@@ -33,6 +33,10 @@
     const t = document.getElementById('toast'); t.textContent = m; t.classList.add('on');
     clearTimeout(toast._t); toast._t = setTimeout(() => t.classList.remove('on'), ms || 2200);
   }
+  function ask(msg, yes, onYes) {
+    openModal(`<p>${esc(msg)}</p><div class="row"><button class="btn bad grow" id="ask-yes">${esc(yes)}</button><button class="btn grow" data-close>キャンセル</button></div>`);
+    document.getElementById('ask-yes').onclick = () => { closeModal(); onYes(); };
+  }
   function openModal(html) { modal.innerHTML = `<div class="box">${html}</div>`; modal.hidden = false; }
   function closeModal() { modal.hidden = true; modal.innerHTML = ''; }
   modal.addEventListener('click', e => { if (e.target === modal || e.target.closest('[data-close]')) closeModal(); });
@@ -579,7 +583,7 @@
         else d.modules = d.modules.filter(m => m !== b.dataset.mod);
         save(); keepScroll(draw);
       });
-      document.getElementById('del').onclick = () => { if (confirm('このデッキを削除しますか?')) { decks = decks.filter(x => x !== d); saveDecks(); location.hash = 'decks'; } };
+      document.getElementById('del').onclick = () => ask('このデッキを削除しますか?', '削除する', () => { decks = decks.filter(x => x !== d); saveDecks(); location.hash = 'decks'; });
       document.getElementById('test').onclick = () => { if (errs.length) { toast('デッキが条件を満たしていません'); return; } LS.set('lastDeck', d.id); location.hash = 'setup/ai'; };
     };
     draw();
@@ -692,7 +696,7 @@
       <div class="row"><button class="btn" id="exp">戦績を書き出し(JSON)</button><label class="btn">読み込み<input type="file" id="imp" accept=".json,application/json" hidden></label><button class="btn bad" id="rst">リセット</button></div></div>`;
     document.getElementById('exp').onclick = () => download('starcrusade-stats.json', stats);
     document.getElementById('imp').onchange = e => readJSON(e, d => { if (d && Array.isArray(d.games)) { stats = d; saveStats(); viewStats(); toast('読み込みました'); } else toast('形式が違います'); });
-    document.getElementById('rst').onclick = () => { if (confirm('戦績をすべて消去しますか?')) { stats = { games: [] }; saveStats(); viewStats(); } };
+    document.getElementById('rst').onclick = () => ask('戦績をすべて消去しますか?', '消去する', () => { stats = { games: [] }; saveStats(); viewStats(); });
   }
   function readJSON(e, cb) { const f = e.target.files[0]; if (!f) return; const r = new FileReader(); r.onload = () => { try { cb(JSON.parse(r.result)); } catch (x) { toast('読み込めませんでした'); } }; r.readAsText(f); }
 
@@ -729,9 +733,10 @@
       toast('復元しました'); viewSettings();
     });
     document.getElementById('wipe').onclick = () => {
-      if (!confirm('デッキ・戦績・セーブ・設定をすべて消去しますか?')) return;
+      ask('デッキ・戦績・セーブ・設定をすべて消去しますか?', 'すべて消去', () => {
       ['settings', 'decks', 'stats', 'auto', 'slot1', 'slot2', 'slot3', 'lastDeck'].forEach(LS.del);
       location.reload();
+      });
     };
   }
 

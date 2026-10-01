@@ -1,5 +1,5 @@
 /* オフライン用キャッシュ(ファイル更新時は VERSION を上げる) */
-const VERSION = 'scr-v1';
+const VERSION = 'scr-v2';
 const FILES = ['./', './index.html', './style.css', './manifest.webmanifest', './icon.svg',
   './js/data.js', './js/engine.js', './js/ai.js', './js/guide.js', './js/app.js'];
 self.addEventListener('install', e => { e.waitUntil(caches.open(VERSION).then(c => c.addAll(FILES)).then(() => self.skipWaiting())); });
