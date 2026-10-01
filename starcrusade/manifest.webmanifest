@@ -1,0 +1,15 @@
+{
+  "name": "Star Crusade 再現版",
+  "short_name": "StarCrusade",
+  "description": "Star Crusade CCG の非公式ファン再現版(オフライン対戦)",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0b0f1a",
+  "theme_color": "#0b0f1a",
+  "lang": "ja",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}
