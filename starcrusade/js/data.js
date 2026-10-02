@@ -221,7 +221,7 @@
   /* ===== シャンティ ===== */
   add({ id: 'infected_militia', n: 'Infected Militia', ja: '感染民兵', f: 'SHA', t: 'U', c: 2, a: 2, h: 3, r: 'C', g: ['Aberration'],
     on: { mutate: [{ op: 'buff', t: 'self', a: 1, h: 1 }] }, tx: 'MUTATE:+1/+1。', src: 'C', note: 'デッキリストで名称のみ確認' });
-  add({ id: 'fleshborer', n: 'Fleshborer', ja: '肉穿ち', f: 'SHA', t: 'U', c: 3, a: 3, h: 2, r: 'C', g: ['Aberration'],
+  add({ id: 'fleshborer', n: 'Fleshborer', ja: '肉穿ち', f: 'SHA', t: 'U', c: 3, a: 3, h: 3, r: 'C', g: ['Aberration'],
     on: { mutate: [{ op: 'buff', t: 'self', a: 2 }] }, tx: 'MUTATE:攻撃力+2。', src: 'C', note: '名称のみ確認' });
   add({ id: 'geneshaper_apprentice', n: 'Geneshaper Apprentice', ja: 'ジーンシェイパー見習い', f: 'SHA', t: 'U', c: 1, a: 1, h: 1, r: 'C', g: ['Aberration'],
     tg: { side: 'ally', kind: 'unit', mutable: true, opt: true }, on: { play: [{ op: 'mutate', t: 'T' }] }, tx: 'ACTIVATE:味方ユニット1体を MUTATE する。', src: 'C', note: 'モジュール Plague Nexus が生成するカードとして名称確認' });
@@ -503,7 +503,7 @@
   // ===================================================================
   const byId = {}; C.forEach(c => { byId[c.id] = c; });
   const YT = '動画字幕(自動生成・確度中)';
-  const fix = (id, o, note) => { const c = byId[id]; if (!c) throw new Error('no card ' + id); Object.assign(c, o); if (note) c.note = (c.note ? c.note + ' / ' : '') + note; };
+  const fix = (id, o, note) => { const c = byId[id] || C.find(x => x.id === id); if (!c) throw new Error('no card ' + id); Object.assign(c, o); if (note) c.note = (c.note ? c.note + ' / ' : '') + note; };
   const DECK = 'YouTube デッキリストで他勢力のデッキに登場';
   // --- 勢力の修正(他勢力のデッキに入っていた=その勢力のカードではない) ---
   [['automated_defences', 'NEU'], ['fighter_squadron', 'NEU'], ['field_commander', 'NEU'], ['eridani_patrol', 'NEU'], ['arsenal_dropship', 'NEU'],
@@ -548,7 +548,7 @@
   fix('refurbish_weapon', { on: { play: [{ op: 'weaponUp', a: 2, ch: 1 }] }, tx: '装備中のウェポンは攻撃力+2、チャージ+1。', src: 'B' }, YT);
   fix('gargoyle_bomber', { on: { play: [{ op: 'dmg', t: 'REA', n: 2 }] }, tx: 'ACTIVATE:ランダムな敵に2ダメージ。', src: 'B' }, YT);
   fix('mystic_apprentice', { on: { endTurn: [{ op: 'dmg', t: 'REA', n: 1 }] }, tx: 'ターン終了時:ランダムな敵に1ダメージ。', src: 'B' }, YT);
-  fix('minerva_spores', { c: 2, tg: { side: 'ally', kind: 'unit', mutable: true }, on: { play: [{ op: 'mutate', t: 'T' }, { op: 'draw', n: 1 }] }, tx: '味方ユニット1体を MUTATE し、カードを1枚引く。', src: 'B' }, YT + ':動画ではコスト1(再現版はバランスのため2)');
+  fix('minerva_spores', { c: 1, tg: { side: 'ally', kind: 'unit', mutable: true }, on: { play: [{ op: 'mutate', t: 'T' }, { op: 'draw', n: 1 }] }, tx: '味方ユニット1体を MUTATE し、カードを1枚引く。', src: 'B' }, YT + ':コスト1');
   fix('hellfire_cannon', { a: 3, ch: 2, tx: 'WEAPON(攻撃力3/チャージ2)', src: 'B' }, YT + ':3/2のウェポン(「倒すたびに強化」は未実装)');
   fix('sniper', { c: 2, a: 1, h: 1, tg: { side: 'enemy', kind: 'char', opt: true }, on: { play: [{ op: 'dmg', t: 'T', n: 1 }] }, energize: [{ n: 4, fx: [{ op: 'bounce', t: 'self' }], tx: 'このユニットを手札に戻す' }], tx: 'ACTIVATE:1ダメージ。ENERGIZE 4:このユニットを手札に戻す。', src: 'B' }, YT + ':コスト2');
   fix('raptor_tank', { src: 'B' }, '字幕でも ARMORED を確認');
@@ -575,8 +575,8 @@
   N({ id: 'teleport', n: 'Teleport', ja: 'テレポート', f: 'HIE', t: 'T', c: 3, r: 'C', on: { play: [{ op: 'draw', n: 2, filter: { g: 'Cyborg' } }] }, tx: '山札からサイボーグ・ユニットを2枚引く。' }, YT + ':コスト3(「体力+1」は未実装)');
   N({ id: 'disintegrate', n: 'Disintegrate', ja: '分解', f: 'HIE', t: 'T', c: 6, r: 'E', tg: { side: 'enemy', kind: 'unit' }, on: { play: [{ op: 'healFromTarget', t: 'T' }, { op: 'destroy', t: 'T' }] }, tx: '敵ユニット1体を破壊し、その体力と同じ値だけ自分の指揮官を回復する。' }, YT + '(コストは再構成)');
   N({ id: 'reassemble', n: 'Reassemble', ja: '再組立', f: 'HIE', t: 'T', c: 2, r: 'E', tg: { side: 'ally', kind: 'unit' }, on: { play: [{ op: 'grant', t: 'T', trig: 'revenge', fx: [{ op: 'returnSelf' }, { op: 'returnSelf' }] }] }, tx: '味方ユニット1体に「REVENGE:このカードを2枚手札に加える」を与える。' }, YT + '(コストは再構成)');
-  N({ id: 'brood_mother', n: 'Brood Mother', ja: 'ブルードマザー', f: 'SHA', t: 'U', c: 3, a: 2, h: 4, r: 'E', g: ['Aberration'], on: { mutate: [{ op: 'summon', id: 'brood_spawn', n: 1 }] }, tx: 'MUTATE:1/1 SCREEN のブルードを配備。' }, YT + ':2/4(コストは再構成)');
-  N({ id: 'spine_spitters', n: 'Spine Spitters', ja: 'スパイン・スピッター', f: 'SHA', t: 'T', c: 4, r: 'C',
+  N({ id: 'brood_mother', n: 'Brood Mother', ja: 'ブルードマザー', f: 'SHA', t: 'U', c: 2, a: 2, h: 4, r: 'E', g: ['Aberration'], on: { mutate: [{ op: 'summon', id: 'brood_spawn', n: 1 }] }, tx: 'MUTATE:1/1 SCREEN のブルードを配備。' }, YT + ':2/4(コストは再構成)');
+  N({ id: 'spine_spitters', n: 'Spine Spitters', ja: 'スパイン・スピッター', f: 'SHA', t: 'T', c: 3, r: 'C',
     on: { play: [{ op: 'if', c: { hasGroup: 'Aberration' }, then: [{ op: 'repeat', n: 5, fx: [{ op: 'dmg', t: 'RE', n: 1, calc: 1 }] }], else: [{ op: 'repeat', n: 3, fx: [{ op: 'dmg', t: 'RE', n: 1, calc: 1 }] }] }] },
     tx: 'ランダムな敵ユニットに1ダメージを3回。味方アベレーションがいれば5回。' }, YT + '(コストは再構成)');
   N({ id: 'terminal_mutation', n: 'Terminal Mutation', ja: '末期変異', f: 'SHA', t: 'T', c: 1, r: 'E', tg: { side: 'enemy', kind: 'unit' },
@@ -620,6 +620,81 @@
     { id: 'praecordian_symbiote', n: 'Praecordian Symbiote', ja: 'プレコーディアン共生体', f: 'SHA', ct: 'supply', c: 1, fx: [{ op: 'dmg', t: 'ac', n: 3, calc: 1 }, { op: 'energy', n: 8 }], tx: '自分の指揮官は3ダメージを受け、エネルギー+8。', src: 'B', note: '動画字幕(確度中)。シャンティのデッキ7本で採用' },
     { id: 'draw_essence', n: 'Draw Essence', ja: 'エッセンス抽出', f: 'ANN', ct: 'passive', start: [{ op: 'if', c: { hasKw: 'PACIFIST' }, then: [{ op: 'psy', n: 1 }] }], tx: 'ターン開始時、PACIFY(攻撃不能)の味方ユニットがいればサイキックチャージ+1。', src: 'B', note: '動画字幕(確度高)' },
     { id: 'battle_hardened', n: 'Battle Hardened', ja: '歴戦の守り', f: 'CON', ct: 'energy', c: 5, tg: { side: 'ally', kind: 'unit' }, fx: [{ op: 'kw', t: 'T', k: 'SOAK', v: 1 }], tx: '味方ユニット1体に SOAK 1 を与える。', src: 'B', note: '動画字幕(確度高、コストは再構成)' }
+  );
+
+
+  // ===================================================================
+  // v3 修正(2026-10-02:追加の字幕調査 第1〜4回+ユーザー提供のスクリーンショット)
+  // スクリーンショットで文面を読めたものは src A。詳細は YOUTUBE_RESEARCH.md 第3部。
+  // ===================================================================
+  const SS = 'ゲーム画面のスクリーンショットで文面を確認';
+  const RU = 'ロシア語のデッキ解説動画(字幕)';
+  // --- スクリーンショットで確認したカード ---
+  fix('void_probe', { c: 3, a: 3, h: 2, g: ['Support'], src: 'A' }, SS + '(3コスト 3/2 Support)');
+  fix('combat_engineer', { c: 1, a: 1, h: 2, src: 'A' }, SS + '(1コスト 1/2 Support)');
+  fix('carbonic_protector', { c: 6, a: 4, h: 6, g: ['Massive'], kw: { SOAK: 2, SCREEN: 1 }, tx: 'SOAK 2。SCREEN', src: 'B' }, SS + '(4/6 Massive、SOAK 2・SCREEN)。コストは画面外のため推定');
+  fix('adrenal_transformation', { c: 2, tg: null, on: {}, cy: { on: 'allyUnitAttacked', fx: [{ op: 'buff', t: 'T', a: 3, h: 3 }] }, tx: 'CYPHER:自分のユニットが攻撃された時、そのユニットは+3/+3を得る。', src: 'B' }, SS + '(コストは画面外のため推定)');
+  fix('terminal_mutation', { on: { play: [{ op: 'grant', t: 'T', trig: 'mutate', fx: [{ op: 'destroy', t: 'self' }] }] }, tx: '対象は「MUTATE:このユニットを破壊する」を得る。(Release Mutagen で変異させて破壊する)', src: 'B' }, SS + '。即時に変異させる処理を削除');
+  fix('the_restless', { f: 'NEU' }, 'シャンティのデッキリストにも登場したため中立に修正');
+  N({ id: 'infestation', n: 'Infestation', ja: 'インフェステーション', f: 'SHA', t: 'T', c: 2, r: 'E',
+    cy: { on: 'enemyUnitPlayed', fx: [{ op: 'grant', t: 'T', trig: 'revenge', fx: [{ op: 'summon', id: 'infestation_spawn', n: 2, side: 'enemy' }] }] },
+    tx: 'CYPHER:相手がユニットを配備した時、そのユニットは「REVENGE:2/1 を2体、相手(あなた)の側に配備」を得る。', src: 'A' }, SS);
+  N({ id: 'saboteur', n: 'Saboteur', ja: 'サボタージュ工作員', f: 'CON', t: 'U', c: 3, a: 3, h: 3, r: 'C', tg: { side: 'enemy', kind: 'unit', opt: true },
+    on: { play: [{ op: 'disable', t: 'T' }] }, tx: 'ACTIVATE:敵ユニット1体を DISABLE。', src: 'A' }, SS + '(勢力はデッキリストから推定)');
+  N({ id: 'defensive_bunker', n: 'Defensive Bunker', ja: '防衛バンカー', f: 'NEU', t: 'U', c: 2, a: 1, h: 4, r: 'C', kw: { SCREEN: 1 }, tx: 'SCREEN', src: 'A' }, SS);
+  N({ id: 'battle_walker', n: 'Battle Walker', ja: 'バトルウォーカー', f: 'NEU', t: 'U', c: 3, a: 3, h: 3, r: 'C', on: { endTurn: [{ op: 'dmg', t: 'REA', n: 1 }] }, tx: 'ターン終了時:ランダムな敵に1ダメージ。', src: 'A' }, SS);
+  N({ id: 'brigands_of_arcturis', n: 'Brigands of Arcturis', ja: 'アークトゥルスの略奪者', f: 'NEU', t: 'U', c: 3, a: 3, h: 1, r: 'H', kw: { MOBILITY: 1 }, on: { revenge: [{ op: 'redeployWeaker' }] },
+    tx: 'MOBILITY。REVENGE:このユニットの基本攻撃力が1より大きければ、基本攻撃力を1下げて再配備する。', src: 'B' }, SS + '(コストは画面外のため推定)');
+  N({ id: 'vraxxian_frigate', n: 'Vraxxian Frigate', ja: 'ヴラクシアン・フリゲート', f: 'NEU', t: 'U', c: 5, a: 3, h: 5, r: 'C', g: ['Vraxxian'], kw: { 'ARC ATTACK': 1 }, tx: 'ARC ATTACK', src: 'B' }, SS + '(コスト・勢力は推定)');
+  // 英語名が分からないカード(ロシア語版の画面のみ)→ 仮称で新規実装
+  const RUSS = 'ロシア語版のゲーム画面で文面を確認。英語名不明のため仮称(コストは推定)';
+  N({ id: 'ru_spawn', n: 'Spawn (provisional)', ja: 'オトロージエ(仮称)', f: 'SHA', t: 'U', c: 5, a: 4, h: 7, r: 'E', g: ['Aberration'], on: { devour: [{ op: 'copyFromMem' }] },
+    tx: 'DEVOUR:破壊したユニットの能力を COPY する。', src: 'B' }, RUSS + '。原文「Отродье」');
+  N({ id: 'ru_walking_ironclads', n: 'Walking Ironclads (provisional)', ja: '歩行装甲兵(仮称)', f: 'NEU', t: 'U', c: 4, a: 2, h: 5, r: 'C', kw: { MOBILITY: 1, ARMORED: 1 },
+    tx: 'MOBILITY。ARMORED', src: 'B' }, RUSS + '。原文「Шагающие броненосцы」');
+  N({ id: 'ru_deadly_gaze', n: 'Deadly Gaze (provisional)', ja: '死の凝視(仮称)', f: 'NEU', t: 'U', c: 4, a: 2, h: 4, r: 'E', on: { attack: [{ op: 'nullify', t: 'T' }] },
+    tx: '攻撃する前に、攻撃対象のユニットを NULLIFY する。', src: 'B' }, RUSS + '。原文「Смертельный взгляд」');
+  // --- 字幕調査(第1〜3回)で分かったカード ---
+  fix('disciple_of_asag', { f: 'ANN', c: 3, a: 3, h: 4, on: { moduleUsed: [{ op: 'psy', n: 1 }] }, tx: 'モジュールを使うたびに、サイキックチャージ+1。', src: 'B' }, '動画2本(英語・ロシア語)で「モジュールを使うたびにチャージ」。アヌンナキに修正');
+  N({ id: 'prophetic_visions', n: 'Prophetic Visions', ja: '予言の幻視', f: 'ANN', t: 'T', c: 4, r: 'E', on: { play: [{ op: 'draw', n: 2 }, { op: 'if', c: { psy: 5 }, then: [{ op: 'draw', n: 2 }] }] },
+    tx: 'カードを2枚引く。サイキックチャージが5以上なら、さらに2枚引く。' }, RU + '「4コストで最大4枚」+英語動画「チャージ5で2倍」');
+  N({ id: 'true_believer', n: 'True Believer', ja: '真の信者', f: 'ANN', t: 'U', c: 4, a: 1, h: 2, r: 'H', on: { play: [{ op: 'buff', t: 'self', a: 'psy', h: 'psy' }] },
+    tx: 'ACTIVATE:サイキックチャージ1につき+1/+1。' }, RU + '(数値は再構成)');
+  N({ id: 'illusionary_force', n: 'Illusionary Force', ja: '幻影の軍勢', f: 'ANN', t: 'U', c: 3, a: 1, h: 4, r: 'E', kw: { SCREEN: 1 }, tg: { side: 'ally', kind: 'unit', opt: true, notSelf: true },
+    on: { play: [{ op: 'copyText', t: 'T' }] }, tx: 'SCREEN。ACTIVATE:味方ユニット1体の効果をコピーする。' }, RU + '(数値は再構成)');
+  N({ id: 'energy_link', n: 'Energy Link', ja: 'エナジーリンク', f: 'HIE', t: 'T', c: 1, r: 'C', tg: { side: 'ally', kind: 'unit' }, on: { play: [{ op: 'healHpFromCost', t: 'T' }] },
+    tx: '味方ユニット1体の体力を、そのユニットのコスト分だけ増やす。' }, RU + '(確度高、コストは再構成)');
+  N({ id: 'rangers', n: 'Rangers', ja: 'レンジャーズ', f: 'HIE', t: 'U', c: 2, a: 2, h: 3, r: 'C', tx: '(テキストなし)' }, RU + ':2コスト 2/3');
+  N({ id: 'error_card', n: 'Error', ja: 'エラー', f: 'CON', t: 'T', c: 2, r: 'E', on: { play: [{ op: 'drawOpp', n: 1 }, { op: 'tax', n: 2 }] },
+    tx: '相手はカードを1枚引く。相手の次のターン、相手のタクティクスのコスト+2。' }, RU + '(英語名は推定)');
+  N({ id: 'treachery', n: 'Treachery', ja: '裏切り', f: 'CON', t: 'T', c: 2, r: 'E', kw: { CREDIT: 1 }, on: { play: [{ op: 'giveOpp', id: 'mercenary_traitor', n: 2 }] },
+    tx: 'CREDIT 1。相手の手札に「裏切り者の傭兵」を2枚加える。' }, RU + '(2コスト・CREDIT 1)');
+  N({ id: 'discharge', n: 'Discharge', ja: '放電', f: 'NEU', t: 'T', c: 3, r: 'E', on: { play: [{ op: 'grant', t: 'AE', trig: 'endTurn', fx: [{ op: 'dmg', t: 'self', n: 1 }] }] },
+    energize: [{ n: 10, fx: [{ op: 'dmg', t: 'AE', n: 1 }], tx: 'さらに全ての敵ユニットに1ダメージ' }], tx: '全ての敵ユニットは「ターン終了時に自身に1ダメージ」を得る。ENERGIZE 10:さらに全ての敵ユニットに1ダメージ。' }, RU + '(ENERGIZE の値は再構成)');
+  N({ id: 'privateer_raid', n: 'Privateer Raid', ja: '私掠襲撃', f: 'CON', t: 'T', c: 2, r: 'C', on: { play: [{ op: 'dmg', t: 'ec', n: 4, calc: 1 }] }, tx: '敵指揮官に4ダメージ。' }, RU + '(動画ではコスト1。再現版はバランスのため2)');
+  N({ id: 'corrupted_hound', n: 'Corrupted Hound', ja: '汚染された猟犬', f: 'NEU', t: 'U', c: 1, a: 2, h: 1, r: 'C', kw: { MOBILITY: 1 }, tx: 'MOBILITY' }, RU + '(数値は再構成)');
+  N({ id: 'mercenary_traitor', n: 'Mercenary Traitor', ja: '裏切り者の傭兵', f: 'CON', t: 'U', c: 3, a: 1, h: 2, r: 'C', g: ['Mercenary'], token: true, handEnd: [{ op: 'dmg', t: 'ac', n: 1, calc: 1 }],
+    tx: 'これが手札にある間、自分のターン終了時に自分の指揮官は1ダメージを受ける。' }, RU + '(英語名は推定、数値は再構成)');
+  N({ id: 'infestation_spawn', n: 'Infestation Spawn (provisional)', ja: '寄生体(仮称)', f: 'SHA', t: 'U', c: 1, a: 2, h: 1, r: 'C', g: ['Aberration'], token: true, tx: '(Infestation が配備する 2/1。画面上の名前は判読不可)' }, SS);
+  fix('brood_egg', { n: 'Brood Eggs' });
+  fix('fledgling', { on: { endTurn: [{ op: 'destroy', t: 'self' }], revenge: [{ op: 'shuffleIn', id: 'raider' }] }, tx: 'MOBILITY。ターン終了時に破壊される。REVENGE:2/1 MOBILITY のレイダーを山札に混ぜる。' }, RU + ':「ターン終了時に死ぬ」');
+
+  // --- v3 モジュール修正 ---
+  mfix('psychic_charge', { n: 'Mind Anchor', ja: 'マインドアンカー', tg: { side: 'any', kind: 'unit', opt: true },
+    fx: [{ op: 'if', c: { hasT: 1 }, then: [{ op: 'buff', t: 'T', a: -1 }], else: [{ op: 'psy', n: 1 }] }],
+    tx: '2サプライ:ユニット1体の攻撃力-1、または(対象を選ばなければ)サイキックチャージ+1。', src: 'B' }, '英語・ロシア語の動画2本で「チャージを得るか、ユニットの攻撃力-1」の二択と確認。名称 Mind Anchor は英語動画より');
+  mfix('mind_anchor', { hidden: 1 }, '基本モジュールと同じものと判明したため追加モジュールから除外');
+  mfix('viromorphic_spores', { c: 14, tg: { side: 'ally', kind: 'unit' }, fx: [{ op: 'copyLeft', t: 'T' }], tx: '選んだ味方ユニットは、左隣のユニットの効果を得る。', src: 'A' }, SS + '(画面ではエネルギー12。2017/5/22 のパッチで14)');
+  mfix('infect', { tg: { side: 'ally', kind: 'unit' }, fx: [{ op: 'grant', t: 'T', trig: 'revenge', fx: [{ op: 'summon', id: 'brood_egg', n: 1 }] }], tx: '味方ユニット1体に「REVENGE:0/3 のブルードエッグを配備」を与える。', src: 'A' }, SS + '(画面ではエネルギー7。v1.2.2 のパッチで9)');
+  mfix('release_mutagen', { tg: { side: 'any', kind: 'char', mutable: true }, tx: 'MUTATE を持つユニット1体(敵も可)を変異させる。指揮官を対象にした場合、指揮官は1ダメージを受け、このターン攻撃力+2。' }, 'Terminal Mutation を敵に使う画面から、敵ユニットも対象にできると推定');
+  mfix('warlords_call', { ct: 'supply', c: 1, tx: '1サプライ:1/1 MOBILITY のフレッジリングを配備(ターン終了時に破壊され、2/1 のレイダーが山札に入る)。' }, RU + ':1サプライ');
+  mfix('hit_and_run', { ct: 'supply', c: 1 }, RU + '(「攻撃と後退」):1サプライ');
+  mfix('ethereal_enlightenment', {}, 'ロシア語動画では体力-15(後の版で変更された可能性)');
+  M.push(
+    { id: 'compensation_protocol', n: 'Compensation Protocol', ja: '補償プロトコル', f: 'HIE', ct: 'passive', tx: 'テキストのない味方ユニットにタクティクスを使うと、そのユニットは+1/+1を得る。', src: 'B', note: RU },
+    { id: 'overextend', n: 'Overextend', ja: '過剰展開(ディスロケーション)', f: 'CON', ct: 'passive', r: 'P',
+      end: [{ op: 'if', c: { enemyMore: 1 }, then: [{ op: 'giveOpp', id: 'mercenary_traitor', n: 1 }] }],
+      tx: 'ターン終了時、相手のユニットの方が多ければ、相手の手札に「裏切り者の傭兵」を1枚加える。', src: 'B', note: '英語動画の Overextend の説明と、ロシア語動画の「ディスロケーション」の説明が一致。デッキリストでも名称確認' }
   );
 
   // カード属性(読みやすさのため)

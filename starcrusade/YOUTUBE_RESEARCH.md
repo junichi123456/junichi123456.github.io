@@ -530,3 +530,149 @@ Accelerated Bloom(シャンティ)、Anti-personnel Turret(中立)、Archeus Cru
 - コスト・攻撃力・体力はほとんど読み上げられないため、数値はほぼ判明していません。
 - サブエージェントの多くは、字幕の全文ではなく抜粋だけを保存していました。全文が必要なら再取得が必要です(1本5クレジット)。
 - vidIQ の残りクレジットは75(約15本分)です。次回の補充は2026年11月2日です。
+
+---
+
+# 第3部:追加の字幕調査(15クレジットずつ)
+
+## 第1回(2026-10-02、15クレジット、3本)
+
+| 動画 | 内容 | 有用度 |
+|---|---|---|
+| [370r6KKYwPY](https://www.youtube.com/watch?v=370r6KKYwPY) | 英語、ランク戦3試合(サイボーグデッキ) | 低(字幕の崩れが大きい) |
+| [xGlsdKuSKlA](https://www.youtube.com/watch?v=xGlsdKuSKlA) | 英語、ランク戦3試合(コンソーシアム) | 低 |
+| [QBBq3FexCeM](https://www.youtube.com/watch?v=QBBq3FexCeM) | ロシア語、アヌンナキ「Annunaki 10」デッキ解説 | **高** |
+
+### 分かったこと
+
+| 対象 | 内容 | 確度 | 再現版との関係 |
+|---|---|---|---|
+| アヌンナキの基本モジュール | 2サプライで「サイキックチャージ+1」か「ユニット1体の攻撃力-1」を選ぶ | 高 | 第2部の Mind Anchor の説明(同じ二択)と一致。基本能力は二択だった可能性が高い。再現版はチャージ+1のみ |
+| Ethereal Enlightenment | ターン終了時にチャージ+1。指揮官の体力-15 | 高 | 再現版は v1.2.2 パッチノートの「-10」。動画は後の版の可能性があり、版による違いとして記録 |
+| Disciple of Asag(と思われる「アサグの信奉者」) | 3コスト 3/4。モジュールを使うたびにチャージ+1 | 中 | 第2部の別動画でも「指揮官能力を使うたびにチャージ」。**アヌンナキのカードの可能性が高い**(再現版はシャンティ・変異効果) |
+| Marduk's Faithful | ターン終了時にチャージ+1 | 高 | 再現版と一致 |
+| Prophetic Visions | 4コスト、4枚ドロー(チャージが必要) | 高 | 未収録 |
+| True Believer | チャージ1につき強化される | 中 | 未収録 |
+| Harbinger of Doom | 全体ダメージ源(チャージ獲得で誘発) | 高 | 再現版と同方向 |
+| Illusionary Force | 他のユニットの効果をコピーする | 中 | 未収録 |
+| Neutralize | マーセナリーがいれば大型の脅威を除去 | 中 | 再現版と一致 |
+| SOAK | 「SOAK 1 なら2ダメージの攻撃が1になる」 | 高 | 再現版と一致 |
+| Soldier of Fortune | 1コスト 2/3 | 低 | 未収録 |
+
+デッキ構成の参考:「Annunaki 10」は25枚(タクティクス13・ユニット12)とモジュール3つで、Ethereal Enlightenment の体力ペナルティにより指揮官の体力は約10で戦う構成とのことです。
+
+## 第2回(2026-10-02、15クレジット、3本・すべてロシア語のデッキ解説)
+
+| 動画 | デッキ | 有用度 |
+|---|---|---|
+| [ecDWNpHNobQ](https://www.youtube.com/watch?v=ecDWNpHNobQ) | ヒエラルキー「強化(バフ)」25枚・初心者向け | 中 |
+| [l2GJSnZdaOE](https://www.youtube.com/watch?v=l2GJSnZdaOE) | ハジル=ゴグ系「ハイパー速攻」・初心者向け | 中 |
+| [QzQGqh5PrH0](https://www.youtube.com/watch?v=QzQGqh5PrH0) | コンソーシアム「ディスロケーション」30枚 | **高** |
+
+### 分かったこと
+
+| 対象 | 内容 | 確度 | 再現版との関係 |
+|---|---|---|---|
+| ヒエラルキー基本モジュール(ナノ修復) | 2サプライで体力2回復 | 高 | Nanite Conversion と一致(3本目の確認) |
+| Compensation Protocol(ヒエラルキーのモジュール) | テキストのないユニットにタクティクスを使うと+1/+1 | 中 | 未収録 |
+| ナノ生産(Nanite Fabrication と思われる) | ターン開始時、エネルギー5で「SHIELD/SCREEN/2回攻撃/REVENGE」の4択のどれかを与えるモジュールに変わる | 中 | 未収録 |
+| Energy Link(ヒエラルキー) | ユニットの体力を、そのコスト分だけ増やす | 高 | 未収録 |
+| Rangers(ヒエラルキー) | コスト2の 2/3、テキストなし | 中 | 未収録 |
+| Dislocation(コンソーシアムのモジュール) | 相手のユニットの方が多いと、相手の手札に「裏切り者の傭兵」が入る | 高 | 第2部の Overextend の説明と同じ内容。同じモジュールの別名(ロシア語訳)の可能性 |
+| 裏切り者の傭兵(Mercenary Traitor) | 3コストのユニット。手札にある間、ターン終了時に持ち主の指揮官へ1ダメージ | 中 | 未収録 |
+| Treachery(と思われる「裏切り」) | 2コスト。相手の手札に裏切り者の傭兵を2枚入れる | 高 | 未収録 |
+| Attack and Retreat(Hit and Run Tactics のロシア語訳と思われる) | 1サプライ。敵ユニットが攻撃を受けるたびに追加ダメージ | 中 | v2 で反映済みの内容と一致。コストは1サプライ |
+| Error(タクティクス) | 2コスト。相手は1枚引き、このターン相手のタクティクスはコスト+2 | 中 | 未収録 |
+| Discharge | 3コスト。敵ユニットはターン終了時に1ダメージ(強化版は2) | 中 | 未収録 |
+| Privateer Raid(と思われる) | 1コスト。敵指揮官に4ダメージ | 中 | 未収録 |
+| Information War(モジュール) | エネルギー11で、相手の山札の一番上に「Error」を置く | 低 | 未収録 |
+| Warlord's Call | 1サプライ。MOBILITY のユニットを出し、山札に強い版を入れる | 中 | v2 の内容と一致。コストはエネルギーではなく1サプライの可能性 |
+| Syndicate Enforcers | 相手がカードをプレイするたびにダメージ | 中 | 再現版は「自分がプレイするたび」。どちらが正しいか要確認 |
+| Corrupted Hound(中立) | 1ターン目から敵指揮官を攻撃できる(MOBILITY) | 中 | 未収録 |
+| Portal Master | コンソーシアムのデッキで使用、MOBILITY 的に動く | 高 | v2 でコンソーシアムに移した判断と一致 |
+
+ロシア語の自動字幕も崩れが大きく、数値の多くは聞き取れていません。カード名はロシア語訳からの推定を含みます。
+
+## 第3回(2026-10-02、15クレジット、3本)
+
+| 動画 | 内容 | 有用度 |
+|---|---|---|
+| [Bf0sBmALwqg](https://www.youtube.com/watch?v=Bf0sBmALwqg) | ロシア語、相手の手札枚数の数え方 | 低 |
+| [d_-s_c6DsII](https://www.youtube.com/watch?v=d_-s_c6DsII) | ドイツ語、パック開封とデッキ構築 | 低(字幕の崩れが大きい) |
+| [XZqUU-85VKw](https://www.youtube.com/watch?v=XZqUU-85VKw) | 英語、パック開封 | なし(字幕がポルトガル語として誤認識されたノイズ) |
+
+### 分かったこと
+
+| 対象 | 内容 | 確度 | 再現版との関係 |
+|---|---|---|---|
+| Treachery(ロシア語「裏切り」) | 2コスト。使うと自分は CREDIT 1 を負う。相手の手札が10枚だと、入れた傭兵は溢れて捨てられ、ダメージを与えない | 中 | 第2回の内容を補足 |
+| Error(タクティクス) | 相手の手札が満杯の時に使うと、溢れて捨てられるのは Error のほうになる | 低 | 第2回の内容を補足 |
+| 手札の上限 | 10枚。引いた時に溢れたカードは捨てられる | 中 | 再現版と一致 |
+| デッキ枚数 | 25〜40枚 | 中〜高 | 再現版と一致 |
+| PACIFIST | 攻撃力0で攻撃できない | 中 | 再現版と一致 |
+| MOBILITY | 出したターンに攻撃できる | 高 | 再現版と一致 |
+
+第3回は新しいカード効果がほとんど得られませんでした。英語のパック開封動画は字幕がノイズで、クレジットだけ消費しています。
+
+## 第4回:シャンティ関連(2026-10-02)
+
+YouTube 検索で見つかったシャンティ関連の動画8本で字幕を試しました。
+
+| 動画 | 言語 | 結果 |
+|---|---|---|
+| [PrxIJaSIO5w](https://www.youtube.com/watch?v=PrxIJaSIO5w) ランク戦(Фай Родис) | ロシア語 | 字幕なし |
+| [vUzQNb2qbbA](https://www.youtube.com/watch?v=vUzQNb2qbbA) Shan'Ti Raid | 英語 | 字幕なし |
+| [c3fDSzfG_Ec](https://www.youtube.com/watch?v=c3fDSzfG_Ec) On joue Shan'ti | フランス語 | 字幕なし |
+| [rCsFAv-jJBo](https://www.youtube.com/watch?v=rCsFAv-jJBo) Shan-ti Mutation | 英語 | 字幕なし |
+| [w8PzFNbQESo](https://www.youtube.com/watch?v=w8PzFNbQESo) Ranked Shan ti | チェコ語 | 字幕なし |
+| [QhYEhuooz4w](https://www.youtube.com/watch?v=QhYEhuooz4w) Shan Ti | チェコ語 | 字幕なし |
+| [b7PXOiRubOA](https://www.youtube.com/watch?v=b7PXOiRubOA) Game of Shan Ti | 英語 | 字幕なし |
+| [Jf-_fVaKwjY](https://www.youtube.com/watch?v=Jf-_fVaKwjY) Terran vs Shan Ti | — | 字幕はあったがノイズ(5クレジット消費) |
+
+字幕から得られた情報はありませんでした。
+
+### 説明欄のデッキリスト(クレジット不要)
+
+[L7vsXCX6TFE](https://www.youtube.com/watch?v=L7vsXCX6TFE)(Imaginary Moth「Shan Ti - Viromorphic Spores 2.0」)の説明欄に、シャンティのデッキリストがありました。
+
+- モジュール:Praecordian Symbiote、Viromorphic Spores、Empty
+- 勢力の判定に効く新情報:**The Restless**(再現版はアヌンナキ)がシャンティのデッキに入っており、中立と確定します。Soul Devourer・Preacher・Horror of the Shade・Archon Carrier・Land Crawler・Titan などの中立判定も、これで裏付けが増えました。
+- その他の採用カード:Field Medic、Shock Trooper、Adrenal Transformation、Omega Squadron、Sentry Drones、Accelerated Bloom、The Spatial Anomaly、Brigands of Arcturis、Pirate Baron Bang、Harvest、Avatar of Woe、Etho the Absorber、Bio Monger、Bombardiers、The Manowar ほか。
+
+## 第5回:ユーザー提供のスクリーンショット(2026-10-02)
+
+ゲーム画面のスクリーンショット15枚(英語版1本+ロシア語版の大会配信「StarCrusadeLeague」)から、カードの文面を直接読み取りました。**画面上の文面なので、字幕より信頼度が高い**資料です。ロシア語版の文面は日本語に訳しています。コストは画面に写っていたものだけを記録しています。
+
+### カード
+
+| カード(画面表記) | 種別/グループ | コスト | 攻/体 | 文面(画面のまま/訳) | 再現版との関係 |
+|---|---|---|---|---|---|
+| Infestation | タクティクス | 2 | — | CYPHER: When opponent DEPLOYS a unit, it gains "REVENGE: DEPLOY two 2/1 (名称判読不可) under opponent's control" | 未収録(シャンティのデッキリストに登場) |
+| Saboteur / Саботажник | ユニット | 3 | 3/3 | ACTIVATE: DISABLE target enemy unit | 未収録 |
+| Defensive Bunker | ユニット | 2 | 1/4 | SCREEN | 未収録 |
+| Void Probe | ユニット/Support | 3 | 3/2 | ACTIVATE: NULLIFY target unit | 効果は一致。数値が違う(再現版は2コスト 1/2) |
+| Battle Walker | ユニット | 3 | 3/3 | At the end of your turn, deal 1 damage to a random enemy | 未収録 |
+| Combat Engineer / Боевой инженер | ユニット/Support | 1 | 1/2 | ターン終了時、ランダムな味方ユニットの最大体力+1 | 効果は一致。数値が違う(再現版は3コスト 2/3) |
+| Adrenal Transformation / Адреналиновая трансформация | タクティクス | 不明 | — | CYPHER:自分のユニットが攻撃された時、そのユニットは+3/+3を得る | **効果が違う**(再現版は即時の+2/+2) |
+| Terminal Mutation / Смертельная мутация | タクティクス | 不明 | — | 対象は「MUTATE:このユニットを破壊する」を得る | 付与までは一致。再現版の「すぐ変異させる」処理は原作にない |
+| Carbonic Protector(ロシア語「Карбонический страж」) | ユニット/Massive | 不明 | 4/6 | SOAK 2。SCREEN | **数値と効果が違う**(再現版は 1/4 SCREEN) |
+| Brigands of Arcturis(ロシア語「Арктурианские налётчики」) | ユニット | 不明 | 3/1 | MOBILITY。REVENGE:このユニットの基本攻撃力が1より大きければ、基本攻撃力を1下げて再配備 | 未収録 |
+| Vraxxian Frigate(ロシア語「Враксианский фрегат」) | ユニット | 不明 | 3/5 | ARC ATTACK | 未収録 |
+| Отродье(英名不明、Abomination の可能性) | ユニット/Aberration | 不明 | 4/7 | DEVOUR:破壊したユニットの能力を COPY する | 未収録 |
+| Шагающие броненосцы(英名不明、「歩行装甲」) | ユニット | 不明 | 2/5 | MOBILITY。ARMORED | 未収録 |
+| Смертельный взгляд(英名不明、「死の凝視」) | ユニット | 不明 | 2/4 | 攻撃する前に、選んだユニットを NULLIFY | 未収録 |
+
+### モジュール
+
+| モジュール | コスト(画面) | 文面 | 再現版との関係 |
+|---|---|---|---|
+| Infect | エネルギー7 | Give target friendly unit "REVENGE: DEPLOY 0/3 Brood Eggs" | **効果が違う**(再現版は敵に脆弱+2ダメージ)。パッチ1.2.2では7→9に変更されたので、この画面はそれ以前の版 |
+| Praecordian Symbiote(ロシア語「Артериальный симбиот」) | 1サプライ | 自分の指揮官は3ダメージを受ける。エネルギー8を得る | **完全に一致** |
+| Viromorphic Spores(ロシア語「Вироморфические споры」) | エネルギー12 | 選んだユニットは、左隣のカードの効果を得る | **効果が違う**(再現版は味方全体を変異)。コスト12は2017/5/22のパッチ(12→14)以前の値と一致 |
+| Mad Minute(テランの対戦相手のモジュール欄) | エネルギー11 | (画面ではアイコンのみ) | コスト11はパッチ後の値と一致 |
+
+### 画面から分かったルール
+
+- シャンティ指揮官のモジュール欄は「Release Mutagen(2サプライ)・Praecordian Symbiote(1サプライ)・Viromorphic Spores(エネルギー12)」の並びでした。モジュールにはサプライで使うものとエネルギーで使うものが混在します(再現版と同じ方式)。
+- Terminal Mutation を**敵**ユニットに使っている場面がありました。シャンティの Release Mutagen は敵ユニットも変異させられる可能性が高いです(再現版は味方のみ)。
+- 指揮官の初期体力は40(40枚デッキ)で、デッキ枚数=体力のルールと一致しました。
