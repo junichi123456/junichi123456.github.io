@@ -39,8 +39,7 @@
     const second = 1 - s.first;
     draw(s, s.first, 3, null, true);
     draw(s, second, 4, null, true);
-    addHand(s, second, 'supply_crate');
-    log(s, `${P(s, s.first).name} が先攻。後攻の ${P(s, second).name} はイニシアチブを得た。`);
+    log(s, `${P(s, s.first).name} が先攻。後攻の ${P(s, second).name} はマリガン後にイニシアチブを得る。`);
     // マリガン(引き直し):CPU は自動、人間は UI から選ぶ
     s.phase = 'mulligan';
     s.mull = s.players.map(pl => false);
@@ -56,16 +55,21 @@
   function mulligan(s, p, uids) {
     const pl = s.players[p];
     if (s.phase !== 'mulligan' || s.mull[p]) return false;
-    const back = pl.hand.filter(h => uids.includes(h.uid) && h.id !== 'supply_crate');
+    const back = pl.hand.filter(h => uids.includes(h.uid));
     pl.hand = pl.hand.filter(h => !back.includes(h));
     back.forEach(h => pl.deck.push(h.id));
     shuffle(pl.deck);
-    for (const h of back) { const id = pl.deck.shift(); const nh = addHand(s, p, id); if (nh) { const i = pl.hand.indexOf(nh); pl.hand.splice(i, 1); pl.hand.splice(pl.hand.length - (pl.hand.some(x => x.id === 'supply_crate') ? 1 : 0), 0, nh); } }
+    for (let i = 0; i < back.length; i++) addHand(s, p, pl.deck.shift());
     s.mull[p] = true;
     if (back.length) log(s, `${pl.name} は ${back.length} 枚を引き直した。`);
     return true;
   }
-  function beginPlay(s) { s.phase = 'play'; startTurn(s); }
+  function beginPlay(s) {
+    s.phase = 'play';
+    if (!s.players[1 - s.first].hand.some(h => h.id === 'supply_crate')) addHand(s, 1 - s.first, 'supply_crate');
+    log(s, `${P(s, 1 - s.first).name} はイニシアチブを得た。`);
+    startTurn(s);
+  }
 
   // ---------- ヘルパー ----------
   function P(s, i) { return s.players[i]; }
@@ -224,11 +228,11 @@
     if (over) Object.assign(u, over);
     return u;
   }
-  function summon(s, p, id, over) {
+  function summon(s, p, id, over, pos) {
     const pl = s.players[p];
     if (pl.board.length >= BOARD_MAX) { log(s, `${pl.name} の場がいっぱいで ${ja(id)} を配備できない。`); return null; }
     const u = makeUnit(s, id, p, over);
-    pl.board.push(u);
+    if (pos === undefined || pos === null || pos < 0 || pos > pl.board.length) pl.board.push(u); else pl.board.splice(pos, 0, u);
     fx(s, { ref: u.uid, k: 'summon' });
     return u;
   }
@@ -611,7 +615,7 @@
   }
 
   // ---------- 行動 ----------
-  function play(s, handUid, T, energize) {
+  function play(s, handUid, T, energize, pos) {
     const p = s.active, pl = s.players[p];
     const hi = pl.hand.findIndex(h => h.uid === handUid); if (hi < 0) return false;
     const h = pl.hand[hi], c = card(h.id);
@@ -639,7 +643,7 @@
     if (c.kw && c.kw.CREDIT) for (const u of pl.board.slice()) for (const f of trigs(u, 'creditPlayed')) s.q.push({ k: 'run', p, self: u.uid, fx: f });
     const ctx = { p, T, srcKind, energized: !!en };
     if (c.t === 'U') {
-      const u = summon(s, p, h.id);
+      const u = summon(s, p, h.id, null, pos);
       if (u) {
         ctx.self = u.uid;
         if (c.on && c.on.play) run(s, ctx, c.on.play);
@@ -722,7 +726,7 @@
     let ok = false;
     if (a.type === 'mulligan') { ok = mulligan(s, a.p, a.uids || []); if (ok && s.mull.every(Boolean)) beginPlay(s); return ok; }
     if (s.phase === 'mulligan') return false;
-    if (a.type === 'play') ok = play(s, a.uid, a.T, a.en);
+    if (a.type === 'play') ok = play(s, a.uid, a.T, a.en, a.pos);
     else if (a.type === 'attack') ok = attack(s, a.from, a.to);
     else if (a.type === 'module') ok = useModule(s, a.i, a.T);
     else if (a.type === 'end') { endTurn(s); ok = true; }
@@ -741,7 +745,8 @@
       const ts = c.tg ? validTargets(s, p, c.tg, c.t === 'T' ? 'tactic' : 'ability', null) : [];
       const tl = c.tg ? (ts.length ? ts : (c.tg.opt ? [null] : [])) : [null];
       if (c.tg && c.tg.needEn) tl.push(null);
-      for (const T of tl) for (const en of ens) out.push({ type: 'play', uid: h.uid, T, en });
+      const poss = c.t === 'U' && pl.board.length ? [pl.board.length, 0] : [undefined];
+      for (const T of tl) for (const en of ens) for (const pos of poss) out.push({ type: 'play', uid: h.uid, T, en, pos });
     }
     pl.modules.forEach((m, i) => {
       if (!canUseModule(s, p, i)) return;

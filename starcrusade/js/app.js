@@ -250,7 +250,7 @@
     const me = ui.viewer, op = 1 - me;
     const P = s.players[me], O = s.players[op];
     const my = isHumanTurn();
-    const msg = ui.mode ? (ui.mode.kind === 'attack' ? '攻撃対象を選んでください' : '対象を選んでください') :
+    const msg = ui.mode ? (ui.mode.kind === 'attack' ? '攻撃対象を選んでください' : ui.mode.kind === 'place' ? '配備する位置の「＋」をタップしてください' : '対象を選んでください') :
       s.winner !== null ? '対戦終了' : my ? (settings.hints ? hintText(s) : 'あなたのターン') : `${esc(s.players[s.active].name)} のターン…`;
     const ohand = O.hand.map(h => h.rev ? `<span class="crev" data-card="${h.id}">${esc(SC.ja(h.id))} (${SC.costOf(s, op, h)})</span>` : '<span class="cback"></span>').join('');
     const hand = P.hand.map(h => {
@@ -276,7 +276,9 @@
         ${ui.mode ? `${ui.mode.opt ? '<button class="btn sm" id="notgt">対象なし</button>' : ''}<button class="btn sm" id="cancel">やめる</button>` : ''}
         <button class="btn sm" id="logbtn">ログ</button>
         ${my && !ui.mode ? '<button class="btn sm pri" id="endbtn">ターン終了</button>' : ''}</div>
-      <div class="board ${P.board.length ? '' : 'empty'}" data-empty="自分の場(手札のカードをタップして出す)">${P.board.map(u => unitHTML(s, u)).join('')}</div>
+      <div class="board ${P.board.length ? '' : 'empty'}" data-empty="自分の場(手札のカードをタップして出す)">${ui.mode && ui.mode.kind === 'place'
+        ? P.board.map((u, i) => `<button class="slot" data-slot="${i}" aria-label="${i + 1}番目に配備">＋</button>` + unitHTML(s, u)).join('') + `<button class="slot" data-slot="${P.board.length}" aria-label="右端に配備">＋</button>`
+        : P.board.map(u => unitHTML(s, u)).join('')}</div>
       <div class="cbar me">${avatarHTML(s, me)}${resHTML(s, me)}<div class="mods">${mods}</div></div>
       <div class="hand">${hand || '<span class="tiny muted" style="margin:auto">手札なし</span>'}</div>
       ${ui.sheet ? sheetHTML(s) : ''}
@@ -302,13 +304,13 @@
     ui.mullSel = ui.mullSel || [];
     const first = s.first === p;
     const cards = pl.hand.map(h => {
-      const c = SC.card(h.id), on = ui.mullSel.includes(h.uid), fixed = h.id === 'supply_crate';
+      const c = SC.card(h.id), on = ui.mullSel.includes(h.uid), fixed = false;
       return `<button class="hcard ${on ? 'sel' : ''}" style="--fc:${fcol(c.f)};${on ? 'opacity:.55' : ''}" data-mh="${h.uid}" ${fixed ? 'disabled' : ''}>
         <span class="cost">${c.c}</span><span class="hn">${esc(c.ja)}</span><span class="ht">${esc(c.tx)}</span><span class="hs">${c.t === 'U' ? `<span class="atk">${c.a}</span><span class="hp">${c.h}</span>` : '<span class="muted tiny">' + D.types[c.t] + '</span>'}</span>${on ? '<span class="zz">↺</span>' : ''}</button>`;
     }).join('');
     app.innerHTML = `<div class="game"><div class="view" style="padding-top:1rem">
       <h2>引き直し(マリガン)</h2>
-      <p class="small">${esc(pl.name)} は<b>${first ? '先攻' : '後攻'}</b>です。戻したいカードをタップして選び、「決定」を押してください。選んだカードは山札に戻り、同じ枚数を引き直します。${first ? '' : '後攻はイニシアチブ(サプライ+1)を持っています。'}</p>
+      <p class="small">${esc(pl.name)} は<b>${first ? '先攻' : '後攻'}</b>です。戻したいカードをタップして選び、「決定」を押してください。選んだカードは山札に戻り、同じ枚数を引き直します。${first ? '' : '後攻は、引き直しの後にイニシアチブ(サプライ+1)を受け取ります。'}</p>
       <p class="small muted">迷ったら、序盤に出せないコスト5以上のカードを戻すのが基本です。</p>
       <div class="hand" style="flex-wrap:wrap;min-height:auto;background:none">${cards}</div>
       <div class="row" style="margin-top:1rem"><button class="btn pri grow" id="mdone">決定(${ui.mullSel.length}枚を引き直す)</button><button class="btn" id="mnone">このまま始める</button></div></div></div>`;
@@ -409,7 +411,9 @@
       }
       return doAct({ type: 'end' });
     }
-    if (t.closest('#notgt')) { const m = ui.mode; ui.mode = null; ui.targets = []; if (m.kind === 'module') return doAct({ type: 'module', i: m.i, T: null }); return doAct({ type: 'play', uid: m.uid, T: null, en: m.en }); }
+    if (t.closest('#notgt')) { const m = ui.mode; ui.mode = null; ui.targets = []; if (m.kind === 'module') return doAct({ type: 'module', i: m.i, T: null }); return doAct({ type: 'play', uid: m.uid, T: null, en: m.en, pos: m.pos }); }
+    const sl = t.closest('[data-slot]');
+    if (sl && ui.mode && ui.mode.kind === 'place') { const m = ui.mode; ui.mode = null; return startPlay(m.uid, m.en, +sl.dataset.slot); }
     const pb = t.closest('[data-play]');
     if (pb) return startPlay(+pb.dataset.play, pb.dataset.en === '' ? null : +pb.dataset.en);
     const um = t.closest('[data-usemod]');
@@ -427,7 +431,7 @@
         if (ui.targets.includes(ref)) {
           const m = ui.mode; ui.mode = null; ui.targets = [];
           if (m.kind === 'attack') return doAct({ type: 'attack', from: m.from, to: ref });
-          if (m.kind === 'play') return doAct({ type: 'play', uid: m.uid, T: ref, en: m.en });
+          if (m.kind === 'play') return doAct({ type: 'play', uid: m.uid, T: ref, en: m.en, pos: m.pos });
           if (m.kind === 'module') return doAct({ type: 'module', i: m.i, T: ref });
         }
         if (ui.mode.kind === 'attack' && ui.mode.from === ref) { ui.mode = null; ui.targets = []; renderGame(); return; }
@@ -441,16 +445,20 @@
     if (ui.mode && !t.closest('.mid')) { ui.mode = null; ui.targets = []; renderGame(); }
   }
 
-  function startPlay(uid, en) {
+  function startPlay(uid, en, pos) {
     const s = game, p = ui.viewer;
     const h = s.players[p].hand.find(x => x.uid === uid); if (!h) return;
     const c = SC.card(h.id);
     ui.sheet = null;
+    // ユニットは配備位置を選ぶ(場にユニットがいる時だけ)
+    if (c.t === 'U' && pos === undefined && s.players[p].board.length) {
+      ui.mode = { kind: 'place', uid, en }; ui.targets = []; renderGame(); return;
+    }
     if (c.tg) {
       const vt = SC.validTargets(s, p, c.tg, c.t === 'T' ? 'tactic' : 'ability');
-      if (vt.length) { ui.mode = { kind: 'play', uid, en, opt: !!c.tg.opt }; ui.targets = vt; renderGame(); return; }
+      if (vt.length) { ui.mode = { kind: 'play', uid, en, pos, opt: !!c.tg.opt }; ui.targets = vt; renderGame(); return; }
     }
-    doAct({ type: 'play', uid, T: null, en });
+    doAct({ type: 'play', uid, T: null, en, pos });
   }
   function startModule(i) {
     const s = game, p = ui.viewer;

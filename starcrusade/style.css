@@ -175,3 +175,4 @@ th { color: var(--tx2); font-weight: 600; }
 .tabs .btn { flex: none; }
 .tabs .btn.on { background: var(--acc); color: #001018; }
 .sheet > .row { position: sticky; bottom: calc(-1rem - env(safe-area-inset-bottom)); background: var(--bg2); padding: .5rem 0 .2rem; margin-bottom: -.2rem; }
+.slot { flex: none; width: 1.9rem; height: 5.9rem; border-radius: .5rem; border: 2px dashed var(--acc); background: color-mix(in srgb, var(--acc) 12%, transparent); color: var(--acc); font-size: 1.2rem; font-weight: 800; animation: pulse 1.2s infinite; }
