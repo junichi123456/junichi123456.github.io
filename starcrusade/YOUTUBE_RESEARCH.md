@@ -1,0 +1,428 @@
+# YouTube 調査結果(デッキリスト)
+
+調査日: 2026-10-02。対象: YouTube 上の Star Crusade CCG 関連動画 95本(検索で収集)。
+
+## 方法と制約
+
+- yt-dlp で動画本体はダウンロードせず、メタデータ(タイトル・説明欄)だけを取得しました。
+- **字幕と音声は取得できませんでした。** この環境の IP では YouTube の「ボットではないことを確認」が出て、字幕トラックも音声ストリームも返されません(埋め込み用クライアントで説明欄だけ取得できました)。そのため、カードの**効果テキストはこの調査では得られていません**。
+- 説明欄にデッキリストがあった **34本**(すべてチャンネル Imaginary Moth、2021年4〜7月投稿)を解析しました。各デッキの勢力は動画タイトルから判定しています。
+- 勢力の推定ルール: 勢力固有カードは他勢力のデッキに入れられないため、**2つ以上の勢力のデッキに登場したカードは中立で確定**です。1勢力のデッキにだけ登場したカードは「その勢力の可能性が高い(中立の可能性も残る)」という推定です。
+- 綴りの揺れ(Harvet / Harvest など)は統合しました。
+
+## 解析したデッキ
+
+| 動画 | 勢力 | 投稿日 | モジュール |
+|---|---|---|---|
+| [Annunaki -Pacifist Control Deck!](https://www.youtube.com/watch?v=-ZnMGx9rzgo) | アヌンナキ | 2021-05-25 | Trance Projector |
+| [Annunaki -Screen Deck!](https://www.youtube.com/watch?v=-tULy2Nl31w) | アヌンナキ | 2021-04-15 | Phase Shift、Acolyte |
+| [Massive Taxation 2.0 Deck!](https://www.youtube.com/watch?v=1GlLTTxVp4M) | コンソーシアム | 2021-07-13 | Leveraged Warfare、Master of Logistics |
+| [Annunaki -Psychic Charge Deck!](https://www.youtube.com/watch?v=5_0huyWgAGs) | アヌンナキ | 2021-05-22 | Ethereal Enlightenment、Draw Essense、Mind Anchor |
+| [Hierarchy -Going Big Deck!](https://www.youtube.com/watch?v=7543aJ3o_AI) | ヒエラルキー | 2021-06-26 | Energy Banks |
+| [Consortium -Massive Taxation Deck!](https://www.youtube.com/watch?v=9ypqm0j5wlg) | コンソーシアム | 2021-06-10 | Leveraged Warfare、Master of Logistics |
+| [Annunaki -Pacifist Control 2.0 Deck!](https://www.youtube.com/watch?v=Cv1z_2KkOlU) | アヌンナキ | 2021-07-31 | Trance Projector |
+| [Consortium -Mercenary Deck!](https://www.youtube.com/watch?v=CwMnxkgNv0k) | コンソーシアム | 2021-04-20 | Redeem Contract、Incursion |
+| [Annunaki -Copycat Deck!](https://www.youtube.com/watch?v=DiFWYUvF8co) | アヌンナキ | 2021-06-17 | Puppet Master、Shimmer、Quantum Glimpse |
+| [Hajir Gog -Weaponry Deck!](https://www.youtube.com/watch?v=GNUKNsqG2Z8) | ハジル=ゴグ | 2021-04-17 | Arsenal、Thick of Battle、Warlord's Call |
+| [Shan Ti -Plague Doctor Deck!](https://www.youtube.com/watch?v=JLPb_JNq8PY) | シャンティ | 2021-06-15 | Contamination、Praecordian Symbiote、Plague Nexus |
+| [Terrans -Armord Deck!](https://www.youtube.com/watch?v=KGuqT_OLnbY) | テラン | 2021-06-03 | Veterancy、Consult General Staff |
+| [Consortium -Thief Deck!](https://www.youtube.com/watch?v=Mij-epTpV1o) | コンソーシアム | 2021-04-08 | Incentivized Recruitment |
+| [Terrans -Guardsman Deck!](https://www.youtube.com/watch?v=MlSyxbjrD5s) | テラン | 2021-06-05 | Band of Brothers、Rally、Combined Arms |
+| [Annunaki -Pacifist Bomber Deck!](https://www.youtube.com/watch?v=QvEWeOCh6is) | アヌンナキ | 2021-05-27 | Nergal's Gift |
+| [Vraxxian -Support Deck!](https://www.youtube.com/watch?v=Tsgtfqcz6os) | ヴラクシアン | 2021-04-13 | Captain's Pride、Captain's Minders、Noise Veil |
+| [Vraxxian -Weaponry Deck!](https://www.youtube.com/watch?v=VySuxWq3kCA) | ヴラクシアン | 2021-05-06 | Bone Spurs、Scout Ahead、Prediction Engine |
+| [Vraxxian -Massive Stun Deck!](https://www.youtube.com/watch?v=W-_NoJQ0Q_U) | ヴラクシアン | 2021-06-08 | Chrono Field、Blink Generator |
+| [Hierarchy -Tactic Combo Deck!](https://www.youtube.com/watch?v=YRGwTe0fROA) | ヒエラルキー | 2021-06-22 | Energy Banks |
+| [Shan Ti -Massive Mutation 2.0 Deck!](https://www.youtube.com/watch?v=Yx3pLA9TKjo) | シャンティ | 2021-07-10 | Growth Chamber、Praecordian Symbiote、Release Mutagen |
+| [Hierarchy -Textless 2.0 Deck!](https://www.youtube.com/watch?v=cgtgxOLaWF4) | ヒエラルキー | 2021-07-15 | Damage Control Protocols、Nanite Coversion、Overclock Targeting Servos |
+| [Herarchy - Cypher Deck!](https://www.youtube.com/watch?v=fUGDjlmAof4) | ヒエラルキー | 2021-04-29 | Nanaite Conversion、Nanite Fabrication |
+| [Subverted Mercenary Deck!](https://www.youtube.com/watch?v=lcf9FCj2oqM) | 不明 | 2021-06-12 | Overextend、Battle Hardened、Redeem Contract |
+| [Shan Ti -Swarm Deck!](https://www.youtube.com/watch?v=m8LeWcPNEWg) | シャンティ | 2021-05-01 | Call of the Swarm、Release Mutagen、Natural Selection |
+| [Consortium -Credit Combo Deck!](https://www.youtube.com/watch?v=mzaUHR0YNtw) | コンソーシアム | 2021-05-04 | Redeem Contract、Efficiency |
+| [Shan Ti -Massive Mutation Deck!](https://www.youtube.com/watch?v=o8O-4smvHZE) | シャンティ | 2021-05-20 | Praecordian Symbiote、Release Mutagen、Growth Chamber |
+| [Shan Ti -Viromorphic Spores Deck!](https://www.youtube.com/watch?v=ocAvdBxBcQY) | シャンティ | 2021-05-15 | Viromorphic Spores、Praecordian Symbiote |
+| [Shan Ti -Active Genome Deck!](https://www.youtube.com/watch?v=qPpRBrMOQFg) | シャンティ | 2021-06-19 | Natural Selection、Praecordian Symbiote、Active Genome |
+| [Shan Ti -Spontaneous Flees Deck!](https://www.youtube.com/watch?v=vgqGruhYDBo) | シャンティ | 2021-05-29 | Praecordian Symbiote、Spontaneous Replication |
+| [Annunaki -Copycat 2.0 Deck!](https://www.youtube.com/watch?v=y3rj6wJeO5M) | アヌンナキ | 2021-07-24 | Puppet Master、Shimmer、Quantum Glimpse |
+| [Shan Ti -Aberration Deck!](https://www.youtube.com/watch?v=yKRbm8TWOU0) | シャンティ | 2021-04-10 | Natural Selection、Infect、Praecordian Symbiote |
+| [Herarchy - Textless Deck!](https://www.youtube.com/watch?v=yOS6VcYLUZo) | ヒエラルキー | 2021-04-03 | Damage Control Protocols、Compression Algorithm、Nonite Conversion |
+| [Vraxxian -Support 2.0 Deck!](https://www.youtube.com/watch?v=ySKUA_r7lZI) | ヴラクシアン | 2021-07-27 | Captain's Pride、Noise Veil |
+| [Terrans -Massive Firepower Deck!](https://www.youtube.com/watch?v=zNUly6OsRDY) | テラン | 2021-06-24 | Combined Arms、Conslet General Staff |
+
+## 1. 再現版の勢力割り当ての誤り(42枚)
+
+再現版で勢力カードとしていたが、別勢力のデッキに入っていたカードです。
+
+| カード | 再現版 | デッキでの登場 | 正しい勢力(推定) |
+|---|---|---|---|
+| Adrenal Transformation(アドレナル変容) | ハジル=ゴグ | シャンティ6 | **シャンティ**(推定(6デッキ・同一勢力のみ)) |
+| Advisor(顧問) | コンソーシアム | ヒエラルキー2 | **ヒエラルキー**(推定(2デッキ・同一勢力のみ)) |
+| Archon Carrier(アルコン母艦) | ヒエラルキー | ヒエラルキー1、アヌンナキ1 | **中立**(確定的(複数勢力のデッキに登場)) |
+| Arms Merchant(武器商人) | コンソーシアム | ヴラクシアン2、アヌンナキ1、ヒエラルキー1 | **中立**(確定的(複数勢力のデッキに登場)) |
+| Arsenal Dropship(武器庫降下艇) | テラン | ヴラクシアン2、アヌンナキ1、ヒエラルキー1、シャンティ1 | **中立**(確定的(複数勢力のデッキに登場)) |
+| Assault Autovec Squad(強襲オートヴェク分隊) | テラン | コンソーシアム1 | **コンソーシアム**(推定(1デッキ・同一勢力のみ)) |
+| Attaché(随員) | コンソーシアム | ヴラクシアン2 | **ヴラクシアン**(推定(2デッキ・同一勢力のみ)) |
+| Automated Defences(自動防衛) | ヒエラルキー | アヌンナキ7、コンソーシアム3、シャンティ3、テラン3、ヒエラルキー2、ヴラクシアン2、勢力不明デッキ1 | **中立**(確定的(複数勢力のデッキに登場)) |
+| Bombardiers(爆撃兵) | テラン | テラン1、シャンティ1 | **中立**(確定的(複数勢力のデッキに登場)) |
+| Carbonic Protector(炭素の守護者) | ヒエラルキー | アヌンナキ2、コンソーシアム1、ヒエラルキー1、シャンティ1、テラン1 | **中立**(確定的(複数勢力のデッキに登場)) |
+| Corvette(コルベット) | テラン | コンソーシアム2、シャンティ2、ヴラクシアン1 | **中立**(確定的(複数勢力のデッキに登場)) |
+| Cytek Drone(サイテック・ドローン) | ヒエラルキー | ヒエラルキー1、テラン1、アヌンナキ1 | **中立**(確定的(複数勢力のデッキに登場)) |
+| Deathstalker Malik(死の追跡者マリク) | コンソーシアム | ヒエラルキー2 | **ヒエラルキー**(推定(2デッキ・同一勢力のみ)) |
+| Displacer Cannon(ディスプレイサー砲) | テラン | コンソーシアム1 | **コンソーシアム**(推定(1デッキ・同一勢力のみ)) |
+| Eredani Battalion(エレダニ大隊) | テラン | コンソーシアム2、勢力不明デッキ1 | **コンソーシアム**(推定(2デッキ・同一勢力のみ)) |
+| Eredani Guards(エレダニ近衛) | テラン | コンソーシアム2 | **コンソーシアム**(推定(2デッキ・同一勢力のみ)) |
+| Eridani Patrol(エリダニ哨戒隊) | テラン | アヌンナキ1 | **アヌンナキ**(推定(1デッキ・同一勢力のみ)) |
+| Fenrik's Partisan(フェンリクの遊撃兵) | テラン | ヒエラルキー2 | **ヒエラルキー**(推定(2デッキ・同一勢力のみ)) |
+| Field Commander(野戦指揮官) | コンソーシアム | ヴラクシアン2、アヌンナキ1、ヒエラルキー1 | **中立**(確定的(複数勢力のデッキに登場)) |
+| Fighter Squadron(戦闘機中隊) | テラン | アヌンナキ1、コンソーシアム1 | **中立**(確定的(複数勢力のデッキに登場)) |
+| Fleet Beacon(艦隊標識) | テラン | アヌンナキ2、ヒエラルキー1 | **中立**(確定的(複数勢力のデッキに登場)) |
+| Fleet Core(艦隊中枢) | ヒエラルキー | ヒエラルキー1、アヌンナキ1、テラン1 | **中立**(確定的(複数勢力のデッキに登場)) |
+| Gatekeeper(門番) | アヌンナキ | コンソーシアム2 | **コンソーシアム**(推定(2デッキ・同一勢力のみ)) |
+| Heavy Transport(重輸送艦) | コンソーシアム | ヒエラルキー2、アヌンナキ2、テラン2、コンソーシアム1、シャンティ1 | **中立**(確定的(複数勢力のデッキに登場)) |
+| Horror of the Shade(影の恐怖) | アヌンナキ | テラン2、ヒエラルキー1、アヌンナキ1 | **中立**(確定的(複数勢力のデッキに登場)) |
+| Land Crawler(ランドクローラー) | ハジル=ゴグ | コンソーシアム1、ヒエラルキー1、シャンティ1 | **中立**(確定的(複数勢力のデッキに登場)) |
+| Mad Seer(狂える予言者) | アヌンナキ | ヴラクシアン1 | **ヴラクシアン**(推定(1デッキ・同一勢力のみ)) |
+| Mr Bradford(ブラッドフォード氏) | コンソーシアム | アヌンナキ2、ヒエラルキー1 | **中立**(確定的(複数勢力のデッキに登場)) |
+| Myrmidon Squad(ミュルミドン分隊) | テラン | ヒエラルキー2 | **ヒエラルキー**(推定(2デッキ・同一勢力のみ)) |
+| Portal Master(ポータルの主) | アヌンナキ | コンソーシアム4 | **コンソーシアム**(推定(4デッキ・同一勢力のみ)) |
+| Preacher(説教者) | アヌンナキ | アヌンナキ2、ヒエラルキー1 | **中立**(確定的(複数勢力のデッキに登場)) |
+| Rapid Strike Team(即応打撃チーム) | テラン | コンソーシアム1 | **コンソーシアム**(推定(1デッキ・同一勢力のみ)) |
+| Ravager(略奪者) | シャンティ | ヒエラルキー1、テラン1、シャンティ1 | **中立**(確定的(複数勢力のデッキに登場)) |
+| Regulator(レギュレーター) | ヒエラルキー | ハジル=ゴグ1 | **ハジル=ゴグ**(推定(1デッキ・同一勢力のみ)) |
+| Replicant(レプリカント) | ヒエラルキー | ヒエラルキー1、アヌンナキ1、ヴラクシアン1 | **中立**(確定的(複数勢力のデッキに登場)) |
+| Rippers(リッパーズ) | ハジル=ゴグ | シャンティ2、コンソーシアム1 | **中立**(確定的(複数勢力のデッキに登場)) |
+| Soul Devourer(魂喰らい) | アヌンナキ | ヒエラルキー1 | **ヒエラルキー**(推定(1デッキ・同一勢力のみ)) |
+| Terazin Destroyer(テラジン駆逐艦) | テラン | シャンティ3、コンソーシアム2、ヴラクシアン1 | **中立**(確定的(複数勢力のデッキに登場)) |
+| Titan(タイタン) | テラン | アヌンナキ2、コンソーシアム1、ヒエラルキー1、シャンティ1、テラン1 | **中立**(確定的(複数勢力のデッキに登場)) |
+| Tower of Eyes(眼の塔) | アヌンナキ | アヌンナキ1、ハジル=ゴグ1、ヴラクシアン1、シャンティ1 | **中立**(確定的(複数勢力のデッキに登場)) |
+| Void Probe(虚空探査機) | テラン | アヌンナキ2、ヴラクシアン1 | **中立**(確定的(複数勢力のデッキに登場)) |
+| Vraxxian Gunboat(ヴラクシアン砲艦) | ヴラクシアン | ハジル=ゴグ1、シャンティ1 | **中立**(確定的(複数勢力のデッキに登場)) |
+
+## 2. 再現版の勢力と矛盾しなかったカード(39枚)
+
+Accelerated Bloom(シャンティ)、Anti-personnel Turret(中立)、Archeus Cruiser(テラン)、Bloodsworn Berserker(ハジル=ゴグ)、Combat Engineer(中立)、Council Voidliner(中立)、Cryptographer(ヒエラルキー)、Double Retainer(コンソーシアム)、Duskwind Guerilla(中立)、EMP Blast(テラン)、Fleshborer(シャンティ)、Frenzy(ハジル=ゴグ)、Fusion Bomb(中立)、Gargoyle Bomber(中立)、Geneshaper Apprentice(シャンティ)、Hellfire Cannon(ハジル=ゴグ)、Infected Militia(シャンティ)、Interphasic Weaponry(ヒエラルキー)、Leviathan(中立)、Minerva Spores(シャンティ)、Paranoia(アヌンナキ)、Patrol Trooper(中立)、Phoenix Fighter(中立)、Protected Convoys(コンソーシアム)、Pulse Rifles(テラン)、Raptor Tank(テラン)、Recon Element(テラン)、Refurbish Weapon(ハジル=ゴグ)、The Manovar(中立)、The Outsider(中立)、Time Echoes(中立)、Toroth's Scepter(アヌンナキ)、Toxic Creeper(シャンティ)、Veteran Advisor(コンソーシアム)、Veteran Scout(中立)、War Banner(ハジル=ゴグ)、Youngmane(ヴラクシアン)、Zero In(テラン)、Zeron(中立)
+
+## 3. 新たに名前が判明したカード(195枚)
+
+効果・コスト・数値は不明です(デッキリストに載っていた名前と枚数だけ)。
+
+### アヌンナキ(36枚)
+
+| カード | 登場デッキ | 最大採用枚数 |
+|---|---|---|
+| Ancient Hierophant | アヌンナキ1 | 2 |
+| Arbiter | アヌンナキ3 | 2 |
+| Assimilation | アヌンナキ1 | 2 |
+| Avatar of Akhazu | アヌンナキ1 | 2 |
+| Chosen of Ereshkigal | アヌンナキ1 | 2 |
+| Council Patrol | アヌンナキ2 | 2 |
+| Council Recruiter | アヌンナキ1 | 2 |
+| Derelict Battleship | アヌンナキ2 | 2 |
+| Dominate | アヌンナキ1 | 2 |
+| Drauga's Cohort | アヌンナキ3 | 2 |
+| Dreams of Power | アヌンナキ5 | 2 |
+| Emanation | アヌンナキ4 | 2 |
+| Glimmer Field | アヌンナキ4 | 2 |
+| Gun Turret | アヌンナキ1 | 2 |
+| Harbinger of Doom | アヌンナキ1 | 2 |
+| Illusionary Force | アヌンナキ1 | 2 |
+| Marduk's Faithful | アヌンナキ1 | 2 |
+| Mark of Akhazu | アヌンナキ4 | 2 |
+| Mark of Devotion | アヌンナキ1 | 2 |
+| Mind Meld | アヌンナキ1 | 2 |
+| Nightmarish Visage | アヌンナキ2 | 2 |
+| Nymph Gunship | アヌンナキ2 | 2 |
+| Pacify | アヌンナキ5 | 2 |
+| Patroness Valida | アヌンナキ2 | 2 |
+| Persuade | アヌンナキ4 | 2 |
+| Prophet Marton | アヌンナキ1 | 2 |
+| Prophetic Visions | アヌンナキ1 | 2 |
+| Psionic Overload | アヌンナキ1 | 2 |
+| Psychic Rot | アヌンナキ1 | 2 |
+| Seraph | アヌンナキ1 | 2 |
+| Telekinesis | アヌンナキ5 | 2 |
+| Telekinetic Blast | アヌンナキ5 | 2 |
+| The Indomitable | アヌンナキ1 | 1 |
+| True Believer | アヌンナキ1 | 2 |
+| Underhaven Rabble | アヌンナキ4 | 2 |
+| ZD1 Protector | アヌンナキ2 | 2 |
+
+### ヒエラルキー(23枚)
+
+| カード | 登場デッキ | 最大採用枚数 |
+|---|---|---|
+| Absorption Matrix | ヒエラルキー1 | 2 |
+| Auto-Personnel Turret | ヒエラルキー1 | 2 |
+| Battle Tactician | ヒエラルキー2 | 2 |
+| Blessing of Synthus | ヒエラルキー1 | 2 |
+| Conspirator | ヒエラルキー2 | 2 |
+| Conveyor | ヒエラルキー2 | 2 |
+| Cybek Displacer | ヒエラルキー1 | 2 |
+| Deflector Shield Operational | ヒエラルキー2 | 2 |
+| Disintegrate | ヒエラルキー4 | 2 |
+| Emergency Repairs | ヒエラルキー2 | 2 |
+| Energy Link | ヒエラルキー2 | 2 |
+| Mass Transfer | ヒエラルキー2 | 2 |
+| Nanite Infusion | ヒエラルキー2 | 2 |
+| Nanite Regenerators | ヒエラルキー3 | 2 |
+| Phase Bubble | ヒエラルキー2 | 2 |
+| Photonic Pylons | ヒエラルキー2 | 2 |
+| Privateer Gaius | ヒエラルキー1 | 1 |
+| Rangers | ヒエラルキー2 | 2 |
+| Reassemble | ヒエラルキー2 | 2 |
+| Reinforced Rover | ヒエラルキー2 | 2 |
+| Shield Array | ヒエラルキー3 | 2 |
+| Terminator | ヒエラルキー2 | 2 |
+| Venerable Master | ヒエラルキー2 | 2 |
+
+### シャンティ(24枚)
+
+| カード | 登場デッキ | 最大採用枚数 |
+|---|---|---|
+| Abomination | シャンティ2 | 2 |
+| Bioneedle Cannon | シャンティ5 | 2 |
+| Brood Mother | シャンティ4 | 2 |
+| Carapace Armor | シャンティ4 | 2 |
+| Carnivex Brute | シャンティ2 | 2 |
+| Chimera | シャンティ1 | 2 |
+| Conclave Stalker | シャンティ3 | 2 |
+| Corrupt Transformation | シャンティ5 | 2 |
+| Defensive Bunker | シャンティ1 | 2 |
+| Entropic Organism | シャンティ1 | 2 |
+| Genetic Trigger | シャンティ5 | 2 |
+| Harvest | シャンティ7 | 2 |
+| Infected Cruiser | シャンティ2 | 2 |
+| Infestation | シャンティ5 | 2 |
+| Liquefy | シャンティ1 | 2 |
+| Locust Reaper | シャンティ2 | 2 |
+| Master Geneshaper | シャンティ7 | 2 |
+| Mindbender Stalk | シャンティ5 | 2 |
+| Nyx Hound | シャンティ4 | 2 |
+| Omega Squadron | 勢力不明デッキ1、シャンティ1 | 2 |
+| Reappers | シャンティ1 | 2 |
+| Repair Bay | シャンティ1 | 2 |
+| Spine Spitters | シャンティ4 | 2 |
+| Terminal Mutation | シャンティ5 | 2 |
+
+### ハジル=ゴグ(7枚)
+
+| カード | 登場デッキ | 最大採用枚数 |
+|---|---|---|
+| Champion of the Pit | ハジル=ゴグ1 | 2 |
+| Reaver | ハジル=ゴグ1 | 2 |
+| Recover Losses | ハジル=ゴグ1 | 2 |
+| Repair Team | ハジル=ゴグ1 | 2 |
+| Sacrificial Rites | ハジル=ゴグ1 | 2 |
+| Superheat | ハジル=ゴグ1 | 2 |
+| Vengeful Outcast | ハジル=ゴグ1 | 2 |
+
+### コンソーシアム(25枚)
+
+| カード | 登場デッキ | 最大採用枚数 |
+|---|---|---|
+| Abaku Scavenger | コンソーシアム1 | 2 |
+| Cloaked Assassin | コンソーシアム1 | 2 |
+| Contract Hit | コンソーシアム2、勢力不明デッキ1 | 2 |
+| Double Agent | コンソーシアム1 | 2 |
+| Eridani Legion | コンソーシアム1 | 2 |
+| Eridani Volunteer | コンソーシアム1 | 2 |
+| Exigent Circumstances | コンソーシアム3 | 2 |
+| Financier | コンソーシアム1 | 2 |
+| Franchise | コンソーシアム2 | 2 |
+| Gongor the Insane | コンソーシアム1 | 1 |
+| Massive Bombing | コンソーシアム2 | 2 |
+| Mineral Freighter | コンソーシアム2 | 2 |
+| Neutralize | コンソーシアム1、勢力不明デッキ1 | 2 |
+| Privateer Raid | コンソーシアム2 | 2 |
+| Protective Services | コンソーシアム2、勢力不明デッキ1 | 2 |
+| Saboteur | コンソーシアム1 | 2 |
+| Shadow Operative | コンソーシアム1 | 2 |
+| Shift Priorities | コンソーシアム1 | 2 |
+| Spy Network | コンソーシアム2、勢力不明デッキ1 | 2 |
+| Syndicate Agent | コンソーシアム1 | 2 |
+| Syndicate Collector | コンソーシアム2 | 2 |
+| Syndicate Security | コンソーシアム1 | 2 |
+| Syndicate Tough | コンソーシアム1 | 2 |
+| Treachery | 勢力不明デッキ1、コンソーシアム1 | 2 |
+| Vraxxian Headhunter | コンソーシアム1 | 2 |
+
+### テラン(23枚)
+
+| カード | 登場デッキ | 最大採用枚数 |
+|---|---|---|
+| Augmented Guardian | テラン1 | 2 |
+| Captain Rayner | テラン2 | 1 |
+| Command Center | テラン1 | 2 |
+| Counter Battery | テラン1 | 2 |
+| Disrupt Communications | テラン1 | 2 |
+| Entrench | テラン2 | 2 |
+| Gut Decision | テラン1 | 2 |
+| Lieutenant | テラン2 | 2 |
+| Mammoth Tank | テラン1 | 2 |
+| Maxwell" Scout | テラン2 | 2 |
+| Mobilize | テラン1 | 2 |
+| Nuclear Strike | テラン3 | 2 |
+| Oculus | テラン1 | 2 |
+| Ordinance Specialist | テラン1 | 2 |
+| Overwatch | テラン1 | 2 |
+| Precision Strike | テラン2 | 2 |
+| Pulse Barrage | テラン2 | 2 |
+| Rampager | テラン1 | 2 |
+| Reinforce | テラン2 | 2 |
+| Saturate Fire | テラン2 | 2 |
+| Star Guardian | テラン2 | 1 |
+| Vanguard Commander | テラン2 | 2 |
+| Vendetta Battleship | テラン1 | 1 |
+
+### ヴラクシアン(23枚)
+
+| カード | 登場デッキ | 最大採用枚数 |
+|---|---|---|
+| Ancient Hullbreaker | ヴラクシアン2 | 2 |
+| Bloodpack Bandits | ヴラクシアン1 | 2 |
+| Bloodpack Gunner | ヴラクシアン1 | 2 |
+| Falcon Scout | ヴラクシアン1 | 2 |
+| Fracta Gas Grenades | ヴラクシアン2 | 2 |
+| Fractal Cannon | ヴラクシアン1 | 2 |
+| Freelance Tech | ヴラクシアン1 | 2 |
+| Greymane Defenders | ヴラクシアン2 | 2 |
+| Inspired Lunatic | ヴラクシアン2 | 2 |
+| Lunar Oracle | ヴラクシアン1 | 2 |
+| Mirror Reality | ヴラクシアン1 | 2 |
+| Moonchaser | ヴラクシアン1 | 2 |
+| Oathkeeper | ヴラクシアン1 | 2 |
+| Open Wormhole | ヴラクシアン1 | 2 |
+| Pulveriza | ヴラクシアン1 | 2 |
+| Reposition the Lobbers | ヴラクシアン1 | 2 |
+| Scanning Emitter | ヴラクシアン4 | 2 |
+| Signal Ops | ヴラクシアン2 | 2 |
+| Tear in Space | ヴラクシアン1 | 2 |
+| Time Loop | ヴラクシアン1 | 2 |
+| Warren Agent | ヴラクシアン1 | 2 |
+| Warren Tracker | ヴラクシアン1 | 2 |
+| White Fang | ヴラクシアン2 | 2 |
+
+### 中立(27枚)
+
+| カード | 登場デッキ | 最大採用枚数 |
+|---|---|---|
+| Avatar of Woe | アヌンナキ2、テラン2、ヒエラルキー1 | 1 |
+| B-13 Hollow | コンソーシアム3、ヴラクシアン1 | 2 |
+| Bio Monger | シャンティ7、アヌンナキ1、ハジル=ゴグ1、勢力不明デッキ1 | 2 |
+| Brash Smuggler | アヌンナキ2、ヒエラルキー1 | 1 |
+| Brigands of Arcturis | アヌンナキ2、ヒエラルキー1 | 1 |
+| Colossus | コンソーシアム2、シャンティ2、ヴラクシアン1 | 2 |
+| Combat Fighter | ヴラクシアン2、ヒエラルキー2 | 2 |
+| Conclave Harvester | コンソーシアム2、シャンティ2、ヴラクシアン1 | 2 |
+| Convoy Escort | アヌンナキ2、シャンティ1 | 2 |
+| Corrupted Hound | シャンティ2、コンソーシアム1 | 2 |
+| Creditmonger | コンソーシアム2、ヒエラルキー1、アヌンナキ1 | 2 |
+| Etho the Absorber | アヌンナキ2、ヒエラルキー1 | 1 |
+| Evacuation Team | アヌンナキ4、コンソーシアム2、ヒエラルキー1、勢力不明デッキ1、テラン1 | 2 |
+| Field Medic | テラン1、シャンティ1 | 2 |
+| Maintenance Drone | アヌンナキ1、コンソーシアム1 | 2 |
+| Military Logistician | コンソーシアム2、シャンティ2、ヴラクシアン1 | 2 |
+| Mobile Base Ship | ヒエラルキー3、コンソーシアム1 | 2 |
+| Outpost | ヴラクシアン2、アヌンナキ1、コンソーシアム1、ハジル=ゴグ1、シャンティ1 | 2 |
+| Pirate Baron Bang | アヌンナキ2、テラン2、ヒエラルキー1 | 1 |
+| Pirate Cruiser | アヌンナキ1、ヒエラルキー1、勢力不明デッキ1 | 2 |
+| Planetary Runner | コンソーシアム3、シャンティ2、ヴラクシアン1、ヒエラルキー1 | 2 |
+| Sentry Drones | アヌンナキ7、ヒエラルキー3、コンソーシアム2、テラン2、ヴラクシアン2、勢力不明デッキ1 | 2 |
+| Shock Trooper | ヴラクシアン3、ハジル=ゴグ1、シャンティ1、アヌンナキ1 | 2 |
+| Soldier of Fortune | コンソーシアム1、ヴラクシアン1 | 2 |
+| Syndicate Stormers | ヒエラルキー2、ヴラクシアン1 | 2 |
+| The Spatial Anomaly | アヌンナキ4、コンソーシアム2、シャンティ2、テラン1、ヒエラルキー1、ヴラクシアン1 | 2 |
+| Veteran Legionnaire | ヴラクシアン2、ヒエラルキー1、シャンティ1 | 2 |
+
+### 不明(7枚)
+
+| カード | 登場デッキ | 最大採用枚数 |
+|---|---|---|
+| Battle Judge | 勢力不明デッキ1 | 2 |
+| Buyout | 勢力不明デッキ1 | 2 |
+| Council Levy | 勢力不明デッキ1 | 2 |
+| Discharge | 勢力不明デッキ1 | 2 |
+| Entrenched Fort | 勢力不明デッキ1 | 2 |
+| Shadow Delegate | 勢力不明デッキ1 | 2 |
+| Warthog Mine Layer | 勢力不明デッキ1 | 2 |
+
+採用枚数が1枚のカードは、パラゴン(1枚制限)である可能性があります。
+
+## 4. モジュール(51種)
+
+| モジュール | 登場デッキ | 再現版 |
+|---|---|---|
+| Acolyte | アヌンナキ1 | **未収録** |
+| Active Genome | シャンティ1 | **未収録** |
+| Arsenal | ハジル=ゴグ1 | ハジル=ゴグ/一部確認 |
+| Band of Brothers | テラン1 | **未収録** |
+| Battle Hardened | 勢力不明デッキ1 | **未収録** |
+| Blink Generator | ヴラクシアン1 | **未収録** |
+| Bone Spurs | ヴラクシアン1 | 共通/検証済み |
+| Call of the Swarm | シャンティ1 | **未収録** |
+| Captain's Minders | ヴラクシアン1 | **未収録** |
+| Captain's Pride | ヴラクシアン2 | 共通/検証済み |
+| Chrono Field | ヴラクシアン1 | **未収録** |
+| Combined Arms | テラン2 | **未収録** |
+| Compression Algorithm | ヒエラルキー1 | 共通/一部確認 |
+| Consult General Staff | テラン2 | 共通/一部確認 |
+| Contamination | シャンティ1 | **未収録** |
+| Damage Control Protocols | ヒエラルキー2 | **未収録** |
+| Draw Essense | アヌンナキ1 | **未収録** |
+| Efficiency | コンソーシアム1 | 共通/一部確認 |
+| Energy Banks | ヒエラルキー2 | **未収録** |
+| Ethereal Enlightenment | アヌンナキ1 | アヌンナキ/検証済み |
+| Growth Chamber | シャンティ2 | **未収録** |
+| Incentivized Recruitment | コンソーシアム1 | **未収録** |
+| Incursion | コンソーシアム1 | **未収録** |
+| Infect | シャンティ1 | シャンティ/一部確認 |
+| Leveraged Warfare | コンソーシアム2 | **未収録** |
+| Master of Logistics | コンソーシアム2 | **未収録** |
+| Mind Anchor | アヌンナキ1 | アヌンナキ/名称のみ |
+| Nanite Coversion | ヒエラルキー3 | **未収録** |
+| Nanite Fabrication | ヒエラルキー1 | **未収録** |
+| Natural Selection | シャンティ3 | シャンティ/検証済み |
+| Nergal's Gift | アヌンナキ1 | ヒエラルキー/一部確認 |
+| Noise Veil | ヴラクシアン2 | アヌンナキ/名称のみ |
+| Overclock Targeting Servos | ヒエラルキー1 | 共通/検証済み |
+| Overextend | 勢力不明デッキ1 | **未収録** |
+| Phase Shift | アヌンナキ1 | **未収録** |
+| Plague Nexus | シャンティ1 | シャンティ/検証済み |
+| Praecordian Symbiote | シャンティ7 | **未収録** |
+| Prediction Engine | ヴラクシアン1 | **未収録** |
+| Puppet Master | アヌンナキ2 | **未収録** |
+| Quantum Glimpse | アヌンナキ2 | **未収録** |
+| Rally | テラン1 | **未収録** |
+| Redeem Contract | コンソーシアム2、勢力不明デッキ1 | コンソーシアム/一部確認 |
+| Release Mutagen | シャンティ3 | シャンティ/一部確認 |
+| Scout Ahead | ヴラクシアン1 | ヴラクシアン/名称のみ |
+| Shimmer | アヌンナキ2 | 共通/検証済み |
+| Spontaneous Replication | シャンティ1 | **未収録** |
+| Thick of Battle | ハジル=ゴグ1 | **未収録** |
+| Trance Projector | アヌンナキ2 | **未収録** |
+| Veterancy | テラン1 | テラン/名称のみ |
+| Viromorphic Spores | シャンティ1 | シャンティ/一部確認 |
+| Warlord's Call | ハジル=ゴグ1 | ハジル=ゴグ/名称のみ |
+
+## 5. 名称の修正候補
+
+デッキリストの綴りと再現版の名称が違うものです。デッキリスト側が実際のゲーム内表記である可能性が高いと考えます。
+
+| 再現版 | デッキリスト |
+|---|---|
+| Psychic Overload | Psionic Overload |
+| The Manovar | The Manowar |
+| Zero In | Zeroed In |
+| Duskwind Guerilla | Duskwind Guerrillas |
+| Bloodsworn Berserker | Bloodsworn Berserkers |
+| Automated Defences | Automated Defenses |
+| Eredani Battalion / Eredani Guards | Eridani Battalion / Eridani Guards(コンソーシアムのデッキに登場) |
+
+## 6. 主な発見
+
+- **Scout Ahead** はヴラクシアンのデッキのモジュール欄にあり、再現版でヴラクシアンの指揮官能力と推定した名前と合っています。**Release Mutagen** はシャンティ、**Redeem Contract** はコンソーシアムのデッキに登場し、勢力の割り当てを裏付けます。
+- **Rally** はテランのデッキの**モジュール欄**に登場しました。再現版ではタクティクスとして作っていたので、モジュールである可能性が高いです。
+- **Mr Bradford**・**Advisor**・**Heavy Transport**・**Deathstalker Malik** など、再現版でコンソーシアムとしたパラゴン級のカードが他勢力のデッキに入っており、中立カードだったと考えられます。
+- **Adrenal Transformation** はシャンティのデッキに6回登場しました。再現版のハジル=ゴグではなく、シャンティのカードと見られます。
+- **Automated Defenses**(6勢力のデッキ)・**Sentry Drones**・**Evacuation Team**・**The Spatial Anomaly** などは多くの勢力で使われる中立の定番カードでした。
+- 34デッキ中30デッキが上限の40枚で、18デッキがモジュール欄に「Empty」(空きスロット)を含んでいました。空きスロットでエネルギーを稼ぐ構成がよく使われていたと考えられます。
