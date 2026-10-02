@@ -40,10 +40,32 @@
     draw(s, s.first, 3, null, true);
     draw(s, second, 4, null, true);
     addHand(s, second, 'supply_crate');
-    log(s, `${P(s, s.first).name} が先攻。後攻の ${P(s, second).name} はサプライ・クレートを得た。`);
-    startTurn(s);
+    log(s, `${P(s, s.first).name} が先攻。後攻の ${P(s, second).name} はイニシアチブを得た。`);
+    // マリガン(引き直し):CPU は自動、人間は UI から選ぶ
+    s.phase = 'mulligan';
+    s.mull = s.players.map(pl => false);
+    s.players.forEach((pl, i) => { if (pl.ai || cfg.mulligan === false) autoMulligan(s, i); });
+    if (s.mull.every(Boolean)) beginPlay(s);
     return s;
   }
+  function autoMulligan(s, p) {
+    const pl = s.players[p];
+    const pickCost = pl.ai ? 5 : 99;
+    mulligan(s, p, pl.hand.filter(h => h.id !== 'supply_crate' && card(h.id).c >= pickCost).map(h => h.uid));
+  }
+  function mulligan(s, p, uids) {
+    const pl = s.players[p];
+    if (s.phase !== 'mulligan' || s.mull[p]) return false;
+    const back = pl.hand.filter(h => uids.includes(h.uid) && h.id !== 'supply_crate');
+    pl.hand = pl.hand.filter(h => !back.includes(h));
+    back.forEach(h => pl.deck.push(h.id));
+    shuffle(pl.deck);
+    for (const h of back) { const id = pl.deck.shift(); const nh = addHand(s, p, id); if (nh) { const i = pl.hand.indexOf(nh); pl.hand.splice(i, 1); pl.hand.splice(pl.hand.length - (pl.hand.some(x => x.id === 'supply_crate') ? 1 : 0), 0, nh); } }
+    s.mull[p] = true;
+    if (back.length) log(s, `${pl.name} は ${back.length} 枚を引き直した。`);
+    return true;
+  }
+  function beginPlay(s) { s.phase = 'play'; startTurn(s); }
 
   // ---------- ヘルパー ----------
   function P(s, i) { return s.players[i]; }
@@ -102,6 +124,7 @@
     if (c.kw && c.kw.CREDIT) { for (const u of pl.board) { const au = auraOf(u); if (au && au.creditRed) v -= au.creditRed; } }
     if (c.t === 'T') v -= pl.tacticDiscount;
     v -= pl.nextDiscount;
+    if (c.psyDiscount) v -= pl.psy;
     return Math.max(0, v);
   }
 
@@ -116,6 +139,7 @@
       case 'rend': return 2 + (ctx.modCount || 0);
       case 'damagedAllies': return me.board.filter(u => u.hp < u.maxHp).length;
       case 'allies': return me.board.length;
+      case 'others': return Math.max(0, me.board.length - 1);
       default: return 0;
     }
   }
@@ -144,6 +168,7 @@
         if (spec.g && !groupsOf(u).includes(spec.g)) continue;
         if (spec.gs && !spec.gs.some(g => groupsOf(u).includes(g))) continue;
         if (spec.maxAtk !== undefined && atkOf(s, u.uid) > val(s, { p }, spec.maxAtk)) continue;
+        if (spec.maxHp !== undefined && u.hp > spec.maxHp) continue;
         if (spec.mutable && !trigs(u, 'mutate').length) continue;
         out.push(u.uid);
       }
@@ -181,6 +206,9 @@
     if (c.rev !== undefined && op.hand.filter(h => h.rev).length < c.rev) return false;
     if (c.hasGroup && !me.board.some(u => u.uid !== ctx.self && groupsOf(u).includes(c.hasGroup))) return false;
     if (c.onlyGroup && (!me.board.length || !me.board.every(u => groupsOf(u).includes(c.onlyGroup)))) return false;
+    if (c.allies !== undefined && me.board.length < c.allies) return false;
+    if (c.hasKw && !me.board.some(u => has(u, c.hasKw))) return false;
+    if (c.tDead) { const t = ctx.T !== undefined && ctx.T !== null ? getChar(s, ctx.T) : null; if (t && !t.cmd && t.o.hp > 0 && !t.o.dead) return false; }
     if (c.groupCount && me.board.filter(u => groupsOf(u).includes(c.groupCount[0])).length < c.groupCount[1]) return false;
     return true;
   }
@@ -213,7 +241,7 @@
     const pl = s.players[p];
     for (let i = 0; i < n; i++) {
       let idx = 0;
-      if (filter) { idx = pl.deck.findIndex(id => (!filter.t || card(id).t === filter.t)); if (idx < 0) { log(s, '該当するカードが山札にない。'); return; } }
+      if (filter) { idx = pl.deck.findIndex(id => (!filter.t || card(id).t === filter.t) && (!filter.g || (card(id).g || []).includes(filter.g))); if (idx < 0) { log(s, '該当するカードが山札にない。'); return; } }
       if (!pl.deck.length) {
         pl.fatigue++;
         log(s, `${pl.name} の山札が尽きている!消耗ダメージ ${pl.fatigue}。`);
@@ -257,6 +285,7 @@
     if (src.p !== undefined && src.p !== c.p) s.players[src.p].st.dmg += n;
     fx(s, { ref, k: 'dmg', n });
     if (trigs(o, 'fury').length) s.q.push({ k: 'fury', uid: o.uid });
+    if (src.tag !== 'berserk') for (const w of s.players[c.p].board) for (const f of trigs(w, 'allyDamaged')) s.q.push({ k: 'run', p: c.p, self: w.uid, fx: f });
     return n;
   }
   function removeKw(o, k) { if (o.kw) delete o.kw[k]; if (o.mods) o.mods = o.mods.filter(m => m.k !== k); }
@@ -325,7 +354,7 @@
         let n = val(s, ctx, e.n);
         if (spell && !e.calc) n += firepower(s, ctx.p);
         forT(s, ctx, e.t, (c, r) => {
-          const dealt = damage(s, r, n, { p: ctx.p, kind: ctx.srcKind === 'tactic' ? 'tactic' : ctx.srcKind === 'module' ? 'module' : 'ability', uid: ctx.self });
+          const dealt = damage(s, r, n, { p: ctx.p, kind: ctx.srcKind === 'tactic' ? 'tactic' : ctx.srcKind === 'module' ? 'module' : 'ability', uid: ctx.self, tag: e.tag });
           if (dealt) log(s, `${charName(s, r)} に ${dealt} ダメージ。`);
         });
         if (ctx.self) { const f = findUnit(s, ctx.self); if (f) removeKw(f.u, 'CLOAK'); }
@@ -351,7 +380,9 @@
       case 'summonRandom': { const id = pick(e.ids); summon(s, ctx.p, id); log(s, `${me.name} は ${ja(id)} を雇った。`); break; }
       case 'supply': me.supply += val(s, ctx, e.n); break;
       case 'energy': me.energy = Math.max(0, me.energy + e.n); break;
-      case 'psy': me.psy = Math.min(PSY_MAX, me.psy + val(s, ctx, e.n)); fx(s, { ref: 'c' + ctx.p, k: 'psy' }); break;
+      case 'psy': { const before = me.psy; me.psy = Math.max(0, Math.min(PSY_MAX, me.psy + val(s, ctx, e.n))); fx(s, { ref: 'c' + ctx.p, k: 'psy' });
+        if (me.psy > before) for (const w of me.board) for (const f of trigs(w, 'psyGain')) s.q.push({ k: 'run', p: ctx.p, self: w.uid, fx: f });
+        break; }
       case 'spendPsy': { const n = me.psy; me.psy = 0; for (let i = 0; i < n; i++) run(s, ctx, e.fx); break; }
       case 'repeat': { const n = val(s, ctx, e.n); for (let i = 0; i < n; i++) run(s, ctx, e.fx); break; }
       case 'control': forT(s, ctx, e.t, (c) => {
@@ -425,6 +456,21 @@
       case 'nextDiscount': me.nextDiscount = e.n; break;
       case 'captainsPride': if (!me.board.some(u => has(u, 'SCREEN')) && me.hp > opp.hp && !has(me, 'SCREEN')) { me.kw.SCREEN = 1; me.pride = true; } break;
       case 'boneSpurs': me.bone = true; break;
+      case 'atkFromHp': forT(s, ctx, e.t, (c) => { if (!c.cmd) c.o.atk += c.o.hp; }); break;
+      case 'cmdAttack': me.attacks += e.n; break;
+      case 'maxSupply': me.maxSupply = Math.min(SUPPLY_MAX, me.maxSupply + e.n); me.supply += e.n; log(s, `${me.name} の最大サプライが ${me.maxSupply} になった。`); break;
+      case 'creditPay': me.credit = Math.max(0, me.credit - e.n); break;
+      case 'stealEnergy': { const n = Math.min(opp.energy, e.n); opp.energy -= n; me.energy += n; break; }
+      case 'healFromTarget': forT(s, ctx, e.t, (c) => { if (!c.cmd) heal(s, 'c' + ctx.p, Math.max(0, c.o.hp)); }); break;
+      case 'breakWeapon': me.weapon = null; break;
+      case 'tuck': forT(s, ctx, e.t, (c) => {
+        if (c.cmd) return;
+        const pl = s.players[c.p]; pl.board.splice(pl.board.indexOf(c.o), 1);
+        const owner = s.players[c.o.owner !== undefined ? c.o.owner : c.p];
+        if (!card(c.o.id).token) owner.deck.splice(rnd(owner.deck.length + 1), 0, c.o.id);
+        log(s, `${ja(c.o.id)} は山札に戻された。`);
+      }); break;
+      case 'shuffleIn': me.deck.splice(rnd(me.deck.length + 1), 0, e.id); log(s, `${ja(e.id)} が山札に加わった。`); break;
       default: console.warn('unknown op', e.op);
     }
   }
@@ -507,7 +553,7 @@
 
   // ---------- 行動判定 ----------
   function canPlay(s, p, h) {
-    if (s.winner !== null || s.active !== p) return false;
+    if (s.winner !== null || s.active !== p || s.phase === 'mulligan') return false;
     const pl = s.players[p], c = card(h.id);
     if (costOf(s, p, h) > pl.supply) return false;
     if (c.t === 'U' && pl.board.length >= BOARD_MAX) return false;
@@ -570,6 +616,7 @@
     log(s, `${pl.name} は ${c.ja} をプレイ${en ? `(ENERGIZE ${en.n})` : ''}。`);
     fx(s, { k: 'play', p, id: h.id });
     for (const u of pl.board.slice()) for (const f of trigs(u, 'cardPlayed')) s.q.push({ k: 'run', p, self: u.uid, fx: f });
+    if (c.kw && c.kw.CREDIT) for (const u of pl.board.slice()) for (const f of trigs(u, 'creditPlayed')) s.q.push({ k: 'run', p, self: u.uid, fx: f });
     const ctx = { p, T, srcKind, energized: !!en };
     if (c.t === 'U') {
       const u = summon(s, p, h.id);
@@ -616,6 +663,7 @@
     const a = getChar(s, aRef), t = getChar(s, tRef);
     const p = a.p;
     a.o.attacks--;
+    gainEnergy(s, p, 1);
     if (!a.cmd) removeKw(a.o, 'CLOAK');
     log(s, `${charName(s, aRef)} が ${charName(s, tRef)} を攻撃。`);
     fx(s, { ref: aRef, k: 'attack', to: tRef });
@@ -645,6 +693,8 @@
     if (s.winner !== null) return false;
     s.fx = [];
     let ok = false;
+    if (a.type === 'mulligan') { ok = mulligan(s, a.p, a.uids || []); if (ok && s.mull.every(Boolean)) beginPlay(s); return ok; }
+    if (s.phase === 'mulligan') return false;
     if (a.type === 'play') ok = play(s, a.uid, a.T, a.en);
     else if (a.type === 'attack') ok = attack(s, a.from, a.to);
     else if (a.type === 'module') ok = useModule(s, a.i, a.T);
@@ -655,7 +705,7 @@
 
   function legalActions(s) {
     const p = s.active, pl = s.players[p], out = [];
-    if (s.winner !== null) return out;
+    if (s.winner !== null || s.phase === 'mulligan') return out;
     for (const h of pl.hand) {
       if (!canPlay(s, p, h)) continue;
       const c = card(h.id);
@@ -679,7 +729,7 @@
   }
 
   // ---------- デッキ ----------
-  function poolFor(faction) { return D.cards.filter(c => !c.token && (c.f === faction || c.f === 'NEU')); }
+  function poolFor(faction) { return D.cards.filter(c => !c.token && !c.retired && (c.f === faction || c.f === 'NEU')); }
   function modulePoolFor(faction) { return D.modules.filter(m => !m.base && !m.hidden && (m.f === faction || m.f === 'ANY')); }
   function validateDeck(d) {
     const errs = [];
@@ -688,7 +738,8 @@
     d.cards.forEach(id => { cnt[id] = (cnt[id] || 0) + 1; });
     for (const id in cnt) {
       const c = card(id); if (!c) { errs.push('不明なカード: ' + id); continue; }
-      if (c.f !== 'NEU' && c.f !== d.faction) errs.push(`${c.ja} は別勢力のカードです。`);
+      if (c.retired) errs.push(`${c.ja} は調査で誤りと分かり除外されたカードです。`);
+      else if (c.f !== 'NEU' && c.f !== d.faction) errs.push(`${c.ja} は別勢力のカードです。`);
       const lim = c.r === 'P' ? 1 : 2;
       if (cnt[id] > lim) errs.push(`${c.ja} は${lim}枚までです。`);
     }

@@ -13,7 +13,7 @@
       blurb: '神として崇められるサイキック種族。指揮官能力で「サイキックチャージ」を蓄え、それを盾と打点の両方に使う。精神支配(TAKE CONTROL)・複製(COPY)・帰還(RETURN)が得意。' },
     HIE: { ja: 'ヒエラルキー', en: 'Hierarchy', color: '#3fa7c9', glyph: '⚙',
       commander: 'テル=マクス (Tel\'Machus)',
-      blurb: 'サイボーグ化した冷徹な秩序の勢力。強力な修復技術で防御を固める。指揮官能力 Restore(修復2)、サイボーグ統一デッキ向けのモジュール、SHIELD・ARMORED・CYPHER を持つ。' },
+      blurb: 'サイボーグ化した冷徹な秩序の勢力。強力な修復技術で防御を固める。指揮官能力 Nanite Conversion(修復2)、サイボーグ統一デッキ向けのモジュール、SHIELD・ARMORED・CYPHER を持つ。' },
     SHA: { ja: 'シャンティ', en: "Shan'Ti", color: '#4fbf62', glyph: '❦',
       commander: 'ダル・ゲハリス (Dar Geharis)',
       blurb: '遺伝子を生ける兵器に作り変える種族。指揮官能力 Release Mutagen でユニットの MUTATE テキストを任意に発動できる。アベレーション(異形)を中心に、育つユニットで盤面を制圧する。' },
@@ -22,10 +22,10 @@
       blurb: '数で押し寄せる残忍で適応力の高い種族。指揮官能力 Thrash は任意の対象に1ダメージ。FURY(被ダメージ時誘発)・SWARM・ウェポン・全体強化で押し切る。' },
     CON: { ja: 'コンソーシアム', en: 'Consortium', color: '#d9a93f', glyph: '¤',
       commander: 'コンソーシアム総帥(名称未確認)',
-      blurb: '陰謀と傭兵軍団の勢力。指揮官能力 Redeem Contract でランダムな傭兵(0/2 SCREEN/1/1 CLOAK/0/1 Trader)を雇う。CREDIT(前借り)で早いターンに強いカードを出し、CLOAK で奇襲する。' },
+      blurb: '陰謀と傭兵軍団の勢力。指揮官能力 Redeem Contract でランダムな傭兵(Bodyguard 0/2 SCREEN/Contractor 1/1 CLOAK/Dealer 0/1)を雇う。CREDIT(前借り)で早いターンに強いカードを出し、CLOAK で奇襲する。' },
     TER: { ja: 'テラン', en: 'Terran', color: '#7a8ca6', glyph: '✦',
       commander: 'テラン提督(名称未確認)',
-      blurb: '恐れを知らない歴戦の人類。巨大兵器(マッシブ)を擁する。指揮官能力で1/1のサポート・マリーンを配備し、ARMORED・SCREEN を持つ重装ユニットとウェポンで戦線を押し上げる。' },
+      blurb: '恐れを知らない歴戦の人類。巨大兵器(マッシブ)を擁する。指揮官能力 Rally で1/1のガーズマンを配備し、ARMORED・SCREEN を持つ重装ユニットとウェポンで戦線を押し上げる。' },
     VRX: { ja: 'ヴラクシアン', en: 'Vraxxian', color: '#c95fa0', glyph: '♛',
       commander: 'ハイメイン・グリクス (High Mane Grix)',
       blurb: '2016年12月の拡張で追加された海賊的な獅子族。相手の手札を REVEAL(公開)し、公開枚数に応じて PILLAGE(略奪)効果やダメージが伸びる情報戦の勢力。' },
@@ -75,7 +75,7 @@
     VULNERABILITY: ['脆弱', 'VULNERABILITY X:あらゆるダメージ源からX点余分にダメージを受ける。', 'A'],
     WEAPON: ['ウェポン', '指揮官に装備させる武器。チャージ数が攻撃回数。', 'A'],
     ZEAL: ['熱狂', '敵ユニット1体につき攻撃力+1。', 'A'],
-    ENERGY: ['エネルギー', '第2リソース。敵ユニット撃破・敵指揮官へのダメージ・空きモジュールスロットで獲得し、モジュールや ENERGIZE に使う。', 'A'],
+    ENERGY: ['エネルギー', '第2リソース。攻撃・敵ユニット撃破・敵指揮官へのダメージ・空きモジュールスロットで獲得し、モジュールや ENERGIZE に使う。', 'A'],
     SUPPLY: ['サプライ', '基本リソース(マナ相当)。毎ターン最大値+1(上限10)。', 'A']
   };
 
@@ -255,7 +255,7 @@
     on: { play: [{ op: 'buff', t: 'T', a: 3, temp: 1 }, { op: 'kw', t: 'T', k: 'ASSAULT', v: 1, temp: 1 }, { op: 'extraAttack', t: 'T' }] }, tx: '味方ユニット1体はこのターン攻撃力+3と ASSAULT を得る。', src: 'C', note: '上位デッキリストで名称のみ確認' });
   add({ id: 'frenzy', n: 'Frenzy', ja: '狂乱', f: 'HAJ', t: 'T', c: 1, r: 'C',
     on: { play: [{ op: 'buff', t: 'AA', a: 1, temp: 1 }] }, tx: '味方ユニット全体はこのターン攻撃力+1。', src: 'C', note: '名称のみ確認' });
-  add({ id: 'oppressor', n: 'Oppressor', ja: '圧制者', f: 'HAJ', t: 'U', c: 4, a: 3, h: 5, r: 'E', kw: { ZEAL: 1 },
+  add({ id: 'oppressor', n: 'Oppressor', ja: '圧制者', f: 'HAJ', t: 'U', c: 4, a: 4, h: 5, r: 'E', kw: { ZEAL: 1 },
     tx: 'ZEAL', src: 'C', note: '名称のみ確認' });
   add({ id: 'bloodsworn_berserker', n: 'Bloodsworn Berserker', ja: '血誓の狂戦士', f: 'HAJ', t: 'U', c: 2, a: 2, h: 3, r: 'C',
     on: { fury: [{ op: 'buff', t: 'self', a: 2 }] }, tx: 'FURY:攻撃力+2。', src: 'C', note: '名称のみ確認' });
@@ -267,7 +267,7 @@
     on: { play: [{ op: 'weaponUp', a: 1, ch: 1 }] }, tx: '装備中のウェポンは攻撃力+1、チャージ+1。', src: 'C', note: '名称のみ確認' });
   add({ id: 'scour', n: 'Scour', ja: '掃討', f: 'HAJ', t: 'T', c: 3, r: 'E',
     on: { play: [{ op: 'dmg', t: 'AU', n: 2 }] }, tx: '全てのユニットに2ダメージ。', src: 'C', note: '名称のみ確認' });
-  add({ id: 'rage_dok', n: 'Rage Dok', ja: 'レイジ・ドク', f: 'HAJ', t: 'U', c: 3, a: 3, h: 3, r: 'E', g: ['Support'],
+  add({ id: 'rage_dok', n: 'Rage Dok', ja: 'レイジ・ドク', f: 'HAJ', t: 'U', c: 3, a: 3, h: 4, r: 'E', g: ['Support'],
     on: { play: [{ op: 'grant', t: 'OA', trig: 'fury', fx: [{ op: 'buff', t: 'self', a: 1 }] }] }, tx: 'ACTIVATE:他の味方ユニット全体は「FURY:攻撃力+1」を得る。', src: 'C', note: '名称のみ確認' });
   add({ id: 'hellfire_cannon', n: 'Hellfire Cannon', ja: 'ヘルファイア砲', f: 'HAJ', t: 'W', c: 3, a: 3, ch: 3, r: 'E',
     tx: 'WEAPON(攻撃力3/チャージ3)', src: 'C', note: '主力ウェポンとして名称のみ確認' });
@@ -277,11 +277,11 @@
     on: { play: [{ op: 'dmg', t: 'REA', n: 1 }, { op: 'dmg', t: 'REA', n: 1 }, { op: 'dmg', t: 'REA', n: 1 }] }, tx: 'ランダムな敵に1ダメージを3回与える。', src: 'B', note: 'コスト2(3→2)はv1.2.7で確認。他は再構成' });
   add({ id: 'land_crawler', n: 'Land Crawler', ja: 'ランドクローラー', f: 'HAJ', t: 'U', c: 7, a: 2, h: 8, r: 'P', g: ['Massive'], kw: { SWARM: 1, SCREEN: 1 },
     tx: 'SWARM。SCREEN', src: 'C', note: 'パラゴン(名称のみ確認)' });
-  add({ id: 'spider_walker', n: 'Spider Walker', ja: 'スパイダーウォーカー', f: 'HAJ', t: 'U', c: 3, a: 3, h: 3, r: 'C',
+  add({ id: 'spider_walker', n: 'Spider Walker', ja: 'スパイダーウォーカー', f: 'HAJ', t: 'U', c: 3, a: 3, h: 4, r: 'C',
     on: { fury: [{ op: 'dmg', t: 'RE', n: 1 }] }, tx: 'FURY:ランダムな敵ユニットに1ダメージ。', src: 'C', note: 'バランス議論で名称のみ確認(勢力推定)' });
 
   /* ===== コンソーシアム ===== */
-  add({ id: 'despaired_debtor', n: 'Despaired Debtor', ja: '絶望した債務者', f: 'CON', t: 'U', c: 1, a: 3, h: 2, r: 'H', g: ['Mercenary'], kw: { CREDIT: 1 },
+  add({ id: 'despaired_debtor', n: 'Despaired Debtor', ja: '絶望した債務者', f: 'CON', t: 'U', c: 1, a: 2, h: 2, r: 'H', g: ['Mercenary'], kw: { CREDIT: 1 },
     tx: 'CREDIT 1', src: 'B', note: 'キャンペーン「ネルガル教団」報酬。コスト1・ヒロイックは確認、他は再構成' });
   add({ id: 'arms_merchant', n: 'Arms Merchant', ja: '武器商人', f: 'CON', t: 'U', c: 3, a: 2, h: 3, r: 'C', g: ['Mercenary'], kw: { CREDIT: 1 },
     on: { play: [{ op: 'equip', id: 'blaster' }] }, tx: 'CREDIT 1。ACTIVATE:ブラスター(2/2)を装備する。', src: 'C', note: '傭兵デッキで名称のみ確認' });
@@ -290,7 +290,7 @@
   add({ id: 'veteran_advisor', n: 'Veteran Advisor', ja: '古参顧問', f: 'CON', t: 'U', c: 3, a: 2, h: 3, r: 'E', kw: { CREDIT: 2 },
     on: { play: [{ op: 'draw', n: 2 }] }, tx: 'CREDIT 2。ACTIVATE:カードを2枚引く。', src: 'C', note: '傭兵デッキで名称のみ確認' });
   add({ id: 'double_retainer', n: 'Double Retainer', ja: '二重雇用', f: 'CON', t: 'T', c: 3, r: 'C',
-    on: { play: [{ op: 'summon', id: 'merc_bodyguard', n: 1 }, { op: 'summon', id: 'merc_infiltrator', n: 1 }] }, tx: '傭兵護衛(0/2 SCREEN)と傭兵潜入員(1/1 CLOAK)を配備する。', src: 'C', note: '傭兵デッキで名称のみ確認' });
+    on: { play: [{ op: 'summon', id: 'merc_bodyguard', n: 1 }, { op: 'summon', id: 'merc_infiltrator', n: 1 }] }, tx: 'Bodyguard(0/2 SCREEN)と Contractor(1/1 CLOAK)を配備する。', src: 'C', note: '傭兵デッキで名称のみ確認' });
   add({ id: 'syndicate_enforcers', n: 'Syndicate Enforcers', ja: 'シンジケートの執行者', f: 'CON', t: 'U', c: 4, a: 3, h: 4, r: 'E', g: ['Mercenary'],
     on: { cardPlayed: [{ op: 'dmg', t: 'RE', n: 1 }] }, tx: '自分がカードをプレイするたびに、ランダムな敵ユニットに1ダメージ。', en: 'Whenever you play a card, deal 1 damage to a random enemy.', src: 'B', note: '効果は2017/5/22で確認。勢力・数値は再構成' });
   add({ id: 'mr_bradford', n: 'Mr Bradford', ja: 'ブラッドフォード氏', f: 'CON', t: 'U', c: 5, a: 4, h: 4, r: 'P',
@@ -317,7 +317,7 @@
 
   /* ===== テラン ===== */
   add({ id: 'sect_recruiter', n: 'Sect Recruiter', ja: '教団の勧誘者', f: 'TER', t: 'U', c: 5, a: 3, h: 5, r: 'H',
-    on: { play: [{ op: 'summon', id: 'support_marine', n: 2 }] }, tx: 'ACTIVATE:サポート・マリーンを2体配備。', src: 'B', note: 'キャンペーン報酬。コスト5・ヒロイックは確認、他は再構成' });
+    on: { play: [{ op: 'summon', id: 'support_marine', n: 2 }] }, tx: 'ACTIVATE:ガーズマンを2体配備。', src: 'B', note: 'キャンペーン報酬。コスト5・ヒロイックは確認、他は再構成' });
   add({ id: 'recon_element', n: 'Recon Element', ja: '偵察要素', f: 'TER', t: 'U', c: 1, a: 1, h: 1, r: 'C', kw: { CLOAK: 1 },
     tx: 'CLOAK', src: 'B', note: '1/1クロークとして言及。コストは再構成' });
   add({ id: 'guardsman', n: 'Guardsman', ja: '衛兵', f: 'TER', t: 'U', c: 2, a: 1, h: 3, r: 'C', kw: { SCREEN: 1 },
@@ -339,9 +339,9 @@
   add({ id: 'myrmidon_squad', n: 'Myrmidon Squad', ja: 'ミュルミドン分隊', f: 'TER', t: 'U', c: 4, a: 3, h: 4, r: 'C', kw: { SHIELD: 1, SCREEN: 1 },
     tx: 'SHIELD。SCREEN', src: 'C', note: '名称のみ確認' });
   add({ id: 'eridani_patrol', n: 'Eridani Patrol', ja: 'エリダニ哨戒隊', f: 'TER', t: 'U', c: 2, a: 2, h: 1, r: 'C',
-    on: { play: [{ op: 'summon', id: 'support_marine', n: 1 }] }, tx: 'ACTIVATE:サポート・マリーンを1体配備。', src: 'C', note: 'デッキリストで名称のみ確認(勢力推定)' });
+    on: { play: [{ op: 'summon', id: 'support_marine', n: 1 }] }, tx: 'ACTIVATE:ガーズマンを1体配備。', src: 'C', note: 'デッキリストで名称のみ確認(勢力推定)' });
   add({ id: 'eredani_guards', n: 'Eredani Guards', ja: 'エレダニ近衛', f: 'TER', t: 'U', c: 3, a: 2, h: 4, r: 'C', kw: { SCREEN: 1 },
-    on: { revenge: [{ op: 'summon', id: 'support_marine', n: 1 }] }, tx: 'SCREEN。REVENGE:サポート・マリーンを1体配備。', src: 'C', note: 'デッキリストで名称のみ確認(勢力推定)' });
+    on: { revenge: [{ op: 'summon', id: 'support_marine', n: 1 }] }, tx: 'SCREEN。REVENGE:ガーズマンを1体配備。', src: 'C', note: 'デッキリストで名称のみ確認(勢力推定)' });
   add({ id: 'eredani_battalion', n: 'Eredani Battalion', ja: 'エレダニ大隊', f: 'TER', t: 'U', c: 6, a: 4, h: 6, r: 'E', kw: { ARMORED: 1 },
     on: { play: [{ op: 'buff', t: { s: 'OA', g: 'Support' }, a: 1, h: 1 }] }, tx: 'ARMORED。ACTIVATE:他の味方サポート・ユニット全体に+1/+1。', src: 'C', note: 'デッキリストで名称のみ確認(勢力推定)' });
   add({ id: 'void_probe', n: 'Void Probe', ja: '虚空探査機', f: 'TER', t: 'U', c: 1, a: 0, h: 2, r: 'C', kw: { PACIFIST: 1 },
@@ -363,7 +363,7 @@
   add({ id: 'titan', n: 'Titan', ja: 'タイタン', f: 'TER', t: 'U', c: 9, a: 8, h: 8, r: 'H', g: ['Massive'], kw: { ARMORED: 1 },
     tx: 'ARMORED', src: 'C', note: 'アニメーションカード告知で名称のみ確認(勢力推定)' });
   add({ id: 'fleet_beacon', n: 'Fleet Beacon', ja: '艦隊標識', f: 'TER', t: 'U', c: 3, a: 0, h: 4, r: 'E', kw: { PACIFIST: 1 },
-    on: { startTurn: [{ op: 'summon', id: 'support_marine', n: 1 }] }, tx: 'PACIFIST。自ターン開始時:サポート・マリーンを1体配備。', src: 'C', note: 'アニメーションカード告知で名称のみ確認(勢力推定)' });
+    on: { startTurn: [{ op: 'summon', id: 'support_marine', n: 1 }] }, tx: 'PACIFIST。自ターン開始時:ガーズマンを1体配備。', src: 'C', note: 'アニメーションカード告知で名称のみ確認(勢力推定)' });
   add({ id: 'rally', n: 'Rally', ja: '結集', f: 'TER', t: 'T', c: 3, r: 'C',
     on: { play: [{ op: 'buff', t: 'AA', a: 1, h: 1 }] }, tx: '味方ユニット全体に+1/+1。', src: 'C', note: '名称のみ確認' });
   add({ id: 'ion_cannon', n: 'Ion Cannon', ja: 'イオン砲', f: 'TER', t: 'T', c: 6, r: 'P', tg: { side: 'enemy', kind: 'char' },
@@ -406,7 +406,7 @@
     on: { play: [{ op: 'reveal', n: 1 }] }, tx: 'MOBILITY。ACTIVATE:敵カード1枚を REVEAL。', src: 'D', note: '資料で確認できない補完カード(仮称)' });
 
   /* ===== トークン/生成カード ===== */
-  add({ id: 'support_marine', n: 'Support Marine', ja: 'サポート・マリーン', f: 'TER', t: 'U', c: 1, a: 1, h: 1, r: 'C', g: ['Support'], token: true,
+  add({ id: 'support_marine', n: 'Support Marine', ja: 'ガーズマン', f: 'TER', t: 'U', c: 1, a: 1, h: 1, r: 'C', g: ['Support'], token: true,
     tx: '(テラン指揮官能力で配備される1/1)', src: 'B', note: '「2サプライで1/1のSupport marineを配備」とのプレイヤー説明' });
   add({ id: 'merc_bodyguard', n: 'Mercenary Bodyguard', ja: '傭兵護衛', f: 'CON', t: 'U', c: 1, a: 0, h: 2, r: 'C', g: ['Mercenary'], token: true, kw: { SCREEN: 1 },
     tx: 'SCREEN', src: 'B', note: '指揮官能力の生成ユニット「0/2 SCREEN」。名称は仮称' });
@@ -431,7 +431,7 @@
     { id: 'redeem_contract', n: 'Redeem Contract', ja: '契約履行', f: 'CON', ct: 'supply', c: 2, base: 1,
       fx: [{ op: 'summonRandom', ids: ['merc_bodyguard', 'merc_infiltrator', 'merc_trader'] }], tx: 'ランダムな傭兵を配備:0/2 SCREEN、1/1 CLOAK、0/1 Trader(CREDITカードのコスト-1)のいずれか。', src: 'B', note: 'プレイヤー説明より' },
     { id: 'call_marines', n: 'Call Reinforcements', ja: '増援要請(仮称)', f: 'TER', ct: 'supply', c: 2, base: 1,
-      fx: [{ op: 'summon', id: 'support_marine', n: 1 }], tx: '1/1のサポート・マリーンを配備。', src: 'B', note: '効果はプレイヤー説明で確認。モジュール名は未確認' },
+      fx: [{ op: 'summon', id: 'support_marine', n: 1 }], tx: '1/1のガーズマンを配備。', src: 'B', note: '効果はプレイヤー説明で確認。モジュール名は未確認' },
     { id: 'scout_ahead', n: 'Scout Ahead', ja: '先行偵察', f: 'VRX', ct: 'supply', c: 2, base: 1,
       fx: [{ op: 'reveal', n: 1 }, { op: 'if', c: { rev: 3 }, then: [{ op: 'dmg', t: 'REA', n: 1 }] }], tx: '敵カード1枚を REVEAL。公開済みが3枚以上ならランダムな敵に1ダメージ。', src: 'C', note: 'モジュール名のみ確認。ヴラクシアンの指揮官能力とするのは推定' },
     { id: 'rend_mod', n: 'Rend', ja: '引き裂き', f: 'HAJ', ct: 'supply', c: 2, hidden: 1,
@@ -492,6 +492,135 @@
     { id: 'cb_pods', n: 'CB Pods', ja: 'CBポッド', f: 'ANY', ct: 'energy', c: 5,
       fx: [{ op: 'supply', n: 2 }], tx: 'このターンのサプライ+2。', src: 'B', note: '「エネルギーからリソースを生成」とのみ確認' }
   ];
+
+
+  // ===================================================================
+  // v2 修正(2026-10-02 YouTube 調査:デッキリスト34本+動画字幕13本)
+  // 詳細と根拠は starcrusade/YOUTUBE_RESEARCH.md。
+  //   - デッキリストで他勢力のデッキに入っていたカードは勢力を修正
+  //   - 字幕で効果が判明したカードは効果を差し替え(src B、note に出典)
+  //   - 誤りと分かったカードは retired(図鑑・デッキ構築から除外。古いセーブ互換のため残す)
+  // ===================================================================
+  const byId = {}; C.forEach(c => { byId[c.id] = c; });
+  const YT = '動画字幕(自動生成・確度中)';
+  const fix = (id, o, note) => { const c = byId[id]; if (!c) throw new Error('no card ' + id); Object.assign(c, o); if (note) c.note = (c.note ? c.note + ' / ' : '') + note; };
+  const DECK = 'YouTube デッキリストで他勢力のデッキに登場';
+  // --- 勢力の修正(他勢力のデッキに入っていた=その勢力のカードではない) ---
+  [['automated_defences', 'NEU'], ['fighter_squadron', 'NEU'], ['field_commander', 'NEU'], ['eridani_patrol', 'NEU'], ['arsenal_dropship', 'NEU'],
+    ['tower_of_eyes', 'NEU'], ['arms_merchant', 'NEU'], ['heavy_transport', 'NEU'], ['corvette', 'NEU'], ['terazin_destroyer', 'NEU'], ['land_crawler', 'NEU'],
+    ['carbonic_protector', 'NEU'], ['gatekeeper', 'CON'], ['titan', 'NEU'], ['soul_devourer', 'NEU'], ['replicant', 'NEU'], ['mr_bradford', 'NEU'],
+    ['cytek_drone', 'NEU'], ['fleet_beacon', 'NEU'], ['preacher', 'NEU'], ['advisor', 'HIE'], ['horror_of_the_shade', 'NEU'], ['archon_carrier', 'NEU'],
+    ['ravager', 'NEU'], ['fleet_core', 'NEU'], ['deathstalker_malik', 'HIE'], ['void_probe', 'NEU'], ['eredani_guards', 'CON'], ['eredani_battalion', 'CON'],
+    ['portal_master', 'CON'], ['regulator', 'NEU'], ['vraxxian_gunboat', 'NEU'], ['adrenal_transformation', 'SHA'], ['bombardiers', 'NEU'], ['rippers', 'NEU'],
+    ['rapid_strike_team', 'NEU'], ['assault_autovec_squad', 'NEU'], ['attache', 'VRX'], ['mad_seer', 'NEU'], ['fenriks_partisan', 'HIE'], ['myrmidon_squad', 'HIE'],
+    ['displacer_cannon', 'NEU']].forEach(([id, f]) => fix(id, { f }, DECK + '→' + (f === 'NEU' ? '中立' : F[f].ja) + 'に修正'));
+
+  // --- 名称の修正(デッキリスト・字幕の表記に合わせる) ---
+  fix('psychic_overload', { n: 'Psionic Overload', ja: 'サイオニック・オーバーロード' }, '正式名はデッキリストの Psionic Overload');
+  fix('the_manovar', { n: 'The Manowar', ja: 'マノウォー' }, '正式名はデッキリストの The Manowar');
+  fix('zero_in', { n: 'Zeroed In', ja: '照準固定' }, '正式名はデッキリストの Zeroed In');
+  fix('duskwind_guerilla', { n: 'Duskwind Guerrillas', ja: 'ダスクウィンド・ゲリラ' });
+  fix('automated_defences', { n: 'Automated Defenses' });
+  fix('eredani_guards', { n: 'Eridani Guards', ja: 'エリダニ近衛' });
+  fix('eredani_battalion', { n: 'Eridani Battalion', ja: 'エリダニ大隊' });
+  fix('support_marine', { n: 'Guardsman', ja: 'ガーズマン', src: 'A', tx: '(テランの指揮官能力 Rally で配備される1/1のサポート)', note: '複数の動画で「Rally で 1/1 の Guardsman を配備」と確認' });
+  fix('merc_bodyguard', { n: 'Bodyguard', ja: 'ボディガード', src: 'A', note: 'Redeem Contract の生成ユニット 0/2 SCREEN(動画2本で確認)' });
+  fix('merc_infiltrator', { n: 'Contractor', ja: 'コントラクター', src: 'A', note: 'Redeem Contract の生成ユニット 1/1 CLOAK(動画2本で確認)' });
+  fix('merc_trader', { n: 'Dealer', ja: 'ディーラー', src: 'B', tx: 'IMPACT:CREDIT を持つ自分のカードのコスト-1。', note: 'Redeem Contract の生成ユニット 0/1。「契約(CREDIT)カードのコスト-1」(動画)' });
+  fix('supply_crate', { n: 'Initiative', ja: 'イニシアチブ', src: 'A', note: '後攻が得るカード。「そのターンのサプライ+1」(複数の動画で確認)' });
+  fix('double_retainer', { tx: '傭兵2体(Bodyguard と Contractor)を配備する。' });
+  fix('heavy_transport', { tx: 'ACTIVATE:3種の傭兵(Bodyguard・Contractor・Dealer)を1体ずつ配備。' });
+
+  // --- 誤りと分かったカード(図鑑とデッキ構築から除外) ---
+  fix('guardsman', { retired: true }, '実物の Guardsman は Rally で配備される 1/1 トークンと判明したため除外');
+  fix('rally', { retired: true }, 'Rally はタクティクスではなくテランの指揮官モジュールと判明したため除外');
+
+  // --- 字幕で効果が判明したカード(効果を差し替え) ---
+  fix('paranoia', { c: 4, tg: { side: 'enemy', kind: 'unit', maxHp: 3 }, on: { play: [{ op: 'control', t: 'T' }] }, tx: '体力3以下の敵ユニット1体のコントロールを得る。', src: 'B' }, YT + ':コスト4、体力3以下を奪う');
+  fix('infected_militia', { c: 1, a: 1, h: 2, on: { mutate: [{ op: 'summon', id: 'brood_egg', n: 2 }, { op: 'destroy', t: 'self' }] }, tx: 'MUTATE:このユニットを破壊し、0/3のブルードエッグを2体配備。', src: 'B' }, YT + ':1コスト、MUTATE で破壊+0/3 Brood Egg×2');
+  fix('bloodsworn_berserker', { n: 'Bloodsworn Berserkers', on: { allyDamaged: [{ op: 'dmg', t: 'RE', n: 1, tag: 'berserk' }] }, tx: '味方ユニットがダメージを受けるたびに、ランダムな敵ユニットに1ダメージ。', src: 'B' }, YT);
+  fix('avalanche_bombard', { c: 8, a: 6, h: 6, on: { play: [{ op: 'summon', id: 'technician', n: 1 }] }, tx: 'ACTIVATE:3/3のテクニシャンを配備。', src: 'B' }, YT + ':8コスト 6/6');
+  fix('void_probe', { c: 2, a: 1, h: 2, kw: {}, tg: { side: 'any', kind: 'unit', opt: true }, on: { play: [{ op: 'nullify', t: 'T' }] }, tx: 'ACTIVATE:ユニット1体を NULLIFY する。', src: 'B' }, YT + '(コスト・数値は再構成)');
+  fix('double_retainer', { on: { play: [{ op: 'buff', t: { s: 'AA', g: 'Mercenary' }, a: 2 }] }, tx: '味方マーセナリー全体の攻撃力+2。', src: 'B' }, YT);
+  fix('veteran_advisor', { kw: {}, on: { play: [{ op: 'buff', t: { s: 'OA', g: 'Mercenary' }, a: 1, h: 1 }] }, tx: 'ACTIVATE:他の味方マーセナリー全体に+1/+1。', src: 'B' }, YT);
+  fix('interphasic_weaponry', { on: { play: [{ op: 'atkFromHp', t: 'T' }] }, tx: '味方ユニット1体は、体力と同じ値だけ攻撃力を得る。', src: 'B' }, YT + ':コスト2');
+  fix('rampage', { tg: null, on: { play: [{ op: 'cmdAttack', n: 1 }] }, energize: [{ n: 3, fx: [{ op: 'buff', t: 'ac', a: 1 }], tx: '指揮官の攻撃力+1(このターン)' }], tx: '自分の指揮官はこのターン ASSAULT を得る(もう1回攻撃できる)。ENERGIZE 3:指揮官の攻撃力+1。', src: 'B' }, YT + '(ENERGIZE の値は再構成)');
+  fix('refurbish_weapon', { on: { play: [{ op: 'weaponUp', a: 2, ch: 1 }] }, tx: '装備中のウェポンは攻撃力+2、チャージ+1。', src: 'B' }, YT);
+  fix('gargoyle_bomber', { on: { play: [{ op: 'dmg', t: 'REA', n: 2 }] }, tx: 'ACTIVATE:ランダムな敵に2ダメージ。', src: 'B' }, YT);
+  fix('mystic_apprentice', { on: { endTurn: [{ op: 'dmg', t: 'REA', n: 1 }] }, tx: 'ターン終了時:ランダムな敵に1ダメージ。', src: 'B' }, YT);
+  fix('minerva_spores', { c: 2, tg: { side: 'ally', kind: 'unit', mutable: true }, on: { play: [{ op: 'mutate', t: 'T' }, { op: 'draw', n: 1 }] }, tx: '味方ユニット1体を MUTATE し、カードを1枚引く。', src: 'B' }, YT + ':動画ではコスト1(再現版はバランスのため2)');
+  fix('hellfire_cannon', { a: 3, ch: 2, tx: 'WEAPON(攻撃力3/チャージ2)', src: 'B' }, YT + ':3/2のウェポン(「倒すたびに強化」は未実装)');
+  fix('sniper', { c: 2, a: 1, h: 1, tg: { side: 'enemy', kind: 'char', opt: true }, on: { play: [{ op: 'dmg', t: 'T', n: 1 }] }, energize: [{ n: 4, fx: [{ op: 'bounce', t: 'self' }], tx: 'このユニットを手札に戻す' }], tx: 'ACTIVATE:1ダメージ。ENERGIZE 4:このユニットを手札に戻す。', src: 'B' }, YT + ':コスト2');
+  fix('raptor_tank', { src: 'B' }, '字幕でも ARMORED を確認');
+  fix('rippers', { src: 'B' }, '字幕でも「ターン終了時に攻撃力+1」を確認');
+
+  // --- 字幕で効果が判明した新カード(名称はデッキリストで確認) ---
+  const N = (o, note) => { o.src = o.src || 'B'; o.note = note || YT; add(o); };
+  N({ id: 'franchise', n: 'Franchise', ja: 'フランチャイズ', f: 'CON', t: 'T', c: 2, r: 'E', on: { play: [{ op: 'maxSupply', n: 1 }] }, tx: '空のサプライ・クレートを1つ得る(以後ずっと最大サプライ+1)。' }, YT + '(コストは再構成)');
+  N({ id: 'contract_hit', n: 'Contract Hit', ja: '契約殺人', f: 'CON', t: 'T', c: 2, r: 'C', kw: { CREDIT: 1 }, tg: { side: 'enemy', kind: 'unit' },
+    on: { play: [{ op: 'dmg', t: 'T', n: 2 }, { op: 'if', c: { tDead: 1 }, then: [{ op: 'creditPay', n: 1 }] }] }, tx: 'CREDIT 1。敵ユニット1体に2ダメージ。それを破壊したら CREDIT を1解消する。' }, YT + '(コストは再構成)');
+  N({ id: 'red_tape', n: 'Red Tape', ja: 'レッドテープ', f: 'CON', t: 'T', c: 2, r: 'E', cy: { on: 'enemyUnitPlayed', fx: [{ op: 'tuck', t: 'T' }] }, tx: 'CYPHER:相手がユニットを配備した時、それを持ち主の山札に戻す。' }, YT + '(コストは再構成)');
+  N({ id: 'neutralize', n: 'Neutralize', ja: '無力化工作', f: 'CON', t: 'T', c: 4, r: 'E', tg: { side: 'enemy', kind: 'unit' },
+    on: { play: [{ op: 'if', c: { hasGroup: 'Mercenary' }, then: [{ op: 'destroy', t: 'T' }] }] }, tx: '味方マーセナリーがいれば、敵ユニット1体を破壊する。' }, YT + '(コストは再構成)');
+  N({ id: 'abaku_scavenger', n: 'Abaku Scavenger', ja: 'アバク・スカベンジャー', f: 'CON', t: 'U', c: 2, a: 2, h: 2, r: 'C', g: ['Mercenary'], on: { attack: [{ op: 'stealEnergy', n: 1 }] }, tx: '攻撃時:相手のエネルギーを1奪う。' }, YT + ':コンスクリプト(数値は再構成)');
+  N({ id: 'syndicate_agent', n: 'Syndicate Agent', ja: 'シンジケート工作員', f: 'CON', t: 'U', c: 4, a: 2, h: 3, r: 'E', g: ['Mercenary'], on: { creditPlayed: [{ op: 'dmg', t: 'ec', n: 2 }] }, tx: 'CREDIT を持つカードをプレイするたびに、敵指揮官に2ダメージ。' }, YT + '(数値は再構成)');
+  N({ id: 'syndicate_security', n: 'Syndicate Security', ja: 'シンジケート警備員', f: 'CON', t: 'U', c: 1, a: 1, h: 2, r: 'C', g: ['Mercenary'], on: { play: [{ op: 'if', c: { hasGroup: 'Mercenary' }, then: [{ op: 'buff', t: 'self', a: 1 }] }] }, tx: 'ACTIVATE:他の味方マーセナリーがいれば攻撃力+1。' }, YT + ':コスト1(数値は再構成)');
+  N({ id: 'psychic_rot', n: 'Psychic Rot', ja: 'サイキック・ロット', f: 'ANN', t: 'T', c: 1, r: 'E', tg: { side: 'enemy', kind: 'unit', maxAtk: 'psy' }, on: { play: [{ op: 'destroy', t: 'T' }] }, tx: '攻撃力がサイキックチャージ以下の敵ユニット1体を破壊する。' }, YT + ':コスト1');
+  N({ id: 'dominate', n: 'Dominate', ja: '支配', f: 'ANN', t: 'T', c: 10, r: 'H', psyDiscount: 1, tg: { side: 'enemy', kind: 'unit' }, on: { play: [{ op: 'control', t: 'T' }] }, tx: '敵ユニット1体のコントロールを得る。サイキックチャージ1につきコスト-1。' }, YT + '(基本コスト10は「10以上」との発言から推定)');
+  N({ id: 'emanation', n: 'Emanation', ja: '放射', f: 'ANN', t: 'T', c: 2, r: 'C', cy: { on: 'enemyUnitPlayed', fx: [{ op: 'kw', t: 'T', k: 'PACIFIST', v: 1 }] }, tx: 'CYPHER:相手がユニットを配備した時、それを PACIFY(攻撃不能)にする。' }, YT + '(コストは再構成)');
+  N({ id: 'mindwipe', n: 'Mindwipe', ja: 'マインドワイプ', f: 'ANN', t: 'T', c: 2, r: 'E', tg: { side: 'enemy', kind: 'unit' }, on: { play: [{ op: 'nullify', t: 'T' }, { op: 'dmg', t: 'T', n: 'psy', calc: 1 }] }, tx: 'ユニット1体を NULLIFY し、サイキックチャージと同じ値のダメージを与える。' }, YT + '(コストは再構成)');
+  N({ id: 'marduks_faithful', n: "Marduk's Faithful", ja: 'マルドゥクの信徒', f: 'ANN', t: 'U', c: 2, a: 2, h: 3, r: 'C', on: { endTurn: [{ op: 'psy', n: 1 }] }, tx: 'ターン終了時:サイキックチャージ+1。' }, YT + '(数値は再構成)');
+  N({ id: 'harbinger_of_doom', n: 'Harbinger of Doom', ja: '破滅の先触れ', f: 'ANN', t: 'U', c: 4, a: 3, h: 5, r: 'H', on: { psyGain: [{ op: 'dmg', t: 'REA', n: 1 }] }, tx: 'サイキックチャージを得るたびに、ランダムな敵に1ダメージ。' }, YT + '(数値は再構成)');
+  N({ id: 'council_patrol', n: 'Council Patrol', ja: 'カウンシル哨戒隊', f: 'ANN', t: 'U', c: 3, a: 3, h: 4, r: 'E', g: ['Council'], on: { play: [{ op: 'nullify', t: 'ROA' }, { op: 'nullify', t: 'RE' }] }, tx: 'ACTIVATE:ランダムな他の味方1体と敵1体を NULLIFY する。' }, YT + '(数値は再構成)');
+  N({ id: 'teleport', n: 'Teleport', ja: 'テレポート', f: 'HIE', t: 'T', c: 3, r: 'C', on: { play: [{ op: 'draw', n: 2, filter: { g: 'Cyborg' } }] }, tx: '山札からサイボーグ・ユニットを2枚引く。' }, YT + ':コスト3(「体力+1」は未実装)');
+  N({ id: 'disintegrate', n: 'Disintegrate', ja: '分解', f: 'HIE', t: 'T', c: 6, r: 'E', tg: { side: 'enemy', kind: 'unit' }, on: { play: [{ op: 'healFromTarget', t: 'T' }, { op: 'destroy', t: 'T' }] }, tx: '敵ユニット1体を破壊し、その体力と同じ値だけ自分の指揮官を回復する。' }, YT + '(コストは再構成)');
+  N({ id: 'reassemble', n: 'Reassemble', ja: '再組立', f: 'HIE', t: 'T', c: 2, r: 'E', tg: { side: 'ally', kind: 'unit' }, on: { play: [{ op: 'grant', t: 'T', trig: 'revenge', fx: [{ op: 'returnSelf' }, { op: 'returnSelf' }] }] }, tx: '味方ユニット1体に「REVENGE:このカードを2枚手札に加える」を与える。' }, YT + '(コストは再構成)');
+  N({ id: 'brood_mother', n: 'Brood Mother', ja: 'ブルードマザー', f: 'SHA', t: 'U', c: 3, a: 2, h: 4, r: 'E', g: ['Aberration'], on: { mutate: [{ op: 'summon', id: 'brood_spawn', n: 1 }] }, tx: 'MUTATE:1/1 SCREEN のブルードを配備。' }, YT + ':2/4(コストは再構成)');
+  N({ id: 'spine_spitters', n: 'Spine Spitters', ja: 'スパイン・スピッター', f: 'SHA', t: 'T', c: 4, r: 'C',
+    on: { play: [{ op: 'if', c: { hasGroup: 'Aberration' }, then: [{ op: 'repeat', n: 5, fx: [{ op: 'dmg', t: 'RE', n: 1, calc: 1 }] }], else: [{ op: 'repeat', n: 3, fx: [{ op: 'dmg', t: 'RE', n: 1, calc: 1 }] }] }] },
+    tx: 'ランダムな敵ユニットに1ダメージを3回。味方アベレーションがいれば5回。' }, YT + '(コストは再構成)');
+  N({ id: 'terminal_mutation', n: 'Terminal Mutation', ja: '末期変異', f: 'SHA', t: 'T', c: 1, r: 'E', tg: { side: 'enemy', kind: 'unit' },
+    on: { play: [{ op: 'grant', t: 'T', trig: 'mutate', fx: [{ op: 'destroy', t: 'self' }] }, { op: 'mutate', t: 'T' }] }, tx: '敵ユニット1体に「MUTATE:このユニットを破壊する」を与え、MUTATE させる。' }, YT + '(即時に変異させる処理は再現版の解釈)');
+  N({ id: 'unstable_transformation', n: 'Unstable Transformation', ja: '不安定な変容', f: 'SHA', t: 'T', c: 2, r: 'C', tg: { side: 'ally', kind: 'unit' },
+    on: { play: [{ op: 'transform', t: 'T', id: 'unstable_monstrosity' }] }, tx: '味方ユニット1体を 4/3 のアンステーブル・モンストロシティに変身させる。' }, YT + '(コストは再構成)');
+  N({ id: 'superheat', n: 'Superheat', ja: '過熱', f: 'HAJ', t: 'T', c: 2, r: 'E', needs: 'ownWeapon', tg: { side: 'enemy', kind: 'unit' },
+    on: { play: [{ op: 'destroy', t: 'T' }, { op: 'breakWeapon' }] }, tx: '敵ユニット1体と、自分のウェポンを破壊する。' }, YT + '(コストは再構成)');
+  N({ id: 'pulse_barrage', n: 'Pulse Barrage', ja: 'パルス弾幕', f: 'TER', t: 'T', c: 3, r: 'C', on: { play: [{ op: 'if', c: { allies: 3 }, then: [{ op: 'dmg', t: 'AE', n: 2 }] }] }, tx: '味方ユニットが3体以上いれば、全ての敵ユニットに2ダメージ。' }, YT + '(コストは再構成)');
+  N({ id: 'precision_strike', n: 'Precision Strike', ja: '精密攻撃', f: 'TER', t: 'T', c: 3, r: 'C', tg: { side: 'enemy', kind: 'unit' }, on: { play: [{ op: 'dmg', t: 'T', n: 3 }] },
+    energize: [{ n: 5, fx: [{ op: 'dmg', t: 'AE', n: 1 }], tx: 'さらに全ての敵ユニットに1ダメージ' }], tx: '敵ユニット1体に3ダメージ。ENERGIZE 5:さらに全ての敵ユニットに1ダメージ。' }, YT + '(数値は再構成)');
+  N({ id: 'colonial_militia', n: 'Colonial Militia', ja: '植民地民兵', f: 'NEU', t: 'U', c: 3, a: 2, h: 2, r: 'E', on: { play: [{ op: 'buff', t: 'self', h: 'others' }] }, tx: 'ACTIVATE:他の味方ユニット1体につき体力+1。' }, YT + ':エリート(数値は再構成)');
+  N({ id: 'viking_destroyer', n: 'Viking Destroyer', ja: 'ヴァイキング駆逐艦', f: 'NEU', t: 'U', c: 6, a: 5, h: 8, r: 'E', g: ['Massive'], tx: '(効果なし)' }, YT + ':6コスト 5/8(勢力不明のため中立)');
+  // ハジル=ゴグのデッキリスト(Weaponry デッキ)で名前だけ確認できたカード
+  const DL = 'YouTube デッキリスト(ハジル=ゴグ)で名称のみ確認。効果は再構成';
+  add({ id: 'champion_of_the_pit', n: 'Champion of the Pit', ja: '闘技場の王者', f: 'HAJ', t: 'U', c: 5, a: 5, h: 5, r: 'E', kw: { ASSAULT: 1 }, tx: 'ASSAULT', src: 'C', note: DL });
+  add({ id: 'reaver', n: 'Reaver', ja: 'リーヴァー', f: 'HAJ', t: 'U', c: 2, a: 3, h: 3, r: 'C', on: { fury: [{ op: 'buff', t: 'self', a: 1 }] }, tx: 'FURY:攻撃力+1。', src: 'C', note: DL });
+  add({ id: 'vengeful_outcast', n: 'Vengeful Outcast', ja: '復讐の追放者', f: 'HAJ', t: 'U', c: 3, a: 3, h: 4, r: 'C', on: { revenge: [{ op: 'dmg', t: 'REA', n: 2 }] }, tx: 'REVENGE:ランダムな敵に2ダメージ。', src: 'C', note: DL });
+  add({ id: 'repair_team', n: 'Repair Team', ja: '修理班', f: 'HAJ', t: 'U', c: 2, a: 2, h: 3, r: 'C', needsNot: 1, on: { play: [{ op: 'weaponUp', a: 0, ch: 1 }] }, tx: 'ACTIVATE:装備中のウェポンのチャージ+1。', src: 'C', note: DL });
+  // 生成ユニット
+  N({ id: 'brood_egg', n: 'Brood Egg', ja: 'ブルードエッグ', f: 'SHA', t: 'U', c: 1, a: 0, h: 3, r: 'C', g: ['Aberration'], token: true, on: { mutate: [{ op: 'buff', t: 'self', a: 3, h: 1 }] }, tx: 'MUTATE:+3/+1(3/4 になる)。' }, YT);
+  N({ id: 'brood_spawn', n: 'Brood', ja: 'ブルード', f: 'SHA', t: 'U', c: 1, a: 1, h: 1, r: 'C', g: ['Aberration'], token: true, kw: { SCREEN: 1 }, tx: 'SCREEN' }, YT);
+  N({ id: 'technician', n: 'Technician', ja: 'テクニシャン', f: 'NEU', t: 'U', c: 3, a: 3, h: 3, r: 'C', token: true, tx: '(Avalanche Bombard が配備する3/3)' }, YT);
+  N({ id: 'unstable_monstrosity', n: 'Unstable Monstrosity', ja: 'アンステーブル・モンストロシティ', f: 'SHA', t: 'U', c: 4, a: 4, h: 3, r: 'C', g: ['Aberration'], token: true, tx: '(Unstable Transformation の変身先)' }, YT);
+  N({ id: 'fledgling', n: 'Fledgling', ja: 'フレッジリング', f: 'HAJ', t: 'U', c: 1, a: 1, h: 1, r: 'C', token: true, kw: { MOBILITY: 1 }, on: { revenge: [{ op: 'shuffleIn', id: 'raider' }] }, tx: 'MOBILITY。REVENGE:2/1 MOBILITY のレイダーを山札に混ぜる。' }, YT);
+  N({ id: 'raider', n: 'Raider', ja: 'レイダー', f: 'HAJ', t: 'U', c: 1, a: 2, h: 1, r: 'C', token: true, kw: { MOBILITY: 1 }, tx: 'MOBILITY' }, YT);
+
+  // --- v2 モジュール修正(YouTube 調査) ---
+  const mById = {}; M.forEach(m => { mById[m.id] = m; });
+  const mfix = (id, o, note) => { Object.assign(mById[id], o); if (note) mById[id].note = (mById[id].note ? mById[id].note + ' / ' : '') + note; };
+  mfix('call_marines', { n: 'Rally', ja: 'ラリー', src: 'A', tx: '1/1 のガーズマン(サポート)を配備。' }, '動画3本とデッキリストで名称・効果を確認');
+  mfix('restore', { n: 'Nanite Conversion', ja: 'ナナイト変換', tx: '味方のユニットか指揮官1体を RESTORE 2。' }, '動画2本ではこの名前(Restore は開発者インタビューでの呼び名)');
+  mfix('redeem_contract', { src: 'A', tx: 'ランダムな傭兵を配備:Bodyguard(0/2 SCREEN)、Contractor(1/1 CLOAK)、Dealer(0/1、CREDIT カードのコスト-1)のいずれか。' }, '動画2本で確認');
+  mfix('scout_ahead', { src: 'B' }, 'ヴラクシアンのデッキのモジュール欄で確認(効果は未確認)');
+  mfix('compression_algorithm', { tg: { side: 'enemy', kind: 'unit' }, fx: [{ op: 'bounce', t: 'T' }], tx: '敵ユニット1体を手札に戻す。' }, '動画字幕で効果を確認');
+  mfix('arsenal', { fx: [{ op: 'equip', id: 'blaster' }], tx: 'ブラスターを装備する。' }, '動画字幕で「1/1 のブラスターを装備」');
+  mfix('mind_anchor', { fx: [{ op: 'buff', t: 'T', a: -1 }, { op: 'psy', n: 1 }], tx: '敵ユニット1体の攻撃力-1、サイキックチャージ+1。' }, '動画字幕(確度中)');
+  mfix('hit_and_run', { tg: { side: 'enemy', kind: 'unit' }, fx: [{ op: 'kw', t: 'T', k: 'VULNERABILITY', v: 1 }], tx: '敵ユニット1体は、ダメージを受けるたびに1点余分に受ける(VULNERABILITY 1)。' }, '動画字幕(確度中)');
+  mfix('warlords_call', { fx: [{ op: 'summon', id: 'fledgling', n: 1 }], tx: '1/1 MOBILITY のフレッジリングを配備(破壊されると 2/1 のレイダーが山札に入る)。' }, '動画字幕(確度中)');
+  M.push(
+    { id: 'praecordian_symbiote', n: 'Praecordian Symbiote', ja: 'プレコーディアン共生体', f: 'SHA', ct: 'supply', c: 1, fx: [{ op: 'dmg', t: 'ac', n: 3, calc: 1 }, { op: 'energy', n: 8 }], tx: '自分の指揮官は3ダメージを受け、エネルギー+8。', src: 'B', note: '動画字幕(確度中)。シャンティのデッキ7本で採用' },
+    { id: 'draw_essence', n: 'Draw Essence', ja: 'エッセンス抽出', f: 'ANN', ct: 'passive', start: [{ op: 'if', c: { hasKw: 'PACIFIST' }, then: [{ op: 'psy', n: 1 }] }], tx: 'ターン開始時、PACIFY(攻撃不能)の味方ユニットがいればサイキックチャージ+1。', src: 'B', note: '動画字幕(確度高)' },
+    { id: 'battle_hardened', n: 'Battle Hardened', ja: '歴戦の守り', f: 'CON', ct: 'energy', c: 5, tg: { side: 'ally', kind: 'unit' }, fx: [{ op: 'kw', t: 'T', k: 'SOAK', v: 1 }], tx: '味方ユニット1体に SOAK 1 を与える。', src: 'B', note: '動画字幕(確度高、コストは再構成)' }
+  );
 
   // カード属性(読みやすさのため)
   const RAR = { C: 'コンスクリプト', E: 'エリート', H: 'ヒロイック', P: 'パラゴン' };

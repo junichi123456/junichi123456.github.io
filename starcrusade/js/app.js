@@ -94,10 +94,10 @@
 
   // ---------- デッキ ----------
   function starterDeck(f) {
-    const fac = D.cards.filter(c => c.f === f && !c.token && c.r !== 'P').sort((a, b) => a.c - b.c);
+    const fac = D.cards.filter(c => c.f === f && !c.token && !c.retired && c.r !== 'P').sort((a, b) => a.c - b.c);
     const cards = [];
     for (const c of fac) { if (c.c >= 8) continue; cards.push(c.id, c.id); if (cards.length >= 20) break; }
-    const neu = D.cards.filter(c => c.f === 'NEU' && !c.token && c.r === 'C' && c.c <= 4).sort((a, b) => a.c - b.c);
+    const neu = D.cards.filter(c => c.f === 'NEU' && !c.token && !c.retired && c.r === 'C' && c.c <= 4).sort((a, b) => a.c - b.c);
     for (const c of neu) { if (cards.length >= 26) break; cards.push(c.id); if (cards.length < 26) cards.push(c.id); }
     return { id: 'starter_' + f, name: `${D.factions[f].ja} スターター`, faction: f, cards: cards.slice(0, 26), modules: [], starter: true };
   }
@@ -245,6 +245,7 @@
 
   function renderGame() {
     const s = game;
+    if (s.phase === 'mulligan') return renderMulligan();
     if (s.mode === 'hot' && s.winner === null && s.active !== ui.viewer) { ui.cover = true; ui.viewer = s.active; }
     const me = ui.viewer, op = 1 - me;
     const P = s.players[me], O = s.players[op];
@@ -285,6 +286,44 @@
     playFx();
     if (s.winner !== null) return finishGame();
     if (!ui.cover && s.players[s.active].ai) scheduleAI();
+  }
+
+  function renderMulligan() {
+    const s = game;
+    const p = s.mode === 'ai' ? 0 : s.mull.indexOf(false);
+    const pl = s.players[p];
+    if (s.mode === 'hot' && ui.mullFor !== p) {
+      ui.mullFor = p; ui.mullSel = [];
+      app.innerHTML = `<div class="game"><div class="cover"><div class="logo" style="font-size:1.6rem">${esc(pl.name)} の引き直し</div><p class="muted">相手に画面が見えないようにしてからタップしてください。</p><button class="btn pri" id="mstart">はじめる</button></div></div>`;
+      document.getElementById('mstart').onclick = () => { ui.mullReady = p; renderMulligan(); };
+      return;
+    }
+    if (s.mode === 'hot' && ui.mullReady !== p) return;
+    ui.mullSel = ui.mullSel || [];
+    const first = s.first === p;
+    const cards = pl.hand.map(h => {
+      const c = SC.card(h.id), on = ui.mullSel.includes(h.uid), fixed = h.id === 'supply_crate';
+      return `<button class="hcard ${on ? 'sel' : ''}" style="--fc:${fcol(c.f)};${on ? 'opacity:.55' : ''}" data-mh="${h.uid}" ${fixed ? 'disabled' : ''}>
+        <span class="cost">${c.c}</span><span class="hn">${esc(c.ja)}</span><span class="ht">${esc(c.tx)}</span><span class="hs">${c.t === 'U' ? `<span class="atk">${c.a}</span><span class="hp">${c.h}</span>` : '<span class="muted tiny">' + D.types[c.t] + '</span>'}</span>${on ? '<span class="zz">↺</span>' : ''}</button>`;
+    }).join('');
+    app.innerHTML = `<div class="game"><div class="view" style="padding-top:1rem">
+      <h2>引き直し(マリガン)</h2>
+      <p class="small">${esc(pl.name)} は<b>${first ? '先攻' : '後攻'}</b>です。戻したいカードをタップして選び、「決定」を押してください。選んだカードは山札に戻り、同じ枚数を引き直します。${first ? '' : '後攻はイニシアチブ(サプライ+1)を持っています。'}</p>
+      <p class="small muted">迷ったら、序盤に出せないコスト5以上のカードを戻すのが基本です。</p>
+      <div class="hand" style="flex-wrap:wrap;min-height:auto;background:none">${cards}</div>
+      <div class="row" style="margin-top:1rem"><button class="btn pri grow" id="mdone">決定(${ui.mullSel.length}枚を引き直す)</button><button class="btn" id="mnone">このまま始める</button></div></div></div>`;
+    app.querySelectorAll('[data-mh]').forEach(b => b.onclick = () => {
+      const u = +b.dataset.mh; ui.mullSel = ui.mullSel.includes(u) ? ui.mullSel.filter(x => x !== u) : ui.mullSel.concat([u]); renderMulligan();
+    });
+    const done = (uids) => {
+      SC.act(game, { type: 'mulligan', p, uids });
+      ui.mullSel = []; ui.mullFor = null; ui.mullReady = null;
+      autosave();
+      if (game.phase !== 'mulligan') { resetUI(); if (game.mode === 'ai' && game.active === 0) banner('あなたのターン'); }
+      renderGame();
+    };
+    document.getElementById('mdone').onclick = () => done(ui.mullSel);
+    document.getElementById('mnone').onclick = () => done([]);
   }
 
   function hintText(s) {
@@ -606,12 +645,12 @@
       document.getElementById('ff').onchange = e => { st.f = e.target.value; viewCards('modules'); };
       return;
     }
-    const list = D.cards.filter(c => (!st.f || c.f === st.f) && (!st.t || c.t === st.t) && (!st.s || c.src === st.s) && (!st.r || c.r === st.r) &&
+    const list = D.cards.filter(c => !c.retired && (!st.f || c.f === st.f) && (!st.t || c.t === st.t) && (!st.s || c.src === st.s) && (!st.r || c.r === st.r) &&
       (st.c === '' || (st.c === '7' ? c.c >= 7 : c.c === +st.c)) && (!st.q || (c.ja + c.n + c.tx + (c.en || '')).toLowerCase().includes(st.q.toLowerCase())))
       .sort((a, b) => FKEYS.concat(['NEU']).indexOf(a.f) - FKEYS.concat(['NEU']).indexOf(b.f) || a.c - b.c);
-    const cnt = { A: 0, B: 0, C: 0, D: 0 }; D.cards.forEach(c => cnt[c.src]++);
+    const cnt = { A: 0, B: 0, C: 0, D: 0 }; const live = D.cards.filter(c => !c.retired); live.forEach(c => cnt[c.src]++);
     app.innerHTML = topbar('カード図鑑') + `<div class="view">${tabs}
-      <div class="small muted">全${D.cards.length}枚(うち生成カード${D.cards.filter(c => c.token).length}枚)・ ${['A', 'B', 'C', 'D'].map(k => `${srcChip(k)} ${cnt[k]}`).join(' ')}</div>
+      <div class="small muted">全${live.length}枚(うち生成カード${live.filter(c => c.token).length}枚)・ ${['A', 'B', 'C', 'D'].map(k => `${srcChip(k)} ${cnt[k]}`).join(' ')}</div>
       <div class="filters">
         <select id="ff"><option value="">全勢力</option>${FKEYS.concat(['NEU']).map(f => `<option value="${f}" ${st.f === f ? 'selected' : ''}>${D.factions[f].ja}</option>`).join('')}</select>
         <select id="ft"><option value="">全種別</option>${Object.keys(D.types).map(k => `<option value="${k}" ${st.t === k ? 'selected' : ''}>${D.types[k]}</option>`).join('')}</select>
@@ -645,6 +684,8 @@
         <li><b>一部確認</b>:パッチノートのバランス変更(例「体力6→5」)などで一部の数値や文面だけ分かっているもの。残りは同勢力の傾向から再構成。</li>
         <li><b>名称のみ</b>:デッキリストや議論スレッドで名前と勢力の文脈だけ分かるもの。効果はキーワード体系に沿って遊べるよう設計。</li>
         <li><b>補完</b>:資料で一切確認できない仮称カード。ヴラクシアンの枚数不足を補うため3枚だけ追加。</li></ul>
+        <h3>YouTube 調査(v2)</h3>
+        <p>2026年10月に YouTube を追加調査しました。動画説明欄のデッキリスト34本からカード名と勢力を、解説付き動画13本の自動字幕から効果を照合しています。その結果、勢力の誤り42枚と効果の誤り十数枚を修正し、効果の分かったカード約30枚を追加しました。指揮官能力の正式名(Rally、Nanite Conversion)、Redeem Contract の傭兵名、後攻の「イニシアチブ」、マリガンも反映しています。字幕は自動生成のため、固有名詞の聞き取りには誤りが残る可能性があります。詳細はリポジトリの YOUTUBE_RESEARCH.md にあります。</p>
         <h3>完全版に近づけるには</h3>
         <p>ファン DB「starcrusadeops.com」(2017年5月公開)の Wayback Machine アーカイブ、Android 版 APK(v1.3.12)内のデータ、YouTube のプレイ動画(カード画面の目視)が残された一次資料です。今回の作成環境からはアーカイブと Steam に接続できなかったため、提供された調査資料 v0.9 と検索結果の抜粋を基にしています。</p>
         <h3>主な出典</h3><ul class="small">${G.sources.map(([t, u]) => `<li><a href="${u}" target="_blank" rel="noopener">${esc(t)}</a></li>`).join('')}</ul></div>`;
