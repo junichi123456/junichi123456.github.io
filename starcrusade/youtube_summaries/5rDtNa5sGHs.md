@@ -1,0 +1,81 @@
+# Video 5rDtNa5sGHs - Faction Introduction (overview of all six factions, by "Jello", video 2 of 3)
+Language: en (auto captions, names mangled). Note: tx file holds only a stub; full text was not persisted verbatim.
+
+## Rules / mechanics
+- Six factions: Anunaki (ANN), Consortium (CON), Terrans (TER), Hierarchy (HIE), Shanty/"Shanti" (SHA), Hajj-agog/"Had year" (HAJ).
+- "Hero power"/commander has a base power plus a secondary power (a module; Consortium's secondary is gained by levelling to 15 per speaker). Energy is used for hero powers and "energize" card upgrades.
+- Pacify: pacified unit cannot attack. Zero-attack units can't attack. Armored: takes only 1 damage at a time from characters (spells can still kill). Critical = deadly (destroys what it hits unless Shield/Soak). Mobility = can attack immediately. Assault = attack twice a turn. Taunt, Stealth/Cloak, Shield, Soak, Fury (triggers when damaged), Swarm (+1 attack per other friendly unit), Firepower (spell damage; shown next to life total), Credit (overload: locks supply next turn; unlocked if you kill something), Psychic Charge (armor-like), Mutate, Restore (heal).
+
+## Factions
+- Anunaki: psychic/control. Hero power Mind Anchor: -1 attack to enemy creature, or target self to gain Psychic Charge. Second power "Draw Essence": with two pacified creatures, gain psychic charge at start of turn. Theme: Pacify, mind control, psychic-charge payoffs, low attack/high health, damage reduction.
+- Consortium: merchant/aggro, Mercenary type, Credit. Hero power Redeem Contract creates Mercenary tokens. Tokens: 0/1 Dealer (contract cards cost 1 less), 1/1 Contractor (stealth/cloak), 0/2 Bodyguard (taunt). Hit and Run Tactics: 1 mana, enemy unit takes 1 extra damage whenever hit (levelling-15 module). Minor: resource ramp (Franchise), Swarm.
+- Terrans: big bulky creatures, Firepower, AoE, armored. Hero power Rally: 1/1 Guardsman (type Support). Secondary Combined Arms: +1 mana, Guardsman with +1 firepower until end of turn. Lots of AoE.
+- Hierarchy: healing/HP, cyborgs. Hero power Nanite Conversion (heal). Secondary Deep Weave(?): increase max HP.
+- Shanty: mutation, self-damage, aberrations. Hero power Release Mutagen: mutate a unit or your hero (lose 1 HP, gain 2 attack). Secondary Symbiote: 1 mana, commander takes 3 damage, gain 8 energy (as stated).
+- Hajj-agog: brute force, self-damaging creatures, weapons, Fury. Hero power Thrash: pinging hero power. Secondary Warlord's Call: makes 1/1 Fledgling (mobility; when it dies shuffles a 2/1 Raider into deck, 1 mana, mobility).
+
+## Cards / modules
+- Mind Anchor (module) | ANN | - | -1 attack to enemy or psychic charge to self | high
+- Draw Essence (module) | ANN | - | with 2 pacified creatures, gain psychic charge start of turn | med
+- Psychic Rot | ANN | 1 mana | destroy anything with attack <= your psychic charge | med
+- Paranoia | ANN | 4 mana (spoken "for") | weaker mind control, take things at 3 HP or less | med
+- Unnamed big mind control (likely Dominate) | ANN | >10 mana, costs 1 less per psychic charge | low
+- Unnamed draw | ANN | draw twice as many cards with 5 psychic charge | low
+- Psychic Overload ("sounding overload") | ANN | board clear based on psychic charge | med
+- Emissary(?) | ANN | reduces things to one | low
+- Ancient Hierophant | ANN | builds psychic charge based on creatures on board | med
+- Pacify | ANN | pacified unit can't attack | med
+- Redeem Contract (module) | CON | creates mercenary tokens | high
+- Dealer 0/1, Contractor 1/1, Bodyguard 0/2 | CON tokens | as above | med (stats spoken "01", "11", "02")
+- Contract Hit | CON | credit 1 | high-ish name, med
+- Veteran Advisor ("vet visor") | CON | all your mercenaries +1/+1 | med
+- Unnamed | CON | friendly mercenaries gain attack | low
+- Overextend (module) | CON? | enemy with more creatures gets a Subversive Mercenary dealing damage at end of turn if in hand | low
+- Eridani Guards | CON(spoken; list says TER) | hefty credit cost, gives 4(?) mercenaries immediately | low
+- Franchise | CON | ramp spell | med
+- Hit and Run Tactics (module) | CON | 1 mana, enemy unit takes 1 extra damage when hit | high
+- Unnamed 1-drop | CON | gains attack when you play a card with credit; powerful 1 drop | low
+- Rally (hero power) | TER | 1/1 Guardsman, type Support | high
+- Combined Arms (module) | TER | +1 mana, Guardsman +1 firepower until end of turn | high
+- Recon Element | TER | one-drop, gives firepower | med
+- Command Promotion | TER | buff based on firepower | low
+- Unnamed 0-cost ping | TER | stronger with firepower | low
+- Mammoth Tank | TER | lots of HP, protects tokens | med
+- Raptor Tank | TER | Armored | high
+- Pulse Barrage | TER | with 3+ units, deals 2 damage (AoE, plus firepower) | high
+- Precision Strike | TER | removal; energize makes it AoE | high
+- Saturate Fire | TER | very cheap removal, AoE | med
+- Nanite Conversion (module) | HIE | heal hero power | med
+- Deep Weave(?) (module) | HIE | increase maximum HP | low
+- Assembly Complex(?) / Blessing (Blessing of Synthus?) | HIE | draw cards when unit restored | low
+- Shield Array | HIE | damage something, give it shield/heal | low
+- AI Integrator | HIE | playing a cyborg gives it +1/+1 | med
+- Augmented Sentry | HIE | triggers whenever a module is activated (incl. opponent's) | med
+- Overseer | HIE | self-heals, high HP for cost | low
+- Interphasic Weaponry | HIE | 2 mana(?), gains attack equal to HP | med
+- Energy Link | HIE | buff | low
+- Disintegrate | HIE | removal, restores HP of unit to yourself | med
+- Release Mutagen (module) | SHA | mutate unit/hero, lose 1 HP gain 2 attack | high
+- Infected Militia | SHA | 1 drop, 1/0(sic); mutate: destroy it and deploy 2 0/3 Brood X | med
+- 0/3 Brood X | SHA | mutate becomes 3/4 | low
+- Minerva Spores | SHA | mutate and draw a card, 1 mana | med
+- Bone Needle Cannon (Bioneedle Cannon) | SHA | weapon; when destroyed mutates all your units | med
+- Broodmother | SHA | makes tokens | low
+- Unnamed | SHA | blocks damage from every source (soak) | low
+- Regenerate | SHA | restores full HP if mutated, loses stats | low
+- Spine Spitters | SHA | 3 damage split among enemy units (not hero); 5 with an aberration | high
+- Terminal Mutation | SHA | put on enemy; mutating it destroys it | med
+- Unnamed (Dormant Pathogen?) | SHA | on enemy unit; each mutate deals 2 damage to owner | low
+- Symbiote (module) | SHA | 1 mana, commander takes 3 damage, gain 8 energy | high
+- Unnamed | SHA | hero +1 attack and critical | low
+- Thrash (module) | HAJ | pinging hero power | high
+- Warlord's Call (module) | HAJ | 1/1 Fledgling, mobility; death shuffles 2/1 Raider (1 mana, mobility) | high
+- Bloodsworn Berserker | HAJ | whenever friendly unit takes damage, 1 damage to random enemy | high
+- Unnamed buff | HAJ | reduces a creature's HP to give massive attack | low
+- Unnamed "on slope" | HAJ | for each creature destroyed this turn, put 1/1 hound; energize makes 2/2 | low
+- Recover Losses | HAJ | draw per creature; 1 damage to friendly units (triggers fury) | med
+- Bloodthirsty Tyrant | HAJ | Fury: when damaged, friendly units gain mobility | low
+- Hellfire Cannon | HAJ | 3/2 weapon; grows when commander kills anything | high
+- Rampage | HAJ | commander gains assault; energize +1 attack | med
+- Superheat | HAJ | destroy target unit and your weapon | med
+- Refurbish Weapon | HAJ | +2 attack, +1 charge on weapon | high
