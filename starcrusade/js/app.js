@@ -409,7 +409,7 @@
       }
       return doAct({ type: 'end' });
     }
-    if (t.closest('#notgt')) { const m = ui.mode; ui.mode = null; ui.targets = []; return doAct({ type: 'play', uid: m.uid, T: null, en: m.en }); }
+    if (t.closest('#notgt')) { const m = ui.mode; ui.mode = null; ui.targets = []; if (m.kind === 'module') return doAct({ type: 'module', i: m.i, T: null }); return doAct({ type: 'play', uid: m.uid, T: null, en: m.en }); }
     const pb = t.closest('[data-play]');
     if (pb) return startPlay(+pb.dataset.play, pb.dataset.en === '' ? null : +pb.dataset.en);
     const um = t.closest('[data-usemod]');
@@ -456,7 +456,7 @@
     const s = game, p = ui.viewer;
     const d = SC.MODS[s.players[p].modules[i].id];
     ui.sheet = null;
-    if (d.tg) { ui.mode = { kind: 'module', i }; ui.targets = SC.validTargets(s, p, d.tg, 'module'); renderGame(); return; }
+    if (d.tg) { const vt = SC.validTargets(s, p, d.tg, 'module'); if (vt.length) { ui.mode = { kind: 'module', i, opt: !!d.tg.opt }; ui.targets = vt; renderGame(); return; } }
     doAct({ type: 'module', i });
   }
 
@@ -686,6 +686,8 @@
         <li><b>補完</b>:資料で一切確認できない仮称カード。ヴラクシアンの枚数不足を補うため3枚だけ追加。</li></ul>
         <h3>YouTube 調査(v2)</h3>
         <p>2026年10月に YouTube を追加調査しました。動画説明欄のデッキリスト34本からカード名と勢力を、解説付き動画13本の自動字幕から効果を照合しています。その結果、勢力の誤り42枚と効果の誤り十数枚を修正し、効果の分かったカード約30枚を追加しました。指揮官能力の正式名(Rally、Nanite Conversion)、Redeem Contract の傭兵名、後攻の「イニシアチブ」、マリガンも反映しています。字幕は自動生成のため、固有名詞の聞き取りには誤りが残る可能性があります。詳細はリポジトリの YOUTUBE_RESEARCH.md にあります。</p>
+        <h3>追加調査(v3)</h3>
+        <p>英語・ロシア語の解説動画の字幕と、ユーザーから提供されたゲーム画面のスクリーンショットで、Viromorphic Spores・Infect・Adrenal Transformation・Carbonic Protector などの文面を確認して修正しました。アヌンナキの指揮官能力は Mind Anchor(二択)に変わり、英語名の分からないロシア語版のカード3枚は仮称で収録しています。</p>
         <h3>完全版に近づけるには</h3>
         <p>ファン DB「starcrusadeops.com」(2017年5月公開)の Wayback Machine アーカイブ、Android 版 APK(v1.3.12)内のデータ、YouTube のプレイ動画(カード画面の目視)が残された一次資料です。今回の作成環境からはアーカイブと Steam に接続できなかったため、提供された調査資料 v0.9 と検索結果の抜粋を基にしています。</p>
         <h3>主な出典</h3><ul class="small">${G.sources.map(([t, u]) => `<li><a href="${u}" target="_blank" rel="noopener">${esc(t)}</a></li>`).join('')}</ul></div>`;

@@ -123,6 +123,7 @@
     const pl = s.players[p];
     if (c.kw && c.kw.CREDIT) { for (const u of pl.board) { const au = auraOf(u); if (au && au.creditRed) v -= au.creditRed; } }
     if (c.t === 'T') v -= pl.tacticDiscount;
+    if (c.t === 'T' && pl.taxUntil !== undefined && pl.taxUntil >= s.turn) v += pl.tax || 0;
     v -= pl.nextDiscount;
     if (c.psyDiscount) v -= pl.psy;
     return Math.max(0, v);
@@ -206,6 +207,8 @@
     if (c.rev !== undefined && op.hand.filter(h => h.rev).length < c.rev) return false;
     if (c.hasGroup && !me.board.some(u => u.uid !== ctx.self && groupsOf(u).includes(c.hasGroup))) return false;
     if (c.onlyGroup && (!me.board.length || !me.board.every(u => groupsOf(u).includes(c.onlyGroup)))) return false;
+    if (c.hasT && (ctx.T === undefined || ctx.T === null)) return false;
+    if (c.enemyMore && !(op.board.length > me.board.length)) return false;
     if (c.allies !== undefined && me.board.length < c.allies) return false;
     if (c.hasKw && !me.board.some(u => has(u, c.hasKw))) return false;
     if (c.tDead) { const t = ctx.T !== undefined && ctx.T !== null ? getChar(s, ctx.T) : null; if (t && !t.cmd && t.o.hp > 0 && !t.o.dead) return false; }
@@ -303,7 +306,7 @@
       if (s.q.length) {
         const e = s.q.shift();
         if (e.k === 'fury') { const f = findUnit(s, e.uid); if (f && f.u.hp > 0 && !f.u.dead) for (const fl of trigs(f.u, 'fury')) run(s, { p: f.p, self: f.u.uid, srcKind: 'ability' }, fl); }
-        else if (e.k === 'run') run(s, { p: e.p, self: e.self, srcKind: 'ability', mem: e.mem }, e.fx);
+        else if (e.k === 'run') run(s, { p: e.p, self: e.self, srcKind: 'ability', mem: e.mem, memAtk: e.memAtk }, e.fx);
         continue;
       }
       const dead = [];
@@ -319,7 +322,7 @@
         s.players[killer].st.kills++;
         const rv = trigs(u, 'revenge');
         if (rv.length) {
-          for (const f of rv) s.q.push({ k: 'run', p: u.p, self: u.uid, fx: f, mem: u.id });
+          for (const f of rv) s.q.push({ k: 'run', p: u.p, self: u.uid, fx: f, mem: u.id, memAtk: u.atk });
           for (const pl2 of s.players) for (const w of pl2.board) for (const f of trigs(w, 'revengeAny')) s.q.push({ k: 'run', p: pl2.idx, self: w.uid, fx: f });
         }
       }
@@ -471,8 +474,24 @@
         log(s, `${ja(c.o.id)} は山札に戻された。`);
       }); break;
       case 'shuffleIn': me.deck.splice(rnd(me.deck.length + 1), 0, e.id); log(s, `${ja(e.id)} が山札に加わった。`); break;
+      case 'copyLeft': forT(s, ctx, e.t, (c) => {
+        if (c.cmd) return; const b = s.players[c.p].board; const left = b[b.indexOf(c.o) - 1]; if (!left) return;
+        copyTextInto(left, c.o); log(s, `${ja(c.o.id)} は左隣の ${ja(left.id)} の効果を得た。`);
+      }); break;
+      case 'copyText': forT(s, ctx, e.t, (c) => { if (c.cmd) return; const f = findUnit(s, ctx.self); if (f && f.u !== c.o) { copyTextInto(c.o, f.u); log(s, `${ja(f.u.id)} は ${ja(c.o.id)} の効果をコピーした。`); } }); break;
+      case 'copyFromMem': { const f = findUnit(s, ctx.self); if (f && ctx.mem) { copyTextInto({ id: ctx.mem, kw: Object.assign({}, card(ctx.mem).kw || {}), xt: [] }, f.u); log(s, `${ja(f.u.id)} は ${ja(ctx.mem)} の能力をコピーした。`); } break; }
+      case 'redeployWeaker': if (ctx.mem && ctx.memAtk > 1) { summon(s, ctx.p, ctx.mem, { atk: ctx.memAtk - 1 }); log(s, `${ja(ctx.mem)} が攻撃力${ctx.memAtk - 1}で再配備された。`); } break;
+      case 'tax': opp.tax = e.n; opp.taxUntil = s.turn + 1; break;
+      case 'drawOpp': draw(s, 1 - ctx.p, e.n); break;
+      case 'giveOpp': for (let i = 0; i < (e.n || 1); i++) addHand(s, 1 - ctx.p, e.id); log(s, `${opp.name} の手札に ${ja(e.id)} が入った。`); break;
+      case 'healHpFromCost': forT(s, ctx, e.t, (c) => { if (!c.cmd) { const n = card(c.o.id).c; c.o.maxHp += n; c.o.hp += n; } }); break;
       default: console.warn('unknown op', e.op);
     }
+  }
+  function copyTextInto(src, dst) {
+    for (const k in (src.kw || {})) if (k !== 'CREDIT') dst.kw[k] = Math.max(dst.kw[k] || 0, src.kw[k]);
+    if (!src.nulled) { const on = card(src.id).on || {}; for (const t in on) if (t !== 'play') dst.xt.push({ trig: t, fx: on[t] }); }
+    for (const x of (src.xt || [])) if (x.exp === undefined) dst.xt.push({ trig: x.trig, fx: x.fx });
   }
   function firepower(s, p) { let f = 0; for (const u of s.players[p].board) f += has(u, 'FIREPOWER'); return f; }
 
@@ -530,6 +549,7 @@
     const p = s.active, pl = s.players[p];
     for (const u of pl.board.slice()) for (const f of trigs(u, 'endTurn')) { if (findUnit(s, u.uid)) run(s, { p, self: u.uid, srcKind: 'ability' }, f); }
     for (const m of pl.modules) { const d = MODS[m.id]; if (d.end) run(s, { p, srcKind: 'module' }, d.end); }
+    for (const h of pl.hand.slice()) { const hc = card(h.id); if (hc.handEnd) run(s, { p, srcKind: 'ability' }, hc.handEnd); }
     resolve(s);
     if (s.winner !== null) return;
     // 一時効果の失効
@@ -568,7 +588,7 @@
     const d = MODS[m.id]; if (d.ct === 'passive' || m.used) return false;
     if (d.ct === 'supply' && pl.supply < d.c) return false;
     if (d.ct === 'energy' && pl.energy < d.c) return false;
-    if (d.tg && !validTargets(s, p, d.tg, 'module').length) return false;
+    if (d.tg && !d.tg.opt && !validTargets(s, p, d.tg, 'module').length) return false;
     if (d.id === 'rend_mod' && !s.players[1 - p].board.length) return false;
     return true;
   }
@@ -638,6 +658,11 @@
         if (en && !en.pre) run(s, ctx, en.fx);
       }
     }
+    // Compensation Protocol:テキストのない味方ユニットにタクティクスを使うと+1/+1
+    if (c.t === 'T' && T !== undefined && T !== null && pl.modules.some(m => m.id === 'compensation_protocol')) {
+      const t = getChar(s, T);
+      if (t && !t.cmd && t.p === p) { const tc = card(t.o.id); if (!tc.on && !tc.aura && !tc.energize && !Object.keys(tc.kw || {}).length) { t.o.atk += 1; t.o.maxHp += 1; t.o.hp += 1; log(s, `Compensation Protocol:${tc.ja} に+1/+1。`); } }
+    }
     resolve(s);
     return true;
   }
@@ -646,13 +671,14 @@
     const p = s.active, pl = s.players[p];
     if (!canUseModule(s, p, i)) return false;
     const m = pl.modules[i], d = MODS[m.id];
-    if (d.tg) { const vt = validTargets(s, p, d.tg, 'module'); if (!vt.includes(T)) return false; }
+    if (d.tg && !(d.tg.opt && (T === undefined || T === null))) { const vt = validTargets(s, p, d.tg, 'module'); if (!vt.includes(T)) return false; }
     if (d.ct === 'supply') pl.supply -= d.c; else pl.energy -= d.c;
     m.used = true;
     log(s, `${pl.name} はモジュール「${d.ja}」を使用。`);
     fx(s, { k: 'module', p, id: m.id });
     run(s, { p, T, srcKind: 'module', modCount: m.count }, d.fx);
     m.count++;
+    for (const u of pl.board.slice()) for (const f of trigs(u, 'moduleUsed')) s.q.push({ k: 'run', p, self: u.uid, fx: f });
     resolve(s);
     return true;
   }
@@ -667,7 +693,8 @@
     if (!a.cmd) removeKw(a.o, 'CLOAK');
     log(s, `${charName(s, aRef)} が ${charName(s, tRef)} を攻撃。`);
     fx(s, { ref: aRef, k: 'attack', to: tRef });
-    if (!a.cmd) for (const f of trigs(a.o, 'attack')) run(s, { p, self: a.o.uid, srcKind: 'ability' }, f);
+    if (!a.cmd) for (const f of trigs(a.o, 'attack')) run(s, { p, self: a.o.uid, T: tRef, srcKind: 'ability' }, f);
+    if (!t.cmd) { cypherCheck(s, t.p, 'allyUnitAttacked', tRef); resolve(s); if (!getChar(s, aRef) || !getChar(s, tRef) || s.winner !== null) return true; }
     if (t.cmd && !a.cmd) { cypherCheck(s, t.p, 'enemyAttackCmd', aRef); resolve(s); if (!getChar(s, aRef) || a.o.hp <= 0 || a.o.dead || s.winner !== null) return true; }
     const aAtk = atkOf(s, aRef);
     const tAtk = t.cmd ? 0 : atkOf(s, tRef);
@@ -719,7 +746,7 @@
     pl.modules.forEach((m, i) => {
       if (!canUseModule(s, p, i)) return;
       const d = MODS[m.id];
-      if (d.tg) for (const T of validTargets(s, p, d.tg, 'module')) out.push({ type: 'module', i, T });
+      if (d.tg) { for (const T of validTargets(s, p, d.tg, 'module')) out.push({ type: 'module', i, T }); if (d.tg.opt) out.push({ type: 'module', i }); }
       else out.push({ type: 'module', i });
     });
     const attackers = pl.board.map(u => u.uid).concat(['c' + p]);
