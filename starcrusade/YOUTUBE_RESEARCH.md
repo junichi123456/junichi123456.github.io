@@ -638,3 +638,41 @@ YouTube 検索で見つかったシャンティ関連の動画8本で字幕を�
 - モジュール:Praecordian Symbiote、Viromorphic Spores、Empty
 - 勢力の判定に効く新情報:**The Restless**(再現版はアヌンナキ)がシャンティのデッキに入っており、中立と確定します。Soul Devourer・Preacher・Horror of the Shade・Archon Carrier・Land Crawler・Titan などの中立判定も、これで裏付けが増えました。
 - その他の採用カード:Field Medic、Shock Trooper、Adrenal Transformation、Omega Squadron、Sentry Drones、Accelerated Bloom、The Spatial Anomaly、Brigands of Arcturis、Pirate Baron Bang、Harvest、Avatar of Woe、Etho the Absorber、Bio Monger、Bombardiers、The Manowar ほか。
+
+## 第5回:ユーザー提供のスクリーンショット(2026-10-02)
+
+ゲーム画面のスクリーンショット15枚(英語版1本+ロシア語版の大会配信「StarCrusadeLeague」)から、カードの文面を直接読み取りました。**画面上の文面なので、字幕より信頼度が高い**資料です。ロシア語版の文面は日本語に訳しています。コストは画面に写っていたものだけを記録しています。
+
+### カード
+
+| カード(画面表記) | 種別/グループ | コスト | 攻/体 | 文面(画面のまま/訳) | 再現版との関係 |
+|---|---|---|---|---|---|
+| Infestation | タクティクス | 2 | — | CYPHER: When opponent DEPLOYS a unit, it gains "REVENGE: DEPLOY two 2/1 (名称判読不可) under opponent's control" | 未収録(シャンティのデッキリストに登場) |
+| Saboteur / Саботажник | ユニット | 3 | 3/3 | ACTIVATE: DISABLE target enemy unit | 未収録 |
+| Defensive Bunker | ユニット | 2 | 1/4 | SCREEN | 未収録 |
+| Void Probe | ユニット/Support | 3 | 3/2 | ACTIVATE: NULLIFY target unit | 効果は一致。数値が違う(再現版は2コスト 1/2) |
+| Battle Walker | ユニット | 3 | 3/3 | At the end of your turn, deal 1 damage to a random enemy | 未収録 |
+| Combat Engineer / Боевой инженер | ユニット/Support | 1 | 1/2 | ターン終了時、ランダムな味方ユニットの最大体力+1 | 効果は一致。数値が違う(再現版は3コスト 2/3) |
+| Adrenal Transformation / Адреналиновая трансформация | タクティクス | 不明 | — | CYPHER:自分のユニットが攻撃された時、そのユニットは+3/+3を得る | **効果が違う**(再現版は即時の+2/+2) |
+| Terminal Mutation / Смертельная мутация | タクティクス | 不明 | — | 対象は「MUTATE:このユニットを破壊する」を得る | 付与までは一致。再現版の「すぐ変異させる」処理は原作にない |
+| Carbonic Protector(ロシア語「Карбонический страж」) | ユニット/Massive | 不明 | 4/6 | SOAK 2。SCREEN | **数値と効果が違う**(再現版は 1/4 SCREEN) |
+| Brigands of Arcturis(ロシア語「Арктурианские налётчики」) | ユニット | 不明 | 3/1 | MOBILITY。REVENGE:このユニットの基本攻撃力が1より大きければ、基本攻撃力を1下げて再配備 | 未収録 |
+| Vraxxian Frigate(ロシア語「Враксианский фрегат」) | ユニット | 不明 | 3/5 | ARC ATTACK | 未収録 |
+| Отродье(英名不明、Abomination の可能性) | ユニット/Aberration | 不明 | 4/7 | DEVOUR:破壊したユニットの能力を COPY する | 未収録 |
+| Шагающие броненосцы(英名不明、「歩行装甲」) | ユニット | 不明 | 2/5 | MOBILITY。ARMORED | 未収録 |
+| Смертельный взгляд(英名不明、「死の凝視」) | ユニット | 不明 | 2/4 | 攻撃する前に、選んだユニットを NULLIFY | 未収録 |
+
+### モジュール
+
+| モジュール | コスト(画面) | 文面 | 再現版との関係 |
+|---|---|---|---|
+| Infect | エネルギー7 | Give target friendly unit "REVENGE: DEPLOY 0/3 Brood Eggs" | **効果が違う**(再現版は敵に脆弱+2ダメージ)。パッチ1.2.2では7→9に変更されたので、この画面はそれ以前の版 |
+| Praecordian Symbiote(ロシア語「Артериальный симбиот」) | 1サプライ | 自分の指揮官は3ダメージを受ける。エネルギー8を得る | **完全に一致** |
+| Viromorphic Spores(ロシア語「Вироморфические споры」) | エネルギー12 | 選んだユニットは、左隣のカードの効果を得る | **効果が違う**(再現版は味方全体を変異)。コスト12は2017/5/22のパッチ(12→14)以前の値と一致 |
+| Mad Minute(テランの対戦相手のモジュール欄) | エネルギー11 | (画面ではアイコンのみ) | コスト11はパッチ後の値と一致 |
+
+### 画面から分かったルール
+
+- シャンティ指揮官のモジュール欄は「Release Mutagen(2サプライ)・Praecordian Symbiote(1サプライ)・Viromorphic Spores(エネルギー12)」の並びでした。モジュールにはサプライで使うものとエネルギーで使うものが混在します(再現版と同じ方式)。
+- Terminal Mutation を**敵**ユニットに使っている場面がありました。シャンティの Release Mutagen は敵ユニットも変異させられる可能性が高いです(再現版は味方のみ)。
+- 指揮官の初期体力は40(40枚デッキ)で、デッキ枚数=体力のルールと一致しました。
