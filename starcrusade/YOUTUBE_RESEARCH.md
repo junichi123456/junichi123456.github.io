@@ -613,3 +613,28 @@ Accelerated Bloom(シャンティ)、Anti-personnel Turret(中立)、Archeus Cru
 | MOBILITY | 出したターンに攻撃できる | 高 | 再現版と一致 |
 
 第3回は新しいカード効果がほとんど得られませんでした。英語のパック開封動画は字幕がノイズで、クレジットだけ消費しています。
+
+## 第4回:シャンティ関連(2026-10-02)
+
+YouTube 検索で見つかったシャンティ関連の動画8本で字幕を試しました。
+
+| 動画 | 言語 | 結果 |
+|---|---|---|
+| [PrxIJaSIO5w](https://www.youtube.com/watch?v=PrxIJaSIO5w) ランク戦(Фай Родис) | ロシア語 | 字幕なし |
+| [vUzQNb2qbbA](https://www.youtube.com/watch?v=vUzQNb2qbbA) Shan'Ti Raid | 英語 | 字幕なし |
+| [c3fDSzfG_Ec](https://www.youtube.com/watch?v=c3fDSzfG_Ec) On joue Shan'ti | フランス語 | 字幕なし |
+| [rCsFAv-jJBo](https://www.youtube.com/watch?v=rCsFAv-jJBo) Shan-ti Mutation | 英語 | 字幕なし |
+| [w8PzFNbQESo](https://www.youtube.com/watch?v=w8PzFNbQESo) Ranked Shan ti | チェコ語 | 字幕なし |
+| [QhYEhuooz4w](https://www.youtube.com/watch?v=QhYEhuooz4w) Shan Ti | チェコ語 | 字幕なし |
+| [b7PXOiRubOA](https://www.youtube.com/watch?v=b7PXOiRubOA) Game of Shan Ti | 英語 | 字幕なし |
+| [Jf-_fVaKwjY](https://www.youtube.com/watch?v=Jf-_fVaKwjY) Terran vs Shan Ti | — | 字幕はあったがノイズ(5クレジット消費) |
+
+字幕から得られた情報はありませんでした。
+
+### 説明欄のデッキリスト(クレジット不要)
+
+[L7vsXCX6TFE](https://www.youtube.com/watch?v=L7vsXCX6TFE)(Imaginary Moth「Shan Ti - Viromorphic Spores 2.0」)の説明欄に、シャンティのデッキリストがありました。
+
+- モジュール:Praecordian Symbiote、Viromorphic Spores、Empty
+- 勢力の判定に効く新情報:**The Restless**(再現版はアヌンナキ)がシャンティのデッキに入っており、中立と確定します。Soul Devourer・Preacher・Horror of the Shade・Archon Carrier・Land Crawler・Titan などの中立判定も、これで裏付けが増えました。
+- その他の採用カード:Field Medic、Shock Trooper、Adrenal Transformation、Omega Squadron、Sentry Drones、Accelerated Bloom、The Spatial Anomaly、Brigands of Arcturis、Pirate Baron Bang、Harvest、Avatar of Woe、Etho the Absorber、Bio Monger、Bombardiers、The Manowar ほか。
