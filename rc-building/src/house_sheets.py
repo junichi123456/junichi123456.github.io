@@ -95,6 +95,29 @@ def stair_marks(h, sh, t, floor):
             sh.text("DN", t(xb - 120, y0 + d * 400), 1.8, "A-STRS", "MIDDLE_RIGHT")
 
 
+FLOWS = {
+    "1F": [("回遊①", [(7700, 3400), (3500, 3400), (3800, 7600), (7000, 6850), (9000, 6850), (9000, 3400), (7700, 3400)]),
+           ("回遊②", [(3000, 8800), (800, 10200), (800, 12000), (7600, 11950), (10350, 12200), (10350, 8600), (7000, 6900), (5000, 7300), (3000, 8800)]),
+           ("搬入", [(14200, -2600), (14200, 2600)])],
+    "2F": [("回遊③", [(9000, 7000), (3000, 7600), (1400, 5450), (9000, 5450), (9000, 7000)]),
+           ("回遊④", [(10350, 8600), (10350, 12200), (7600, 11950), (5000, 12500), (4900, 9500), (6600, 7400), (10350, 8600)])],
+}
+
+
+def flows(h, sh, t, floor):
+    S = sh.S
+    for name, pts in FLOWS.get(floor, []):
+        sh.pline(t.pts(pts), "A-FLOW")
+        for (a, b) in zip(pts, pts[1:]):
+            m = ((a[0] + b[0]) / 2, (a[1] + b[1]) / 2)
+            ang = math.atan2(b[1] - a[1], b[0] - a[0])
+            L = 350
+            for s_ in (2.6, -2.6):
+                sh.line(t(*m), t(m[0] - L * math.cos(ang + s_ / 4.5), m[1] - L * math.sin(ang + s_ / 4.5)), "A-FLOW")
+        p = pts[0]
+        sh.text(name, t(p[0] + 150, p[1] + 250), 1.7, "A-FLOW")
+
+
 def north_arrow_true(sh, p, r=7):
     sh.north_arrow(p, r)
 
@@ -271,6 +294,7 @@ def exterior_plan(h, number):
     sh.text("建物（壁式RC造 2階建て）", t(h.W / 2, h.D / 2), 2.0, "A-ROOM", "MIDDLE_CENTER")
     sh.text("Dotcon+ 透水舗装", t(cp[2] + 1500, cp[1] - 1500), 1.7, "A-TEXT", "MIDDLE_LEFT")
     sh.text("アプローチ（透水性舗装）", t(5800, -12000), 1.6, "A-TEXT", "MIDDLE_LEFT")
+    sh.text("車路 → ジム搬入デッキ", t(17200, -9000), 1.6, "A-TEXT", "MIDDLE_LEFT")
     # 貯留槽・浸透
     tk = h.tank
     sh.rect(*t(tk[0], tk[1]), *t(tk[2], tk[3]), "A-DRAIN")
@@ -357,26 +381,31 @@ def floor_plan(h, floor, number):
                 opening_tag(sh, t, op, offset=650)
     stair_marks(h, sh, t, floor)
     room_labels(h, sh, t, floor)
+    flows(h, sh, t, floor)
     if floor == "1F":
-        sh.text(f"玄関ポーチ・外部階段 {h.ext_stair['n']}段 蹴上{h.ext_stair['riser']:.0f}（FGL+{h.fgl}→1FL）", t(11200, -3000), 1.7, "A-TEXT", "MIDDLE_LEFT")
+        sh.text(f"玄関ポーチ・外部階段 {h.ext_stair['n']}段", t(6300, -2700), 1.6, "A-TEXT", "MIDDLE_RIGHT")
+        sh.text("搬入デッキ（1FL同高）", t(15900, -1800), 1.6, "A-TEXT", "MIDDLE_LEFT")
+        sh.text("← 車路（Dotcon+）からトラック横付け", t(15900, -2700), 1.5, "A-TEXT", "MIDDLE_LEFT")
     sh.north_arrow(sh.P(395, 268), 7)
     sh.view_title(names[floor], "1:100", (24, 22))
     sh.text(f"{floor[:-1]}FL = 設計GL+{fl:,}（TP+{tp(h, fl):.2f}）／天井高 CH={h.ch[floor]:,}", (24, 15), 2.4, "A-TEXT", paper=True)
     cy = side_panel(sh, 284, 282, [("h", "凡例")])
     cy = legend(sh, 285, cy - 1, [("A-CUT", "RC壁 t=250（耐力壁）", "hatch"), ("A-CUT-LGS", "外断熱100＋外装20", "ins"),
-                                    ("A-CUT-LGS", "乾式間仕切（LGS）t=100", "line"), ("A-GRID", "通り芯（壁芯）", "line")])
-    notes = [("h", "特記")]
+                                    ("A-CUT-LGS", "乾式間仕切（LGS）t=100", "line"), ("A-GRID", "通り芯（壁芯）", "line"),
+                                    ("A-FLOW", "動線（回遊・家事・搬入）", "line")])
+    notes = [("h", "計画の考え方（v3.1）")]
     if floor == "1F":
-        notes += [("t", "耐力壁: 外周＋X2・X3・Y2・Y3通り（2階と同じ位置）"),
-                  ("t", "窓: FIX（トリプルガラス・樹脂枠・UVカット）。採光=ガラス面積×補正係数3.0"),
-                  ("t", "排煙: LDK・居室A・居室B・ジムは機械排煙（令126条の3）"),
-                  ("t", "ジム: 浮き床（防振）、遮音ドア Ts-35"),
-                  ("t", "床下: 設備ピット（高基礎）。床下点検口は防水扉"),
-                  ("t", "機械室: 西系統・東系統（全熱交換・調湿・排煙機）")]
+        notes += [("t", "回遊①（家族）: 玄関ホール→LDK→キッチン→ホール→玄関。行き止まりのない一周動線"),
+                  ("t", "回遊②（家事）: キッチン→パントリー→ランドリー→洗面脱衣→廊下→ホール→キッチン"),
+                  ("t", "洗う→干す→しまう: ランドリー・室内干し → 隣のファミリークローゼット／階段2で2階ファミクロへ直行"),
+                  ("t", "ジム 45.7m²（従前の1.32倍）: 南面の両開き搬入扉 W1,800×H2,400 → 搬入デッキ（1FL同高）→ 車路。トラック荷台から段差なしで搬入"),
+                  ("t", "防音: ジムは浮き床＋遮音ドア Ts-35、機械室・WIC を緩衝帯として居室Aと分離。真上は2階シアター（騒音ゾーンを上下に集約）"),
+                  ("t", "排煙: LDK・ジム・居室Aは機械排煙（令126条の3）。窓は FIX（トリプルガラス）")]
     else:
-        notes += [("t", "シアター: 浮き床＋二重壁、前室（緩衝廊下）で二重扉"),
-                  ("t", "2階の窓は提案値（各 1.0×0.7m FIX）。無窓居室の排煙は要検討"),
-                  ("t", "間仕切: 乾式（LGS＋ボード）、耐震壁は1階と同位置")]
+        notes += [("t", "回遊③: ホール→図書室→南廊下→ホール。回遊④: ホール→洗面→階段2ホール→図書室→ホール"),
+                  ("t", "防音: シアターは前室（音響ロック）＋両開き遮音扉 Ts-40。主寝室とは前室・WIC の2層で分離"),
+                  ("t", "居室B・C・D は収納・WIC を間に挟んで隣室と分離（戸境に収納）"),
+                  ("t", "ファミリークローゼット: 1階ランドリーから階段2で直結")]
     notes += [("t", "寸法: mm、面積: 壁芯内法の概算")]
     side_panel(sh, 284, cy - 3, notes, width=118)
     return sh
@@ -441,7 +470,7 @@ def building_sections(h, number):
     sh = frame(h, number, "断面図（建物）", 100)
     o = h.outer_dims()
     defs = [("A", "W", 7000.0, (75, 170), "A-A（X2–X3間、階段1を通る南北断面）"),
-            ("B", "S", 3000.0, (75, 55), "B-B（Y1–Y2間、LDK・階段2を通る東西断面）")]
+            ("B", "S", 3000.0, (75, 55), "B-B（Y1–Y2間、LDK・玄関・ジムを通る東西断面）")]
     for key, view, c, paper, title in defs:
         uv = uv_fn(view)
         us = [uv(x, y, 0)[0] for x in (o[0], o[2]) for y in (o[1], o[3])]

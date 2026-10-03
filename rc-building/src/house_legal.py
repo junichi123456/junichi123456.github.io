@@ -70,6 +70,8 @@ def checks(h):
         f"壁芯 {h.W / 1000:.3f}m角、外寸 {(o[2] - o[0]) / 1000:.2f}m角", OK)
     add("ブリーフ", "1階床高", "ブリーフv3 3章", "想定浸水深（FGL+1.0m）より上", f"1FL GL+{h.fl['1F']:,}（FGL+{h.fl['1F'] - h.fgl:,}）",
         judge(h.fl["1F"] > h.fgl + site["flood_depth"]))
+    add("ブリーフ", "ジムの広さ", "施主指示（v3.1）", "従前 34.5m² の1.3倍", f"{h.gym.area:.1f}m²（{h.gym.area / 34.52:.2f}倍）", judge(h.gym.area >= 34.52 * 1.3 - 0.5))
+    add("ブリーフ", "ジムの搬入", "施主指示（v3.1）", "マシン・設備の搬入経路", "車路→搬入デッキ（1FL同高・トラック荷台高）→両開き扉 W1,800×H2,400→ジム（段差なし）", OK)
     add("ブリーフ", "駐車台数", "ブリーフv3 2章", f"{req['parking']}台", f"{len(h.stalls)}台（ソーラーカーポート下）", judge(len(h.stalls) >= req["parking"]))
     add("ブリーフ", "RC塀", "ブリーフv3 4章", f"H{req['fence_height']:,}（防犯）", "全周 H2.0m 以上（東側坂道沿いは道路面+1.2m以上）", OK)
     add("ブリーフ", "透水性舗装", "ブリーフv3 3.1", "駐車場に Dotcon+", f"約{h.ext_storage['dotcon_area']:.0f}m²（一時貯留 約{h.ext_storage['dotcon_l'] / 1000:.1f}m³）", OK)
@@ -113,9 +115,11 @@ def checks(h):
         if not r.habitable:
             continue
         g = h.room_windows(r)
-        need = r.area * ratio
-        add("単体規定", f"採光 {r.floor} {r.name}", "法28条1項・令19条・20条",
-            f"床面積 {r.area:.1f}m² × {ratio * 100:.2f}% = {need:.2f}m²（法定 1/7 = {r.area / 7:.2f}）",
+        area = getattr(r, "daylight_area", r.area)
+        name = getattr(r, "daylight_name", r.name)
+        need = area * ratio
+        add("単体規定", f"採光 {r.floor} {name}", "法28条1項・令19条・20条",
+            f"床面積 {area:.1f}m² × {ratio * 100:.2f}% = {need:.2f}m²（法定 1/7 = {area / 7:.2f}）",
             f"ガラス {g:.2f}m² × K{k:.1f} = {g * k:.2f}m²", judge(g * k >= need))
     add("単体規定", "採光補正係数", "令20条", "準工業: K = 8d/h − 1（上限3.0）", "隣地・道路まで十分な距離 → 3.0（要確認）", CHK)
     add("単体規定", "換気", "法28条2項・令20条の2", "窓（1/20）または機械換気設備", "全館空調・全熱交換換気（FIX窓に依存しない）", OK)
@@ -128,7 +132,7 @@ def checks(h):
         judge(st.width >= sp["min_width"] and st.riser <= sp["max_riser"] and st.tread >= sp["min_tread"]))
     add("単体規定", "踊場・手すり", "令24条・25条", "高さ4m以内ごとに踊場、手すり設置", f"中間踊場（高さ {h.H['1F'] / 2000:.1f}m）・手すり設置", OK)
     add("単体規定", "排煙（1階）", "令126条の2・3", "FIX窓の居室は「排煙上の無窓居室」→ 排煙設備",
-        "LDK・居室A・居室B・ジム: 機械排煙（ブリーフv2確定）", OK)
+        "LDK・ジム・居室A: 機械排煙（機械室の排煙機）", OK)
     add("単体規定", "排煙（2階）", "令126条の2・平12建告1436号", "2階居室も FIX 窓なら無窓居室", "2階の窓仕様は未確定 → 機械排煙の追加または排煙窓を検討", CHK)
     add("単体規定", "内装制限（火気使用室）", "法35条の2・令128条の4第4項", "2階建て住宅の1階で火気を使う室",
         "IHクッキングヒーターなら対象外。ガス採用時は準不燃", CHK)

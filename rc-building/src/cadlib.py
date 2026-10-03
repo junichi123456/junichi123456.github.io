@@ -31,6 +31,7 @@ LAYERS = {
     "A-WATER": (5, "Continuous", 18, "水路"),
     "A-TERRAIN": (30, "Continuous", 25, "地形断面（DEM）"),
     "A-FLOOD": (5, "DASHDOT", 25, "想定浸水深"),
+    "A-FLOW": (6, "DASHED", 35, "動線（回遊・家事・搬入）"),
     "A-VIS": (7, "Continuous", 18, "見え掛り（細線）"),
     "A-HIDDEN": (8, "HIDDEN", 13, "隠れ線（破線）"),
     "A-GLAZ": (5, "Continuous", 18, "建具・ガラス"),

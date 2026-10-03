@@ -87,7 +87,23 @@ def door_symbol(sh, t, op, label=True):
         P = lambda u, n: t(u, n)
     else:
         P = lambda u, n: t(n, u)
-    if op.operation == "swing":
+    if op.operation == "swing" and "両開き" in op.name:
+        s_ = op.swing
+        n0 = c + s_ * th / 2
+        m = (u0 + u1) / 2
+        half = op.width / 2
+        for uh, um in ((u0, 1), (u1, -1)):
+            hp = P(uh, n0)
+            op_pt = P(uh, n0 + s_ * half)
+            sh.line(hp, op_pt, "A-DOOR", lineweight=35)
+            cl = P(uh + um * half, n0)
+            a_c = math.degrees(math.atan2(cl[1] - hp[1], cl[0] - hp[0])) % 360
+            a_o = math.degrees(math.atan2(op_pt[1] - hp[1], op_pt[0] - hp[0])) % 360
+            if (a_o - a_c) % 360 == 90:
+                sh.arc(hp, half, a_c, a_o, "A-DOOR")
+            else:
+                sh.arc(hp, half, a_o, a_c, "A-DOOR")
+    elif op.operation == "swing":
         uh = u0 if op.hinge == 0 else u1
         uo = u1 if op.hinge == 0 else u0
         s = op.swing
