@@ -1,6 +1,6 @@
-"""図面一式・法規チェック・3D モデルを生成するエントリポイント。
+"""河沿要（仮称）図面一式・法規チェック・3D モデルを生成する。
 
-    python3 src/build.py            # rc-building/ で実行
+    cd rc-building && python3 src/build.py
 """
 from __future__ import annotations
 
@@ -13,74 +13,66 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from matplotlib.backends.backend_pdf import PdfPages  # noqa: E402
 
-import legal  # noqa: E402
-import sheets  # noqa: E402
+import house_legal  # noqa: E402
+import house_sheets as hs  # noqa: E402
 from cadlib import render  # noqa: E402
-from design import Building  # noqa: E402
+from house import House  # noqa: E402
 from model3d import export_glb  # noqa: E402
+from sheetlib import fittings_sheet, legal_sheets  # noqa: E402
 
 
 def main():
-    b = Building(ROOT / "spec.yaml")
+    h = House(ROOT)
     dist = ROOT / "dist"
     for d in ("dxf", "png"):
         (dist / d).mkdir(parents=True, exist_ok=True)
+    rows, sm, wq = house_legal.checks(h)
+    wall_rows = [["階", "方向", "耐力壁長さ", "壁量", "判定"]]
+    for (f, d), (L, q) in sorted(wq.items()):
+        wall_rows.append([f, d, f"{L:.1f} m", f"{q:.1f} cm/m²", "≧12 適合" if q >= 12 else "不足"])
+    wall_rows.append(["", "", "壁厚", f"{h.t / 10:.0f} cm", "≧15 適合"])
 
     body = [
-        sheets.site_plan(b, "A-01"),
-        sheets.floor_plan(b, "1F", "A-02"),
-        sheets.floor_plan(b, "2F", "A-03"),
-        sheets.floor_plan(b, "3F", "A-04"),
-        sheets.floor_plan(b, "RF", "A-05"),
-        sheets.elevations_sheet(b, "A-06"),
-        sheets.section_sheet(b, "A-07", "A"),
-        sheets.section_sheet(b, "A-08", "B"),
-        sheets.fittings_sheet(b, "A-09"),
+        hs.site_plan(h, "A-01", sm),
+        hs.exterior_plan(h, "A-02"),
+        hs.floor_plan(h, "1F", "A-03"),
+        hs.floor_plan(h, "2F", "A-04"),
+        hs.roof_plan(h, "A-05"),
+        hs.elevations(h, "A-06"),
+        hs.building_sections(h, "A-07"),
+        hs.site_sections(h, "A-08"),
+        fittings_sheet(h, "A-09"),
     ]
-    lsheets, rows, sm = sheets.legal_sheets(b, 10)
-    body += lsheets
-    body += [
-        sheets.struct_plan(b, "S-01", "FDN"),
-        sheets.struct_plan(b, "S-02", "2F"),
-        sheets.struct_plan(b, "S-03", "3F"),
-        sheets.struct_plan(b, "S-04", "RF"),
-        sheets.member_list(b, "S-05"),
-    ]
+    body += legal_sheets(h, 10, rows)
+    body += [hs.wall_plan(h, "S-01", wall_rows), hs.details(h, "S-02")]
     dl = [(s.number, s.title, s.scale_label) for s in body]
-    cover = sheets.cover_sheet(b, [("A-00", "表紙・図面リスト・建築概要", "—")] + dl)
-    all_sheets = [cover] + body
-
+    cover = hs.cover(h, [("A-00", "表紙・図面リスト・計画概要", "—")] + dl, sm)
+    sheets = [cover] + body
     index = []
     with PdfPages(dist / "drawings.pdf") as pdf:
-        for s in all_sheets:
-            stem = f"{s.number}"
-            s.save(dist / "dxf" / f"{stem}.dxf")
-            render(s, dist / "png" / f"{stem}.png", pdf)
+        for s in sheets:
+            s.save(dist / "dxf" / f"{s.number}.dxf")
+            render(s, dist / "png" / f"{s.number}.png", pdf)
             index.append(dict(number=s.number, title=s.title, scale=s.scale_label,
-                              dxf=f"dist/dxf/{stem}.dxf", png=f"dist/png/{stem}.png"))
+                              dxf=f"dist/dxf/{s.number}.dxf", png=f"dist/png/{s.number}.png"))
             print("sheet", s.number, s.title)
-
-    export_glb(b, dist / "model.glb")
-    write_report(b, rows, sm, dist)
-    (dist / "index.json").write_text(json.dumps(dict(sheets=index, summary=jsonable(sm),
+    export_glb(h, dist / "model.glb")
+    write_report(rows, sm, dist)
+    (dist / "index.json").write_text(json.dumps(dict(sheets=index, summary={k: round(v, 3) for k, v in sm.items()},
                                                      checks=rows), ensure_ascii=False, indent=1), encoding="utf-8")
-    ng = [r for r in rows if r["result"] == legal.NG]
-    print(f"checks: {len(rows)} rows, NG={len(ng)}")
+    ng = [r for r in rows if r["result"] == house_legal.NG]
+    print(f"checks: {len(rows)} rows, NG={len(ng)}, 要確認={sum(r['result'] == house_legal.CHK for r in rows)}")
     for r in ng:
         print("  NG:", r["item"], r["planned"])
 
 
-def jsonable(sm):
-    return {k: (round(v, 3) if isinstance(v, float) else v) for k, v in sm.items()}
-
-
-def write_report(b, rows, sm, dist):
+def write_report(rows, sm, dist):
     lines = ["# 法規チェック結果（自動生成）", "",
-             f"- 敷地面積 {sm['site_area']:.2f} m² / 建築面積 {sm['building_area']:.2f} m² / 延べ面積 {sm['total']:.2f} m²",
-             f"- 建ぺい率 {sm['coverage'] * 100:.2f}% / 容積率 {sm['far'] * 100:.2f}% / 建築物の高さ {sm['height']:.2f} m", "",
+             f"- 敷地面積 {sm['site_area']:,.2f} m²（推定）／建築面積 {sm['building_area']:.2f} m²／延べ面積 {sm['total']:.2f} m²",
+             f"- 建ぺい率 {sm['coverage'] * 100:.2f}%／容積率 {sm['far'] * 100:.2f}%／最高高さ {sm['height']:.2f} m", "",
              "| 区分 | 項目 | 根拠 | 規定・要求 | 計画 | 判定 |", "|---|---|---|---|---|---|"]
     for r in rows:
-        cells = [r[k].replace("|", "／").replace("\n", " ") for k in ("cat", "item", "basis", "required", "planned", "result")]
+        cells = [str(r[k]).replace("|", "／") for k in ("cat", "item", "basis", "required", "planned", "result")]
         lines.append("| " + " | ".join(cells) + " |")
     (dist / "LEGAL_CHECK.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
 

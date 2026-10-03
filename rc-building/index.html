@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>RCオフィスビル 設計図・3D</title>
+<title>河沿要 設計図・3D</title>
 <style>
   :root { --bg:#f5f4f0; --panel:#ffffff; --ink:#1d1d1b; --sub:#6b6a66; --line:#dddbd4; --accent:#b4371f; }
   @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg:#1b1c1e; --panel:#242528; --ink:#ecebe7; --sub:#a3a29d; --line:#3a3b3f; --accent:#ff7a5c; } }
@@ -45,8 +45,8 @@
 </head>
 <body>
 <header>
-  <h1>(仮称) RCオフィスビル新築計画 — 2D図面と3Dモデル</h1>
-  <p>RC造 地上3階・塔屋1階／近隣商業地域・準防火地域。図面と3Dモデルは同じ建物モデル（<code>spec.yaml</code>）から自動生成しています。</p>
+  <h1>河沿要（仮称）— 壁式RC造 2階建て専用住宅：2D図面と3Dモデル</h1>
+  <p>八王子市大和田町7丁目。敷地・地形は国土地理院の基盤地図情報・空中写真・DEM5A から推定。図面と3Dモデルは同じモデル（<code>spec.yaml</code>・<code>docs/kawazanyo_design_brief_v3.md</code>）から自動生成しています。</p>
 </header>
 <main>
   <section>
@@ -54,14 +54,14 @@
     <div id="viewer"></div>
     <div class="controls" id="layers"></div>
     <div class="controls">
-      <label>水平断面 <input type="range" id="clip" min="-2.5" max="15" step="0.05" value="15"> <span id="clipv"></span></label>
-      <button data-view="iso">外観</button><button data-view="top">屋根伏</button><button data-view="south">南面</button><button data-view="east">東面</button>
+      <label>水平断面 <input type="range" id="clip" min="-0.5" max="9" step="0.05" value="9"> <span id="clipv"></span></label>
+      <button data-view="iso">外観</button><button data-view="top">配置</button><button data-view="south">南面</button><button data-view="east">東面</button>
     </div>
   </section>
   <section><h2>建築概要</h2><div class="stats" id="stats"></div></section>
   <section>
     <h2>図面一式</h2>
-    <p class="links"><a href="dist/drawings.pdf">PDF（A3 全図面）</a><a href="dist/model.glb">3Dモデル（.glb）</a><a href="dist/LEGAL_CHECK.md">法規チェック（.md）</a><a href="spec.yaml">設計仕様書（spec.yaml）</a></p>
+    <p class="links"><a href="dist/drawings.pdf">PDF（A3 全図面）</a><a href="dist/model.glb">3Dモデル（.glb）</a><a href="dist/LEGAL_CHECK.md">法規チェック（.md）</a><a href="docs/kawazanyo_design_brief_v3.md">設計ブリーフ v3</a><a href="spec.yaml">設計条件（spec.yaml）</a><a href="docs/site_estimate.png">敷地推定図</a></p>
     <div class="gallery" id="gallery"></div>
   </section>
   <section><h2>法規チェック（自動算定）</h2><div class="tbl"><table id="checks"></table></div></section>
@@ -80,21 +80,21 @@ renderer.shadowMap.enabled = true;
 el.appendChild(renderer.domElement);
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0xdfe6ea);
-const camera = new THREE.PerspectiveCamera(35, 1, 0.1, 500);
+const camera = new THREE.PerspectiveCamera(35, 1, 0.1, 1000);
 const controls = new OrbitControls(camera, renderer.domElement);
-controls.target.set(9, 5, -6);
+controls.target.set(8.6, 3, -8.6);
 scene.add(new THREE.HemisphereLight(0xffffff, 0x8a8f84, 1.6));
 const sun = new THREE.DirectionalLight(0xffffff, 2.2);
 sun.position.set(-20, 35, 25); sun.castShadow = true;
 sun.shadow.mapSize.set(2048, 2048);
-Object.assign(sun.shadow.camera, { left: -30, right: 30, top: 30, bottom: -30 });
+Object.assign(sun.shadow.camera, { left: -60, right: 60, top: 60, bottom: -60 });
 scene.add(sun);
-const plane = new THREE.Plane(new THREE.Vector3(0, -1, 0), 15);
+const plane = new THREE.Plane(new THREE.Vector3(0, -1, 0), 9);
 const groups = {};
 const views = {
-  iso: [[-14, 18, 20]], top: [[9.01, 45, -6]], south: [[9, 6, 32]], east: [[45, 6, -6]],
+  iso: [[-38, 34, 48]], top: [[8.61, 95, -8.6]], south: [[8.6, 6, 48]], east: [[60, 8, -8.6]],
 };
-function setView(k) { camera.position.set(...views[k][0]); controls.target.set(9, 5, -6); controls.update(); }
+function setView(k) { camera.position.set(...views[k][0]); controls.target.set(8.6, 3, -8.6); controls.update(); }
 setView("iso");
 
 new GLTFLoader().load("dist/model.glb", (g) => {
@@ -102,7 +102,7 @@ new GLTFLoader().load("dist/model.glb", (g) => {
     if (!o.isMesh) return;
     const grp = (o.name || o.parent.name).split("|")[0].replace(/_\d+$/, "");
     o.castShadow = o.receiveShadow = true;
-    o.material.clippingPlanes = grp === "敷地" || grp === "道路" ? [] : [plane];
+    o.material.clippingPlanes = /地形|周辺|水路|塀|外構|カーポート/.test(grp) ? [] : [plane];
     o.material.clipShadows = true;
     (groups[grp] ||= []).push(o);
   });
@@ -127,9 +127,9 @@ renderer.setAnimationLoop(() => { controls.update(); renderer.render(scene, came
 
 const data = await (await fetch("dist/index.json")).json();
 const s = data.summary;
-const stats = [["敷地面積", s.site_area.toFixed(2) + " m²"], ["建築面積", s.building_area.toFixed(2) + " m²"],
+const stats = [["敷地面積（推定）", s.site_area.toFixed(2) + " m²"], ["建築面積", s.building_area.toFixed(2) + " m²"],
   ["延べ面積", s.total.toFixed(2) + " m²"], ["建ぺい率", (s.coverage * 100).toFixed(2) + " %"],
-  ["容積率", (s.far * 100).toFixed(2) + " %"], ["建築物の高さ", s.height.toFixed(2) + " m"]];
+  ["容積率", (s.far * 100).toFixed(2) + " %"], ["最高高さ（設計GL）", s.height.toFixed(2) + " m"]];
 document.getElementById("stats").innerHTML = stats.map(([k, v]) => `<div class="stat"><b>${v}</b><span>${k}</span></div>`).join("");
 document.getElementById("gallery").innerHTML = data.sheets.map((d) =>
   `<div class="card"><img loading="lazy" src="${d.png}" alt="${d.number} ${d.title}"><div><span>${d.number} ${d.title}</span><a href="${d.dxf}">DXF</a></div></div>`).join("");

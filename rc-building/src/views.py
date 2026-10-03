@@ -27,6 +27,8 @@ def _rng(b, axis, sign):
 
 
 def klass(b):
+    if b.mat == "insul":
+        return "insul"
     if b.mat == "glass":
         return "glass"
     if b.cat == "door":

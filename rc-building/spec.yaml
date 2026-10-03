@@ -1,72 +1,81 @@
 # =====================================================================
-#  設計仕様書（設計条件）  ― 本ファイルを変更して `python3 src/build.py` を
-#  実行すると、2D図面（DXF/PDF/PNG）・法規チェック・3Dモデル（GLB）が
-#  すべて再生成されます。単位: mm（面積 m²）
+#  河沿要（仮称）設計条件 — docs/kawazanyo_design_brief_v3.md の数値版
+#  `python3 src/build.py` で 図面（DXF/PDF/PNG）・法規チェック・3D を再生成
+#  単位: mm（面積 m²）。敷地・地形データは data/site_gsi.json（国土地理院）
 # =====================================================================
 project:
-  name: (仮称) RCオフィスビル新築計画
-  short: RC-OFFICE
-  location: 東京都内（想定）
-  designer: 設計事務所（仮）
+  name: 河沿要（仮称）新築計画
+  short: KAWAZANYO
+  location: 東京都八王子市大和田町7丁目
+  designer: 設計検討（仮）
   date: "2026-10-03"
-  phase: 基本設計
+  phase: 基本計画
 
-site:                       # 敷地（南側が前面道路の整形地）
-  width: 25000              # 間口（東西）
-  depth: 22000              # 奥行（南北）
-  road:
-    side: south
-    width: 6000             # 前面道路幅員
-    kind: 法42条1項1号道路（公道）
-  zoning: 近隣商業地域
-  fire_zone: 準防火地域
-  coverage_limit: 0.80      # 指定建ぺい率
-  far_limit: 3.00           # 指定容積率
-  road_far_factor: 0.6      # 前面道路幅員による容積率の乗数（住居系以外 0.6）
-  road_slope: 1.5           # 道路斜線勾配（別表第3 近隣商業）
-  road_slope_range: 20000   # 道路斜線 適用距離
-  adjacent_slope: {rise: 31000, slope: 2.5}   # 隣地斜線（住居系以外）
-  height_district: 指定なし（想定）
-  shadow_regulation: 条例による指定の有無を要確認（高さ10m超が対象）
+site:
+  data: data/site_gsi.json
+  building_origin_m: [-5.505, -17.005]   # 建物 X1・Y1 壁芯交点のローカル座標(m)
+  gl_tp: 109.0                 # 設計GL = 南側道路面 TP(m)
+  fgl: 450                     # 敷地仕上げ地盤（現況維持）
+  zoning: 準工業地域（推定・要確認）
+  fire_zone: 指定未確認（耐火建築物で計画）
+  coverage_limit: 0.60
+  far_limit: 2.00
+  road_far_factor: 0.6         # 住居系以外
+  road_slope: 1.5
+  road_slope_range: 20000
+  adjacent_slope: {rise: 31000, slope: 2.5}
+  south_road_width: 7400       # 基盤地図より計測
+  east_road_width: 5500
+  flood_depth: 1000            # 想定浸水深（上限）
+  cliff: {north_h: 3200, east_h: 3300}   # 敷地外の高低差（DEM）
 
-requirements:               # 建築主要求
-  use: 事務所
-  stories: 3                # 地上階数
-  basement: 0
-  min_total_floor_area: 600 # 延べ面積 以上（m²）
-  ceiling_height: {1F: 2800, 2F: 2600, 3F: 2600}
-  elevator: true            # 乗用EV 1基（11人乗 MRL）
-  toilets: 2・3階 男女別、1階 多機能トイレ
-  roof: 屋上利用（設備置場・点検）、階段室で屋上へ出入り
-  stair: {min_width: 1200, max_riser: 175, min_tread: 260}
-  parking: 敷地内通路のみ（駐車場なし）
+requirements:
+  use: 一戸建ての住宅
+  stories: 2
+  stair: {min_width: 750, max_riser: 230, min_tread: 150}   # 令23条（住宅）
+  daylight_ratio: 0.1529       # 1/7 + 1ポイント（設計基準）
+  daylight_k: 3.0              # 採光補正係数（準工業・上限値、要確認）
+  parking: 3
+  fence_height: 2000
+  fence_watertight: 600        # 止水構造の高さ（FGL基準）
 
 building:
-  origin: [3500, 4000]      # 敷地南西角から X1・Y1 通り芯交点までの距離
-  grid_x: [6000, 6000, 6000]   # X1–X4 スパン
-  grid_y: [6000, 6000]         # Y1–Y3 スパン
-  fl_1f: 150                # 1FL = 設計GL+150
-  story_heights: {1F: 4000, 2F: 3600, 3F: 3600}
-  parapet: 1100             # 屋上パラペット高（手すり兼用）
-  penthouse: {height: 3000, parapet: 300, ev_overhead: 1500}
+  grid_x: [6125, 5000, 6125]   # 壁芯（内寸 17,000 角）
+  grid_y: [6125, 5000, 6125]
+  fl_1f: 1500                  # GL 基準
+  story_heights: {1F: 3200, 2F: 3200}
+  parapet: 600
+  ceiling: {1F: 2600, 2F: 2600}
+  wall_rc: 250
+  insulation: 100
+  cladding: 20
+  slab: 220
+  partition: 100
+  base_slab: 350
 
-structure:                  # 構造（仮定断面）
-  system: 鉄筋コンクリート造 純ラーメン構造（階段・EVはRC壁）
-  concrete: {Fc: 24, slump: 18, cement: 普通ポルトランドセメント}
+structure:
+  system: 壁式鉄筋コンクリート造（平13国交告1026号）
+  concrete: {Fc: 24}
   rebar: {D10-D16: SD295, D19-D25: SD345}
-  cover: {column_beam: 40, slab_wall: 30, earth_contact: 50, foundation: 70}  # 設計かぶり
-  column:  {C1: {b: 600, d: 600, main: 12, main_dia: 22, hoop_dia: 10, hoop_pitch: 100}}
-  girder:  {G1: {b: 400, d: 700, top: 4, bottom: 4, main_dia: 22, stirrup_dia: 10, stirrup_pitch: 200}}
-  fgirder: {FG1: {b: 500, d: 1500, top: 5, bottom: 5, main_dia: 25, stirrup_dia: 13, stirrup_pitch: 200}}
-  footing: {F1: {b: 2800, d: 2800, t: 800, bars: D19@200 ダブル}}
-  slab:    {S1: {t: 180, bars: 上下端 D13@200（短辺）D10・D13@200（長辺）}}
-  wall:    {W20: {t: 200, bars: D13@200 ダブル}, W_lgs: {t: 100}}
-  foundation: 直接基礎（独立フーチング）長期許容地耐力 150kN/m²（地盤調査により確認）
-  live_load_floor: 2900     # 事務室 床用 積載荷重 N/m²（令85）
-  finish_load: 1000
+  cover: {wall: 40, slab: 30, earth_contact: 50, foundation: 70}
+  wall_bars: D13@200 ダブル
+  slab_bars: D13@200 ダブル（上下端）
+
+windows:      # FIX窓 実ガラス面積（m²）— v2 確定値 + 本計画の提案値
+  LDK: 4.06
+  居室A: 0.70
+  居室B: 0.70
+  ジム: 1.80     # v2 1.65 → 採光基準に合わせて増（ジム 34.5m²）
+  2F居室: 0.70   # 2階は未確定 → 1階方針を延長した提案値
+
+exterior:
+  carport: {w: 9000, d: 10000, h: 2500}     # ソーラーカーポート 約90m²
+  dotcon_storage_l_per_m2: 13
+  retention_tank_m3: 25
+  gate_vehicle: 5000
+  gate_person: 1200
 
 finish:
-  exterior: コンクリート打放し 撥水剤塗布（一部 磁器質タイル）
-  roof: アスファルト防水 外断熱 押えコンクリート
-  office: 床 OAフロア+タイルカーペット / 壁 PB t12.5 EP（準不燃）/ 天井 岩綿吸音板（不燃）
-  stair: 床 長尺シート / 壁・天井 コンクリート素地 EP（不燃）
+  exterior: 外断熱100 + 外装仕上げ（腰壁 GL〜+1,500 はタイル張り）
+  roof: 外断熱防水（シート防水）、太陽光パネル架台
+  interior: 床 浮き床・フローリング／壁 化粧壁（直貼り）／天井 PB EP
