@@ -122,19 +122,8 @@ class House:
         self.site = Polygon(pts)
         n = len(pts)
         self.site_edges = [(pts[i], pts[(i + 1) % n], self.site_kind[i]) for i in range(n)]
-        # 辺の分類（北=水路, 東=東側道路, 南=南側道路, 他=隣地）
-        cls = []
-        for i in range(n):
-            if i < 7:
-                cls.append("水路")
-            elif i == 7:
-                cls.append("水路")
-            elif i < 13:
-                cls.append("東側道路")
-            elif i == 13:
-                cls.append("南側道路")
-            else:
-                cls.append("隣地")
+        # 辺の分類（水路／東側道路／南側道路／隣地）
+        cls = list(self.gsi["site"]["cls"])
         self.edge_class = cls
         self.road_edges = [dict(ft=r["ft"], pts=[self.m2mm(*p) for p in r["pts"]]) for r in self.gsi["road_edges"]]
         self.water = [[self.m2mm(*p) for p in w] for w in self.gsi["water"]]
@@ -478,12 +467,12 @@ class House:
         self.approach = LineString([(gm[0], gm[1] + 200), (3300, -22000), (4800, -16000), (4800, -6000), (9300, -6000),
                                     (9300, self.porch[1])]).buffer(750, cap_style=2, join_style=2)
         # 雨水貯留槽・浸透施設（西側の庭）
-        self.tank = (-32000, 22000, -27000, 27000)
-        self.trench = [LineString([(-42000, 45000), (-29000, 39500), (-6000, 31500)]),
-                       LineString([(-42500, 44500), (-35500, 11500)])]
-        self.infil_pits = [(-42000, 45000), (-29000, 39500), (-6000, 31500), (-35500, 11500), (3000, -25000)]
+        self.tank = (-23500, 20000, -18500, 25000)
+        self.trench = [LineString([(-24000, 35500), (-9500, 32600), (-500, 30400)]),
+                       LineString([(-25500, 34000), (-27500, 17000), (-31000, 9500)])]
+        self.infil_pits = [(-24000, 35500), (-9500, 32600), (-500, 30400), (-27500, 17000), (-31000, 9500), (3000, -25000)]
         # 塀の排水口（フラップ弁）＝ 低い位置
-        self.flap = [(-35600, 10200), (1000, -29200)]
+        self.flap = [(-32500, 8800), (1000, -29200)]
         self.ext_storage = dict(
             dotcon_area=pave.area / 1e6,
             dotcon_l=pave.area / 1e6 * ex["dotcon_storage_l_per_m2"],

@@ -212,9 +212,9 @@ def site_plan(h, number, legal_summary):
         sh.text(s, t(x, y), 2.0, "A-TEXT", "MIDDLE_CENTER")
     sh.text("建物（壁式RC造 2階建て）", t(h.W / 2, h.D / 2 + 1500), 2.2, "A-ROOM", "MIDDLE_CENTER")
     sh.text("駐車場（Dotcon+）", t((cp[0] + cp[2]) / 2, cp[1] - 2500), 1.9, "A-TEXT", "MIDDLE_CENTER")
-    sh.text("庭・雨水貯留浸透", t(-28000, 30000), 1.9, "A-TEXT", "MIDDLE_CENTER")
+    sh.text("庭・雨水貯留浸透", t(-17000, 28000), 1.9, "A-TEXT", "MIDDLE_CENTER")
     sh.text("破線: 既存建物（解体）", t(-8000, 26000), 1.7, "A-TEXT", "MIDDLE_CENTER")
-    for (x, y) in [(8600, 8600), (-28000, 25000), (8000, -24000), (8000, 40000), (30000, 15000), (-10000, -40000), (25000, -25000)]:
+    for (x, y) in [(8600, 8600), (-18000, 18000), (8000, -24000), (8000, 40000), (30000, 15000), (-10000, -40000), (25000, -25000)]:
         z = h.ground(x, y)
         sh.text(f"+{tp(h, z):.1f}", t(x, y - 1800), 1.6, "A-TERRAIN", "MIDDLE_CENTER")
         sh.line(t(x - 400, y), t(x + 400, y), "A-TERRAIN")
@@ -244,7 +244,7 @@ def site_plan(h, number, legal_summary):
              ["建ぺい率", f"{sm['coverage'] * 100:.2f}%（≦60%）"],
              ["容積率", f"{sm['far'] * 100:.2f}%（≦200%）"]]
     sh.table(250, 150, [40, 80], rows2, row_h=5.2, h=2.1)
-    sh.text("※ 境界の番号15〜21は隣接建物からの推定（要測量）。誤差 ±5%程度。", (250, 115), 1.9, "A-TEXT", paper=True)
+    sh.text("※ 西側境界は標高109.6の点を通り駐車場白線に平行な直線（ご指定）。13〜15は隣接建物からの推定（要測量）。", (250, 115), 1.9, "A-TEXT", paper=True)
     return sh
 
 
@@ -304,7 +304,7 @@ def exterior_plan(h, number):
             sh.text(f"{(top - h.fgl) / 1000:.1f}", t(*p), 1.4, "A-SYMB", "MIDDLE_CENTER")
             d += 14000
     # レベル
-    for (x, y, s) in [(8600, -1500 - 1800, f"1FL GL+{h.fl['1F']:,}"), (-15000, 10000, f"FGL GL+{h.fgl}（現況維持）"),
+    for (x, y, s) in [(8600, -1500 - 1800, f"1FL GL+{h.fl['1F']:,}"), (-12000, 10000, f"FGL GL+{h.fgl}（現況維持）"),
                       (6000, -31800, "設計GL±0（南側道路 TP+109.0）")]:
         sh.text(s, t(x, y), 1.6, "A-SYMB", "MIDDLE_CENTER")
     sh.north_arrow(sh.P(282, 60), 6)
