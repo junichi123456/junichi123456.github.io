@@ -83,6 +83,11 @@ def export_glb(h, path):
     m = trimesh.creation.box(extents=[(cp[2] - cp[0]) * S, (cp[3] - cp[1]) * S, 0.12])
     m.apply_translation([(cp[0] + cp[2]) / 2 * S, (cp[1] + cp[3]) / 2 * S, (h.fgl + cph + 60) * S])
     parts[("カーポート", "-", (0.12, 0.18, 0.32, 1.0))].append(m)
+    # ジム機器（簡易ボリューム）
+    for name, r, hh, kg in getattr(h, "equipment", []):
+        m = trimesh.creation.box(extents=[(r[2] - r[0]) * S, (r[3] - r[1]) * S, hh * S])
+        m.apply_translation([(r[0] + r[2]) / 2 * S, (r[1] + r[3]) / 2 * S, (h.fl["1F"] + hh / 2) * S])
+        parts[("ジム機器", "1F", (0.25, 0.27, 0.30, 1.0))].append(m)
     # 隣接建物（高さ 6.5m の簡易ボリューム）
     for pts in h.neighbors:
         poly = Polygon(pts)

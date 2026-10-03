@@ -106,6 +106,7 @@ class House:
         self._openings_rc()
         self._stairs()
         self._entrance()
+        self._gym_equipment()
         self._exterior()
         self._label_openings()
         for w in self.walls:
@@ -240,12 +241,13 @@ class House:
         self.ldk.daylight_name = "LDK（キッチン含む）"
         R("パントリー", f, (125, 6250, 1500, 11000))
         L(f, "y", 1550, 6250, 11000, [(9800, 10600, "sliding")])
-        R("玄関（土間・搬入）", f, (6250, 125, 11000, 2700), label=(8000, 1400))
-        R("ホール", f, (6250, 2800, 9200, 6000))
-        R("SIC（通り抜け）", f, (9300, 2800, 11000, 6000))
-        L(f, "y", 9250, 2800, 6000, [(5100, 5900, "sliding")])
-        L(f, "x", 2750, 9300, 11000, [(9500, 10600, "sliding")])
-        self.gym = R("ジム", f, (11250, 125, 17125, 7900), True, label=(14200, 4000))
+        R("玄関土間", f, (6250, 125, 11000, 2000), label=(8800, 1100))
+        R("式台（框1）", f, (6250, 2000, 11000, 2400), label=(10000, 2200))
+        R("ホール", f, (6250, 2400, 11000, 6000), label=(8000, 4600))
+        # 玄関の二重框: 土間 FL-360 → 式台 FL-180 → ホール FL
+        self.genkan = dict(doma=(6250, 125, 11000, 2000), shikidai=(6250, 2000, 11000, 2400), step=180)
+        self.shoe = (6250, 125, 6700, 2000)        # 下足入れ（造作）
+        self.gym = R("ジム", f, (11250, 125, 17125, 7900), True, label=(16200, 6500))
         R("ホール・階段1", f, (6250, 6250, 11000, 9500), label=(9600, 7400))
         R("トイレ", f, (8350, 9600, 9700, 11000))
         L(f, "x", 9550, 8350, 9750, [(8600, 9300, "swing", 1, 0)])
@@ -305,6 +307,23 @@ class House:
         L(f, "x", 14550, 9100, 11000, [(9500, 10300, "swing", 1, 0)])
         R("主寝室", f, (11250, 11250, 17125, 17125), True)
 
+    def _gym_equipment(self):
+        """ジム機器（エニタイムフィットネス等の商業ジム相当）。(名称, 矩形, 高さ, 重量kg の目安)"""
+        self.equipment = [
+            ("パワーラック＋デッドリフト台", (11300, 300, 13500, 2700), 2300, 350),
+            ("トレッドミル", (13700, 300, 14600, 2400), 1500, 200),
+            ("トレッドミル", (15000, 300, 15900, 2400), 1500, 200),
+            ("クロストレーナー", (16250, 300, 17050, 2200), 1700, 150),
+            ("ダンベルラック", (11300, 4300, 11900, 6000), 1000, 450),
+            ("ベンチ", (12300, 4500, 12900, 5800), 500, 40),
+            ("ラットプル・ロー", (13300, 4500, 14400, 6000), 2200, 300),
+            ("レッグプレス", (14900, 4500, 17000, 5900), 1500, 400),
+            ("ケーブルクロスオーバー", (12000, 6900, 15500, 7700), 2300, 450),
+            ("ストレッチマット", (16250, 2700, 17050, 4300), 20, 5),
+        ]
+        # トレッドミル後方の安全帯（幅×2.0m）
+        self.treadmill_zone = (13700, 2400, 16000, 4400)
+
     def _door(self, lv, wname, u0, u1, name="木製片開き戸", op="swing", swing=1, hinge=0, h=2000, fire=False):
         w = self.rc_walls[lv][wname]
         z0 = self.fl[lv]
@@ -336,8 +355,8 @@ class House:
         # ---------------- 1F
         # 玄関: 片開き W1,000×H2,300（組立式パワーラック・一般ジム規模の機器は分解・梱包で通過可能）
         self.entrance = self._ext_door("1F", "S", 8800, 9800, 2300, "玄関ドア（断熱・防犯CP）")
-        # 土間 → ジム へ直進できる遮音ドア（X3 通り）
-        D("1F", "X3", 700, 1700, "遮音ドア（Ts-35・搬入兼用）", swing=1, h=2300)
+        # 框を上がったホールから右折してジムへ（X3 通り）
+        D("1F", "X3", 3000, 4000, "遮音ドア（Ts-35・搬入兼用）", swing=1, h=2300)
         G("1F", "X2", 2800, 4000, name="開口（LDK↔ホール）")
         G("1F", "X2", 6400, 7300, name="開口（キッチン↔ホール）")
         D("1F", "X2", 11500, 12400, op="sliding", name="木製引戸")
@@ -397,29 +416,31 @@ class House:
                                   level="1F", tag="手すり壁"))
         e = self.t / 2
         outer = (-e, -e, self.W + e, self.D + e)
+        g = self.genkan
+        for key, dz in (("doma", 2 * g["step"]), ("shikidai", g["step"])):
+            x0, y0, x1, y1 = g[key]
+            self.boxes.append(Box(x0, y0, self.fl["1F"] - dz - self.slab_t, x1, y1, self.fl["1F"] - dz, "slab", level="1F", tag=key))
         for lv in ("1F", "2F", "RF"):
-            holes = self.slab_holes(lv)
+            holes = self.slab_holes(lv) + ([g["doma"], g["shikidai"]] if lv == "1F" else [])
             for r in decompose(outer, holes):
                 self.boxes.append(Box(r[0], r[1], self.fl[lv] - self.slab_t, r[2], r[3], self.fl[lv], "slab", level=lv, tag="S1"))
 
     def _entrance(self):
         """玄関前の外部階段（FGL → 1FL）。"""
-        rise = self.fl["1F"] - self.fgl
-        n = 6
+        porch_z = self.fl["1F"] - 2 * 180 - 20          # 土間 FL-360 よりポーチ 20 下げ
+        rise = porch_z - self.fgl
+        n = 4
         r = rise / n
         T = 300
         x0, x1 = 8300, 10300
         y_land = -self.t / 2 - self.ins
         land_d = 2000
-        self.boxes.append(Box(x0 - 300, y_land - land_d, self.fgl, x1 + 300, y_land, self.fl["1F"] - 30, "stair", level="EXT", tag="玄関ポーチ"))
+        self.boxes.append(Box(x0 - 300, y_land - land_d, self.fgl, x1 + 300, y_land, porch_z, "stair", level="EXT", tag="玄関ポーチ"))
         for i in range(1, n):
             z = self.fgl + i * r
             y1 = y_land - land_d - (n - 1 - i) * T
             self.boxes.append(Box(x0, y1 - T, self.fgl, x1, y1, z, "stair", level="EXT", tag="外部階段"))
         self.porch = (x0 - 300, y_land - land_d - (n - 1) * T, x1 + 300, y_land)
-        # 段差解消機（玄関ポーチ東側。積載 300kg 級、かご 1.1×1.6m）— ジム機器・大型荷物の搬入とバリアフリー
-        self.lift = (x1 + 400, y_land - 1800, x1 + 1600, y_land - 100)
-        self.boxes.append(Box(self.lift[0], self.lift[1], self.fgl, self.lift[2], self.lift[3], self.fgl + 80, "stair", level="EXT", tag="段差解消機"))
         self.ext_stair = dict(n=n, riser=r, tread=T)
 
     # -------------------------------------------------------- exterior
@@ -463,7 +484,7 @@ class House:
         self.stalls = [(cx0 + 300 + i * 2800, cy0 + 2000, cx0 + 300 + i * 2800 + 2600, cy0 + 2000 + 5500) for i in range(3)]
         pave = Polygon([(cx0 - 1200, -31000), (cx0 + cp["w"] + 1500, -31000), (cx0 + cp["w"] + 1500, cy0 + cp["d"] + 600),
                         (cx0 - 1200, cy0 + cp["d"] + 600)]).intersection(site.buffer(-self.fence_t))
-        drive = Polygon([(10200, cy0 + cp["d"]), (13800, cy0 + cp["d"]), (13800, self.lift[1] - 200), (10200, self.lift[1] - 200)])
+        drive = Polygon([(10200, cy0 + cp["d"]), (13800, cy0 + cp["d"]), (13800, self.porch[1] + 600), (10200, self.porch[1] + 600)])
         pave = pave.union(drive).intersection(site.buffer(-self.fence_t))
         self.dotcon = pave
         # アプローチ（人用門扉 → 玄関ポーチ）
