@@ -224,7 +224,7 @@ def fittings_sheet(b, number):
             mat = "EV メーカー標準"
         glass = ""
         if f["label"].startswith(("AW", "AD")) and f["label"][:2] != "SS":
-            glass = "Low-E トリプルガラス（UVカット）・FIX"
+            glass = ("防犯合わせ＋Low-E トリプル（CP）・FIX" if "1F" in f["floors"] else "合わせ＋Low-E トリプル（UVカット）・FIX")
         spec = [f"名称: {f['name']}", f"材質: {mat}", f"W{f['w']:,}×H{f['h']:,}", f"数量: {f['count']}か所（{'・'.join(f['floors'])}）"]
         if glass:
             spec.append(f"ガラス: {glass}")

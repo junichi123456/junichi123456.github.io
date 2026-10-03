@@ -83,13 +83,6 @@ def export_glb(h, path):
     m = trimesh.creation.box(extents=[(cp[2] - cp[0]) * S, (cp[3] - cp[1]) * S, 0.12])
     m.apply_translation([(cp[0] + cp[2]) / 2 * S, (cp[1] + cp[3]) / 2 * S, (h.fgl + cph + 60) * S])
     parts[("カーポート", "-", (0.12, 0.18, 0.32, 1.0))].append(m)
-    # 屋上太陽光
-    for i in range(6):
-        for j in range(3):
-            x0, y0 = 800 + i * 2700, 1500 + j * 5000
-            m = trimesh.creation.box(extents=[2.5, 4.0, 0.08])
-            m.apply_translation([(x0 + 1250) * S, (y0 + 2000) * S, (h.fl["RF"] + 400) * S])
-            parts[("屋上太陽光", "-", (0.12, 0.18, 0.32, 1.0))].append(m)
     # 隣接建物（高さ 6.5m の簡易ボリューム）
     for pts in h.neighbors:
         poly = Polygon(pts)

@@ -42,8 +42,9 @@ def main():
         hs.building_sections(h, "A-07"),
         hs.site_sections(h, "A-08"),
         fittings_sheet(h, "A-09"),
+        hs.openings_smoke_sheet(h, "A-10"),
     ]
-    body += legal_sheets(h, 10, rows)
+    body += legal_sheets(h, 11, rows)
     body += [hs.wall_plan(h, "S-01", wall_rows), hs.details(h, "S-02")]
     dl = [(s.number, s.title, s.scale_label) for s in body]
     cover = hs.cover(h, [("A-00", "表紙・図面リスト・計画概要", "—")] + dl, sm)

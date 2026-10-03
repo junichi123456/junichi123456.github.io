@@ -49,6 +49,64 @@ def wall_quantity(h):
     return res
 
 
+U_WALL = 0.22    # RC250＋外断熱100（フェノールフォーム λ0.024）＋外装
+U_WIN = 0.90     # 樹脂枠・Low-E トリプル（Ar）FIX
+U_DOOR = 1.50    # 断熱ドア
+
+
+def smoke_systems(h):
+    """排煙計画: 防煙区画（居室ごと）と排煙機の系統。令126条の3。"""
+    west_x = h.gx[2]          # X3 より西 = 西系統
+    rows = []
+    for r in h.rooms:
+        if not r.habitable:
+            continue
+        area = getattr(r, "daylight_area", r.area)
+        name = getattr(r, "daylight_name", r.name)
+        cx = (r.rect[0] + r.rect[2]) / 2
+        sysname = "西系統" if cx < west_x else "東系統"
+        # 排煙口: 天井面中央付近 → 室内の最遠点までの水平距離
+        x0, y0, x1, y1 = r.rect
+        d = ((x1 - x0) ** 2 + (y1 - y0) ** 2) ** 0.5 / 2 / 1000
+        rows.append(dict(floor=r.floor, room=name, area=area, system=sysname, inlet_dist=d,
+                         natural_need=area / 50))
+    systems = {}
+    for row in rows:
+        systems.setdefault(row["system"], []).append(row)
+    cap = {}
+    for k, v in systems.items():
+        mx = max(x["area"] for x in v)
+        need = max(120.0, (2 * mx) if len(v) > 1 else mx)
+        cap[k] = dict(rooms=len(v), max_area=mx, need=need, plan=max(120.0, need))
+    return rows, cap
+
+
+def window_table(h):
+    """居室の窓: 採光・仕様。"""
+    k = h.spec["requirements"]["daylight_k"]
+    ratio = h.spec["requirements"]["daylight_ratio"]
+    out = []
+    for r in h.rooms:
+        if not r.habitable:
+            continue
+        area = getattr(r, "daylight_area", r.area)
+        g = h.room_windows(r)
+        out.append(dict(floor=r.floor, room=getattr(r, "daylight_name", r.name), area=area, need=area * ratio,
+                        glass=g, eff=g * k, margin=g * k / (area * ratio) if area else 0))
+    return out
+
+
+def gym_envelope(h):
+    """ジム外皮の開口部: 改善前（腰窓2か所＋南面搬入扉）と改善後（高窓2か所）の比較。"""
+    before = dict(win=2 * 1.5 * 1.0, door=1.8 * 2.4)
+    after = dict(win=sum(op.width * op.height / 1e6 for op in h.openings(floor="1F", exterior=True)
+                         if op.kind == "window" and "ジム" in op.name), door=0.0)
+    def q(d):
+        open_a = d["win"] + d["door"]
+        return d["win"] * U_WIN + d["door"] * U_DOOR + (before["win"] + before["door"] - open_a) * U_WALL
+    return dict(before=before, after=after, q_before=q(before), q_after=q(after))
+
+
 def checks(h):
     s, site, req = h.spec, h.spec["site"], h.spec["requirements"]
     sm = summary(h)
@@ -71,7 +129,13 @@ def checks(h):
     add("ブリーフ", "1階床高", "ブリーフv3 3章", "想定浸水深（FGL+1.0m）より上", f"1FL GL+{h.fl['1F']:,}（FGL+{h.fl['1F'] - h.fgl:,}）",
         judge(h.fl["1F"] > h.fgl + site["flood_depth"]))
     add("ブリーフ", "ジムの広さ", "施主指示（v3.1）", "従前 34.5m² の1.3倍", f"{h.gym.area:.1f}m²（{h.gym.area / 34.52:.2f}倍）", judge(h.gym.area >= 34.52 * 1.3 - 0.5))
-    add("ブリーフ", "ジムの搬入", "施主指示（v3.1）", "マシン・設備の搬入経路", "車路→搬入デッキ（1FL同高・トラック荷台高）→両開き扉 W1,800×H2,400→ジム（段差なし）", OK)
+    add("ブリーフ", "ジムの搬入", "施主指示（v3.2）", "窓からではなく玄関から搬入",
+        "車路→段差解消機（300kg）→ポーチ→玄関 親子扉 有効1,450×H2,400→土間→両開き遮音扉 W1,600×H2,400→ジム（直進・段差なし）", OK)
+    ge = gym_envelope(h)
+    add("ブリーフ", "ジム開口部の防犯・断熱", "施主指示（v3.2）", "腰高窓・外部扉を弱点として改善",
+        f"外部扉を廃止、窓は FIX 高窓（窓台FL+2,000）防犯合わせガラス。開口 {ge['before']['win'] + ge['before']['door']:.1f}→{ge['after']['win']:.1f}m²、"
+        f"開口まわりの熱損失 {ge['q_before']:.1f}→{ge['q_after']:.1f}W/K", OK)
+    add("ブリーフ", "太陽光発電", "施主指示（v3.2）", "住宅の屋根には設置しない（駐車場に設置）", "ソーラーカーポートのみ（約90m²）", OK)
     add("ブリーフ", "駐車台数", "ブリーフv3 2章", f"{req['parking']}台", f"{len(h.stalls)}台（ソーラーカーポート下）", judge(len(h.stalls) >= req["parking"]))
     add("ブリーフ", "RC塀", "ブリーフv3 4章", f"H{req['fence_height']:,}（防犯）", "全周 H2.0m 以上（東側坂道沿いは道路面+1.2m以上）", OK)
     add("ブリーフ", "透水性舗装", "ブリーフv3 3.1", "駐車場に Dotcon+", f"約{h.ext_storage['dotcon_area']:.0f}m²（一時貯留 約{h.ext_storage['dotcon_l'] / 1000:.1f}m³）", OK)
@@ -133,7 +197,17 @@ def checks(h):
     add("単体規定", "踊場・手すり", "令24条・25条", "高さ4m以内ごとに踊場、手すり設置", f"中間踊場（高さ {h.H['1F'] / 2000:.1f}m）・手すり設置", OK)
     add("単体規定", "排煙（1階）", "令126条の2・3", "FIX窓の居室は「排煙上の無窓居室」→ 排煙設備",
         "LDK・ジム・居室A: 機械排煙（機械室の排煙機）", OK)
-    add("単体規定", "排煙（2階）", "令126条の2・平12建告1436号", "2階居室も FIX 窓なら無窓居室", "2階の窓仕様は未確定 → 機械排煙の追加または排煙窓を検討", CHK)
+    srows, cap = smoke_systems(h)
+    add("単体規定", "排煙（2階）", "令126条の2・3", "2階居室も FIX 窓 → 排煙上の無窓居室", "居室B・C・D・図書室・主寝室: 機械排煙（1階と同じ方式）", OK)
+    for k_, c in sorted(cap.items()):
+        add("単体規定", f"排煙機 能力（{k_}）", "令126条の3第1項9号",
+            f"120m³/分以上かつ 最大区画 {c['max_area']:.1f}m²×2 = {2 * c['max_area']:.0f}m³/分以上（{c['rooms']}区画）",
+            f"排煙機 {c['plan']:.0f}m³/分（機械室）", OK)
+    mx = max(r["inlet_dist"] for r in srows)
+    add("単体規定", "排煙口の位置", "令126条の3第1項3号", "防煙区画の各部分から水平距離30m以下・天井から80cm以内",
+        f"各室の天井に排煙口、最遠 約{mx:.1f}m", judge(mx <= 30))
+    add("単体規定", "排煙の予備電源・手動開放", "令126条の3第1項5号・11号", "手動開放装置（床から0.8〜1.5m）・予備電源",
+        "各室に手動開放装置、蓄電池（駐車場PV と連携）を予備電源に兼用", OK)
     add("単体規定", "内装制限（火気使用室）", "法35条の2・令128条の4第4項", "2階建て住宅の1階で火気を使う室",
         "IHクッキングヒーターなら対象外。ガス採用時は準不燃", CHK)
     add("単体規定", "非常用の照明", "令126条の4", "一戸建ての住宅は除外", "—", NA)

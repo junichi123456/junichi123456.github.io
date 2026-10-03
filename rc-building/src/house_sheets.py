@@ -98,7 +98,7 @@ def stair_marks(h, sh, t, floor):
 FLOWS = {
     "1F": [("回遊①", [(7700, 3400), (3500, 3400), (3800, 7600), (7000, 6850), (9000, 6850), (9000, 3400), (7700, 3400)]),
            ("回遊②", [(3000, 8800), (800, 10200), (800, 12000), (7600, 11950), (10350, 12200), (10350, 8600), (7000, 6900), (5000, 7300), (3000, 8800)]),
-           ("搬入", [(14200, -2600), (14200, 2600)])],
+           ("搬入", [(11300, -1100), (9300, -1100), (9300, 1300), (14200, 1300), (14200, 3500)])],
     "2F": [("回遊③", [(9000, 7000), (3000, 7600), (1400, 5450), (9000, 5450), (9000, 7000)]),
            ("回遊④", [(10350, 8600), (10350, 12200), (7600, 11950), (5000, 12500), (4900, 9500), (6600, 7400), (10350, 8600)])],
 }
@@ -294,7 +294,7 @@ def exterior_plan(h, number):
     sh.text("建物（壁式RC造 2階建て）", t(h.W / 2, h.D / 2), 2.0, "A-ROOM", "MIDDLE_CENTER")
     sh.text("Dotcon+ 透水舗装", t(cp[2] + 1500, cp[1] - 1500), 1.7, "A-TEXT", "MIDDLE_LEFT")
     sh.text("アプローチ（透水性舗装）", t(5800, -12000), 1.6, "A-TEXT", "MIDDLE_LEFT")
-    sh.text("車路 → ジム搬入デッキ", t(17200, -9000), 1.6, "A-TEXT", "MIDDLE_LEFT")
+    sh.text("車路 → 段差解消機・玄関（ジム搬入）", t(14500, -9000), 1.6, "A-TEXT", "MIDDLE_LEFT")
     # 貯留槽・浸透
     tk = h.tank
     sh.rect(*t(tk[0], tk[1]), *t(tk[2], tk[3]), "A-DRAIN")
@@ -371,6 +371,14 @@ def floor_plan(h, floor, number):
         if w.cat == "insul":
             continue
         for op in w.openings:
+            if op.floor == floor and op.kind == "window" and op.z0 >= cut:
+                # 切断面より上の高窓は破線で表示
+                w_ = op.wall
+                p0 = t(op.u0, w_.c) if w_.axis == "x" else t(w_.c, op.u0)
+                p1 = t(op.u1, w_.c) if w_.axis == "x" else t(w_.c, op.u1)
+                sh.line(p0, p1, "A-HIDDEN", lineweight=35)
+                opening_tag(sh, t, op, offset=650)
+                continue
             if op.floor != floor or not (op.z0 < cut < op.z1) or op.operation == "opening":
                 continue
             if op.kind == "door":
@@ -384,8 +392,10 @@ def floor_plan(h, floor, number):
     flows(h, sh, t, floor)
     if floor == "1F":
         sh.text(f"玄関ポーチ・外部階段 {h.ext_stair['n']}段", t(6300, -2700), 1.6, "A-TEXT", "MIDDLE_RIGHT")
-        sh.text("搬入デッキ（1FL同高）", t(15900, -1800), 1.6, "A-TEXT", "MIDDLE_LEFT")
-        sh.text("← 車路（Dotcon+）からトラック横付け", t(15900, -2700), 1.5, "A-TEXT", "MIDDLE_LEFT")
+        sh.text("段差解消機（300kg・ジム機器搬入）", t(h.lift[2] + 200, -3300), 1.6, "A-TEXT", "MIDDLE_LEFT")
+        sh.rect(*t(h.lift[0], h.lift[1]), *t(h.lift[2], h.lift[3]), "A-VIS")
+        sh.line(t(h.lift[0], h.lift[1]), t(h.lift[2], h.lift[3]), "A-VIS")
+
     sh.north_arrow(sh.P(395, 268), 7)
     sh.view_title(names[floor], "1:100", (24, 22))
     sh.text(f"{floor[:-1]}FL = 設計GL+{fl:,}（TP+{tp(h, fl):.2f}）／天井高 CH={h.ch[floor]:,}", (24, 15), 2.4, "A-TEXT", paper=True)
@@ -393,16 +403,18 @@ def floor_plan(h, floor, number):
     cy = legend(sh, 285, cy - 1, [("A-CUT", "RC壁 t=250（耐力壁）", "hatch"), ("A-CUT-LGS", "外断熱100＋外装20", "ins"),
                                     ("A-CUT-LGS", "乾式間仕切（LGS）t=100", "line"), ("A-GRID", "通り芯（壁芯）", "line"),
                                     ("A-FLOW", "動線（回遊・家事・搬入）", "line")])
-    notes = [("h", "計画の考え方（v3.1）")]
+    notes = [("h", "計画の考え方（v3.2）")]
     if floor == "1F":
         notes += [("t", "回遊①（家族）: 玄関ホール→LDK→キッチン→ホール→玄関。行き止まりのない一周動線"),
                   ("t", "回遊②（家事）: キッチン→パントリー→ランドリー→洗面脱衣→廊下→ホール→キッチン"),
                   ("t", "洗う→干す→しまう: ランドリー・室内干し → 隣のファミリークローゼット／階段2で2階ファミクロへ直行"),
-                  ("t", "ジム 45.7m²（従前の1.32倍）: 南面の両開き搬入扉 W1,800×H2,400 → 搬入デッキ（1FL同高）→ 車路。トラック荷台から段差なしで搬入"),
+                  ("t", "ジム 45.7m²（従前の1.32倍）。搬入は玄関から: 段差解消機 → 玄関 親子扉（有効1,450×H2,400）→ 土間 → 両開き遮音扉 W1,600 → ジム（直進）"),
+                  ("t", "ジムの窓: 外部扉を廃止し、窓は天井際の FIX 高窓（窓台 FL+2,000、防犯合わせガラス・トリプル Low-E）に集約"),
                   ("t", "防音: ジムは浮き床＋遮音ドア Ts-35、機械室・WIC を緩衝帯として居室Aと分離。真上は2階シアター（騒音ゾーンを上下に集約）"),
-                  ("t", "排煙: LDK・ジム・居室Aは機械排煙（令126条の3）。窓は FIX（トリプルガラス）")]
+                  ("t", "排煙: LDK・ジム・居室Aは機械排煙（令126条の3）。窓は FIX（トリプルガラス）。1階の窓は防犯合わせガラス（CP）")]
     else:
         notes += [("t", "回遊③: ホール→図書室→南廊下→ホール。回遊④: ホール→洗面→階段2ホール→図書室→ホール"),
+                  ("t", "窓: FIX（樹脂枠・Low-E トリプル・合わせガラス UVカット、Uw≦0.90）。排煙は各居室の天井排煙口による機械排煙（A-10 参照）"),
                   ("t", "防音: シアターは前室（音響ロック）＋両開き遮音扉 Ts-40。主寝室とは前室・WIC の2層で分離"),
                   ("t", "居室B・C・D は収納・WIC を間に挟んで隣室と分離（戸境に収納）"),
                   ("t", "ファミリークローゼット: 1階ランドリーから階段2で直結")]
@@ -419,18 +431,13 @@ def roof_plan(h, number):
     grid(h, sh, t)
     hdim(sh, t, h.gx, -1450)
     vdim(sh, t, h.gy, -1450)
-    # 太陽光パネル（屋上）・ドレン
-    for i in range(6):
-        for j in range(3):
-            x0 = 800 + i * 2700
-            y0 = 1500 + j * 5000
-            sh.rect(*t(x0, y0), *t(x0 + 2500, y0 + 4000), "A-VIS")
-            sh.line(t(x0, y0 + 2000), t(x0 + 2500, y0 + 2000), "A-VIS")
+    # ドレン（太陽光は屋根に設置しない）
     for (x, y) in [(500, 500), (h.W - 500, 500), (500, h.D - 500), (h.W - 500, h.D - 500)]:
         sh.circle(t(x, y), 1.4 * sh.S, "A-SYMB")
         sh.text("RD", t(x + 300, y + 300), 1.5, "A-SYMB")
     sh.text("屋上: 外断熱防水（シート防水）、水勾配 1/50", t(h.W / 2, h.D / 2), 2.2, "A-TEXT", "MIDDLE_CENTER")
-    sh.text("太陽光パネル（架台）", t(h.W / 2, h.D / 2 - 1200), 1.8, "A-TEXT", "MIDDLE_CENTER")
+    sh.text("太陽光パネルは設置しない（駐車場のソーラーカーポートに集約）", t(h.W / 2, h.D / 2 - 1200), 1.8, "A-TEXT", "MIDDLE_CENTER")
+    sh.text("排煙機の排気口・給気ダンパーは外壁面（機械室）に設置", t(h.W / 2, h.D / 2 - 2200), 1.6, "A-TEXT", "MIDDLE_CENTER")
     sh.north_arrow(sh.P(395, 268), 7)
     sh.view_title("屋根伏図", "1:100", (24, 22))
     sh.text(f"RFL = 設計GL+{h.fl['RF']:,}／パラペット天端 GL+{h.parapet_top:,}", (24, 15), 2.4, "A-TEXT", paper=True)
@@ -470,7 +477,7 @@ def building_sections(h, number):
     sh = frame(h, number, "断面図（建物）", 100)
     o = h.outer_dims()
     defs = [("A", "W", 7000.0, (75, 170), "A-A（X2–X3間、階段1を通る南北断面）"),
-            ("B", "S", 3000.0, (75, 55), "B-B（Y1–Y2間、LDK・玄関・ジムを通る東西断面）")]
+            ("B", "S", 1500.0, (75, 55), "B-B（Y1–Y2間、LDK・玄関土間・ジム搬入扉を通る東西断面）")]
     for key, view, c, paper, title in defs:
         uv = uv_fn(view)
         us = [uv(x, y, 0)[0] for x in (o[0], o[2]) for y in (o[1], o[3])]
@@ -696,4 +703,58 @@ def cover(h, dl, sm):
     sh.table(24, 233, [36, 160], rows, row_h=7.0, h=2.5)
     sh.text("図面リスト", (236, 238), 4.0, "A-TEXT", paper=True)
     sh.table(236, 233, [20, 112, 30], [["図番", "図面名称", "縮尺"]] + [list(r) for r in dl], row_h=6.6, h=2.4)
+    return sh
+
+
+def openings_smoke_sheet(h, number):
+    """開口部仕様・排煙計画（2階窓・排煙方式の検討、ジム開口の改善）。"""
+    import house_legal as HL
+    sh = frame(h, number, "開口部仕様・排煙計画", 1, label="—")
+    sh.text("開口部仕様・排煙計画（2階の窓仕様と排煙方式の検討、ジム開口部の改善）", (12, 280), 3.6, "A-TEXT", paper=True)
+    # (1) 採光
+    wt = HL.window_table(h)
+    rows = [["階", "居室", "床面積", "必要 15.29%", "ガラス", "有効(K3.0)", "余裕"]]
+    for w in wt:
+        rows.append([w["floor"], w["room"], f"{w['area']:.1f}", f"{w['need']:.2f}", f"{w['glass']:.2f}", f"{w['eff']:.2f}", f"{w['margin']:.2f}倍"])
+    sh.text("(1) 居室の窓と採光（m²）", (12, 271), 2.8, "A-TEXT", paper=True)
+    y = sh.table(12, 268, [10, 40, 17, 22, 15, 20, 16], rows, row_h=5.0, h=2.0)
+    # (2) 排煙
+    srows, cap = HL.smoke_systems(h)
+    rows = [["階", "防煙区画（居室）", "面積", "方式", "系統", "排煙口→最遠", "参考:自然排煙の必要開放"]]
+    for r in srows:
+        rows.append([r["floor"], r["room"], f"{r['area']:.1f}", "機械排煙", r["system"], f"{r['inlet_dist']:.1f}m", f"{r['natural_need']:.2f}m²"])
+    sh.text("(2) 排煙計画（令126条の2・3）", (12, y - 6), 2.8, "A-TEXT", paper=True)
+    y = sh.table(12, y - 9, [10, 40, 14, 18, 16, 20, 30], rows, row_h=5.0, h=2.0)
+    rows = [["系統", "区画数", "最大区画", "必要能力", "計画"]]
+    for k, c in sorted(cap.items()):
+        rows.append([k, str(c["rooms"]), f"{c['max_area']:.1f}m²", f"{c['need']:.0f}m³/分", f"{c['plan']:.0f}m³/分×1台"])
+    y = sh.table(12, y - 4, [20, 16, 24, 26, 30], rows, row_h=5.0, h=2.0)
+    # (3) 2階の排煙方式の比較
+    rows = [["比較項目", "A 機械排煙（採用）", "B 自然排煙（高窓の一部を開閉式）"],
+            ["窓", "全室 FIX のまま", "各室に内倒し窓（天井下80cm以内、床面積1/50以上）"],
+            ["防犯", "開閉部なし（侵入経路にならない）", "開閉部が増え、2階でも足場があれば弱点"],
+            ["気密・断熱", "サッシ開閉部の隙間なし", "開閉部の気密・熱貫流が劣る（Uw 約+0.2）"],
+            ["設備", "排煙機・ダクト・予備電源（1階と共用）", "手動開放装置のみ（設備は少ない）"],
+            ["維持管理", "年1回の作動点検", "開閉装置の点検・雨仕舞"],
+            ["判定", "防犯・断熱・FIX方針と整合 → 採用", "不採用"]]
+    sh.text("(3) 2階の排煙方式の比較", (190, 271), 2.8, "A-TEXT", paper=True)
+    y2 = sh.table(190, 268, [24, 82, 102], rows, row_h=5.0, h=2.0)
+    # (4) ジム開口部の改善
+    ge = HL.gym_envelope(h)
+    b, a = ge["before"], ge["after"]
+    rows = [["項目", "改善前（v3.1）", "改善後（v3.2）"],
+            ["窓", "腰高窓 1.5×1.0m ×2（窓台 FL+1,000）", "FIX 高窓 2.1×0.6m ×2（窓台 FL+2,000）"],
+            ["外部扉", "南面 両開き搬入扉 1.8×2.4m", "廃止（搬入は玄関から）"],
+            ["開口面積", f"{b['win'] + b['door']:.2f} m²", f"{a['win']:.2f} m²"],
+            ["開口まわり熱損失", f"{ge['q_before']:.1f} W/K", f"{ge['q_after']:.1f} W/K（{(1 - ge['q_after'] / ge['q_before']) * 100:.0f}%減）"],
+            ["防犯", "外部から手の届く窓・扉", "窓下端 地盤+3.05m・防犯合わせガラス（CP、耐貫通5分以上）・開閉部なし"],
+            ["採光", "9.00 m²（有効）", f"{a['win'] * 3:.2f} m²（必要 {h.gym.area * 0.1529:.2f}）"]]
+    sh.text("(4) ジム開口部の改善（防犯・熱貫流）", (190, y2 - 6), 2.8, "A-TEXT", paper=True)
+    y2 = sh.table(190, y2 - 9, [32, 80, 96], rows, row_h=5.0, h=2.0)
+    notes = [("h", "窓の仕様（全窓 FIX）"),
+             ("t", f"枠: 樹脂（またはアルミ樹脂複合）、ガラス: Low-E トリプル（アルゴン）＋合わせガラス（UVカット約99%）、Uw≦{HL.U_WIN:.2f} W/m²K"),
+             ("t", "1階: 外側を防犯合わせガラス（CP 認定品）。2階: 合わせガラス。窓台: 居室 FL+1,000、ジム FL+2,000"),
+             ("t", "換気は全館空調・全熱交換（窓に依存しない）。排煙時は機械室の給気ダンパーが連動して開く"),
+             ("t", "排煙機: 西・東系統の各機械室に 120m³/分×1台。排煙口は各居室の天井、手動開放装置は床から0.8〜1.5m。予備電源は蓄電池（駐車場PV と連携、30分以上）")]
+    side_panel(sh, 190, y2 - 6, notes, width=210)
     return sh
