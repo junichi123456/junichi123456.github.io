@@ -99,11 +99,15 @@ def export_glb(h, path):
         m.apply_translation([(x0 + x1) / 2 * S, yc * S, z * S])
         parts[("ソーラーパーゴラ", "-", (0.12, 0.18, 0.32, 1.0))].append(m)
     # 菜園の畝
-    for k in range(4):
-        yb = y0 + 800 + k * (y1 - y0 - 1600) / 3.6
-        m = trimesh.creation.box(extents=[(x1 - x0 - 2000) * S, 0.9, 0.25])
-        m.apply_translation([(x0 + x1) / 2 * S, (yb + 450) * S, (zb + 125) * S])
+    for b in h.garden_beds:
+        m = trimesh.creation.box(extents=[(b[2] - b[0]) * S, (b[3] - b[1]) * S, 0.25])
+        m.apply_translation([(b[0] + b[2]) / 2 * S, (b[1] + b[3]) / 2 * S, (zb + 125) * S])
         parts[("菜園", "-", (0.45, 0.33, 0.20, 1.0))].append(m)
+    for p in getattr(h.dotcon_garden, "geoms", [h.dotcon_garden]):      # 菜園まわりの Dotcon+
+        parts[("外構（Dotcon+舗装）", "-", (0.62, 0.66, 0.60, 1.0))].append(_prism(poly_m(p.exterior.coords) if not p.interiors else
+                                                                             Polygon([(x * S, y * S) for x, y in p.exterior.coords],
+                                                                                     [[(x * S, y * S) for x, y in r.coords] for r in p.interiors]),
+                                                                             (h.fgl - 150) * S, (h.fgl + 20) * S))
     # 3台用ソーラーカーポート
     cp = h.carport
     cph = h.spec["exterior"]["carport"]["h"]

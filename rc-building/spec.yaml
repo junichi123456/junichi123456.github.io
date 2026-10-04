@@ -147,6 +147,7 @@ exterior:
     coverage: 0.70                         # パネル被覆率（すき間から光と雨を落とす）
     module_kwp_per_m2: 0.215               # 430W級モジュール（2.0m²）
   dotcon_storage_l_per_m2: 13
+  garden_dotcon: {ring: 1500, strip: 2000}   # 菜園まわりの透水設備も Dotcon+（v4.9）: パーゴラ周囲の通路幅・旧トレンチ位置の帯幅
   retention_tank_m3: 25
   gate_vehicle: 5000
   gate_person: 1200

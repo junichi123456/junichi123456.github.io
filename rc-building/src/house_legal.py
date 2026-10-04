@@ -167,7 +167,7 @@ def checks(h):
     add("ブリーフ", "蓄電池", "ブリーフv3 7章", "排煙機30分＋排水ポンプ6時間＋最低限の生活24時間", f"必要 約{en['battery']:.1f}kWh → 16kWh 級", judge(en["battery"] <= 16.5))
     add("ブリーフ", "駐車台数", "ブリーフv3 2章", f"{req['parking']}台", f"{len(h.stalls)}台（屋根なし・Dotcon+）", judge(len(h.stalls) >= req["parking"]))
     add("ブリーフ", "RC塀", "ブリーフv3 4章", f"H{req['fence_height']:,}（防犯）", "全周 H2.0m 以上（東側坂道沿いは道路面+1.2m以上）", OK)
-    add("ブリーフ", "透水性舗装", "ブリーフv3 3.1", "駐車場に Dotcon+", f"約{h.ext_storage['dotcon_area']:.0f}m²（一時貯留 約{h.ext_storage['dotcon_l'] / 1000:.1f}m³）", OK)
+    add("ブリーフ", "透水性舗装", "ブリーフv3 3.1・施主指示（v4.9）", "駐車場に Dotcon+、菜園まわりの透水設備も全て Dotcon+", f"駐車場・門前 約{h.ext_storage['dotcon_area_parking']:.0f}m²＋菜園まわり 約{h.ext_storage['dotcon_area_garden']:.0f}m² = 約{h.ext_storage['dotcon_area']:.0f}m²（一時貯留 約{h.ext_storage['dotcon_l'] / 1000:.1f}m³）", OK)
 
     # ---------------- 集団規定
     add("ブリーフ", "建物の向き", "施主指示（v4.4）", "南側道路に対して平行・直交", f"建物・外構を道路境界線に合わせて {abs(h.facade_az):.1f}° 回転（南面は真南から{'西' if h.facade_az > 0 else '東'}向き）", OK)
@@ -332,5 +332,5 @@ def checks(h):
     add("外構", "水路の占用・境界", "法定外公共物管理条例（八王子市）", "境界確定・占用協議", "北側の塀・排水口の位置を協議", CHK)
     add("関連法令", "建築物省エネ法", "建築物省エネ法 10条（住宅の適合義務）", "地域区分6: 外皮 UA 0.87以下 ほか", "UA 0.25〜0.29（ブリーフ）", OK)
     add("関連法令", "宅地造成・盛土等規制法", "同法", "規制区域内の切土・盛土", "切土・盛土なし（現況地盤を維持）", OK)
-    add("関連法令", "雨水浸透", "八王子市 雨水浸透施設の指導・助成", "設置基準・補助の確認", "貯留槽25m³・浸透トレンチ・浸透桝", CHK)
+    add("関連法令", "雨水浸透", "八王子市 雨水浸透施設の指導・助成", "設置基準・補助の確認", "貯留槽25m³・Dotcon+ 透水舗装・浸透桝", CHK)
     return rows, sm, wq

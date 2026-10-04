@@ -227,6 +227,8 @@ def site_plan(h, number, legal_summary):
     house_outline(h, sh, t)
     # 駐車場・ソーラーパーゴラ
     sh.hatch_polys([Polygon(t.pts(h.dotcon.exterior.coords))], pattern="NET", spacing=1.0, layer="A-PAVE")
+    sh.hatch_polys([Polygon(t.pts(p.exterior.coords), [t.pts(r.coords) for r in p.interiors]) for p in iter_polygons(h.dotcon_garden)],
+                   pattern="NET", spacing=1.0, layer="A-PAVE")
     cp = h.carport
     pg = h.pergola
     sh.rect(*t(pg[0], pg[1]), *t(pg[2], pg[3]), "A-VIS", lineweight=25)
@@ -292,6 +294,11 @@ def exterior_plan(h, number):
     # 舗装
     sh.hatch_polys([Polygon(t.pts(h.dotcon.exterior.coords))], pattern="NET", spacing=0.9, layer="A-PAVE")
     sh.pline(t.pts(h.dotcon.exterior.coords), "A-PAVE", closed=True)
+    for p in iter_polygons(h.dotcon_garden):          # 菜園まわりの Dotcon+（通路・北と西の帯）
+        sh.hatch_polys([Polygon(t.pts(p.exterior.coords), [t.pts(r.coords) for r in p.interiors])], pattern="NET", spacing=0.9, layer="A-PAVE")
+        sh.pline(t.pts(p.exterior.coords), "A-PAVE", closed=True)
+        for r in p.interiors:
+            sh.pline(t.pts(r.coords), "A-PAVE", closed=True)
     ap = h.approach.intersection(h.site.buffer(-h.fence_t))
     for p in iter_polygons(ap):
         sh.pline(t.pts(p.exterior.coords), "A-PAVE", closed=True)
@@ -325,9 +332,8 @@ def exterior_plan(h, number):
     sh.rect(*t(tk[0], tk[1]), *t(tk[2], tk[3]), "A-DRAIN")
     sh.line(t(tk[0], tk[1]), t(tk[2], tk[3]), "A-DRAIN")
     sh.text(f"地下雨水貯留槽 {h.spec['exterior']['retention_tank_m3']}m³", t((tk[0] + tk[2]) / 2, tk[3] + 900), 1.7, "A-TEXT", "MIDDLE_CENTER")
-    for ln in h.trench:
-        sh.pline(t.pts(ln.coords), "A-DRAIN", lineweight=35)
-    sh.text("浸透トレンチ", t(-20000, 38000), 1.7, "A-TEXT", "MIDDLE_CENTER")
+    st_ = h.ext_storage
+    sh.text(f"菜園まわり Dotcon+ 約{st_['dotcon_area_garden']:.0f}m²（通路・北と西の帯）", t(-20000, 31500), 1.7, "A-TEXT", "MIDDLE_CENTER")
     for p in h.infil_pits:
         sh.circle(t(*p), 0.9 * sh.S, "A-DRAIN")
     for p in h.flap:
@@ -360,14 +366,14 @@ def exterior_plan(h, number):
     sh.view_title("外構・雨水排水計画図", "1:400", (18, 22))
     legend(sh, 300, 280, [("A-FENCE", "RC塀 t=150（数値=FGLからの天端高 m）", "fence"),
                           ("A-PAVE", "Dotcon+ 透水舗装", "pave"),
-                          ("A-DRAIN", "浸透トレンチ・浸透桝・貯留槽", "line"),
+                          ("A-DRAIN", "浸透桝・貯留槽", "line"),
                           ("A-FLOOD", "表流水の流入方向", "line"),
                           ("A-SITE", "敷地境界（推定）", "line")])
     st = h.ext_storage
     notes = [("h", "内水対策"),
              ("t", f"1. RC塀の基礎〜FGL+{h.spec['requirements']['fence_watertight']}を止水構造。門扉には着脱式止水板 H600"),
-             ("t", f"2. Dotcon+ 約{st['dotcon_area']:.0f}m² × 13L/m² ≒ {st['dotcon_l'] / 1000:.1f}m³ の一時貯留"),
-             ("t", f"3. 地下貯留槽 {st['tank_m3']}m³＋浸透トレンチ・浸透桝（透水係数は地盤調査で確認）"),
+             ("t", f"2. Dotcon+ 約{st['dotcon_area']:.0f}m²（駐車場・門前 {st['dotcon_area_parking']:.0f}m²＋菜園まわり {st['dotcon_area_garden']:.0f}m²）× 13L/m² ≒ {st['dotcon_l'] / 1000:.1f}m³ の一時貯留"),
+             ("t", f"3. 地下貯留槽 {st['tank_m3']}m³（菜園の散水に利用）。菜園まわりの透水設備は浸透トレンチに代えて全て Dotcon+（透水係数は地盤調査で確認）"),
              ("t", "4. 塀の低い位置にフラップ弁付き排水口（道路側溝からの逆流防止）"),
              ("t", "5. 建物: 1FL=GL+1,500、床下は設備ピット、逆流防止弁・排水ポンプ（非常電源）"),
              ("t", f"参考: 時間雨量50mmで敷地全体の流出量は約{h.site.area / 1e6 * 0.05:.0f}m³/h。貯留・浸透は初期雨水の抑制が主目的で、超過分は止水と排水ポンプで対応"),

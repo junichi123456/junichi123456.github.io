@@ -558,16 +558,29 @@ class House:
                                          (9100, self.porch[1])])
         self.approach = self.approach_line.buffer(750, cap_style=2, join_style=2)
         self._exterior_lights(gates)
-        # 雨水貯留槽・浸透施設（西側の庭）
+        # 雨水貯留槽（西側の庭、地下・菜園の散水に利用）
         self.tank = (-23500, 22000, -18500, 27000)
-        self.trench = [LineString([(-29500, 28000), (-15000, 28100), (-1000, 27800)]),
-                       LineString([(-30500, 26500), (-31500, 13000), (-32300, 1000)])]
-        self.infil_pits = [(-29500, 28000), (-15000, 28100), (-1000, 27800), (-31500, 13000), (-32300, 1000), (11000, -16000)]
+        # 菜園まわりの透水設備は全て Dotcon+（v4.9）: パーゴラの周囲・畝の間の通路と、北・西の帯（旧 浸透トレンチの位置）
+        px0, py0, px1, py1 = self.pergola
+        self.garden_beds = [(px0 + 1000, py0 + 800 + k * (py1 - py0 - 1600) / 3.6, px1 - 1000, py0 + 800 + k * (py1 - py0 - 1600) / 3.6 + 900)
+                            for k in range(4)]
+        gd = ex["garden_dotcon"]
+        strips = [LineString([(-29500, 28000), (-15000, 28100), (-1000, 27800)]),
+                  LineString([(-30500, 26500), (-31500, 13000), (-32300, 1000)])]
+        garden = Polygon([(px0, py0), (px1, py0), (px1, py1), (px0, py1)]).buffer(gd["ring"], join_style=2)
+        for ln in strips:
+            garden = garden.union(ln.buffer(gd["strip"] / 2, cap_style=2, join_style=2))
+        for b in self.garden_beds:
+            garden = garden.difference(Polygon([(b[0], b[1]), (b[2], b[1]), (b[2], b[3]), (b[0], b[3])]))
+        self.dotcon_garden = garden.intersection(site.buffer(-self.fence_t))
+        self.trench = []
+        self.infil_pits = [(11000, -16000)]
         # 塀の排水口（フラップ弁）＝ 低い位置
         self.flap = [(-33200, -600), (23800, y_g)]
+        area = (self.dotcon.area + self.dotcon_garden.area) / 1e6
         self.ext_storage = dict(
-            dotcon_area=pave.area / 1e6,
-            dotcon_l=pave.area / 1e6 * ex["dotcon_storage_l_per_m2"],
+            dotcon_area=area, dotcon_area_parking=self.dotcon.area / 1e6, dotcon_area_garden=self.dotcon_garden.area / 1e6,
+            dotcon_l=area * ex["dotcon_storage_l_per_m2"],
             tank_m3=ex["retention_tank_m3"])
 
     def _exterior_lights(self, gates):
