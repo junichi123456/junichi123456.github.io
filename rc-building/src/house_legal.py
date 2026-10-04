@@ -149,11 +149,13 @@ def checks(h):
         f"ソーラーパーゴラ {en['pg_kwp']:.1f}kWp＋3台用カーポート {en['cp_kwp']:.1f}kWp（影損失込み）→ 年 約{en['pv_gen']:,.0f}kWh",
         judge(en["pv_gen"] >= en["total"] * 1.2 * 0.99))
     import sightshade as SS
-    v0 = SS.entrance_visibility(h, with_screen=False)
-    v1 = SS.entrance_visibility(h)
-    v2 = SS.entrance_visibility(h, eye=4500)
-    add("ブリーフ", "玄関の目隠し", "施主指示（v4.2）", "敷地外（道路・隣地）から玄関ドアが見えない",
-        f"境界外1.5mの{v1['n']}地点から視線を判定: 目隠し壁なし {len(v0['visible'])}地点で見える → 計画 {len(v1['visible'])}地点（目線1.5m）／{len(v2['visible'])}地点（目線4.5m・隣家2階相当）",
+    S_ = ["南側道路"]
+    v0 = SS.entrance_visibility(h, with_screen=False, only=S_)
+    v1 = SS.entrance_visibility(h, only=S_)
+    v2 = SS.entrance_visibility(h, eye=4500, only=S_)
+    sw = h.screen[0]
+    add("ブリーフ", "玄関の目隠し", "施主指示（v4.3）", "南側道路から目視で玄関ドアが見えない",
+        f"南側道路沿い{v1['n']}地点から判定: 壁なし {len(v0['visible'])}地点で見える → 自立壁 L{(sw[2] - sw[0]) / 1000:.1f}m×H{(h.screen_top - h.fgl) / 1000:.1f}m で {len(v1['visible'])}地点（目線1.5m）／{len(v2['visible'])}地点（4.5m）",
         judge(len(v1["visible"]) == 0))
     ind = PF.indoor(h)
     dd = h.spec["requirements"]["indoor"]

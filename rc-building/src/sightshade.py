@@ -154,12 +154,21 @@ def view_obstacles(h, with_screen=True):
             items.append((box(a0, b0, a1, b1), h.fgl - 400, h.screen_top, "目隠し壁"))
     cp = h.carport
     items.append((box(*cp), h.fgl + 2400, h.fgl + 2650, "カーポート屋根"))
-    if with_screen and getattr(h, "louver", None):
-        items.append((box(*h.louver), h.screen_top - 100, h.screen_top, "格子庇"))
+    if getattr(h, "canopy", None):
+        items.append((box(*h.canopy), h.canopy_z, h.canopy_z + 150, "庇"))
     return Prisms(items)
 
 
-def entrance_visibility(h, eye=1500, with_screen=True, step=1000):
+def edge_class_of(h, x, y):
+    best = None
+    for (a, b, k), c in zip(h.site_edges, h.edge_class):
+        d = LineString([a, b]).distance(Point(x, y))
+        if best is None or d < best[0]:
+            best = (d, c)
+    return best[1]
+
+
+def entrance_visibility(h, eye=1500, with_screen=True, step=1000, only=None):
     """敷地境界の外側 1.5m の線上（道路・隣地）から、玄関ドア面が見えるか。"""
     obs = view_obstacles(h, with_screen)
     door = h.entrance
@@ -172,8 +181,11 @@ def entrance_visibility(h, eye=1500, with_screen=True, step=1000):
     n = int(L // step)
     for i in range(n):
         p = ring.interpolate(i * step)
+        if only and edge_class_of(h, p.x, p.y) not in only:
+            continue
         ze = h.ground(p.x, p.y) + eye
         seen = [t for t in targets if obs.blocked((p.x, p.y), (t[0], t[1]), ze, t[2]) is None]
         if seen:
             vis.append((p.x, p.y, len(seen)))
-    return dict(n=n, visible=vis, ratio=len(vis) / n if n else 0)
+    nn = n if not only else sum(1 for i in range(n) if edge_class_of(h, *ring.interpolate(i * step).coords[0]) in only)
+    return dict(n=nn, visible=vis, ratio=len(vis) / nn if nn else 0)

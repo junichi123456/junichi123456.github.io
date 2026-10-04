@@ -432,17 +432,23 @@ class House:
             self.boxes.append(Box(x0, y1 - T, self.fgl, x1, y1, z, "stair", level="EXT", tag="外部階段"))
         self.porch = (x0 - 300, y_land - land_d - (n - 1) * T, x1 + 300, y_land)
         self.ext_stair = dict(n=n, riser=r, tread=T)
-        # 目隠し壁（RC・独立）: 玄関の正面（南）と東側をふさぎ、西側から回り込んで入る
+        # 目隠し壁（RC・本館から独立した自立壁、単体で補修・更新可能）: 南側道路からの視線だけを遮る1枚壁
         sw = self.spec["exterior"]["screen_wall"]
         tt, top = sw["t"], self.fgl + sw["height"]
-        self.screen = [(5800, -5000 - tt, 12800, -5000), (12800 - tt, -5000 - tt, 12800, -self.t / 2 - self.ins),
-                       (5800, -5000 - tt, 5800 + tt, -1900), (7700, -1700, 7700 + tt, -self.t / 2 - self.ins)]
-        # ポーチ上部の格子庇（上方・東側の高い道路からの視線を遮る）
-        self.louver = (5800, -5000, 12800, -self.t / 2 - self.ins)
-        self.boxes.append(Box(*self.louver[:2], top - 100, *self.louver[2:], top, "partition", "lgs", level="EXT", tag="格子庇"))
+        xa, xb = sw["x"]
+        yc = sw["y"]
+        self.screen = [(xa, yc - tt, xb, yc)]
+        self.louver = None
         for (a0, b0, a1, b1) in self.screen:
             self.boxes.append(Box(a0, b0, self.fgl - 400, a1, b1, top, "wall", level="EXT", tag="目隠し壁"))
         self.screen_top = top
+        # 玄関庇（本館から片持ち、出 2.0m）
+        cn = self.spec["exterior"]["canopy"]
+        y_face = -self.t / 2 - self.ins
+        self.canopy = (cn["x"][0], y_face - cn["depth"], cn["x"][1], y_face)
+        zc = self.fl["1F"] + cn["z"]
+        self.boxes.append(Box(*self.canopy[:2], zc, *self.canopy[2:], zc + 150, "slab", level="EXT", tag="庇"))
+        self.canopy_z = zc
 
     # -------------------------------------------------------- exterior
     def _exterior(self):
@@ -496,7 +502,7 @@ class House:
         gp1 = gates[1][2]
         gm = ((gp0[0] + gp1[0]) / 2, (gp0[1] + gp1[1]) / 2)
         # アプローチ: 目隠し壁の西側から回り込み、壁の内側で玄関階段に至る（クランク）
-        self.approach = LineString([(gm[0], gm[1] + 200), (3300, -22000), (4300, -16000), (4300, -1100), (6900, -1100), (6900, -4050), (9100, -4050),
+        self.approach = LineString([(gm[0], gm[1] + 200), (3300, -22000), (4300, -16000), (4300, -4300), (9100, -4300),
                                     (9100, self.porch[1])]).buffer(750, cap_style=2, join_style=2)
         # 雨水貯留槽・浸透施設（西側の庭）
         self.tank = (-23500, 20000, -18500, 25000)

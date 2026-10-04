@@ -493,7 +493,7 @@ $SKPOLY
   9
 $TDCREATE
  40
-2461318.528020833
+2461318.53412037
   9
 $TDUCREATE
  40
@@ -501,7 +501,7 @@ $TDUCREATE
   9
 $TDUPDATE
  40
-2461318.5282407408
+2461318.534340278
   9
 $TDUUPDATE
  40
@@ -933,11 +933,11 @@ $PSTYLEMODE
   9
 $FINGERPRINTGUID
   2
-{A54F614E-B013-4144-98E9-5BFE14303B6E}
+{0DB4A51E-B3C1-4F3A-A238-0FE5C3C84C6B}
   9
 $VERSIONGUID
   2
-{9EB51F3B-C943-4113-93C5-2E691D05E4DF}
+{D149914F-FA64-4790-8AFF-0E69B3834C74}
   9
 $EXTNAMES
 290
@@ -1327,9 +1327,9 @@ ISM
   0
 CLASS
   1
-ACDBPLACEHOLDER
+LAYOUT
   2
-AcDbPlaceHolder
+AcDbLayout
   3
 ObjectDBX Classes
  90
@@ -1343,9 +1343,9 @@ ObjectDBX Classes
   0
 CLASS
   1
-LAYOUT
+ACDBPLACEHOLDER
   2
-AcDbLayout
+AcDbPlaceHolder
   3
 ObjectDBX Classes
  90
@@ -9691,7 +9691,7 @@ AcDbText
  40
 2.1
   1
-施主指示（v4.2）
+施主指示（v4.3）
   7
 JP
  11
@@ -9723,7 +9723,7 @@ AcDbText
  40
 2.1
   1
-敷地外（道路・隣地）から玄関ドアが見えない
+南側道路から目視で玄関ドアが見えない
   7
 JP
  11
@@ -9755,7 +9755,7 @@ AcDbText
  40
 2.1
   1
-境界外1.5mの270地点から視線を判定: 目隠し壁なし 26地点で見える → 計画 0地点（目線1.5m）／0地点（目線4.5m
+南側道路沿い17地点から判定: 壁なし 9地点で見える → 自立壁 L4.4m×H2.7m で 0地点（目線1.5m）／17地点（4.5
   7
 JP
  11
@@ -9787,7 +9787,7 @@ AcDbText
  40
 2.1
   1
-・隣家2階相当）
+m）
   7
 JP
  11
@@ -16705,7 +16705,7 @@ DictionaryVariables
 280
 0
   1
-1.4.4 @ 2026-10-04T12:40:21.930389+00:00
+1.4.4 @ 2026-10-04T12:49:08.071605+00:00
   0
 VISUALSTYLE
   5
@@ -23267,7 +23267,7 @@ DictionaryVariables
 280
 0
   1
-1.4.4 @ 2026-10-04T12:40:40.350902+00:00
+1.4.4 @ 2026-10-04T12:49:27.245052+00:00
   0
 ENDSEC
   0
