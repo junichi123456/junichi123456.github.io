@@ -44,7 +44,7 @@ FLOOR_TEMP_FACTOR = 0.7       # 床下ピット（基礎断熱）に接する床
 RECOVERY = 0.70               # 全熱交換 回収率（顕熱・潜熱）
 ACH = 0.5                     # 機械換気 回/h
 ACH_INF = 0.03                # すき間風（C値 0.3 程度）
-SHGC = 0.30                   # 日射熱取得率（Low-E トリプル・FIX・深い開口）
+SHGC = 0.30                   # 旧計画の日射熱取得率（全窓 遮熱型 Low-E トリプル・ブラインドなし）— 比較用
 SOLAR = 450.0                 # 夏期ピーク 窓面日射量 W/m²（方位平均）
 
 
@@ -66,11 +66,11 @@ def envelope(h, side=None):
     return dict(parts=parts, area=area, q=q, UA=q / area, L=L, Hc=Hc, win=win)
 
 
-def heat_load(h, side=None, ind=None, gamma=None):
+def heat_load(h, side=None, ind=None, gamma=None, shgc=None, blinds=True):
     import sightshade as SS
     INDOOR = ind or indoor(h)
     env = envelope(h, side)
-    ws = SS.window_solar(h, gamma)
+    ws = SS.window_solar(h, gamma, shgc, blinds)
     S = (env["L"] / 1000) ** 2
     floor_area = 2 * ((side if side is not None else h.W) / 1000) ** 2
     V = 2 * S * 2.9                                          # 空調対象容積 m³（天井懐を除く概算）

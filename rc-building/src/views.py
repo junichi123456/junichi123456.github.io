@@ -31,7 +31,7 @@ def klass(b):
         return "insul"
     if b.mat == "glass":
         return "glass"
-    if b.cat == "door":
+    if b.cat in ("door", "blind"):
         return "door"
     if b.cat == "stair":
         return "stair"

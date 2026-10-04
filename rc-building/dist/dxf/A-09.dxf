@@ -493,7 +493,7 @@ $SKPOLY
   9
 $TDCREATE
  40
-2461318.5429513888
+2461318.550949074
   9
 $TDUCREATE
  40
@@ -501,7 +501,7 @@ $TDUCREATE
   9
 $TDUPDATE
  40
-2461318.5431828704
+2461318.5511805555
   9
 $TDUUPDATE
  40
@@ -933,11 +933,11 @@ $PSTYLEMODE
   9
 $FINGERPRINTGUID
   2
-{DC9DFF3F-8519-4CF3-9DBA-F4F66D4A14A9}
+{72BB16D3-9E39-4AC2-A2D8-DFBEF29D30FB}
   9
 $VERSIONGUID
   2
-{6474FABF-CC5E-426A-A58A-F50603BA812F}
+{7E766EB2-511D-4600-868D-043200A0627B}
   9
 $EXTNAMES
 290
@@ -1327,9 +1327,9 @@ ISM
   0
 CLASS
   1
-LAYOUT
+ACDBPLACEHOLDER
   2
-AcDbLayout
+AcDbPlaceHolder
   3
 ObjectDBX Classes
  90
@@ -1343,9 +1343,9 @@ ObjectDBX Classes
   0
 CLASS
   1
-ACDBPLACEHOLDER
+LAYOUT
   2
-AcDbPlaceHolder
+AcDbLayout
   3
 ObjectDBX Classes
  90
@@ -19633,7 +19633,7 @@ AcDbText
  40
 100.0
   1
-ガラス: 防犯合わせ＋Low-E トリプル（CP）・FIX
+ガラス: Low-E トリプル＋UVカット防犯合わせ（CP）・FIX
   7
 JP
  11
@@ -20027,7 +20027,7 @@ AcDbText
  40
 100.0
   1
-ガラス: 防犯合わせ＋Low-E トリプル（CP）・FIX
+ガラス: Low-E トリプル＋UVカット防犯合わせ（CP）・FIX
   7
 JP
  11
@@ -20421,7 +20421,7 @@ AcDbText
  40
 100.0
   1
-ガラス: 防犯合わせ＋Low-E トリプル（CP）・FIX
+ガラス: Low-E トリプル＋UVカット防犯合わせ（CP）・FIX
   7
 JP
  11
@@ -20815,7 +20815,7 @@ AcDbText
  40
 100.0
   1
-ガラス: 合わせ＋Low-E トリプル（UVカット）・FIX
+ガラス: Low-E トリプル＋UVカット合わせ・FIX
   7
 JP
  11
@@ -21209,7 +21209,7 @@ AcDbText
  40
 100.0
   1
-ガラス: 合わせ＋Low-E トリプル（UVカット）・FIX
+ガラス: Low-E トリプル＋UVカット合わせ・FIX
   7
 JP
  11
@@ -21603,7 +21603,7 @@ AcDbText
  40
 100.0
   1
-ガラス: 合わせ＋Low-E トリプル（UVカット）・FIX
+ガラス: Low-E トリプル＋UVカット合わせ・FIX
   7
 JP
  11
@@ -21997,7 +21997,7 @@ AcDbText
  40
 100.0
   1
-ガラス: 防犯合わせ＋Low-E トリプル（CP）・FIX
+ガラス: Low-E トリプル＋UVカット防犯合わせ（CP）・FIX
   7
 JP
  11
@@ -22391,7 +22391,7 @@ AcDbText
  40
 100.0
   1
-ガラス: 合わせ＋Low-E トリプル（UVカット）・FIX
+ガラス: Low-E トリプル＋UVカット合わせ・FIX
   7
 JP
  11
@@ -22785,7 +22785,7 @@ AcDbText
  40
 100.0
   1
-ガラス: 合わせ＋Low-E トリプル（UVカット）・FIX
+ガラス: Low-E トリプル＋UVカット合わせ・FIX
   7
 JP
  11
@@ -23179,7 +23179,7 @@ AcDbText
  40
 100.0
   1
-ガラス: 合わせ＋Low-E トリプル（UVカット）・FIX
+ガラス: Low-E トリプル＋UVカット合わせ・FIX
   7
 JP
  11
@@ -28451,7 +28451,7 @@ DictionaryVariables
 280
 0
   1
-1.4.4 @ 2026-10-04T13:01:51.664038+00:00
+1.4.4 @ 2026-10-04T13:13:22.908035+00:00
   0
 VISUALSTYLE
   5
@@ -35013,7 +35013,7 @@ DictionaryVariables
 280
 0
   1
-1.4.4 @ 2026-10-04T13:02:11.132704+00:00
+1.4.4 @ 2026-10-04T13:13:42.990860+00:00
   0
 ENDSEC
   0

@@ -448,10 +448,10 @@ def floor_plan(h, floor, number):
                   ("t", "ジム床: 積載荷重 5,000N/m²（提案）・浮き床。天井は直天井（CH 約2,900）を推奨"),
                   ("t", "ジムの窓: 外部扉を廃止し、窓は天井際の FIX 高窓（窓台 FL+2,000、防犯合わせガラス・トリプル Low-E）に集約"),
                   ("t", "防音: ジムは浮き床＋遮音ドア Ts-35、機械室・WIC を緩衝帯として居室Aと分離。真上は2階シアター（騒音ゾーンを上下に集約）"),
-                  ("t", "排煙: LDK・ジム・居室Aは機械排煙（令126条の3）。窓は FIX（トリプルガラス）。1階の窓は防犯合わせガラス（CP）")]
+                  ("t", "排煙: LDK・ジム・居室Aは機械排煙（令126条の3）。窓は全窓 FIX の樹脂サッシ・Low-E トリプル（UVカット合わせ、1階は防犯 CP 兼用）。南・東・西は外付け電動ブラインド（M-03）")]
     else:
         notes += [("t", "回遊③: ホール→図書室→南廊下→ホール。回遊④: ホール→洗面→階段2ホール→図書室→ホール"),
-                  ("t", "窓: FIX（樹脂枠・Low-E トリプル・合わせガラス UVカット、Uw≦0.90）。排煙は各居室の天井排煙口による機械排煙（A-10 参照）"),
+                  ("t", "窓: 全窓 FIX（樹脂サッシ・Low-E トリプル・UVカット合わせガラス、Uw≦0.90）。南・東・西は外付け電動ブラインド（M-03）。排煙は各居室の天井排煙口による機械排煙（A-10 参照）"),
                   ("t", "防音: シアターは前室（音響ロック）＋両開き遮音扉 Ts-40。主寝室とは前室・WIC の2層で分離"),
                   ("t", "居室B・C・D は収納・WIC を間に挟んで隣室と分離（戸境に収納）"),
                   ("t", "ファミリークローゼット: 1階ランドリーから階段2で直結")]
@@ -511,7 +511,8 @@ def elevations(h, number):
         sh.text("腰壁 タイル張り", t(max(us) - 300, h.fgl + 250), 1.4, "A-TEXT", "BOTTOM_RIGHT")
         p = t(u_lo, -2400)
         sh.text(title, p, 3.2, "A-TEXT", "BOTTOM_LEFT")
-    sh.text(f"外壁: {h.spec['finish']['exterior']}　窓: FIX（トリプルガラス）", (18, 30), 2.2, "A-TEXT", paper=True)
+    sh.text(f"外壁: {h.spec['finish']['exterior']}", (18, 36), 2.2, "A-TEXT", paper=True)
+    sh.text("窓: 全窓 FIX 樹脂サッシ・Low-E トリプル（UVカット合わせ）。南・東・西の窓上の箱は外付け電動ブラインドのボックス（M-03）", (18, 30), 2.2, "A-TEXT", paper=True)
     return sh
 
 
@@ -795,7 +796,7 @@ def openings_smoke_sheet(h, number):
     sh.text("(4) ジム開口部の改善（防犯・熱貫流）", (190, y2 - 6), 2.8, "A-TEXT", paper=True)
     y2 = sh.table(190, y2 - 9, [32, 80, 96], rows, row_h=5.0, h=2.0)
     notes = [("h", "窓の仕様（全窓 FIX）"),
-             ("t", f"枠: 樹脂（またはアルミ樹脂複合）、ガラス: Low-E トリプル（アルゴン）＋合わせガラス（UVカット約99%）、Uw≦{HL.U_WIN:.2f} W/m²K"),
+             ("t", f"枠: 樹脂サッシ、ガラス: 全窓 Low-E トリプル（アルゴン）＋室外側 UVカット合わせガラス（紫外線約99%カット）、Uw≦{HL.U_WIN:.2f} W/m²K。南・東・西は外付け電動ブラインド（M-03）"),
              ("t", "1階: 外側を防犯合わせガラス（CP 認定品）。2階: 合わせガラス。窓台: 居室 FL+1,000、ジム FL+2,000"),
              ("t", "換気は全館空調・全熱交換（窓に依存しない）。排煙時は機械室の給気ダンパーが連動して開く"),
              ("t", "排煙機: 西・東系統の各機械室に 120m³/分×1台。排煙口は各居室の天井、手動開放装置は床から0.8〜1.5m。予備電源は蓄電池（駐車場PV と連携、30分以上）")]
@@ -885,7 +886,7 @@ def orientation_sheet(h, number):
                      f"{w0['heat'][k]:,.0f} → {w1['heat'][k]:,.0f}", f"{w0['cool'][k]:,.0f} → {w1['cool'][k]:,.0f}"])
     rows.append(["合計", f"{sum(w1['glass'].values()):.2f}", "", f"{sum(w0['heat'].values()):,.0f} → {sum(w1['heat'].values()):,.0f}",
                  f"{sum(w0['cool'].values()):,.0f} → {sum(w1['cool'].values()):,.0f}"])
-    sh.text("(1) 窓からの日射取得（日射熱取得率 0.30・日照率 45%）", (12, 271), 2.8, "A-TEXT", paper=True)
+    sh.text("(1) 窓からの日射取得（Low-E 南北 g0.45・東西 g0.28、外付けブラインド 5〜9月、日照率 45%）", (12, 271), 2.8, "A-TEXT", paper=True)
     y = sh.table(12, 268, [24, 26, 66, 40, 40], rows, row_h=5.2, h=2.0)
     h0, h1 = PF.heat_load(h, gamma=0.0), PF.heat_load(h)
     e1 = PF.energy(h, h1)
@@ -905,6 +906,103 @@ def orientation_sheet(h, number):
         ("t", "窓の日射取得は、東面が冬に少し増え、西面が冬・夏とも少し減る。合計ではほぼ変わらない（窓が小さい FIX 窓中心の外皮のため、方位の影響は小さい）"),
         ("t", "太陽光は真南から12°程度の振れでは年間日射の減少が 0.2%未満で、発電量への影響は無視できる"),
         ("t", "敷地との関係では、建物と道路・塀が平行になり、南側の駐車場・アプローチの配置に無駄がなくなる。北側水路から11.0m、東側道路から10.0m、隣地から9.8m（いずれも がけ条例の2H 以上）")], width=300)
+    return sh
+
+
+def glazing_uv_sheet(h, number):
+    """窓仕様（全窓 樹脂サッシ・Low-E トリプル）と紫外線対策（UVカット合わせガラス・外付け電動ブラインド）。"""
+    import performance as PF
+    import sightshade as SS
+    from shapely.geometry import box as sbox
+    gz, us = h.spec["glazing"], h.spec["uv_shading"]
+    sh = frame(h, number, "窓仕様・紫外線対策", 1, label="—")
+    sh.text("窓仕様・紫外線対策 — 全窓 樹脂サッシ＋Low-E トリプルガラス、UVカット合わせガラス＋外付け電動ブラインド", (12, 280), 3.6, "A-TEXT", paper=True)
+    names = {"S": "南", "E": "東", "N": "北", "W": "西"}
+    blinded = {id(op) for op, _ in h.blinds}
+    rows = [["記号", "階", "名称", "方位", "W×H", "Low-E の種類", "g", "外付けブラインド"]]
+    for op in sorted((o for o in h.openings(exterior=True) if o.kind == "window"), key=lambda o: (o.floor, "SEWN".index(o.side), o.u0)):
+        t = gz["types"][gz["side_type"][op.side]]
+        rows.append([op.label, op.floor, op.name.replace("FIX", "FIX "), names[op.side], f"{op.width:,.0f}×{op.height:,.0f}",
+                     t["name"].replace(" Low-E トリプル", ""), f"{t['g']:.2f}", "あり（電動）" if id(op) in blinded else "—"])
+    sh.text(f"(1) 窓の一覧（全{len(rows) - 1}か所・すべて FIX）", (12, 271), 2.8, "A-TEXT", paper=True)
+    y = sh.table(12, 268, [14, 10, 36, 12, 24, 24, 12, 30], rows, row_h=4.8, h=2.0)
+    rows = [["項目", "仕様"],
+            ["サッシ", gz["frame"] + f"、Uw≦{gz['uw']:.2f} W/m²K"],
+            ["ガラス（1階）", gz["build_1f"]],
+            ["ガラス（2階）", gz["build_2f"]],
+            ["Low-E", f"膜 {gz['low_e']}面、Ug {gz['ug']:.2f} W/m²K。南・北は日射取得型（冬の日射を取り込む）、東・西は遮熱型（朝夕の低い日射を防ぐ）"],
+            ["紫外線", f"室外側の合わせガラス中間膜で紫外線を約{(1 - gz['tuv']) * 100:.0f}%カット（透過率 {gz['tuv'] * 100:.0f}%以下）。全窓共通"],
+            ["外付けブラインド", f"{us['type']}。{'・'.join(names[k] for k in us['sides'])}面の窓 {len(h.blinds)}か所、{us['months'][0]}〜{us['months'][-1]}月は日射センサーで自動降下（遮蔽係数 {us['fc']:.2f}）"]]
+    sh.text("(2) 窓の仕様（全窓共通）", (12, y - 6), 2.8, "A-TEXT", paper=True)
+    y = sh.table(12, y - 9, [30, 142], rows, row_h=5.0, h=2.0)
+    # (3) 紫外線
+    uv = SS.uv_exposure(h)
+    rows = [["ガラスの種類", "紫外線透過率", "室内に入る紫外線 kWh/年", "カット率"]]
+    for n_, t_, kwh in uv["cases"]:
+        rows.append([n_, f"{t_ * 100:.1f}%", f"{kwh:.2f}", f"{(1 - kwh / uv['tot_inc']) * 100:.1f}%"])
+    sh.text(f"(3) 紫外線のカット効果（窓面に当たる紫外線 年 {uv['tot_inc']:.1f} kWh = 日射の{uv['frac'] * 100:.0f}%）", (12, y - 6), 2.8, "A-TEXT", paper=True)
+    y = sh.table(12, y - 9, [70, 26, 46, 30], rows, row_h=5.0, h=2.0)
+    # (4) 冷暖房への影響
+    base = PF.heat_load(h, shgc=PF.SHGC, blinds=False)
+    noblind = PF.heat_load(h, blinds=False)
+    plan = PF.heat_load(h)
+    rows = [["項目", "旧（全窓 遮熱型・ブラインドなし）", "Low-E 使い分けのみ", "本計画（＋外付けブラインド）"],
+            ["冷房ピークの窓日射取得 kW", f"{base['solar']:.2f}", f"{noblind['solar']:.2f}", f"{plan['solar']:.2f}"],
+            ["冷房 顕熱 設計負荷 kW", f"{base['cool_s']:.2f}", f"{noblind['cool_s']:.2f}", f"{plan['cool_s']:.2f}"],
+            ["暖房期の窓日射取得 kWh", f"{sum(base['ws']['heat'].values()):,.0f}", f"{sum(noblind['ws']['heat'].values()):,.0f}", f"{sum(plan['ws']['heat'].values()):,.0f}"],
+            ["冷房期の窓日射取得 kWh", f"{sum(base['ws']['cool'].values()):,.0f}", f"{sum(noblind['ws']['cool'].values()):,.0f}", f"{sum(plan['ws']['cool'].values()):,.0f}"],
+            ["年間 暖房熱量 kWh", f"{base['heat_kwh']:,.0f}", f"{noblind['heat_kwh']:,.0f}", f"{plan['heat_kwh']:,.0f}"],
+            ["年間 冷房・除湿熱量 kWh", f"{base['cool_kwh']:,.0f}", f"{noblind['cool_kwh']:,.0f}", f"{plan['cool_kwh']:,.0f}"]]
+    sh.text("(4) 冷暖房負荷への影響", (12, y - 6), 2.8, "A-TEXT", paper=True)
+    y = sh.table(12, y - 9, [52, 46, 36, 46], rows, row_h=5.0, h=2.0)
+        # (5) 窓上部の詳細（模式図 1:5）
+    px0, py0, k = 228, 212, 1 / 8.0
+
+    def Q(x, z):
+        return sh.P(px0 + x * k, py0 + z * k)
+
+    def R(x0, z0, x1, z1, layer="A-VIS", **kw):
+        a, b = Q(x0, z0), Q(x1, z1)
+        sh.rect(a[0], a[1], b[0], b[1], layer, **kw)
+        return sbox(min(a[0], b[0]), min(a[1], b[1]), max(a[0], b[0]), max(a[1], b[1]))
+    sh.text("(5) 窓上部 断面詳細（模式図 1:8）", (200, 271), 2.8, "A-TEXT", paper=True)
+    rc = R(120, 0, 370, 420, "A-CUT", lineweight=50)
+    sh.hatch_polys([rc], spacing=1.0)
+    ins = R(20, 200, 120, 420, "A-CUT-LGS")
+    sh.hatch_polys([ins], pattern="ANSI37", spacing=0.6, layer="A-CUT-INS")
+    R(0, 200, 20, 420, "A-CUT-LGS")
+    R(-30, 0, 120, 200, "A-DOOR", lineweight=35)                       # ブラインドボックス
+    for j in range(5):
+        R(-10, 30 + j * 30, 100, 45 + j * 30, "A-DOOR")                 # 巻き上げたスラット
+    R(125, -80, 205, 0, "A-DOOR", lineweight=35)                       # サッシ枠（上枠）
+    R(140, -420, 190, -80, "A-GLAZ", lineweight=25)                    # ガラス（トリプル 約50mm）
+    for xg in (148, 168):
+        sh.line(Q(xg, -420), Q(xg, -80), "A-GLAZ")
+    for j in range(9):                                                 # 下ろしたスラット
+        zz = -40 - j * 42
+        sh.line(Q(-5, zz), Q(85, zz - 18), "A-DOOR")
+    sh.line(Q(40, -10), Q(40, -420), "A-HIDDEN")                       # ガイドレール
+    sh.line(Q(370, -420), Q(370, 420), "A-VIS")
+    sh.line(Q(-60, -430), Q(400, -430), "A-HIDDEN")
+    labels = [((300, 400), "RC 壁 250"), ((70, 340), "外断熱 100"), ((10, 270), "外装 20"),
+              ((60, 100), f"ブラインドボックス H{us['box']['h']}×D{us['box']['d']}（外断熱層に埋込）"),
+              ((180, -40), "樹脂サッシ（FIX）"), ((165, -170), "Low-E トリプル（Ar）＋室外側 UVカット合わせ"),
+              ((40, -290), "スラット（電動・角度制御）"), ((40, -390), "ガイドレール")]
+    for (x_, z_), t_ in labels:
+        p = Q(x_, z_)
+        q = sh.P(px0 + 58, py0 + z_ * k)
+        sh.line(p, q, "A-SYMB")
+        sh.circle(p, 0.4, "A-SYMB")
+        sh.text(t_, (q[0] + 1, q[1] - 0.8), 1.9, "A-TEXT")
+    sh.text("屋外", Q(-60, 430), 2.2, "A-TEXT")
+    sh.text("室内", Q(390, 430), 2.2, "A-TEXT")
+    notes = [("h", "紫外線対策の考え方"),
+             ("t", "① ガラス: 全窓の室外側を UVカット中間膜の合わせガラスとし、紫外線を約99%止める（家具・床の退色、肌への影響を抑える）。1階は防犯合わせガラス（CP）を兼ねる"),
+             ("t", "② 外付け電動ブラインド: 南・東・西の窓は、日射と紫外線をガラスの外で止める。夏（5〜9月）は日射センサーで自動降下、冬は上げて日射を取り込む。強風時は自動で巻き上げる"),
+             ("t", "③ Low-E の使い分け: 南・北は日射取得型で冬の暖房を助け、夏の南面はブラインドで遮る。東・西は低い朝夕日を防ぐ遮熱型"),
+             ("t", "④ 屋外: 玄関庇（出2.0m）、ソーラーパーゴラ（被覆率70%）、カーポート屋根が、屋外の作業・乗降時の日よけになる"),
+             ("t", "数値は概算（日射の5%を紫外線とし、ガラスの透過率は代表値）。実施設計でガラス・ブラインドのメーカー値により確定する")]
+    side_panel(sh, 200, 146, notes, width=195)
     return sh
 
 

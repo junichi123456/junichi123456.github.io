@@ -111,6 +111,7 @@ class House:
         self._label_openings()
         for w in self.walls:
             self.boxes.extend(self._wall_boxes(w))
+        self._blind_boxes()
 
     # ------------------------------------------------------------ site
     def _orientation(self):
@@ -587,6 +588,29 @@ class House:
             self.fittings.append(dict(label=label, name=key[1], w=key[2], h=key[3], fire=False, smoke=False,
                                       exterior=key[4], count=len(groups[key]),
                                       floors=sorted({o.floor for o in groups[key]}), alt_entry=False))
+
+    def _blind_boxes(self):
+        """外付け電動ブラインドのボックス（窓上、外断熱層に埋め込み、外装面から30mm出す）。"""
+        us = self.spec.get("uv_shading")
+        self.blinds = []
+        if not us:
+            return
+        bh, bd = us["box"]["h"], us["box"]["d"]
+        e = self.t / 2 + self.ins
+        for op in self.openings(exterior=True):
+            if op.kind != "window" or op.side not in us["sides"]:
+                continue
+            a, b, z0, z1 = op.u0 - 50, op.u1 + 50, op.z1, op.z1 + bh
+            if op.side == "S":
+                bx = Box(a, -e - 30, z0, b, -e - 30 + bd, z1, "blind", "sash", level=op.floor, tag="外付けブラインド")
+            elif op.side == "N":
+                bx = Box(a, self.D + e + 30 - bd, z0, b, self.D + e + 30, z1, "blind", "sash", level=op.floor, tag="外付けブラインド")
+            elif op.side == "W":
+                bx = Box(-e - 30, a, z0, -e - 30 + bd, b, z1, "blind", "sash", level=op.floor, tag="外付けブラインド")
+            else:
+                bx = Box(self.W + e + 30 - bd, a, z0, self.W + e + 30, b, z1, "blind", "sash", level=op.floor, tag="外付けブラインド")
+            self.boxes.append(bx)
+            self.blinds.append((op, bx))
 
     def _wall_boxes(self, w: Wall):
         holes = [(op.u0, op.z0, op.u1, op.z1) for op in w.openings]

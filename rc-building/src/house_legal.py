@@ -171,6 +171,14 @@ def checks(h):
 
     # ---------------- 集団規定
     add("ブリーフ", "建物の向き", "施主指示（v4.4）", "南側道路に対して平行・直交", f"建物・外構を道路境界線に合わせて {abs(h.facade_az):.1f}° 回転（南面は真南から{'西' if h.facade_az > 0 else '東'}向き）", OK)
+    gz, us = s["glazing"], s["uv_shading"]
+    wins = [op for op in h.openings(exterior=True) if op.kind == "window"]
+    add("ブリーフ", "窓の仕様", "施主指示（v4.5）", "全窓 Low-E ガラスのトリプルサッシ",
+        f"全{len(wins)}か所 {gz['frame']}・Low-E トリプル（Ar・Low-E {gz['low_e']}面）、Uw≦{gz['uw']:.2f}。南北 日射取得型・東西 遮熱型", OK)
+    import sightshade as SS
+    uv = SS.uv_exposure(h)
+    add("ブリーフ", "紫外線対策", "施主指示（v4.5）", "日照による紫外線をカットする設備",
+        f"全窓 UVカット合わせガラス（紫外線透過率{gz['tuv'] * 100:.0f}%以下）＋南・東・西の窓{len(h.blinds)}か所に外付け電動ブラインド（{us['months'][0]}〜{us['months'][-1]}月 自動）→ 室内に入る紫外線 約{uv['cases'][-1][2] / uv['tot_inc'] * 100:.1f}%（M-03）", OK)
     add("集団規定", "用途地域の制限", "法48条・別表第2", f"{site['zoning']}：住宅は建築可", "一戸建ての住宅", CHK)
     add("集団規定", "接道", "法43条", "道路に2m以上接する", f"南側道路 約13.9m・東側道路 約81.8m", OK)
     add("集団規定", "建ぺい率", "法53条", f"{site['coverage_limit'] * 100:.0f}%以下（角地緩和は不使用）",

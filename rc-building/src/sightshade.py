@@ -229,30 +229,77 @@ def annual_poa(tilt_deg, az_surf_deg, months=range(1, 13)):
 SIDE_AZ = {"S": 0.0, "W": 90.0, "N": 180.0, "E": -90.0}
 
 
-def window_solar(h, gamma_deg=None, shgc=0.30):
-    """窓の日射取得。gamma: 建物南面の方位（真南から西回り）。"""
+def glazing_g(h, side):
+    """方位ごとのガラスの日射熱取得率 g（Low-E の種類で変える）。"""
+    gz = h.spec["glazing"]
+    return gz["types"][gz["side_type"][side]]["g"]
+
+
+def blind_factor(h, side, month, blinds=True):
+    """外付けブラインドを下ろす時期・方位なら遮蔽係数 fc、それ以外は 1。"""
+    us = h.spec.get("uv_shading")
+    if not blinds or not us or side not in us["sides"] or month not in us["months"]:
+        return 1.0
+    return us["fc"]
+
+
+def window_solar(h, gamma_deg=None, shgc=None, blinds=True):
+    """窓の日射取得。gamma: 建物南面の方位（真南から西回り）。shgc を与えると全方位その値（比較用）。"""
     g = h.facade_az if gamma_deg is None else gamma_deg
     glass = {k: 0.0 for k in SIDE_AZ}
     for op in h.openings(exterior=True):
         if op.kind == "window" and op.side in glass:
             glass[op.side] += op.width * op.height / 1e6
+    gs = {k: (shgc if shgc is not None else glazing_g(h, k)) for k in SIDE_AZ}
     heat = {k: 0.0 for k in SIDE_AZ}     # 暖房期（11〜3月）の取得熱 kWh
     cool = {k: 0.0 for k in SIDE_AZ}     # 冷房期（6〜9月）の取得熱 kWh
     peak = 0.0
     for alt, az, dni, m in sun_positions(0.5):
         tot = 0.0
+        dhi, _ = _sky(alt, dni)
         for k, a in glass.items():
             if a == 0:
                 continue
             I = surface_irradiance(alt, az, dni, 90, SIDE_AZ[k] + g)
-            q = I * a * shgc
-            tot += q
-            dhi, _ = _sky(alt, dni)
-            mean = (SUNSHINE * I + (1 - SUNSHINE) * dhi * 0.8 * 0.5) * a * shgc * 0.5 * DAYS[m - 1] / 1000
+            f = gs[k] * blind_factor(h, k, m, blinds)
+            tot += I * a * f
+            mean = (SUNSHINE * I + (1 - SUNSHINE) * dhi * 0.8 * 0.5) * a * f * 0.5 * DAYS[m - 1] / 1000
             if m in (11, 12, 1, 2, 3):
                 heat[k] += mean
             if m in (6, 7, 8, 9):
                 cool[k] += mean
         if m in (7, 8):
             peak = max(peak, tot)
-    return dict(glass=glass, heat=heat, cool=cool, peak=peak / 1000, gamma=g)
+    return dict(glass=glass, heat=heat, cool=cool, peak=peak / 1000, gamma=g, g=gs)
+
+
+# 紫外線透過率の比較対象（メーカー公表値の代表的な値）
+UV_GLASS = [("透明単板ガラス（参考）", 0.65), ("透明複層ガラス（参考）", 0.45),
+            ("Low-E トリプル（合わせなし）", 0.15)]
+
+
+def uv_exposure(h):
+    """窓に当たる紫外線と室内に入る紫外線（年間 kWh、日射 × UV 割合で概算）。"""
+    frac = h.spec.get("uv_fraction", 0.05)
+    tuv = h.spec["glazing"]["tuv"]
+    g = h.facade_az
+    glass = {k: 0.0 for k in SIDE_AZ}
+    for op in h.openings(exterior=True):
+        if op.kind == "window" and op.side in glass:
+            glass[op.side] += op.width * op.height / 1e6
+    inc = {k: 0.0 for k in SIDE_AZ}      # 窓面に当たる UV
+    blind = {k: 0.0 for k in SIDE_AZ}    # ブラインド通過後（ガラスに当たる UV）
+    peak = {k: 0.0 for k in SIDE_AZ}     # 夏の最大 UV 強度 W/m²（窓面）
+    for alt, az, dni, m in sun_positions(0.5):
+        dhi, _ = _sky(alt, dni)
+        for k, a in glass.items():
+            I = surface_irradiance(alt, az, dni, 90, SIDE_AZ[k] + g)
+            mean = (SUNSHINE * I + (1 - SUNSHINE) * dhi * 0.8 * 0.5) * 0.5 * DAYS[m - 1] / 1000 * frac
+            inc[k] += mean * a
+            blind[k] += mean * a * blind_factor(h, k, m)
+            peak[k] = max(peak[k], I * frac)
+    tot_inc, tot_bl = sum(inc.values()), sum(blind.values())
+    cases = [(n, t, tot_inc * t) for n, t in UV_GLASS]
+    cases.append(("本計画: UVカット合わせ Low-E トリプル", tuv, tot_inc * tuv))
+    cases.append(("本計画＋外付けブラインド（5〜9月 S・E・W）", tuv * tot_bl / tot_inc if tot_inc else 0, tot_bl * tuv))
+    return dict(glass=glass, inc=inc, blind=blind, peak=peak, tot_inc=tot_inc, tot_blind=tot_bl, tuv=tuv, frac=frac, cases=cases)
