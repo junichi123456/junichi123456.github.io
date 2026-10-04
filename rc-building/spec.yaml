@@ -138,7 +138,7 @@ exterior_lighting:   # 防虫の外構照明（v4.7）
 
 exterior:
   carport: {w: 8800, d: 6100, h: 2500, kwp_per_m2: 0.19}   # 3台用ソーラーカーポート（パーゴラの影・被覆率による損失を補う）
-  screen_wall: {x: [8100, 11900], y: -7000, height: 2700, t: 180}   # 南側道路から玄関を隠す自立壁（FGL基準・独立基礎）
+  screen_wall: {x: [8100, 12100], y: -7000, height: 2700, t: 180}   # 南側道路から玄関を隠す自立壁（FGL基準・独立基礎）
   canopy: {x: [7300, 10900], depth: 2000, z: 2500}                   # 玄関庇（出2.0m・1FL+2,500）
   solar_pergola:                           # 日よけ付き菜園（ソーラーパーゴラ）— 本館と構造的に分離
     rect: [-27000, 11000, -9000, 21000]    # 建物 X1・Y1 基準 mm（西側の庭、18×10m）
@@ -150,6 +150,12 @@ exterior:
   retention_tank_m3: 25
   gate_vehicle: 5000
   gate_person: 1200
+  gate_setback: 4000                     # 門を南側道路の境界から後退させる距離（門前に車1台分の待避スペース）
+  gate_person_x: [9400, 10600]           # 人用門扉（X 範囲、建物座標 mm）
+  gate_vehicle_x: [17400, 22400]         # 車両門扉
+  carport_origin: [13000, -19400]        # カーポート南西角（v4.8 で 8m 北へ）
+  garbage_box: {w: 1600, d: 800, h: 1200, gap: 100}           # ゴミ収集ボックス（門の外・門扉の中間、門の塀から gap 離す）
+  garbage_screen: {x: [10700, 16900], front: 1250, h: 1800, t: 150, wing: 1000}   # ボックス前の自立目隠し壁（ボックス前面から front 南）＋東端の袖壁（北へ wing）
 
 finish:
   exterior: 外断熱100 + 外装仕上げ（腰壁 GL〜+1,500 はタイル張り）

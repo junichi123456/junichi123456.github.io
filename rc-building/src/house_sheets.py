@@ -99,7 +99,7 @@ FLOWS = {
     "1F": [("回遊①", [(8600, 3400), (3500, 3400), (3800, 7800), (7200, 7000), (9500, 7000), (9500, 3400), (8600, 3400)]),
            ("回遊②", [(3000, 9500), (800, 11200), (800, 13000), (7600, 12950), (10800, 12900), (11350, 12900), (11350, 9000),
                       (7200, 7000), (3000, 9500)]),
-           ("搬入", [(13900, -4800), (13900, -4300), (9100, -4300), (9100, 3500), (13300, 3500)])],
+           ("搬入", [(13100, -4800), (13100, -4300), (9100, -4300), (9100, 3500), (13300, 3500)])],
     "2F": [("回遊③", [(9500, 7000), (3000, 7600), (1400, 5450), (9000, 5450), (9000, 7000), (9500, 7000)]),
            ("回遊④", [(11350, 9000), (11350, 12900), (7600, 12950), (5000, 13500), (4900, 10000), (7200, 7000), (11350, 9000)])],
 }
@@ -183,12 +183,21 @@ def site_base(h, sh, t, neighbors=True, contours=False, margin=9000):
     sh.pline(t.pts(h.site_pts), "A-SITE", closed=True)
 
 
-def fence_draw(h, sh, t, label=False):
-    off = h.fence_t
-    inner = h.site.buffer(-off, join_style=2)
-    band = h.site.difference(inner)
-    for gl in [LineString([g[1], g[2]]).buffer(60, cap_style=2) for g in h.gates]:
-        band = band.difference(gl.buffer(off * 2))
+def fence_draw(h, sh, t, label=False, clip=None):
+    from shapely.ops import unary_union
+    parts = []
+    for ln in h.fence_lines:                 # 塀の芯線を敷地の内側へ t/2 寄せた帯
+        for k in range(len(ln.coords) - 1):
+            seg = LineString(ln.coords[k:k + 2])
+            if seg.length < 1:
+                continue
+            o = seg.parallel_offset(h.fence_t / 2, "left")
+            if not h.site.contains(o.interpolate(0.5, normalized=True)):
+                o = seg.parallel_offset(h.fence_t / 2, "right")
+            parts.append(o.buffer(h.fence_t / 2, cap_style=2, join_style=2))
+    band = unary_union(parts).buffer(1, join_style=2).buffer(-1, join_style=2)
+    if clip is not None:
+        band = band.intersection(clip)
     polys = []
     for p in iter_polygons(band):
         polys.append(Polygon(t.pts(p.exterior.coords), [t.pts(r.coords) for r in p.interiors]))
@@ -306,8 +315,11 @@ def exterior_plan(h, number):
     sh.text(f"目隠し壁（自立・独立基礎）L{(sw_[2] - sw_[0]) / 1000:.1f}m H{(h.screen_top - h.fgl) / 1000:.1f}m", t(sw_[0] - 600, sw_[1] - 300), 1.5, "A-TEXT", "MIDDLE_RIGHT")
     sh.text("建物（壁式RC造 2階建て）", t(h.W / 2, h.D / 2), 2.0, "A-ROOM", "MIDDLE_CENTER")
     sh.text("Dotcon+ 透水舗装", t(cp[2] + 1500, cp[1] - 1500), 1.7, "A-TEXT", "MIDDLE_LEFT")
-    sh.text("アプローチ（透水性舗装）", t(15000, -14000), 1.6, "A-TEXT", "MIDDLE_LEFT")
-    sh.text("アプローチ → 玄関（ジム搬入も同じ）", t(15000, -12000), 1.6, "A-TEXT", "MIDDLE_LEFT")
+    sh.text("アプローチ（透水性舗装）", t(14500, -10200), 1.6, "A-TEXT", "MIDDLE_LEFT")
+    sh.text("アプローチ → 玄関（ジム搬入も同じ）", t(14500, -8400), 1.6, "A-TEXT", "MIDDLE_LEFT")
+    gbx = h.garbage_box
+    sh.text(f"門を道路境界から{h.spec['exterior']['gate_setback'] / 1000:.1f}m 後退（門前スペース）", t(23500, h.y_gate - 1800), 1.5, "A-TEXT", "MIDDLE_LEFT")
+    sh.text("ゴミ収集ボックス（門の外・L形の目隠し壁の裏、A-02D）", t(gbx[0] - 300, gbx[3] + 900), 1.4, "A-TEXT", "MIDDLE_RIGHT")
     # 貯留槽・浸透
     tk = h.tank
     sh.rect(*t(tk[0], tk[1]), *t(tk[2], tk[3]), "A-DRAIN")
@@ -1249,6 +1261,75 @@ def insect_sheet(h, number):
     rows = [["器具", "台数", "仕様"]] + [[k, str(v), f"{el['cct']}K・全カットオフ・人感" + ("・H600" if k == "ボラード" else "")] for k, v in cnt.items()]
     sh.text("外構照明の器具", (222, y - 6), 2.8, "A-TEXT", paper=True)
     sh.table(222, y - 9, [60, 16, 108], rows, row_h=5.0, h=1.9)
+    return sh
+
+
+def gate_detail(h, number):
+    """門まわり詳細図: 門の後退・ゴミ収集ボックスと目隠し壁・道路からの視線。"""
+    import sightshade as SS
+    ex = h.spec["exterior"]
+    gb, gs = ex["garbage_box"], ex["garbage_screen"]
+    sh = frame(h, number, "門まわり詳細図（ゴミ収集ボックス）", 100)
+    t = T(sh, (7000, -33500), (22, 100))
+    view = sbox(7000, -33500, 27500, -18000)
+    for (a, b, k), c in zip(h.site_edges, h.edge_class):
+        seg = LineString([a, b]).intersection(view)
+        if not seg.is_empty:
+            for g in getattr(seg, "geoms", [seg]):
+                sh.pline(t.pts(g.coords), "A-SITE", lineweight=25)
+    road = [e for e, c in zip(h.site_edges, h.edge_class) if c == "南側道路"][0]
+    sh.text("南側道路（幅員 7.4m）", t(17000, -33000), 2.4, "A-TEXT", "MIDDLE_CENTER")
+    # 舗装・カーポート・アプローチ
+    for geom, lay in ((h.dotcon.intersection(view), "A-PAVE"), (h.approach.intersection(h.site.buffer(-h.fence_t)).intersection(view), "A-PAVE")):
+        for p in iter_polygons(geom):
+            sh.pline(t.pts(p.exterior.coords), lay, closed=True)
+    cp = h.carport
+    sh.rect(*t(cp[0], cp[1]), *t(cp[2], -18000), "A-HIDDEN")
+    for st in h.stalls:
+        sh.rect(*t(st[0], st[1]), *t(st[2], -18100), "A-VIS")
+    sh.text("3台用ソーラーカーポート（北へ続く）", t((cp[0] + cp[2]) / 2, cp[1] + 1200), 2.2, "A-TEXT", "MIDDLE_CENTER")
+    # 塀・門扉
+    fence_draw(h, sh, t, clip=view)
+    for name, a, b in h.gates[:2]:
+        sh.text(name, t((a[0] + b[0]) / 2, a[1] + 700), 2.2, "A-TEXT", "MIDDLE_CENTER")
+    # 目隠し壁・ボックス
+    walls = [sbox(*t(r[0], r[1]), *t(r[2], r[3])) for r in h.garbage_screens]
+    sh.hatch_polys(walls)
+    for wpoly in walls:
+        sh.pline(list(wpoly.exterior.coords), "A-CUT", closed=True, lineweight=50)
+    x0, y0, x1, y1 = h.garbage_box
+    sh.rect(*t(x0, y0), *t(x1, y1), "A-DOOR", lineweight=35)
+    sh.line(t(x0, y0), t(x1, y1), "A-DOOR")
+    sh.line(t(x0, y1), t(x1, y0), "A-DOOR")
+    sh.text("ゴミ収集ボックス", t((x0 + x1) / 2, y1 + 450), 2.0, "A-TEXT", "MIDDLE_CENTER")
+    # 道路からの視線（ボックスの角へ）。壁に当たる所で止める
+    scr = [sbox(*r) for r in h.garbage_screens]
+    for vx, vy in [(7145, road[0][1] - 1500), (10000, road[0][1] - 1500), (14000, road[0][1] - 1500), (19000, road[0][1] - 1500), (23932, -32403)]:
+        for tx in (x0, x1):
+            ln = LineString([(vx, vy), (tx, y0)])
+            hits = [ln.intersection(s_) for s_ in scr]
+            ds = [ln.project(Point(g.coords[0])) for g in hits if not g.is_empty]
+            end = ln.interpolate(min(ds)) if ds else Point(tx, y0)
+            sh.line(t(vx, vy), t(end.x, end.y), "A-FLOOD")
+        sh.circle(t(vx, vy), 0.8 * sh.S, "A-FLOOD")
+    gv = SS.garbage_visibility(h)
+    sh.text(f"視線（目の高さ1.5m）: 道路から {gv['n']}地点で判定 → ボックスが見える地点 {len(gv['visible'])}", t(7200, -34400), 2.0, "A-LEGAL-TEXT", "TOP_LEFT")
+    # 寸法
+    vdim(sh, t, [road[0][1], h.y_gate], 26500)
+    sh.text(f"門の後退 {ex['gate_setback'] / 1000:.1f}m", t(26900, (road[0][1] + h.y_gate) / 2), 1.8, "A-TEXT", "MIDDLE_LEFT")
+    w0 = h.garbage_screen
+    hdim(sh, t, [w0[0], x0, x1, w0[2]], w0[1] - 900)
+    vdim(sh, t, [w0[3], y0, y1, h.y_gate], x1 + 4200)
+    hdim(sh, t, [h.gates[1][1][0], h.gates[1][2][0], h.gates[0][1][0], h.gates[0][2][0]], h.y_gate + 1800)
+    sh.view_title("門まわり平面詳細図", "1:100", (18, 22))
+    notes = [("h", "計画の考え方"),
+             ("t", f"南側の門（人用・車両）を道路境界から {ex['gate_setback'] / 1000:.1f}m 後退させ、門の前を車1台分の待避・ゴミ出しのスペースとする（門を開ける間、車が道路に止まらない）"),
+             ("t", f"ゴミ収集ボックス W{gb['w']:,}×D{gb['d']:,}×H{gb['h']:,} を両門扉の中間・門の外に置く。収集作業者は門を通らずに出し入れできる"),
+             ("t", f"ボックスの前 {gs['front'] / 1000:.2f}m に自立目隠し壁 L{(gs['x'][1] - gs['x'][0]) / 1000:.1f}m×H{gs['h'] / 1000:.1f}m、東端に北へ {gs['wing'] / 1000:.1f}m の袖壁（L形）。西端から回り込んで出し入れする"),
+             ("t", "道路からは壁しか見えず、ボックスの存在はわからない（南側・東側道路、目の高さ1.5m、門扉を閉じた状態で確認）"),
+             ("t", "壁は RC（独立基礎）で門・塀と同じ仕上げ。ボックスは金属製の置き型（基礎に固定しない＝建築物に当たらない想定）。中は臭気がこもらないよう上部に通気"),
+             ("t", "防虫: ボックスは密閉型・蓋付き、近くに照明を置かない（収集は日中）")]
+    side_panel(sh, 250, 270, notes, width=150)
     return sh
 
 

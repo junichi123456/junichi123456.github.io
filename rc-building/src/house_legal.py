@@ -189,6 +189,16 @@ def checks(h):
     add("安全", "階段開口の手すり壁（頭部・指の挟み込み）", "施主指示（v4.6）",
         f"H{sp['guard_height']:,}以上、{hg[0]}〜{hg[1]}mm・{fg[0]}〜{fg[1]}mm のすき間なし",
         f"手すり壁{len(gg)}か所 H{sp['guard_height']:,}（パネル・手すり子なし）、端部は壁に接する。階段の間の壁は 2FL+{sp['guard_height']:,} まで連続", judge(not bad))
+    import sightshade as SS_
+    ex_ = s["exterior"]
+    gv = SS_.garbage_visibility(h)
+    add("ブリーフ", "門の後退・ゴミ収集ボックス", "施主指示（v4.8）", "南側の門を約4m 後退。門の外・人用門扉と車両門扉の中間にゴミ収集ボックス、道路から見えない",
+        f"門の線を道路境界から{ex_['gate_setback'] / 1000:.1f}m 後退。ボックス W{ex_['garbage_box']['w']:,}×D{ex_['garbage_box']['d']:,}×H{ex_['garbage_box']['h']:,} を両門扉の中間に置き、"
+        f"前に自立壁 L{(ex_['garbage_screen']['x'][1] - ex_['garbage_screen']['x'][0]) / 1000:.1f}m＋袖壁{ex_['garbage_screen']['wing'] / 1000:.1f}m（H{ex_['garbage_screen']['h']:,}）。"
+        f"南側・東側道路 {gv['n']}地点（目の高さ1.5m・門扉閉）から見える地点 {len(gv['visible'])}", judge(not gv["visible"]))
+    cp_ = h.carport
+    add("ブリーフ", "駐車場の位置", "施主指示（v4.8）", "約8m 北へ",
+        f"カーポートを 8.0m 北へ（建物南面から {(-0.245 * 1000 - cp_[3]) / 1000:.1f}m、門から {(cp_[1] - h.y_gate) / 1000:.1f}m の前面通路）。アプローチはカーポートの西を通す", OK)
     import services as SV
     import wifi as WF
     add("ブリーフ", "家具の転倒防止", "施主指示（v4.7）", "RC 壁に固定しない。突っ張り・家具の構造で耐震・転倒耐性",

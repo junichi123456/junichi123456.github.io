@@ -132,6 +132,11 @@ def fence_prisms(h, gates_open=True):
                 off = seg.parallel_offset(h.fence_t / 2, "right")
             items.append((off.buffer(h.fence_t / 2 + 20, cap_style=2), -1e4, h.fence_top(c.x, c.y), "RC塀"))
             d = d2
+    if not gates_open:                       # 門扉を閉じた状態（門扉は塀と同じ高さの目隠し扉）
+        for name, a, b in h.gates:
+            seg = LineString([a, b])
+            c = seg.interpolate(0.5, normalized=True)
+            items.append((seg.buffer(h.fence_t / 2 + 20, cap_style=2), -1e4, h.fence_top(c.x, c.y), name))
     return items
 
 
@@ -146,14 +151,16 @@ def pv_shading(h):
 
 
 # ---------------------------------------------------------------- 視線
-def view_obstacles(h, with_screen=True):
+def view_obstacles(h, with_screen=True, gates_open=True):
     items = []
     o = h.outer_dims()
     items.append((box(o[0], o[1], o[2], o[3]), -1e4, h.parapet_top, "本館"))
-    items += fence_prisms(h)
+    items += fence_prisms(h, gates_open)
     if with_screen:
         for (a0, b0, a1, b1) in h.screen:
             items.append((box(a0, b0, a1, b1), h.fgl - 400, h.screen_top, "目隠し壁"))
+    for r in getattr(h, "garbage_screens", []):
+        items.append((box(*r), h.fgl - 400, h.garbage_screen_top, "ゴミ置き目隠し壁"))
     cp = h.carport
     items.append((box(*cp), h.fgl + 2400, h.fgl + 2650, "カーポート屋根"))
     if getattr(h, "canopy", None):
@@ -172,11 +179,25 @@ def edge_class_of(h, x, y):
 
 def entrance_visibility(h, eye=1500, with_screen=True, step=1000, only=None):
     """敷地境界の外側 1.5m の線上（道路・隣地）から、玄関ドア面が見えるか。"""
-    obs = view_obstacles(h, with_screen)
     door = h.entrance
     y_face = -h.t / 2 - h.ins - 20
     targets = [(door.u0 + (door.u1 - door.u0) * fx, y_face, h.fl["1F"] + dz)
                for fx in (0.1, 0.5, 0.9) for dz in (300, 1100, 1900)]
+    return visibility(h, targets, eye, with_screen, step, only)
+
+
+def garbage_visibility(h, eye=1500, with_screen=True, step=500, only=("南側道路", "東側道路")):
+    """道路から、門の外のゴミ収集ボックス（前面・上面・側面）が見えるか。"""
+    x0, y0, x1, y1 = h.garbage_box
+    zt = h.fgl + h.spec["exterior"]["garbage_box"]["h"]
+    targets = [(x0 + (x1 - x0) * fx, y0 - 5, h.fgl + dz) for fx in (0.02, 0.5, 0.98) for dz in (200, 700)]
+    targets += [(x0 + (x1 - x0) * fx, y0 + (y1 - y0) * fy, zt + 5) for fx in (0.02, 0.5, 0.98) for fy in (0.05, 0.95)]
+    targets += [(x - 5 * sgn, y0 + (y1 - y0) * fy, h.fgl + 600) for x, sgn in ((x0, 1), (x1, -1)) for fy in (0.1, 0.9)]
+    return visibility(h, targets, eye, with_screen, step, only, gates_open=False)
+
+
+def visibility(h, targets, eye=1500, with_screen=True, step=1000, only=None, gates_open=True):
+    obs = view_obstacles(h, with_screen, gates_open)
     ring = h.site.exterior.parallel_offset(1500, "right") if False else h.site.buffer(1500, join_style=2).exterior
     L = ring.length
     vis = []

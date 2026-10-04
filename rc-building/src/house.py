@@ -487,33 +487,34 @@ class House:
         ex = self.spec["exterior"]
         req = self.spec["requirements"]
         site = self.site
-        # 門扉（南側道路・東側道路の南端）
+        # 門扉: 南側道路の境界から gate_setback 後退した「門の線」に設ける（門前は車1台分の待避・ゴミ出しスペース）
         s_edge = [e for e, c in zip(self.site_edges, self.edge_class) if c == "南側道路"][0]
-        a, b_ = s_edge[0], s_edge[1]
-        L = LineString([a, b_])
-        gates = []
-        # 南側：車両門扉（東寄り）＋人用門扉
-        gv = ex["gate_vehicle"]
-        gp = ex["gate_person"]
-        d0 = 900
-        gates.append(("車両門扉", L.interpolate(d0).coords[0], L.interpolate(d0 + gv).coords[0]))
-        gates.append(("門扉（人）", L.interpolate(L.length - 2600).coords[0], L.interpolate(L.length - 2600 + gp).coords[0]))
+        y_road = (s_edge[0][1] + s_edge[1][1]) / 2
+        self.y_gate = y_g = y_road + ex["gate_setback"]
+        cross = LineString([(-1e6, y_g), (1e6, y_g)]).intersection(site)
+        xs = sorted(c for g in getattr(cross, "geoms", [cross]) for c in (g.coords[0][0], g.coords[-1][0]))
+        gate_line = LineString([(xs[0], y_g), (xs[-1], y_g)])
+        gates = [("車両門扉", (ex["gate_vehicle_x"][0], y_g), (ex["gate_vehicle_x"][1], y_g)),
+                 ("門扉（人）", (ex["gate_person_x"][0], y_g), (ex["gate_person_x"][1], y_g))]
         # 東側道路の南端（地盤差の小さい位置）勝手口
         e_edges = [e for e, c in zip(self.site_edges, self.edge_class) if c == "東側道路"]
         Le = LineString([p for e in e_edges for p in (e[0], e[1])])
         tot = Le.length
         gates.append(("勝手口", Le.interpolate(tot - 9000).coords[0], Le.interpolate(tot - 8000).coords[0]))
         self.gates = gates
-        # 塀（敷地境界の内側に厚さ 150）
+        self.forecourt = Polygon([p for p in site.exterior.coords]).intersection(
+            Polygon([(-1e6, -1e6), (1e6, -1e6), (1e6, y_g), (-1e6, y_g)]))
+        # 塀（敷地境界の内側に厚さ 150）: 南側道路沿いは塀を設けず、門の線に塀と門扉を設ける
         self.fence_t = 150
         self.fence_h = req["fence_height"]
-        segs = []
         boundary = LineString(list(site.exterior.coords))
-        gate_lines = [LineString([g[1], g[2]]) for g in gates]
-        cut = boundary
-        for gl in gate_lines:
-            cut = cut.difference(gl.buffer(5))
-        self.fence_lines = [g for g in getattr(cut, "geoms", [cut])]
+        cut = boundary.difference(LineString(s_edge[:2]).buffer(5))
+        cut = cut.union(gate_line) if True else cut
+        for g in gates:
+            cut = cut.difference(LineString([g[1], g[2]]).buffer(5))
+        from shapely.ops import linemerge
+        merged = linemerge(cut) if cut.geom_type == "MultiLineString" else cut
+        self.fence_lines = [g for g in getattr(merged, "geoms", [merged])]
         # 塀の高さ: FGL+2.0m と 外側地盤+1.2m の高い方（東側の坂道沿いは道路面から 1.2m 以上）
         self.fence_top = lambda x, y: max(self.fgl + self.fence_h, self.ground_outside(x, y) + 1200)
         # 日よけ付き菜園（ソーラーパーゴラ）— 本館と構造的に分離した独立架台
@@ -522,19 +523,38 @@ class House:
         self.pergola_h = pg["height"]
         # 駐車場（南側の帯状部分）＋3台用ソーラーカーポート
         cp = ex["carport"]
-        cx0, cy0 = 13000, -27400
+        cx0, cy0 = ex["carport_origin"]
         self.carport = (cx0, cy0, cx0 + cp["w"], cy0 + cp["d"])
         self.stalls = [(cx0 + 300 + i * 2800, cy0 + 300, cx0 + 300 + i * 2800 + 2600, cy0 + 300 + 5500) for i in range(3)]
-        pave = Polygon([(cx0 - 1200, -31000), (cx0 + cp["w"] + 1500, -31000), (cx0 + cp["w"] + 1500, cy0 + cp["d"] + 900),
+        pave = Polygon([(cx0 - 1200, y_g + self.fence_t), (cx0 + cp["w"] + 1500, y_g + self.fence_t), (cx0 + cp["w"] + 1500, cy0 + cp["d"] + 900),
                         (cx0 - 1200, cy0 + cp["d"] + 900)]).intersection(site.buffer(-self.fence_t))
-        pave = pave.intersection(site.buffer(-self.fence_t))
-        self.dotcon = pave
+        self.dotcon = pave.union(self.forecourt.intersection(site.buffer(-self.fence_t).union(
+            Polygon([(-1e6, -1e6), (1e6, -1e6), (1e6, y_road + 1), (-1e6, y_road + 1)]))))
+        if self.dotcon.geom_type != "Polygon":
+            self.dotcon = max(getattr(self.dotcon, "geoms", [self.dotcon]), key=lambda g: g.area)
+        # ゴミ収集ボックス（門の外・人用門扉と車両門扉の中間）と、その前の自立目隠し壁
+        gb, gs = ex["garbage_box"], ex["garbage_screen"]
+        xm = (ex["gate_person_x"][1] + ex["gate_vehicle_x"][0]) / 2
+        by1 = y_g - gb["gap"]
+        self.garbage_box = (xm - gb["w"] / 2, by1 - gb["d"], xm + gb["w"] / 2, by1)
+        sy1 = self.garbage_box[1] - gs["front"]
+        self.garbage_screen = (gs["x"][0], sy1 - gs["t"], gs["x"][1], sy1)
+        self.garbage_screens = [self.garbage_screen]
+        if gs.get("wing"):                    # 東端の袖壁（北へ折り返し、東寄りの斜めの視線を切る）
+            self.garbage_screens.append((gs["x"][1] - gs["t"], sy1, gs["x"][1], sy1 + gs["wing"]))
+        if gs.get("wing_w"):                  # 西端の袖壁
+            self.garbage_screens.append((gs["x"][0], sy1, gs["x"][0] + gs["t"], sy1 + gs["wing_w"]))
+        self.garbage_screen_top = self.fgl + gs["h"]
+        for r in self.garbage_screens:
+            self.boxes.append(Box(*r[:2], self.fgl - 400, *r[2:], self.garbage_screen_top, "wall", level="EXT", tag="ゴミ置き目隠し壁"))
+        self.boxes.append(Box(*self.garbage_box[:2], self.fgl, *self.garbage_box[2:], self.fgl + gb["h"],
+                              "door", "door", level="EXT", tag="ゴミ収集ボックス"))
         # アプローチ（人用門扉 → 玄関ポーチ）
         gp0 = gates[1][1]
         gp1 = gates[1][2]
         gm = ((gp0[0] + gp1[0]) / 2, (gp0[1] + gp1[1]) / 2)
-        # アプローチ: 目隠し壁の西側から回り込み、壁の内側で玄関階段に至る（クランク）
-        self.approach_line = LineString([(gm[0], gm[1] + 200), (gm[0], -26000), (12000, -21000), (13900, -17000), (13900, -4300), (9100, -4300),
+        # アプローチ: 人用門扉 → カーポートの西 → 玄関の目隠し壁の東から回り込み、壁の内側で玄関階段に至る
+        self.approach_line = LineString([(gm[0], gm[1] + 200), (10600, -13000), (13100, -9000), (13100, -4300), (9100, -4300),
                                          (9100, self.porch[1])])
         self.approach = self.approach_line.buffer(750, cap_style=2, join_style=2)
         self._exterior_lights(gates)
@@ -544,7 +564,7 @@ class House:
                        LineString([(-30500, 26500), (-31500, 13000), (-32300, 1000)])]
         self.infil_pits = [(-29500, 28000), (-15000, 28100), (-1000, 27800), (-31500, 13000), (-32300, 1000), (11000, -16000)]
         # 塀の排水口（フラップ弁）＝ 低い位置
-        self.flap = [(-33200, -600), (12000, -30600)]
+        self.flap = [(-33200, -600), (23800, y_g)]
         self.ext_storage = dict(
             dotcon_area=pave.area / 1e6,
             dotcon_l=pave.area / 1e6 * ex["dotcon_storage_l_per_m2"],
