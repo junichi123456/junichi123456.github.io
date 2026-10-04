@@ -140,7 +140,13 @@ def checks(h):
     add("ブリーフ", "ジム開口部の防犯・断熱", "施主指示（v3.2）", "腰高窓・外部扉を弱点として改善",
         f"外部扉を廃止、窓は FIX 高窓（窓台FL+2,000）防犯合わせガラス。開口 {ge['before']['win'] + ge['before']['door']:.1f}→{ge['after']['win']:.1f}m²、"
         f"開口まわりの熱損失 {ge['q_before']:.1f}→{ge['q_after']:.1f}W/K", OK)
-    add("ブリーフ", "太陽光発電", "施主指示（v3.2）", "住宅の屋根には設置しない（駐車場に設置）", "ソーラーカーポートのみ（約90m²）", OK)
+    import performance as PF
+    hl = PF.heat_load(h)
+    en = PF.energy(h, hl)
+    add("ブリーフ", "太陽光発電（駐車場のみ）", "施主指示（v3.2・v4）", f"年間電力需要 約{en['total']:,.0f}kWh ×1.2 を賄う → {en['need_kwp_margin']:.1f}kWp",
+        f"ソーラーカーポート {en['carport_area']:.0f}m² → {en['carport_kwp']:.1f}kWp・年 約{en['carport_gen']:,.0f}kWh（屋根には設置しない）",
+        judge(en["carport_gen"] >= en["total"] * 1.2 * 0.99))
+    add("ブリーフ", "蓄電池", "ブリーフv3 7章", "排煙機30分＋排水ポンプ6時間＋最低限の生活24時間", f"必要 約{en['battery']:.1f}kWh → 16kWh 級", judge(en["battery"] <= 16.5))
     add("ブリーフ", "駐車台数", "ブリーフv3 2章", f"{req['parking']}台", f"{len(h.stalls)}台（ソーラーカーポート下）", judge(len(h.stalls) >= req["parking"]))
     add("ブリーフ", "RC塀", "ブリーフv3 4章", f"H{req['fence_height']:,}（防犯）", "全周 H2.0m 以上（東側坂道沿いは道路面+1.2m以上）", OK)
     add("ブリーフ", "透水性舗装", "ブリーフv3 3.1", "駐車場に Dotcon+", f"約{h.ext_storage['dotcon_area']:.0f}m²（一時貯留 約{h.ext_storage['dotcon_l'] / 1000:.1f}m³）", OK)
@@ -228,7 +234,22 @@ def checks(h):
     add("構造", "階高・軒高・階数", "平13国交告1026号 第1", "階高3.5m以下・軒高20m以下・階数5以下",
         f"階高{h.H['1F'] / 1000:.1f}m・軒高{h.fl['RF'] / 1000:.1f}m・2階", judge(h.H["1F"] <= 3500))
     add("構造", "コンクリート強度", "平13国交告1026号 第2・令74条", "Fc18以上", f"Fc{s['structure']['concrete']['Fc']}", judge(s["structure"]["concrete"]["Fc"] >= 18))
-    add("構造", "床版の厚さ", "令77条の2・告示1026号", "8cm以上かつ短辺/40", f"t={h.slab_t}（短辺 内法 5.88m /40 = 147）", judge(h.slab_t >= 147))
+    lx_max = max(min(a2 - a1, b2 - b1) for a1, a2 in zip(h.gx, h.gx[1:]) for b1, b2 in zip(h.gy, h.gy[1:])) - h.t
+    add("構造", "床版の厚さ", "令77条の2・告示1026号", f"8cm以上かつ短辺内法/40 = {lx_max / 40:.0f}mm", f"t={h.slab_t}（短辺 内法 {lx_max / 1000:.2f}m）", judge(h.slab_t >= lx_max / 40))
+    import performance as PF
+    se = PF.seismic(h)
+    t_need = max(x["t_req"] for x in se["slabs"])
+    add("構造", "床版のたわみ（ジム床含む）", "日本建築学会 RC規準（参考）", f"必要厚 最大 {t_need:.0f}mm（ジム床 積載5kN/m²）", f"t={h.slab_t}", judge(h.slab_t >= t_need))
+    worst = min(se["stories"].items(), key=lambda kv: kv[1]["耐震等級3（Co=0.3）"]["ratio"])
+    (wf, wd), wv = worst
+    add("構造", "地震力に対する壁のせん断（概算）", "令88条・告示1026号（参考）",
+        f"Co=0.2（等級3: 0.3）、短期許容せん断 {se['fs']:.2f}N/mm²",
+        f"最小余裕 {wf} {wd}: τ={wv['耐震等級3（Co=0.3）']['tau']:.2f}N/mm²（等級3）→ {wv['耐震等級3（Co=0.3）']['ratio']:.1f}倍", judge(wv["耐震等級3（Co=0.3）"]["ratio"] >= 1.0))
+    ecc = max(v["ecc"] for v in se["stories"].values())
+    add("構造", "偏心率", "令82条の6（参考）", "0.15以下", f"最大 {ecc:.3f}（1階 ジムの開口による）", judge(ecc <= 0.15))
+    qmin = min(v["qu_ratio"] for v in se["stories"].values())
+    add("構造", "保有水平耐力（目安）", "令82条の3（参考）", f"Qu ≧ Qun（Ds={se['Ds']}）", f"最小 Qu/Qun = {qmin:.1f}", judge(qmin >= 1.0))
+    add("構造", "地盤の接地圧（長期）", "令93条", "長期許容支持力度 150kN/m²（要地盤調査）", f"{se['bearing']:.1f}kN/m²", judge(se["bearing"] <= 150))
     add("構造", "かぶり厚さ", "令79条", "壁・床20（耐力壁30）／土に接する40／基礎60",
         "設計かぶり 壁40・床30・土に接する50・基礎70", OK)
     add("構造", "構造計算", "法20条1項3号", "壁式RC 2階建て（延べ200m²超）→ 構造計算（許容応力度等）", "別途 構造計算書", CHK)

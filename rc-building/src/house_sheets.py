@@ -28,7 +28,7 @@ def frame(h, number, title, scale, label=None):
     return sh
 
 
-def grid(h, sh, t, ext=2600, r=3.6):
+def grid(h, sh, t, ext=2300, r=3.6):
     R = r * sh.S
     for x, n in zip(h.gx, h.gx_names):
         sh.line(t(x, -ext + R), t(x, h.D + ext - R), "A-GRID")
@@ -96,11 +96,12 @@ def stair_marks(h, sh, t, floor):
 
 
 FLOWS = {
-    "1F": [("回遊①", [(7700, 3400), (3500, 3400), (3800, 7600), (7000, 6850), (9000, 6850), (9000, 3400), (7700, 3400)]),
-           ("回遊②", [(3000, 8800), (800, 10200), (800, 12000), (7600, 11950), (10350, 12200), (10350, 8600), (7000, 6900), (5000, 7300), (3000, 8800)]),
-           ("搬入", [(9300, -4500), (9300, 3500), (12700, 3500)])],
-    "2F": [("回遊③", [(9000, 7000), (3000, 7600), (1400, 5450), (9000, 5450), (9000, 7000)]),
-           ("回遊④", [(10350, 8600), (10350, 12200), (7600, 11950), (5000, 12500), (4900, 9500), (6600, 7400), (10350, 8600)])],
+    "1F": [("回遊①", [(8600, 3400), (3500, 3400), (3800, 7800), (7200, 7000), (9500, 7000), (9500, 3400), (8600, 3400)]),
+           ("回遊②", [(3000, 9500), (800, 11200), (800, 13000), (7600, 12950), (10800, 12900), (11350, 12900), (11350, 9000),
+                      (7200, 7000), (3000, 9500)]),
+           ("搬入", [(9100, -4500), (9100, 3500), (13300, 3500)])],
+    "2F": [("回遊③", [(9500, 7000), (3000, 7600), (1400, 5450), (9000, 5450), (9000, 7000), (9500, 7000)]),
+           ("回遊④", [(11350, 9000), (11350, 12900), (7600, 12950), (5000, 13500), (4900, 10000), (7200, 7000), (11350, 9000)])],
 }
 
 
@@ -290,11 +291,11 @@ def exterior_plan(h, number):
     sh.rect(*t(cp[0], cp[1]), *t(cp[2], cp[3]), "A-HIDDEN")
     for s in h.stalls:
         sh.rect(*t(s[0], s[1]), *t(s[2], s[3]), "A-VIS")
-    sh.text("ソーラーカーポート 約90m²／駐車3台", t(cp[2] + 1500, (cp[1] + cp[3]) / 2), 1.7, "A-TEXT", "MIDDLE_LEFT")
+    sh.text(f"ソーラーカーポート 約{(cp[2]-cp[0])*(cp[3]-cp[1])/1e6:.0f}m²／駐車3台＋駐輪", t(cp[2] + 1500, (cp[1] + cp[3]) / 2), 1.7, "A-TEXT", "MIDDLE_LEFT")
     sh.text("建物（壁式RC造 2階建て）", t(h.W / 2, h.D / 2), 2.0, "A-ROOM", "MIDDLE_CENTER")
     sh.text("Dotcon+ 透水舗装", t(cp[2] + 1500, cp[1] - 1500), 1.7, "A-TEXT", "MIDDLE_LEFT")
     sh.text("アプローチ（透水性舗装）", t(5800, -12000), 1.6, "A-TEXT", "MIDDLE_LEFT")
-    sh.text("車路 → 玄関（ジム搬入）", t(14500, -9000), 1.6, "A-TEXT", "MIDDLE_LEFT")
+    sh.text("車路 → 玄関（ジム搬入）", t(14500, -10000), 1.6, "A-TEXT", "MIDDLE_LEFT")
     # 貯留槽・浸透
     tk = h.tank
     sh.rect(*t(tk[0], tk[1]), *t(tk[2], tk[3]), "A-DRAIN")
@@ -356,7 +357,7 @@ def exterior_plan(h, number):
 def floor_plan(h, floor, number):
     names = {"1F": "1階平面図", "2F": "2階平面図"}
     sh = frame(h, number, names[floor], 100)
-    t = T(sh, (0, 0), (52, 78))
+    t = T(sh, (0, 0), (52, 73))
     fl = h.fl[floor]
     cut = fl + 1100
     zmin = fl - 1 if floor == "1F" else fl - h.H["1F"] / 2 - 1
@@ -395,12 +396,14 @@ def floor_plan(h, floor, number):
         # 二重框・下足入れ
         g = h.genkan
         sh.line(t(g["doma"][0], g["doma"][3]), t(g["doma"][2], g["doma"][3]), "A-VIS", lineweight=35)
-        sh.text(f"框1 +{g['step']}", t(10500, 1850), 1.4, "A-TEXT", "TOP_CENTER")
-        sh.text(f"框2 +{g['step']}", t(10500, 2550), 1.4, "A-TEXT", "BOTTOM_CENTER")
+        sh.text(f"框1 +{g['step']}", t(11400, 1850), 1.4, "A-TEXT", "TOP_CENTER")
+        sh.text(f"框2 +{g['step']}", t(11400, 2550), 1.4, "A-TEXT", "BOTTOM_CENTER")
         sh.rect(*t(*h.shoe[:2]), *t(*h.shoe[2:]), "A-VIS")
         sh.line(t(*h.shoe[:2]), t(*h.shoe[2:]), "A-VIS")
         sh.text("下足入れ", t(6475, 1100), 1.4, "A-TEXT", "MIDDLE_CENTER", rot=90)
         sh.text(f"土間 1FL-{2 * g['step']}", t(8000, 600), 1.5, "A-TEXT", "MIDDLE_CENTER")
+        sh.rect(*t(*h.bench[:2]), *t(*h.bench[2:]), "A-VIS")
+        sh.text("ベンチ", t(11650, 800), 1.3, "A-TEXT", "MIDDLE_CENTER", rot=90)
         # ジム機器
         for name, r, hh, kg in h.equipment:
             sh.rect(*t(r[0], r[1]), *t(r[2], r[3]), "A-VIS", lineweight=25)
@@ -417,13 +420,14 @@ def floor_plan(h, floor, number):
     cy = legend(sh, 285, cy - 1, [("A-CUT", "RC壁 t=250（耐力壁）", "hatch"), ("A-CUT-LGS", "外断熱100＋外装20", "ins"),
                                     ("A-CUT-LGS", "乾式間仕切（LGS）t=100", "line"), ("A-GRID", "通り芯（壁芯）", "line"),
                                     ("A-FLOW", "動線（回遊・家事・搬入）", "line")])
-    notes = [("h", "計画の考え方（v3.3）")]
+    notes = [("h", "計画の考え方（v4・B案 内寸18.0m角）")]
     if floor == "1F":
         notes += [("t", "回遊①（家族）: 玄関ホール→LDK→キッチン→ホール→玄関。行き止まりのない一周動線"),
                   ("t", "回遊②（家事）: キッチン→パントリー→ランドリー→洗面脱衣→廊下→ホール→キッチン"),
                   ("t", "洗う→干す→しまう: ランドリー・室内干し → 隣のファミリークローゼット／階段2で2階ファミクロへ直行"),
-                  ("t", "ジム 45.7m²（従前の1.32倍）。機器はエニタイムフィットネス等の商業ジム相当（10品目を配置）。搬入: 外部階段 → 玄関 W1,000×H2,300 → 土間 → 二重框 → ホールで右折 → 遮音ドア W1,000 → ジム"),
-                  ("t", "玄関: SICなし（土間に下足入れ）。二重框: 土間 1FL-360 → 式台 1FL-180 → ホール 1FL"),
+                  ("t", f"ジム {h.gym.area:.1f}m²（当初34.5m²の{h.gym.area / 34.52:.2f}倍）。機器はエニタイムフィットネス等の商業ジム相当（10品目を配置）。搬入: 外部階段 → 玄関 W1,000×H2,300 → 土間 → 二重框 → ホールで右折 → 遮音ドア W1,000 → ジム"),
+                  ("t", "玄関: SICなし（土間に下足入れ・ベンチ）。二重框: 土間 1FL-360 → 式台 1FL-180 → ホール 1FL。中央スパン6.0mで土間幅5.75m"),
+                  ("t", "階段1: 有効幅1,150・蹴上177.8・踏面260。中央のトイレは手洗い付き 3.9m²"),
                   ("t", "ジム床: 積載荷重 5,000N/m²（提案）・浮き床。天井は直天井（CH 約2,900）を推奨"),
                   ("t", "ジムの窓: 外部扉を廃止し、窓は天井際の FIX 高窓（窓台 FL+2,000、防犯合わせガラス・トリプル Low-E）に集約"),
                   ("t", "防音: ジムは浮き床＋遮音ドア Ts-35、機械室・WIC を緩衝帯として居室Aと分離。真上は2階シアター（騒音ゾーンを上下に集約）"),
@@ -441,7 +445,7 @@ def floor_plan(h, floor, number):
 
 def roof_plan(h, number):
     sh = frame(h, number, "屋根伏図", 100)
-    t = T(sh, (0, 0), (52, 78))
+    t = T(sh, (0, 0), (52, 73))
     proj = project(h.boxes, "plan", cut=-(h.fl["RF"] + 300), depth_limit=-(h.fl["RF"] - 1))
     emit(sh, proj, t)
     grid(h, sh, t)
@@ -773,4 +777,98 @@ def openings_smoke_sheet(h, number):
              ("t", "換気は全館空調・全熱交換（窓に依存しない）。排煙時は機械室の給気ダンパーが連動して開く"),
              ("t", "排煙機: 西・東系統の各機械室に 120m³/分×1台。排煙口は各居室の天井、手動開放装置は床から0.8〜1.5m。予備電源は蓄電池（駐車場PV と連携、30分以上）")]
     side_panel(sh, 190, y2 - 6, notes, width=210)
+    return sh
+
+
+def energy_sheet(h, number):
+    import performance as PF
+    sh = frame(h, number, "冷暖房負荷・電力需要・必要発電量（概算）", 1, label="—")
+    sh.text("冷暖房負荷・年間電力需要・必要発電量（概算）— B案 内寸18.0m角", (12, 280), 3.6, "A-TEXT", paper=True)
+    old, new = PF.heat_load(h, 17250), PF.heat_load(h)
+    c = PF.CLIMATE
+    rows = [["項目", "変更前（内寸17.0m）", "B案（内寸18.0m）", "増減"]]
+
+    def r(lab, k, fmt="{:.2f}", sub=None):
+        a = old[k] if sub is None else old[sub][k]
+        b = new[k] if sub is None else new[sub][k]
+        rows.append([lab, fmt.format(a), fmt.format(b), f"{(b / a - 1) * 100:+.1f}%"])
+    r("外皮面積 m²", "area", "{:.0f}", "env")
+    r("外皮平均熱貫流率 UA W/m²K", "UA", "{:.3f}", "env")
+    r("貫流 熱損失 W/K", "q", "{:.0f}", "env")
+    r("換気・すき間 熱損失 W/K", "Hv", "{:.0f}")
+    r("暖房 設計負荷 kW", "heat")
+    r("冷房 顕熱 設計負荷 kW", "cool_s")
+    r("冷房 潜熱（除湿）kW", "cool_l")
+    r("冷房 合計 kW", "cool")
+    r("除湿量 L/日（ピーク）", "dehum", "{:.0f}")
+    r("加湿量 L/日（ピーク）", "hum", "{:.0f}")
+    r("年間 暖房熱量 kWh", "heat_kwh", "{:,.0f}")
+    r("年間 冷房・除湿熱量 kWh", "cool_kwh", "{:,.0f}")
+    sh.text("(1) 冷暖房負荷", (12, 271), 2.8, "A-TEXT", paper=True)
+    y = sh.table(12, 268, [58, 38, 38, 22], rows, row_h=5.0, h=2.0)
+    hw = new["heat"] / 2
+    rows = [["系統", "暖房", "冷房（顕熱＋潜熱）", "機器選定（提案）"],
+            ["西系統（X1–X3）", f"{new['heat'] * 0.5:.1f}kW", f"{new['cool'] * 0.45:.1f}kW", "全館空調 5.6kW級＋デシカント調湿"],
+            ["東系統（X3–X4・ジム/シアター）", f"{new['heat'] * 0.5:.1f}kW", f"{new['cool'] * 0.55:.1f}kW", "全館空調 7.1kW級＋デシカント調湿"]]
+    sh.text("(2) 空調機の容量（2系統）", (12, y - 6), 2.8, "A-TEXT", paper=True)
+    y = sh.table(12, y - 9, [50, 24, 34, 66], rows, row_h=5.0, h=2.0)
+    notes = [("t", f"条件: {c['name']}、外気 冬{c['t_win']}℃・夏{c['t_sum']}℃、室内 冬22℃/60%・夏26℃/45%、換気 {PF.ACH}回/h（全熱交換 {PF.RECOVERY * 100:.0f}%回収）"),
+             ("t", f"U値: 外壁{PF.U['wall']}・屋根{PF.U['roof']}・床{PF.U['floor']}・窓{PF.U['window']}・ドア{PF.U['door']} W/m²K。HDD{c['hdd']:.0f}・CDD{c['cdd']:.0f}（K·日）"),
+             ("t", "床面積が+12%増えるのに対し、外皮は+6%の増加にとどまる。UA はほぼ同じで、負荷は換気量（容積）に比例して増える")]
+    side_panel(sh, 12, y - 6, notes, width=170)
+    en = PF.energy(h, new)
+    rows = [["用途", "年間電力 kWh"]] + [[k, f"{v:,.0f}"] for k, v in en["items"]] + [["合計", f"{en['total']:,.0f}"]]
+    sh.text("(3) 年間電力需要", (200, 271), 2.8, "A-TEXT", paper=True)
+    y2 = sh.table(200, 268, [120, 40], rows, row_h=5.0, h=2.0)
+    rows = [["項目", "値"],
+            ["必要容量（需要÷{:.0f}kWh/kWp）".format(c["pv_yield"]), f"{en['need_kwp']:.1f} kWp"],
+            ["必要容量（余裕20%・劣化/天候）", f"{en['need_kwp_margin']:.1f} kWp"],
+            ["必要な屋根面積（{:.2f}kWp/m²）".format(en["kwp_per_m2"]), f"{en['need_area']:.0f} m²"],
+            ["計画: ソーラーカーポート", f"{en['carport_area']:.0f} m² → {en['carport_kwp']:.1f} kWp"],
+            ["計画 年間発電量", f"{en['carport_gen']:,.0f} kWh（需要の {en['carport_gen'] / en['total'] * 100:.0f}%）"],
+            ["蓄電池（停電時）", f"排煙{en['backup']['smoke']:.1f}＋排水ポンプ{en['backup']['pump']:.1f}＋生活{en['backup']['base']:.1f} ≒ {en['battery']:.1f} kWh → 16kWh級"]]
+    sh.text("(4) 必要発電量（住宅の屋根には設置せず、駐車場のみ）", (200, y2 - 6), 2.8, "A-TEXT", paper=True)
+    y2 = sh.table(200, y2 - 9, [70, 110], rows, row_h=5.0, h=2.0)
+    side_panel(sh, 200, y2 - 6, [("t", "ブリーフ v2 の想定（需要 約13,000kWh・17kWp）に対し、B案では暖房・換気・加湿を含めて約22,000kWh と見込む。カーポートを 9×10m（90m²）から 12×11m（132m²）に拡大して賄う"),
+                                 ("t", "実施設計で、住宅版の一次エネルギー計算と発電量シミュレーション（日射・影）により確定する")], width=180)
+    return sh
+
+
+def seismic_sheet(h, number):
+    import performance as PF
+    se = PF.seismic(h)
+    sh = frame(h, number, "耐震検討（壁式RC・概算）", 1, label="—")
+    sh.text("耐震検討（壁式鉄筋コンクリート造・概算）— B案 構造グリッド 6.125 / 6.0 / 6.125", (12, 280), 3.6, "A-TEXT", paper=True)
+    rows = [["項目", "値"],
+            ["R階 重量 W2", f"{se['W2']:,.0f} kN"], ["2階 重量 W1", f"{se['W1']:,.0f} kN"],
+            ["建物重量 ΣW", f"{se['Wt']:,.0f} kN（単位床面積あたり {se['w_unit']:.1f} kN/m²）"],
+            ["固有周期 T", f"{se['T']:.3f} s（Rt=1.0、Z=1.0）"],
+            ["2階の Ai", f"{se['A2']:.3f}（α={se['alpha2']:.3f}）"],
+            ["短期許容せん断応力度 fs", f"{se['fs']:.2f} N/mm²（Fc24）"],
+            ["接地圧（長期）", f"{se['bearing']:.1f} kN/m²（基礎面積 {se['base_area']:.0f}m²、許容150）"]]
+    sh.text("(1) 地震力の算定", (12, 271), 2.8, "A-TEXT", paper=True)
+    y = sh.table(12, 268, [60, 110], rows, row_h=5.0, h=2.0)
+    rows = [["階・方向", "壁長 m", "壁量 cm/m²", "Q (Co0.2) kN", "τ N/mm²", "余裕", "Q (等級3) kN", "τ", "余裕", "Qu/Qun", "偏心率"]]
+    for (f, d), v in sorted(se["stories"].items()):
+        a = v["建築基準法（Co=0.2）"]
+        b = v["耐震等級3（Co=0.3）"]
+        rows.append([f"{f} {d}", f"{v['Lw']:.1f}", f"{v['wall_rate']:.1f}", f"{a['Q']:,.0f}", f"{a['tau']:.3f}", f"{a['ratio']:.1f}",
+                     f"{b['Q']:,.0f}", f"{b['tau']:.3f}", f"{b['ratio']:.1f}", f"{v['qu_ratio']:.1f}", f"{v['ecc']:.3f}"])
+    sh.text("(2) 層せん断力と壁のせん断応力度", (12, y - 6), 2.8, "A-TEXT", paper=True)
+    y = sh.table(12, y - 9, [22, 15, 19, 23, 17, 13, 23, 15, 13, 17, 17], rows, row_h=5.0, h=1.9)
+    rows = [["区画（壁芯 m）", "短辺内法", "積載＋仕上", "必要厚", "計画"]]
+    for x in se["slabs"]:
+        rows.append([x["cell"] + ("（ジム）" if x["gym"] else ""), f"{x['lx'] / 1000:.2f}m", f"{x['wp']:.1f}kN/m²", f"{x['t_req']:.0f}mm", f"{h.slab_t}mm"])
+    sh.text("(3) 床スラブ（日本建築学会 RC規準の床厚算定式）", (12, y - 6), 2.8, "A-TEXT", paper=True)
+    sh.table(12, y - 9, [62, 20, 24, 20, 18], rows, row_h=4.8, h=1.9)
+    notes = [("h", "評価"),
+             ("t", "B案で中央スパンを5.0→6.0mにしても、耐力壁で囲まれた面積は最大37.5m²（告示上限60m²）、壁量は16.6〜19.1cm/m²（基準12）で、壁式構造の規定を満たす"),
+             ("t", "地震力に対する壁のせん断応力度は、耐震等級3相当（Co=0.3）でも短期許容値の5倍以上の余裕がある。壁式RCは壁量が多く、地震に対して非常に強い構造である"),
+             ("t", "偏心率が最も大きいのは1階X方向（0.105）。Y2通りのジムの開口（幅5.2m）で北側に剛性が偏るためで、0.15以下に収まる。開口上部の2階の壁は壁梁として設計する"),
+             ("t", "床スラブ t=220 は全区画で必要厚を満たす。ジム床（積載5kN/m²）の必要厚は約193mm"),
+             ("t", "接地圧は約42kN/m²で小さいが、河川近接のため地盤調査（液状化・地下水位）で基礎形式を確定する"),
+             ("h", "前提・注意"),
+             ("t", "地盤種別は第2種（Rt=1.0）を仮定。重量はモデルの躯体体積×24kN/m³＋仕上・積載。壁の終局せん断強度は2.0N/mm²、Ds=0.55 の目安で、構造計算（許容応力度計算ルート1）で確定する"),
+             ("t", "耐震等級3を取得する場合は、品確法の評価（壁量・偏心・床倍率に相当する検討）を別途行う")]
+    side_panel(sh, 205, 182, notes, width=195)
     return sh

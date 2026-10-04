@@ -40,8 +40,8 @@ requirements:
   fence_watertight: 600        # 止水構造の高さ（FGL基準）
 
 building:
-  grid_x: [6125, 5000, 6125]   # 壁芯（内寸 17,000 角）
-  grid_y: [6125, 5000, 6125]
+  grid_x: [6125, 6000, 6125]   # 壁芯（内寸 18,000 角・B案: 中央スパン 6.0m）
+  grid_y: [6125, 6000, 6125]
   fl_1f: 1500                  # GL 基準
   story_heights: {1F: 3200, 2F: 3200}
   parapet: 600
@@ -69,7 +69,7 @@ windows:      # FIX窓 実ガラス面積（m²）— v2 確定値 + 本計画�
   2F居室: 0.70   # 2階は未確定 → 1階方針を延長した提案値
 
 exterior:
-  carport: {w: 9000, d: 10000, h: 2500}     # ソーラーカーポート 約90m²
+  carport: {w: 12000, d: 11000, h: 2500}    # ソーラーカーポート 132m²（約25kWp・年間需要＋20%を賄う）
   dotcon_storage_l_per_m2: 13
   retention_tank_m3: 25
   gate_vehicle: 5000
