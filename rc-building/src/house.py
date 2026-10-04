@@ -432,6 +432,17 @@ class House:
             self.boxes.append(Box(x0, y1 - T, self.fgl, x1, y1, z, "stair", level="EXT", tag="外部階段"))
         self.porch = (x0 - 300, y_land - land_d - (n - 1) * T, x1 + 300, y_land)
         self.ext_stair = dict(n=n, riser=r, tread=T)
+        # 目隠し壁（RC・独立）: 玄関の正面（南）と東側をふさぎ、西側から回り込んで入る
+        sw = self.spec["exterior"]["screen_wall"]
+        tt, top = sw["t"], self.fgl + sw["height"]
+        self.screen = [(5800, -5000 - tt, 12800, -5000), (12800 - tt, -5000 - tt, 12800, -self.t / 2 - self.ins),
+                       (5800, -5000 - tt, 5800 + tt, -1900), (7700, -1700, 7700 + tt, -self.t / 2 - self.ins)]
+        # ポーチ上部の格子庇（上方・東側の高い道路からの視線を遮る）
+        self.louver = (5800, -5000, 12800, -self.t / 2 - self.ins)
+        self.boxes.append(Box(*self.louver[:2], top - 100, *self.louver[2:], top, "partition", "lgs", level="EXT", tag="格子庇"))
+        for (a0, b0, a1, b1) in self.screen:
+            self.boxes.append(Box(a0, b0, self.fgl - 400, a1, b1, top, "wall", level="EXT", tag="目隠し壁"))
+        self.screen_top = top
 
     # -------------------------------------------------------- exterior
     def _exterior(self):
@@ -471,21 +482,21 @@ class House:
         pg = ex["solar_pergola"]
         self.pergola = tuple(pg["rect"])
         self.pergola_h = pg["height"]
-        # 駐車場（南側の帯状部分・屋根なし）
+        # 駐車場（南側の帯状部分）＋3台用ソーラーカーポート
         cp = ex["carport"]
-        cx0, cy0 = 5600, -27500
+        cx0, cy0 = 5600, -25700
         self.carport = (cx0, cy0, cx0 + cp["w"], cy0 + cp["d"])
-        self.stalls = [(cx0 + 300 + i * 2800, cy0 + 2000, cx0 + 300 + i * 2800 + 2600, cy0 + 2000 + 5500) for i in range(3)]
-        pave = Polygon([(cx0 - 1200, -31000), (cx0 + cp["w"] + 1500, -31000), (cx0 + cp["w"] + 1500, cy0 + cp["d"] + 600),
-                        (cx0 - 1200, cy0 + cp["d"] + 600)]).intersection(site.buffer(-self.fence_t))
-        drive = Polygon([(10200, cy0 + cp["d"]), (13800, cy0 + cp["d"]), (13800, self.porch[1] + 600), (10200, self.porch[1] + 600)])
-        pave = pave.union(drive).intersection(site.buffer(-self.fence_t))
+        self.stalls = [(cx0 + 300 + i * 2800, cy0 + 300, cx0 + 300 + i * 2800 + 2600, cy0 + 300 + 5500) for i in range(3)]
+        pave = Polygon([(cx0 - 1200, -31000), (cx0 + cp["w"] + 1500, -31000), (cx0 + cp["w"] + 1500, cy0 + cp["d"] + 900),
+                        (cx0 - 1200, cy0 + cp["d"] + 900)]).intersection(site.buffer(-self.fence_t))
+        pave = pave.intersection(site.buffer(-self.fence_t))
         self.dotcon = pave
         # アプローチ（人用門扉 → 玄関ポーチ）
         gp0 = gates[1][1]
         gp1 = gates[1][2]
         gm = ((gp0[0] + gp1[0]) / 2, (gp0[1] + gp1[1]) / 2)
-        self.approach = LineString([(gm[0], gm[1] + 200), (3300, -22000), (4800, -16000), (4800, -6000), (9100, -6000),
+        # アプローチ: 目隠し壁の西側から回り込み、壁の内側で玄関階段に至る（クランク）
+        self.approach = LineString([(gm[0], gm[1] + 200), (3300, -22000), (4300, -16000), (4300, -1100), (6900, -1100), (6900, -4050), (9100, -4050),
                                     (9100, self.porch[1])]).buffer(750, cap_style=2, join_style=2)
         # 雨水貯留槽・浸透施設（西側の庭）
         self.tank = (-23500, 20000, -18500, 25000)

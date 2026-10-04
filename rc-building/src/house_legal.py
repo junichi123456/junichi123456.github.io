@@ -145,15 +145,23 @@ def checks(h):
     en = PF.energy(h, hl)
     pg = h.pergola
     pg_area = (pg[2] - pg[0]) * (pg[3] - pg[1]) / 1e6
-    add("ブリーフ", "太陽光発電（本館と分離した屋根付き設備）", "施主指示（v4.1）", f"年間電力需要 約{en['total']:,.0f}kWh ×1.2 を賄う → {en['need_kwp_margin']:.1f}kWp",
-        f"日よけ付き菜園（ソーラーパーゴラ）{pg_area:.0f}m²・パネル{en['panel_area']:.0f}m² → {en['pv_kwp']:.1f}kWp・年 約{en['pv_gen']:,.0f}kWh",
+    add("ブリーフ", "太陽光発電（本館と分離した屋根付き設備）", "施主指示（v4.1・v4.2）", f"年間電力需要 約{en['total']:,.0f}kWh ×1.2 を賄う → {en['need_kwp_margin']:.1f}kWp",
+        f"ソーラーパーゴラ {en['pg_kwp']:.1f}kWp＋3台用カーポート {en['cp_kwp']:.1f}kWp（影損失込み）→ 年 約{en['pv_gen']:,.0f}kWh",
         judge(en["pv_gen"] >= en["total"] * 1.2 * 0.99))
+    import sightshade as SS
+    v0 = SS.entrance_visibility(h, with_screen=False)
+    v1 = SS.entrance_visibility(h)
+    v2 = SS.entrance_visibility(h, eye=4500)
+    add("ブリーフ", "玄関の目隠し", "施主指示（v4.2）", "敷地外（道路・隣地）から玄関ドアが見えない",
+        f"境界外1.5mの{v1['n']}地点から視線を判定: 目隠し壁なし {len(v0['visible'])}地点で見える → 計画 {len(v1['visible'])}地点（目線1.5m）／{len(v2['visible'])}地点（目線4.5m・隣家2階相当）",
+        judge(len(v1["visible"]) == 0))
     ind = PF.indoor(h)
     dd = h.spec["requirements"]["indoor"]
     add("ブリーフ", "室内環境目標", "施主指示（v4.1）", f"全室 通年 湿度{dd['rh'][0]}〜{dd['rh'][1]}%、夏{dd['summer_t'][0]:.0f}〜{dd['summer_t'][1]:.0f}℃、冬{dd['winter_t'][0]:.0f}〜{dd['winter_t'][1]:.0f}℃",
         f"全館空調2系統＋全熱交換＋デシカント調湿。暖房 {hl['heat']:.1f}kW・冷房 {hl['cool']:.1f}kW・除湿 {hl['dehum']:.0f}L/日・加湿 {hl['hum']:.0f}L/日", OK)
-    add("集団規定", "建ぺい率（ソーラーパーゴラ含む）", "法53条・法2条1号", "屋根と柱をもつ架台は建築物として扱う見込み",
-        f"({sm['building_area']:.2f}+{pg_area:.0f})/{sm['site_area']:,.2f} = {(sm['building_area'] + pg_area) / sm['site_area'] * 100:.2f}%", judge((sm['building_area'] + pg_area) / sm['site_area'] <= h.spec['site']['coverage_limit']))
+    add("集団規定", "建ぺい率（パーゴラ・カーポート含む）", "法53条・法2条1号", "屋根と柱をもつ架台は建築物として扱う見込み",
+        f"({sm['building_area']:.2f}+パーゴラ{pg_area:.0f}+カーポート{en['cp_area']:.0f})/{sm['site_area']:,.2f} = {(sm['building_area'] + pg_area + en['cp_area']) / sm['site_area'] * 100:.2f}%",
+        judge((sm['building_area'] + pg_area + en['cp_area']) / sm['site_area'] <= h.spec['site']['coverage_limit']))
     add("ブリーフ", "蓄電池", "ブリーフv3 7章", "排煙機30分＋排水ポンプ6時間＋最低限の生活24時間", f"必要 約{en['battery']:.1f}kWh → 16kWh 級", judge(en["battery"] <= 16.5))
     add("ブリーフ", "駐車台数", "ブリーフv3 2章", f"{req['parking']}台", f"{len(h.stalls)}台（屋根なし・Dotcon+）", judge(len(h.stalls) >= req["parking"]))
     add("ブリーフ", "RC塀", "ブリーフv3 4章", f"H{req['fence_height']:,}（防犯）", "全周 H2.0m 以上（東側坂道沿いは道路面+1.2m以上）", OK)

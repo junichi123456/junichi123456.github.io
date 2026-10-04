@@ -125,14 +125,28 @@ def energy(h, hl):
     pergola_area = (x1 - x0) * (y1 - y0) / 1e6
     panel_area = pergola_area * pg["coverage"]
     kwp_per_m2 = pg["module_kwp_per_m2"]
-    pv_kwp = panel_area * kwp_per_m2
+    pg_kwp = panel_area * kwp_per_m2
+    cp = h.spec["exterior"]["carport"]
+    cp_area = cp["w"] * cp["d"] / 1e6
+    cp_kwp = cp_area * cp["kwp_per_m2"]
+    import sightshade as SS
+    sh = SS.pv_shading(h)
+    pg_gen = pg_kwp * c["pv_yield"] * (1 - sh["pergola"]["loss"])
+    cp_gen = cp_kwp * c["pv_yield"] * (1 - sh["carport"]["loss"])
+    # 参考: 架台全面をパネルで覆った場合との差（被覆率による減少分）
+    full_kwp = pergola_area * kwp_per_m2
+    coverage_deficit = (full_kwp - pg_kwp) * c["pv_yield"]
+    shade_deficit = pg_kwp * c["pv_yield"] * sh["pergola"]["loss"]
+    pv_kwp = pg_kwp + cp_kwp
     need_area = need_kwp_margin / kwp_per_m2 / pg["coverage"]
     # 非常時（停電）の蓄電池
     smoke_fan = 2 * (120 / 60 * 400 / 0.5) / 1000           # kW（120m³/分・400Pa・効率0.5）×2台
     backup = dict(smoke=smoke_fan * 0.5, pump=0.75 * 6, base=0.4 * 24)
     battery = sum(backup.values())
     return dict(items=items, total=total, need_kwp=need_kwp, need_kwp_margin=need_kwp_margin, pergola_area=pergola_area,
-                panel_area=panel_area, coverage=pg["coverage"], pv_kwp=pv_kwp, pv_gen=pv_kwp * c["pv_yield"], need_area=need_area,
+                panel_area=panel_area, coverage=pg["coverage"], pv_kwp=pv_kwp, pv_gen=pg_gen + cp_gen, need_area=need_area,
+                pg_kwp=pg_kwp, pg_gen=pg_gen, cp_area=cp_area, cp_kwp=cp_kwp, cp_gen=cp_gen, shade=sh,
+                coverage_deficit=coverage_deficit, shade_deficit=shade_deficit,
                 kwp_per_m2=kwp_per_m2, smoke_fan=smoke_fan, backup=backup, battery=battery)
 
 

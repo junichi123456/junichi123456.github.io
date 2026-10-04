@@ -103,6 +103,16 @@ def export_glb(h, path):
         m = trimesh.creation.box(extents=[(x1 - x0 - 2000) * S, 0.9, 0.25])
         m.apply_translation([(x0 + x1) / 2 * S, (yb + 450) * S, (zb + 125) * S])
         parts[("菜園", "-", (0.45, 0.33, 0.20, 1.0))].append(m)
+    # 3台用ソーラーカーポート
+    cp = h.carport
+    cph = h.spec["exterior"]["carport"]["h"]
+    for (x, y) in [(cp[0], cp[1]), (cp[2] - 200, cp[1]), (cp[0], cp[3] - 200), (cp[2] - 200, cp[3] - 200)]:
+        m = trimesh.creation.box(extents=[0.2, 0.2, cph * S])
+        m.apply_translation([(x + 100) * S, (y + 100) * S, (h.fgl + cph / 2) * S])
+        parts[("カーポート", "-", (0.35, 0.37, 0.40, 1.0))].append(m)
+    m = trimesh.creation.box(extents=[(cp[2] - cp[0]) * S, (cp[3] - cp[1]) * S, 0.12])
+    m.apply_translation([(cp[0] + cp[2]) / 2 * S, (cp[1] + cp[3]) / 2 * S, (h.fgl + cph + 60) * S])
+    parts[("カーポート", "-", (0.12, 0.18, 0.32, 1.0))].append(m)
     # ジム機器（簡易ボリューム）
     for name, r, hh, kg in getattr(h, "equipment", []):
         m = trimesh.creation.box(extents=[(r[2] - r[0]) * S, (r[3] - r[1]) * S, hh * S])
