@@ -30,6 +30,10 @@ site:
   cliff: {north_h: 3200, east_h: 3300}   # 敷地外の高低差（DEM）
 
 requirements:
+  indoor:                      # 通年・全室の室内環境目標（施主指定 v4.1）
+    summer_t: [25.0, 26.0]
+    winter_t: [20.0, 21.0]
+    rh: [55, 60]
   use: 一戸建ての住宅
   stories: 2
   stair: {min_width: 750, max_riser: 230, min_tread: 150}   # 令23条（住宅）
@@ -69,7 +73,13 @@ windows:      # FIX窓 実ガラス面積（m²）— v2 確定値 + 本計画�
   2F居室: 0.70   # 2階は未確定 → 1階方針を延長した提案値
 
 exterior:
-  carport: {w: 12000, d: 11000, h: 2500}    # ソーラーカーポート 132m²（約25kWp・年間需要＋20%を賄う）
+  carport: {w: 12000, d: 11000, h: 0}       # 駐車場（屋根なし・Dotcon+）
+  solar_pergola:                           # 日よけ付き菜園（ソーラーパーゴラ）— 本館と構造的に分離
+    rect: [-27000, 11000, -9000, 21000]    # 建物 X1・Y1 基準 mm（西側の庭、18×10m）
+    height: 2800                           # 軒高（パネル下端）
+    tilt: 10                               # 南向き傾斜 度
+    coverage: 0.70                         # パネル被覆率（すき間から光と雨を落とす）
+    module_kwp_per_m2: 0.215               # 430W級モジュール（2.0m²）
   dotcon_storage_l_per_m2: 13
   retention_tank_m3: 25
   gate_vehicle: 5000
@@ -77,5 +87,5 @@ exterior:
 
 finish:
   exterior: 外断熱100 + 外装仕上げ（腰壁 GL〜+1,500 はタイル張り）
-  roof: 外断熱防水（シート防水）、太陽光パネル架台
+  roof: 外断熱防水（シート防水）。太陽光は設けない（庭のソーラーパーゴラに設置）
   interior: 床 浮き床・フローリング／壁 化粧壁（直貼り）／天井 PB EP

@@ -216,10 +216,13 @@ def site_plan(h, number, legal_summary):
     proj = project(h.boxes, "plan", filt=lambda b: b.z1 > h.fgl and b.level != "FDN")
     emit(sh, proj, t, cut_lw=25, vis_lw=9)
     house_outline(h, sh, t)
-    # 駐車場・カーポート
+    # 駐車場・ソーラーパーゴラ
     sh.hatch_polys([Polygon(t.pts(h.dotcon.exterior.coords))], pattern="NET", spacing=1.0, layer="A-PAVE")
     cp = h.carport
-    sh.rect(*t(cp[0], cp[1]), *t(cp[2], cp[3]), "A-HIDDEN")
+    pg = h.pergola
+    sh.rect(*t(pg[0], pg[1]), *t(pg[2], pg[3]), "A-VIS", lineweight=25)
+    sh.line(t(pg[0], pg[1]), t(pg[2], pg[3]), "A-VIS")
+    sh.line(t(pg[0], pg[3]), t(pg[2], pg[1]), "A-VIS")
     # 頂点番号
     for i, p in enumerate(h.site_pts):
         sh.circle(t(*p), 0.9 * sh.S, "A-SYMB")
@@ -236,7 +239,8 @@ def site_plan(h, number, legal_summary):
         sh.text(s, t(x, y), 2.0, "A-TEXT", "MIDDLE_CENTER")
     sh.text("建物（壁式RC造 2階建て）", t(h.W / 2, h.D / 2 + 1500), 2.2, "A-ROOM", "MIDDLE_CENTER")
     sh.text("駐車場（Dotcon+）", t((cp[0] + cp[2]) / 2, cp[1] - 2500), 1.9, "A-TEXT", "MIDDLE_CENTER")
-    sh.text("庭・雨水貯留浸透", t(-17000, 28000), 1.9, "A-TEXT", "MIDDLE_CENTER")
+    sh.text("ソーラーパーゴラ（菜園）", t((pg[0] + pg[2]) / 2, pg[1] - 2000), 1.8, "A-TEXT", "MIDDLE_CENTER")
+    sh.text("庭・雨水貯留浸透", t(-17000, 27500), 1.9, "A-TEXT", "MIDDLE_CENTER")
     sh.text("破線: 既存建物（解体）", t(-8000, 26000), 1.7, "A-TEXT", "MIDDLE_CENTER")
     for (x, y) in [(8600, 8600), (-18000, 18000), (8000, -24000), (8000, 40000), (30000, 15000), (-10000, -40000), (25000, -25000)]:
         z = h.ground(x, y)
@@ -288,10 +292,15 @@ def exterior_plan(h, number):
     emit(sh, proj, t, cut_lw=25, vis_lw=9)
     house_outline(h, sh, t)
     cp = h.carport
-    sh.rect(*t(cp[0], cp[1]), *t(cp[2], cp[3]), "A-HIDDEN")
+    pg = h.pergola
+    sh.rect(*t(pg[0], pg[1]), *t(pg[2], pg[3]), "A-HIDDEN")
+    for i in range(1, 7):
+        yy = pg[1] + i * (pg[3] - pg[1]) / 7
+        sh.line(t(pg[0], yy), t(pg[2], yy), "A-VIS", lineweight=9)
+    sh.text("日よけ付き菜園（ソーラーパーゴラ・独立架台 18×10m）", t((pg[0] + pg[2]) / 2, pg[1] - 900), 1.7, "A-TEXT", "MIDDLE_CENTER")
     for s in h.stalls:
         sh.rect(*t(s[0], s[1]), *t(s[2], s[3]), "A-VIS")
-    sh.text(f"ソーラーカーポート 約{(cp[2]-cp[0])*(cp[3]-cp[1])/1e6:.0f}m²／駐車3台＋駐輪", t(cp[2] + 1500, (cp[1] + cp[3]) / 2), 1.7, "A-TEXT", "MIDDLE_LEFT")
+    sh.text("駐車場（屋根なし）3台＋駐輪", t(cp[2] + 1500, (cp[1] + cp[3]) / 2), 1.7, "A-TEXT", "MIDDLE_LEFT")
     sh.text("建物（壁式RC造 2階建て）", t(h.W / 2, h.D / 2), 2.0, "A-ROOM", "MIDDLE_CENTER")
     sh.text("Dotcon+ 透水舗装", t(cp[2] + 1500, cp[1] - 1500), 1.7, "A-TEXT", "MIDDLE_LEFT")
     sh.text("アプローチ（透水性舗装）", t(5800, -12000), 1.6, "A-TEXT", "MIDDLE_LEFT")
@@ -300,7 +309,7 @@ def exterior_plan(h, number):
     tk = h.tank
     sh.rect(*t(tk[0], tk[1]), *t(tk[2], tk[3]), "A-DRAIN")
     sh.line(t(tk[0], tk[1]), t(tk[2], tk[3]), "A-DRAIN")
-    sh.text(f"地下雨水貯留槽 {h.spec['exterior']['retention_tank_m3']}m³", t((tk[0] + tk[2]) / 2, tk[1] - 1200), 1.7, "A-TEXT", "MIDDLE_CENTER")
+    sh.text(f"地下雨水貯留槽 {h.spec['exterior']['retention_tank_m3']}m³", t((tk[0] + tk[2]) / 2, tk[3] + 900), 1.7, "A-TEXT", "MIDDLE_CENTER")
     for ln in h.trench:
         sh.pline(t.pts(ln.coords), "A-DRAIN", lineweight=35)
     sh.text("浸透トレンチ", t(-20000, 38000), 1.7, "A-TEXT", "MIDDLE_CENTER")
@@ -456,7 +465,7 @@ def roof_plan(h, number):
         sh.circle(t(x, y), 1.4 * sh.S, "A-SYMB")
         sh.text("RD", t(x + 300, y + 300), 1.5, "A-SYMB")
     sh.text("屋上: 外断熱防水（シート防水）、水勾配 1/50", t(h.W / 2, h.D / 2), 2.2, "A-TEXT", "MIDDLE_CENTER")
-    sh.text("太陽光パネルは設置しない（駐車場のソーラーカーポートに集約）", t(h.W / 2, h.D / 2 - 1200), 1.8, "A-TEXT", "MIDDLE_CENTER")
+    sh.text("太陽光パネルは設置しない（庭のソーラーパーゴラに集約）", t(h.W / 2, h.D / 2 - 1200), 1.8, "A-TEXT", "MIDDLE_CENTER")
     sh.text("排煙機の排気口・給気ダンパーは外壁面（機械室）に設置", t(h.W / 2, h.D / 2 - 2200), 1.6, "A-TEXT", "MIDDLE_CENTER")
     sh.north_arrow(sh.P(395, 268), 7)
     sh.view_title("屋根伏図", "1:100", (24, 22))
@@ -782,55 +791,64 @@ def openings_smoke_sheet(h, number):
 
 def energy_sheet(h, number):
     import performance as PF
-    sh = frame(h, number, "冷暖房負荷・電力需要・必要発電量（概算）", 1, label="—")
-    sh.text("冷暖房負荷・年間電力需要・必要発電量（概算）— B案 内寸18.0m角", (12, 280), 3.6, "A-TEXT", paper=True)
-    old, new = PF.heat_load(h, 17250), PF.heat_load(h)
+    sh = frame(h, number, "室内環境・冷暖房負荷・必要発電量（概算）", 1, label="—")
+    ind = PF.indoor(h)
+    sh.text("室内環境目標・冷暖房負荷・年間電力需要・必要発電量（概算）— 内寸18.0m角", (12, 280), 3.6, "A-TEXT", paper=True)
+    old, new = PF.heat_load(h, ind=PF.OLD_INDOOR), PF.heat_load(h)
     c = PF.CLIMATE
-    rows = [["項目", "変更前（内寸17.0m）", "B案（内寸18.0m）", "増減"]]
+    d = h.spec["requirements"]["indoor"]
+    rows = [["室内環境目標（全室・通年）", "温度", "湿度", "絶対湿度", "露点"],
+            ["夏（冷房・除湿）", f"{d['summer_t'][0]:.0f}〜{d['summer_t'][1]:.0f}℃", f"{d['rh'][0]}〜{d['rh'][1]}%",
+             f"{PF.abs_humidity(d['summer_t'][0], d['rh'][0]):.1f}〜{PF.abs_humidity(d['summer_t'][1], d['rh'][1]):.1f}g/kg",
+             f"{PF.dew_point(d['summer_t'][0], d['rh'][0]):.1f}〜{PF.dew_point(d['summer_t'][1], d['rh'][1]):.1f}℃"],
+            ["冬（暖房・加湿）", f"{d['winter_t'][0]:.0f}〜{d['winter_t'][1]:.0f}℃", f"{d['rh'][0]}〜{d['rh'][1]}%",
+             f"{PF.abs_humidity(d['winter_t'][0], d['rh'][0]):.1f}〜{PF.abs_humidity(d['winter_t'][1], d['rh'][1]):.1f}g/kg",
+             f"{PF.dew_point(d['winter_t'][0], d['rh'][0]):.1f}〜{PF.dew_point(d['winter_t'][1], d['rh'][1]):.1f}℃"]]
+    sh.text("(1) 室内環境目標", (12, 271), 2.8, "A-TEXT", paper=True)
+    y = sh.table(12, 268, [44, 26, 22, 40, 34], rows, row_h=5.0, h=2.0)
+    win_in = ind["t_win"] - PF.U["window"] * 0.13 * (ind["t_win"] - c["t_win"])
+    rows = [["項目", "旧目標", "新目標", "増減"]]
 
-    def r(lab, k, fmt="{:.2f}", sub=None):
-        a = old[k] if sub is None else old[sub][k]
-        b = new[k] if sub is None else new[sub][k]
-        rows.append([lab, fmt.format(a), fmt.format(b), f"{(b / a - 1) * 100:+.1f}%"])
-    r("外皮面積 m²", "area", "{:.0f}", "env")
-    r("外皮平均熱貫流率 UA W/m²K", "UA", "{:.3f}", "env")
-    r("貫流 熱損失 W/K", "q", "{:.0f}", "env")
-    r("換気・すき間 熱損失 W/K", "Hv", "{:.0f}")
-    r("暖房 設計負荷 kW", "heat")
-    r("冷房 顕熱 設計負荷 kW", "cool_s")
+    def r(lab, k, fmt="{:.2f}"):
+        a_, b_ = old[k], new[k]
+        rows.append([lab, fmt.format(a_), fmt.format(b_), f"{(b_ / a_ - 1) * 100:+.1f}%"])
+    r("暖房 設計負荷 kW（冬 上限21℃）", "heat")
+    r("冷房 顕熱 kW（夏 下限25℃）", "cool_s")
     r("冷房 潜熱（除湿）kW", "cool_l")
-    r("冷房 合計 kW", "cool")
     r("除湿量 L/日（ピーク）", "dehum", "{:.0f}")
     r("加湿量 L/日（ピーク）", "hum", "{:.0f}")
     r("年間 暖房熱量 kWh", "heat_kwh", "{:,.0f}")
     r("年間 冷房・除湿熱量 kWh", "cool_kwh", "{:,.0f}")
-    sh.text("(1) 冷暖房負荷", (12, 271), 2.8, "A-TEXT", paper=True)
-    y = sh.table(12, 268, [58, 38, 38, 22], rows, row_h=5.0, h=2.0)
-    hw = new["heat"] / 2
+    r("年間 加湿熱量 kWh", "hum_kwh", "{:,.0f}")
+    sh.text("(2) 冷暖房負荷（旧目標 冬22℃/60%・夏26℃/45% との比較）", (12, y - 6), 2.8, "A-TEXT", paper=True)
+    y = sh.table(12, y - 9, [62, 32, 32, 22], rows, row_h=5.0, h=2.0)
     rows = [["系統", "暖房", "冷房（顕熱＋潜熱）", "機器選定（提案）"],
             ["西系統（X1–X3）", f"{new['heat'] * 0.5:.1f}kW", f"{new['cool'] * 0.45:.1f}kW", "全館空調 5.6kW級＋デシカント調湿"],
             ["東系統（X3–X4・ジム/シアター）", f"{new['heat'] * 0.5:.1f}kW", f"{new['cool'] * 0.55:.1f}kW", "全館空調 7.1kW級＋デシカント調湿"]]
-    sh.text("(2) 空調機の容量（2系統）", (12, y - 6), 2.8, "A-TEXT", paper=True)
+    sh.text("(3) 空調機の容量（2系統）", (12, y - 6), 2.8, "A-TEXT", paper=True)
     y = sh.table(12, y - 9, [50, 24, 34, 66], rows, row_h=5.0, h=2.0)
-    notes = [("t", f"条件: {c['name']}、外気 冬{c['t_win']}℃・夏{c['t_sum']}℃、室内 冬22℃/60%・夏26℃/45%、換気 {PF.ACH}回/h（全熱交換 {PF.RECOVERY * 100:.0f}%回収）"),
-             ("t", f"U値: 外壁{PF.U['wall']}・屋根{PF.U['roof']}・床{PF.U['floor']}・窓{PF.U['window']}・ドア{PF.U['door']} W/m²K。HDD{c['hdd']:.0f}・CDD{c['cdd']:.0f}（K·日）"),
-             ("t", "床面積が+12%増えるのに対し、外皮は+6%の増加にとどまる。UA はほぼ同じで、負荷は換気量（容積）に比例して増える")]
-    side_panel(sh, 12, y - 6, notes, width=170)
+    notes = [("t", f"湿度55〜60%を通年保つため、夏は除湿（露点 約{PF.dew_point(25, 55):.0f}℃まで）、冬は加湿が主な負荷。湿度幅は狭いので、全熱交換＋デシカント（調湿）を各系統に設け、室ごとの湿度センサーで制御する"),
+             ("t", f"結露: 冬（外気{c['t_win']}℃）の窓の室内表面温度は約{win_in:.1f}℃で、室内露点 {PF.dew_point(21, 60):.1f}℃を上回る。外断熱のため躯体の熱橋も小さい"),
+             ("t", f"条件: {c['name']}、外気 冬{c['t_win']}℃・夏{c['t_sum']}℃（{c['x_sum']}g/kg）、換気 {PF.ACH}回/h（全熱交換 {PF.RECOVERY * 100:.0f}%回収）、HDD {new['hdd']:.0f}・CDD {new['cdd']:.0f}")]
+    side_panel(sh, 12, y - 6, notes, width=175)
     en = PF.energy(h, new)
     rows = [["用途", "年間電力 kWh"]] + [[k, f"{v:,.0f}"] for k, v in en["items"]] + [["合計", f"{en['total']:,.0f}"]]
-    sh.text("(3) 年間電力需要", (200, 271), 2.8, "A-TEXT", paper=True)
+    sh.text("(4) 年間電力需要", (200, 271), 2.8, "A-TEXT", paper=True)
     y2 = sh.table(200, 268, [120, 40], rows, row_h=5.0, h=2.0)
+    pg = h.pergola
     rows = [["項目", "値"],
             ["必要容量（需要÷{:.0f}kWh/kWp）".format(c["pv_yield"]), f"{en['need_kwp']:.1f} kWp"],
             ["必要容量（余裕20%・劣化/天候）", f"{en['need_kwp_margin']:.1f} kWp"],
-            ["必要な屋根面積（{:.2f}kWp/m²）".format(en["kwp_per_m2"]), f"{en['need_area']:.0f} m²"],
-            ["計画: ソーラーカーポート", f"{en['carport_area']:.0f} m² → {en['carport_kwp']:.1f} kWp"],
-            ["計画 年間発電量", f"{en['carport_gen']:,.0f} kWh（需要の {en['carport_gen'] / en['total'] * 100:.0f}%）"],
+            ["必要な架台面積（被覆率{:.0f}%）".format(en["coverage"] * 100), f"{en['need_area']:.0f} m²"],
+            ["計画: ソーラーパーゴラ", f"{(pg[2] - pg[0]) / 1000:.0f}×{(pg[3] - pg[1]) / 1000:.0f}m = {en['pergola_area']:.0f}m²（パネル {en['panel_area']:.0f}m²）→ {en['pv_kwp']:.1f} kWp"],
+            ["計画 年間発電量", f"{en['pv_gen']:,.0f} kWh（需要の {en['pv_gen'] / en['total'] * 100:.0f}%）"],
             ["蓄電池（停電時）", f"排煙{en['backup']['smoke']:.1f}＋排水ポンプ{en['backup']['pump']:.1f}＋生活{en['backup']['base']:.1f} ≒ {en['battery']:.1f} kWh → 16kWh級"]]
-    sh.text("(4) 必要発電量（住宅の屋根には設置せず、駐車場のみ）", (200, y2 - 6), 2.8, "A-TEXT", paper=True)
-    y2 = sh.table(200, y2 - 9, [70, 110], rows, row_h=5.0, h=2.0)
-    side_panel(sh, 200, y2 - 6, [("t", "ブリーフ v2 の想定（需要 約13,000kWh・17kWp）に対し、B案では暖房・換気・加湿を含めて約22,000kWh と見込む。カーポートを 9×10m（90m²）から 12×11m（132m²）に拡大して賄う"),
-                                 ("t", "実施設計で、住宅版の一次エネルギー計算と発電量シミュレーション（日射・影）により確定する")], width=180)
+    sh.text("(5) 必要発電量 — 日よけ付き菜園（ソーラーパーゴラ）", (200, y2 - 6), 2.8, "A-TEXT", paper=True)
+    y2 = sh.table(200, y2 - 9, [62, 140], rows, row_h=5.0, h=2.0)
+    side_panel(sh, 200, y2 - 6, [("t", "本館とは構造的に分離した独立架台（鉄骨・軒高2.8m・南向き10°）。パネルを列状にすき間をあけて並べ（被覆率70%）、光と雨を下の菜園・庭に落とす。営農型太陽光（ソーラーシェアリング）やソーラーパーゴラとして実例がある"),
+                                 ("t", "下は半日陰を好む作物（葉物・ハーブ・ミョウガ・シソ・ベリー類）向き。パネルの雨水は雨どいで地下貯留槽へ集め、散水に使う（内水対策と兼用）"),
+                                 ("t", "屋根と柱をもつため建築物として扱われる見込み（建築面積に算入・確認申請が必要）。駐車場は屋根なしとする"),
+                                 ("t", "実施設計で、発電量シミュレーション（建物・塀の影）と住宅の一次エネルギー計算で確定する")], width=205)
     return sh
 
 

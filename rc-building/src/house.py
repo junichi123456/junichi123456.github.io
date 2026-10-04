@@ -467,7 +467,11 @@ class House:
         self.fence_lines = [g for g in getattr(cut, "geoms", [cut])]
         # 塀の高さ: FGL+2.0m と 外側地盤+1.2m の高い方（東側の坂道沿いは道路面から 1.2m 以上）
         self.fence_top = lambda x, y: max(self.fgl + self.fence_h, self.ground_outside(x, y) + 1200)
-        # 駐車場（南側の帯状部分）＋ソーラーカーポート
+        # 日よけ付き菜園（ソーラーパーゴラ）— 本館と構造的に分離した独立架台
+        pg = ex["solar_pergola"]
+        self.pergola = tuple(pg["rect"])
+        self.pergola_h = pg["height"]
+        # 駐車場（南側の帯状部分・屋根なし）
         cp = ex["carport"]
         cx0, cy0 = 5600, -27500
         self.carport = (cx0, cy0, cx0 + cp["w"], cy0 + cp["d"])
@@ -486,8 +490,8 @@ class House:
         # 雨水貯留槽・浸透施設（西側の庭）
         self.tank = (-23500, 20000, -18500, 25000)
         self.trench = [LineString([(-24000, 35500), (-9500, 32600), (-500, 30400)]),
-                       LineString([(-25500, 34000), (-27500, 17000), (-31000, 9500)])]
-        self.infil_pits = [(-24000, 35500), (-9500, 32600), (-500, 30400), (-27500, 17000), (-31000, 9500), (3000, -25000)]
+                       LineString([(-25500, 34000), (-28800, 17000), (-31000, 9500)])]
+        self.infil_pits = [(-24000, 35500), (-9500, 32600), (-500, 30400), (-28800, 17000), (-31000, 9500), (3000, -25000)]
         # 塀の排水口（フラップ弁）＝ 低い位置
         self.flap = [(-32500, 8800), (1000, -29200)]
         self.ext_storage = dict(

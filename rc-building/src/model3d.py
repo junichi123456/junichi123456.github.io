@@ -73,16 +73,36 @@ def export_glb(h, path):
     for p in getattr(ap, "geoms", [ap]):
         if p.geom_type == "Polygon":
             parts[("外構（Dotcon+舗装）", "-", (0.78, 0.75, 0.68, 1.0))].append(_prism(poly_m(p.exterior.coords), (h.fgl - 100) * S, (h.fgl + 25) * S))
-    # ソーラーカーポート
-    cp = h.carport
-    cph = h.spec["exterior"]["carport"]["h"]
-    for (x, y) in [(cp[0], cp[1]), (cp[2] - 200, cp[1]), (cp[0], cp[3] - 200), (cp[2] - 200, cp[3] - 200)]:
-        m = trimesh.creation.box(extents=[0.2, 0.2, (cph - 0) * S])
-        m.apply_translation([(x + 100) * S, (y + 100) * S, (h.fgl + cph / 2) * S])
-        parts[("カーポート", "-", (0.35, 0.37, 0.40, 1.0))].append(m)
-    m = trimesh.creation.box(extents=[(cp[2] - cp[0]) * S, (cp[3] - cp[1]) * S, 0.12])
-    m.apply_translation([(cp[0] + cp[2]) / 2 * S, (cp[1] + cp[3]) / 2 * S, (h.fgl + cph + 60) * S])
-    parts[("カーポート", "-", (0.12, 0.18, 0.32, 1.0))].append(m)
+    # ソーラーパーゴラ（日よけ付き菜園）: 柱＋梁＋すき間をあけたパネル列（南向き傾斜）
+    pg = h.spec["exterior"]["solar_pergola"]
+    x0, y0, x1, y1 = h.pergola
+    ph = h.pergola_h
+    zb = h.ground((x0 + x1) / 2, (y0 + y1) / 2)
+    zb = max(zb, h.fgl)
+    import math as _m
+    for x in [x0 + i * (x1 - x0) / 4 for i in range(5)]:
+        for y in (y0, y1):
+            hh = ph + (y - y0) * _m.tan(_m.radians(pg["tilt"]))
+            m = trimesh.creation.box(extents=[0.15, 0.15, hh * S])
+            m.apply_translation([x * S, y * S, (zb + hh / 2) * S])
+            parts[("ソーラーパーゴラ", "-", (0.40, 0.33, 0.25, 1.0))].append(m)
+    rows = 7
+    pitch = (y1 - y0) / rows
+    pw = pitch * pg["coverage"]
+    for r in range(rows):
+        yc = y0 + (r + 0.5) * pitch
+        z = zb + ph + (yc - y0) * _m.tan(_m.radians(pg["tilt"])) + 100
+        m = trimesh.creation.box(extents=[(x1 - x0) * S, pw * S, 0.05])
+        rot_t = trimesh.transformations.rotation_matrix(_m.radians(pg["tilt"]), [1, 0, 0])
+        m.apply_transform(rot_t)
+        m.apply_translation([(x0 + x1) / 2 * S, yc * S, z * S])
+        parts[("ソーラーパーゴラ", "-", (0.12, 0.18, 0.32, 1.0))].append(m)
+    # 菜園の畝
+    for k in range(4):
+        yb = y0 + 800 + k * (y1 - y0 - 1600) / 3.6
+        m = trimesh.creation.box(extents=[(x1 - x0 - 2000) * S, 0.9, 0.25])
+        m.apply_translation([(x0 + x1) / 2 * S, (yb + 450) * S, (zb + 125) * S])
+        parts[("菜園", "-", (0.45, 0.33, 0.20, 1.0))].append(m)
     # ジム機器（簡易ボリューム）
     for name, r, hh, kg in getattr(h, "equipment", []):
         m = trimesh.creation.box(extents=[(r[2] - r[0]) * S, (r[3] - r[1]) * S, hh * S])

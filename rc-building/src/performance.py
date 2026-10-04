@@ -17,7 +17,28 @@ CLIMATE = dict(
     hum_days=150, dehum_days=110,      # 加湿・除湿の期間（日）
     pv_yield=1050.0,                   # 年間発電量 kWh/kWp（傾斜10°、損失込み）
 )
-INDOOR = dict(t_win=22.0, t_sum=26.0, x_win=10.05, x_sum=9.58)
+def abs_humidity(t, rh):
+    """絶対湿度 g/kg(DA)（Tetens 式・大気圧 101.325kPa）"""
+    ps = 0.61078 * 10 ** (7.5 * t / (t + 237.3))
+    pv = ps * rh / 100
+    return 622 * pv / (101.325 - pv)
+
+
+def dew_point(t, rh):
+    a, b = 17.27, 237.7
+    g = a * t / (b + t) + math.log(rh / 100)
+    return b * g / (a - g)
+
+
+OLD_INDOOR = dict(t_win=22.0, t_sum=26.0, x_win=10.05, x_sum=9.58, label="旧目標（冬22℃/60%・夏26℃/45%）")
+
+
+def indoor(h):
+    """設計用の室内条件: 負荷が最大となる側の値（冬=上限温度・上限湿度、夏=下限温度・下限湿度）。"""
+    d = h.spec["requirements"]["indoor"]
+    return dict(t_win=d["winter_t"][1], t_sum=d["summer_t"][0],
+                x_win=abs_humidity(d["winter_t"][1], d["rh"][1]), x_sum=abs_humidity(d["summer_t"][0], d["rh"][0]),
+                label=f"新目標（冬{d['winter_t'][0]:.0f}〜{d['winter_t'][1]:.0f}℃・夏{d['summer_t'][0]:.0f}〜{d['summer_t'][1]:.0f}℃・湿度{d['rh'][0]}〜{d['rh'][1]}%）")
 U = dict(wall=0.22, roof=0.15, floor=0.30, window=0.90, door=1.50)   # W/m²K
 FLOOR_TEMP_FACTOR = 0.7       # 床下ピット（基礎断熱）に接する床の温度差係数
 RECOVERY = 0.70               # 全熱交換 回収率（顕熱・潜熱）
@@ -45,7 +66,8 @@ def envelope(h, side=None):
     return dict(parts=parts, area=area, q=q, UA=q / area, L=L, Hc=Hc, win=win)
 
 
-def heat_load(h, side=None):
+def heat_load(h, side=None, ind=None):
+    INDOOR = ind or indoor(h)
     env = envelope(h, side)
     S = (env["L"] / 1000) ** 2
     floor_area = 2 * ((side if side is not None else h.W) / 1000) ** 2
@@ -69,12 +91,15 @@ def heat_load(h, side=None):
     cool_l = (lat_vent_s + lat_people) * 680 / 1000                                # kW（潜熱 680Wh/kg）
     hum = m_air * (INDOOR["x_win"] - c["x_win"]) / 1000 * (1 - RECOVERY) * 24      # L/日
     # 年間（デグリーデー法）
-    heat_kwh = H * c["hdd"] * 24 / 1000
-    cool_kwh = H * c["cdd"] * 24 / 1000 + (solar + internal * 0.5) * 8 * 100 + cool_l * 10 * c["dehum_days"]
+    # デグリーデーは設定温度に連動（基準温度 = 設定温度 − 内部発熱による昇温 約3K）
+    hdd = c["hdd"] - 150 * (22.0 - INDOOR["t_win"])
+    cdd = c["cdd"] + 110 * (26.0 - INDOOR["t_sum"])
+    heat_kwh = H * hdd * 24 / 1000
+    cool_kwh = H * cdd * 24 / 1000 + (solar + internal * 0.5) * 8 * 100 + cool_l * 10 * c["dehum_days"]
     hum_kwh = hum * c["hum_days"] * 0.68                      # 加湿の潜熱 kWh
     return dict(env=env, V=V, vent=vent, H=H, Hv=Hv, heat=heat, cool_s=cool_s, cool_l=cool_l, cool=cool_s + cool_l,
                 solar=solar, internal=internal, dehum=dehum, hum=hum, floor_area=floor_area,
-                heat_kwh=heat_kwh, cool_kwh=cool_kwh, hum_kwh=hum_kwh)
+                heat_kwh=heat_kwh, cool_kwh=cool_kwh, hum_kwh=hum_kwh, hdd=hdd, cdd=cdd, indoor=INDOOR)
 
 
 def energy(h, hl):
@@ -95,17 +120,19 @@ def energy(h, hl):
     c = CLIMATE
     need_kwp = total / c["pv_yield"]
     need_kwp_margin = total * 1.2 / c["pv_yield"]          # 経年劣化・天候変動の余裕 20%
-    kwp_per_m2 = 0.19                                       # 430W級モジュール・架台の配置効率込み
-    cp = h.spec["exterior"]["carport"]
-    carport_area = cp["w"] * cp["d"] / 1e6
-    carport_kwp = carport_area * kwp_per_m2
-    need_area = need_kwp_margin / kwp_per_m2
+    pg = h.spec["exterior"]["solar_pergola"]
+    x0, y0, x1, y1 = pg["rect"]
+    pergola_area = (x1 - x0) * (y1 - y0) / 1e6
+    panel_area = pergola_area * pg["coverage"]
+    kwp_per_m2 = pg["module_kwp_per_m2"]
+    pv_kwp = panel_area * kwp_per_m2
+    need_area = need_kwp_margin / kwp_per_m2 / pg["coverage"]
     # 非常時（停電）の蓄電池
     smoke_fan = 2 * (120 / 60 * 400 / 0.5) / 1000           # kW（120m³/分・400Pa・効率0.5）×2台
     backup = dict(smoke=smoke_fan * 0.5, pump=0.75 * 6, base=0.4 * 24)
     battery = sum(backup.values())
-    return dict(items=items, total=total, need_kwp=need_kwp, need_kwp_margin=need_kwp_margin, carport_area=carport_area,
-                carport_kwp=carport_kwp, carport_gen=carport_kwp * c["pv_yield"], need_area=need_area,
+    return dict(items=items, total=total, need_kwp=need_kwp, need_kwp_margin=need_kwp_margin, pergola_area=pergola_area,
+                panel_area=panel_area, coverage=pg["coverage"], pv_kwp=pv_kwp, pv_gen=pv_kwp * c["pv_yield"], need_area=need_area,
                 kwp_per_m2=kwp_per_m2, smoke_fan=smoke_fan, backup=backup, battery=battery)
 
 
