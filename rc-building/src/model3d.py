@@ -133,7 +133,9 @@ def export_glb(h, path):
         parts[("水路", "-", (0.30, 0.55, 0.80, 1.0))].append(_prism(poly_m(poly.exterior.coords), -1600 * S, -1500 * S))
 
     scene = trimesh.Scene()
-    rot = trimesh.transformations.rotation_matrix(-np.pi / 2, [1, 0, 0])
+    # 建物座標 → 真北基準（建物中心まわりに alpha 回転）→ Y-up
+    rz = trimesh.transformations.rotation_matrix(h.alpha, [0, 0, 1], [h.W / 2000, h.D / 2000, 0])
+    rot = trimesh.transformations.rotation_matrix(-np.pi / 2, [1, 0, 0]) @ rz
     for (grp, lvl, rgba), ms in sorted(parts.items(), key=lambda kv: (kv[0][0], kv[0][1])):
         mesh = trimesh.util.concatenate(ms)
         mesh.apply_transform(rot)

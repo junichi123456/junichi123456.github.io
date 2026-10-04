@@ -69,6 +69,7 @@ def sun_positions(step_h=0.5):
 
 
 def shading_loss(h, rect, z_panel, tilt_deg, obstacles, nx=6, ny=4, diffuse=0.4):
+    gam = math.radians(getattr(h, "facade_az", 0.0))       # 建物（パネル）の向き: 真南から西回り
     """パネル面（rect, 高さ z_panel）の年間影損失率（直達のみ影響、散乱 diffuse は損失なしと仮定）。"""
     x0, y0, x1, y1 = rect
     tilt = math.radians(tilt_deg)
@@ -76,11 +77,12 @@ def shading_loss(h, rect, z_panel, tilt_deg, obstacles, nx=6, ny=4, diffuse=0.4)
     tot = lost = 0.0
     by_month = {}
     for alt, az, dni, m in sun_positions():
-        cos_inc = math.sin(alt) * math.cos(tilt) + math.cos(alt) * math.sin(tilt) * math.cos(az)
+        azl = az - gam                                       # 建物座標系での太陽方位
+        cos_inc = math.sin(alt) * math.cos(tilt) + math.cos(alt) * math.sin(tilt) * math.cos(azl)
         if cos_inc <= 0:
             continue
         w = dni * cos_inc
-        dx, dy = -math.sin(az) * math.cos(alt), -math.cos(az) * math.cos(alt)
+        dx, dy = -math.sin(azl) * math.cos(alt), -math.cos(azl) * math.cos(alt)
         horiz = math.cos(alt)
         reach = 60000.0
         n_sh = 0
@@ -189,3 +191,68 @@ def entrance_visibility(h, eye=1500, with_screen=True, step=1000, only=None):
             vis.append((p.x, p.y, len(seen)))
     nn = n if not only else sum(1 for i in range(n) if edge_class_of(h, *ring.interpolate(i * step).coords[0]) in only)
     return dict(n=nn, visible=vis, ratio=len(vis) / nn if nn else 0)
+
+
+# ---------------------------------------------------------------- 方位と日射
+DAYS = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
+SUNSHINE = 0.45          # 日照率（八王子 年平均の目安）— 晴天日射に乗じて平均化
+
+
+def _sky(alt, dni):
+    dhi = 0.12 * dni + 40 * math.sin(alt)               # 快晴時の天空日射（簡易）
+    ghi = dni * math.sin(alt) + dhi
+    return dhi, ghi
+
+
+def surface_irradiance(alt, az, dni, tilt_deg, az_surf_deg):
+    """面（傾斜 tilt、方位 az_surf: 真南から西回り）の日射強度 W/m²。"""
+    b = math.radians(tilt_deg)
+    g = math.radians(az_surf_deg)
+    cos_inc = math.sin(alt) * math.cos(b) + math.cos(alt) * math.sin(b) * math.cos(az - g)
+    dhi, ghi = _sky(alt, dni)
+    return max(0.0, dni * cos_inc) + dhi * (1 + math.cos(b)) / 2 + 0.2 * ghi * (1 - math.cos(b)) / 2
+
+
+def annual_poa(tilt_deg, az_surf_deg, months=range(1, 13)):
+    """年間（または指定月）の面日射量 kWh/m²（晴天×日照率＋曇天の散乱分）。"""
+    tot = 0.0
+    for alt, az, dni, m in sun_positions(0.5):
+        if m not in months:
+            continue
+        clear = surface_irradiance(alt, az, dni, tilt_deg, az_surf_deg)
+        dhi, _ = _sky(alt, dni)
+        cloudy = dhi * 0.8 * (1 + math.cos(math.radians(tilt_deg))) / 2
+        tot += (SUNSHINE * clear + (1 - SUNSHINE) * cloudy) * 0.5 * DAYS[m - 1] / 1000
+    return tot
+
+
+SIDE_AZ = {"S": 0.0, "W": 90.0, "N": 180.0, "E": -90.0}
+
+
+def window_solar(h, gamma_deg=None, shgc=0.30):
+    """窓の日射取得。gamma: 建物南面の方位（真南から西回り）。"""
+    g = h.facade_az if gamma_deg is None else gamma_deg
+    glass = {k: 0.0 for k in SIDE_AZ}
+    for op in h.openings(exterior=True):
+        if op.kind == "window" and op.side in glass:
+            glass[op.side] += op.width * op.height / 1e6
+    heat = {k: 0.0 for k in SIDE_AZ}     # 暖房期（11〜3月）の取得熱 kWh
+    cool = {k: 0.0 for k in SIDE_AZ}     # 冷房期（6〜9月）の取得熱 kWh
+    peak = 0.0
+    for alt, az, dni, m in sun_positions(0.5):
+        tot = 0.0
+        for k, a in glass.items():
+            if a == 0:
+                continue
+            I = surface_irradiance(alt, az, dni, 90, SIDE_AZ[k] + g)
+            q = I * a * shgc
+            tot += q
+            dhi, _ = _sky(alt, dni)
+            mean = (SUNSHINE * I + (1 - SUNSHINE) * dhi * 0.8 * 0.5) * a * shgc * 0.5 * DAYS[m - 1] / 1000
+            if m in (11, 12, 1, 2, 3):
+                heat[k] += mean
+            if m in (6, 7, 8, 9):
+                cool[k] += mean
+        if m in (7, 8):
+            peak = max(peak, tot)
+    return dict(glass=glass, heat=heat, cool=cool, peak=peak / 1000, gamma=g)

@@ -66,9 +66,11 @@ def envelope(h, side=None):
     return dict(parts=parts, area=area, q=q, UA=q / area, L=L, Hc=Hc, win=win)
 
 
-def heat_load(h, side=None, ind=None):
+def heat_load(h, side=None, ind=None, gamma=None):
+    import sightshade as SS
     INDOOR = ind or indoor(h)
     env = envelope(h, side)
+    ws = SS.window_solar(h, gamma)
     S = (env["L"] / 1000) ** 2
     floor_area = 2 * ((side if side is not None else h.W) / 1000) ** 2
     V = 2 * S * 2.9                                          # 空調対象容積 m³（天井懐を除く概算）
@@ -82,7 +84,7 @@ def heat_load(h, side=None, ind=None):
     heat = H * dT_w / 1000
     # 冷房（顕熱）: 貫流＋換気＋日射＋内部発熱（在室6人・照明・機器、ジム運動時を含む）
     internal = (6 * 75 + 2 * 250 + 2.0 * floor_area + 1500 + 800 + 1500) / 1000
-    solar = env["win"] * SHGC * SOLAR / 1000
+    solar = ws["peak"]                                       # 夏期ピークの窓日射取得 kW（方位別に算定）
     cool_s = H * dT_s / 1000 + solar + internal
     # 潜熱（換気＋人体）
     lat_vent_s = m_air * (c["x_sum"] - INDOOR["x_sum"]) / 1000 * (1 - RECOVERY)   # kg/h
@@ -94,12 +96,13 @@ def heat_load(h, side=None, ind=None):
     # デグリーデーは設定温度に連動（基準温度 = 設定温度 − 内部発熱による昇温 約3K）
     hdd = c["hdd"] - 150 * (22.0 - INDOOR["t_win"])
     cdd = c["cdd"] + 110 * (26.0 - INDOOR["t_sum"])
-    heat_kwh = H * hdd * 24 / 1000
+    solar_heat_use = 0.9 * sum(ws["heat"].values())          # 暖房期の窓日射取得（利用率0.9）
+    heat_kwh = max(0.0, H * hdd * 24 / 1000 - solar_heat_use)
     cool_kwh = H * cdd * 24 / 1000 + (solar + internal * 0.5) * 8 * 100 + cool_l * 10 * c["dehum_days"]
     hum_kwh = hum * c["hum_days"] * 0.68                      # 加湿の潜熱 kWh
     return dict(env=env, V=V, vent=vent, H=H, Hv=Hv, heat=heat, cool_s=cool_s, cool_l=cool_l, cool=cool_s + cool_l,
                 solar=solar, internal=internal, dehum=dehum, hum=hum, floor_area=floor_area,
-                heat_kwh=heat_kwh, cool_kwh=cool_kwh, hum_kwh=hum_kwh, hdd=hdd, cdd=cdd, indoor=INDOOR)
+                heat_kwh=heat_kwh, cool_kwh=cool_kwh, hum_kwh=hum_kwh, hdd=hdd, cdd=cdd, indoor=INDOOR, ws=ws, solar_heat_use=solar_heat_use)
 
 
 def energy(h, hl):
@@ -131,8 +134,11 @@ def energy(h, hl):
     cp_kwp = cp_area * cp["kwp_per_m2"]
     import sightshade as SS
     sh = SS.pv_shading(h)
-    pg_gen = pg_kwp * c["pv_yield"] * (1 - sh["pergola"]["loss"])
-    cp_gen = cp_kwp * c["pv_yield"] * (1 - sh["carport"]["loss"])
+    # 方位補正: パネルは建物の軸に合わせて南面方位 facade_az を向く
+    f_pg = SS.annual_poa(pg["tilt"], h.facade_az) / SS.annual_poa(pg["tilt"], 0.0)
+    f_cp = SS.annual_poa(3, h.facade_az) / SS.annual_poa(3, 0.0)
+    pg_gen = pg_kwp * c["pv_yield"] * f_pg * (1 - sh["pergola"]["loss"])
+    cp_gen = cp_kwp * c["pv_yield"] * f_cp * (1 - sh["carport"]["loss"])
     # 参考: 架台全面をパネルで覆った場合との差（被覆率による減少分）
     full_kwp = pergola_area * kwp_per_m2
     coverage_deficit = (full_kwp - pg_kwp) * c["pv_yield"]
@@ -146,7 +152,7 @@ def energy(h, hl):
     return dict(items=items, total=total, need_kwp=need_kwp, need_kwp_margin=need_kwp_margin, pergola_area=pergola_area,
                 panel_area=panel_area, coverage=pg["coverage"], pv_kwp=pv_kwp, pv_gen=pg_gen + cp_gen, need_area=need_area,
                 pg_kwp=pg_kwp, pg_gen=pg_gen, cp_area=cp_area, cp_kwp=cp_kwp, cp_gen=cp_gen, shade=sh,
-                coverage_deficit=coverage_deficit, shade_deficit=shade_deficit,
+                coverage_deficit=coverage_deficit, shade_deficit=shade_deficit, f_pg=f_pg, f_cp=f_cp,
                 kwp_per_m2=kwp_per_m2, smoke_fan=smoke_fan, backup=backup, battery=battery)
 
 

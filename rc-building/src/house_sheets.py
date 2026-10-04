@@ -99,7 +99,7 @@ FLOWS = {
     "1F": [("回遊①", [(8600, 3400), (3500, 3400), (3800, 7800), (7200, 7000), (9500, 7000), (9500, 3400), (8600, 3400)]),
            ("回遊②", [(3000, 9500), (800, 11200), (800, 13000), (7600, 12950), (10800, 12900), (11350, 12900), (11350, 9000),
                       (7200, 7000), (3000, 9500)]),
-           ("搬入", [(4300, -7500), (4300, -4300), (9100, -4300), (9100, 3500), (13300, 3500)])],
+           ("搬入", [(13900, -4800), (13900, -4300), (9100, -4300), (9100, 3500), (13300, 3500)])],
     "2F": [("回遊③", [(9500, 7000), (3000, 7600), (1400, 5450), (9000, 5450), (9000, 7000), (9500, 7000)]),
            ("回遊④", [(11350, 9000), (11350, 12900), (7600, 12950), (5000, 13500), (4900, 10000), (7200, 7000), (11350, 9000)])],
 }
@@ -247,7 +247,7 @@ def site_plan(h, number, legal_summary):
         sh.text(f"+{tp(h, z):.1f}", t(x, y - 1800), 1.6, "A-TERRAIN", "MIDDLE_CENTER")
         sh.line(t(x - 400, y), t(x + 400, y), "A-TERRAIN")
         sh.line(t(x, y - 400), t(x, y + 400), "A-TERRAIN")
-    sh.north_arrow(sh.P(30, 270), 6)
+    sh.north_arrow(sh.P(30, 270), 6, rot=h.facade_az)
     sh.view_title("配置図", "1:500", (18, 22))
     sh.text("敷地境界・道路縁・水路・隣接建物・等高線: 国土地理院 基盤地図情報／標高: DEM5A（TP m）", (18, 15), 2.0, "A-TEXT", paper=True)
     # 座標求積表
@@ -302,11 +302,12 @@ def exterior_plan(h, number):
         sh.rect(*t(s[0], s[1]), *t(s[2], s[3]), "A-VIS")
     sh.rect(*t(cp[0], cp[1]), *t(cp[2], cp[3]), "A-HIDDEN")
     sh.text(f"3台用ソーラーカーポート {(cp[2] - cp[0]) / 1000:.1f}×{(cp[3] - cp[1]) / 1000:.1f}m", t(cp[2] + 1500, (cp[1] + cp[3]) / 2), 1.7, "A-TEXT", "MIDDLE_LEFT")
-    sh.text("目隠し壁（自立・独立基礎）L4.4m H2.7m：南側道路から玄関を隠す", t(11500, -7200), 1.5, "A-TEXT", "MIDDLE_LEFT")
+    sw_ = h.screen[0]
+    sh.text(f"目隠し壁（自立・独立基礎）L{(sw_[2] - sw_[0]) / 1000:.1f}m H{(h.screen_top - h.fgl) / 1000:.1f}m", t(sw_[0] - 600, sw_[1] - 300), 1.5, "A-TEXT", "MIDDLE_RIGHT")
     sh.text("建物（壁式RC造 2階建て）", t(h.W / 2, h.D / 2), 2.0, "A-ROOM", "MIDDLE_CENTER")
     sh.text("Dotcon+ 透水舗装", t(cp[2] + 1500, cp[1] - 1500), 1.7, "A-TEXT", "MIDDLE_LEFT")
-    sh.text("アプローチ（透水性舗装）", t(5800, -12000), 1.6, "A-TEXT", "MIDDLE_LEFT")
-    sh.text("車路 → 玄関（ジム搬入）", t(14500, -10000), 1.6, "A-TEXT", "MIDDLE_LEFT")
+    sh.text("アプローチ（透水性舗装）", t(15000, -14000), 1.6, "A-TEXT", "MIDDLE_LEFT")
+    sh.text("アプローチ → 玄関（ジム搬入も同じ）", t(15000, -12000), 1.6, "A-TEXT", "MIDDLE_LEFT")
     # 貯留槽・浸透
     tk = h.tank
     sh.rect(*t(tk[0], tk[1]), *t(tk[2], tk[3]), "A-DRAIN")
@@ -340,10 +341,10 @@ def exterior_plan(h, number):
             sh.text(f"{(top - h.fgl) / 1000:.1f}", t(*p), 1.4, "A-SYMB", "MIDDLE_CENTER")
             d += 14000
     # レベル
-    for (x, y, s) in [(8600, -1500 - 1800, f"1FL GL+{h.fl['1F']:,}"), (-12000, 10000, f"FGL GL+{h.fgl}（現況維持）"),
+    for (x, y, s) in [(8600, -1500 - 1800, f"1FL GL+{h.fl['1F']:,}"), (-12000, 4000, f"FGL GL+{h.fgl}（現況維持）"),
                       (6000, -31800, "設計GL±0（南側道路 TP+109.0）")]:
         sh.text(s, t(x, y), 1.6, "A-SYMB", "MIDDLE_CENTER")
-    sh.north_arrow(sh.P(282, 60), 6)
+    sh.north_arrow(sh.P(282, 60), 6, rot=h.facade_az)
     sh.view_title("外構・雨水排水計画図", "1:400", (18, 22))
     legend(sh, 300, 280, [("A-FENCE", "RC塀 t=150（数値=FGLからの天端高 m）", "fence"),
                           ("A-PAVE", "Dotcon+ 透水舗装", "pave"),
@@ -403,13 +404,12 @@ def floor_plan(h, floor, number):
     room_labels(h, sh, t, floor)
     flows(h, sh, t, floor)
     if floor == "1F":
-        sh.text(f"玄関ポーチ・外部階段 {h.ext_stair['n']}段", t(8200, -5900), 1.5, "A-TEXT", "MIDDLE_CENTER")
+        sh.text(f"玄関ポーチ・外部階段 {h.ext_stair['n']}段", t(7600, -3600), 1.4, "A-TEXT", "MIDDLE_RIGHT")
         cn = h.canopy
         sh.rect(*t(cn[0], cn[1]), *t(cn[2], cn[3]), "A-HIDDEN")
         sh.text("玄関庇 出2,000（破線）", t(cn[2] + 300, cn[1] + 300), 1.4, "A-TEXT", "MIDDLE_LEFT")
         sw = h.screen[0]
-        sh.text(f"目隠し壁 RC 自立壁 L{(sw[2] - sw[0]):,.0f} H{h.spec['exterior']['screen_wall']['height']:,}（FGL）", t(sw[2] + 300, sw[1] - 200), 1.4, "A-TEXT", "MIDDLE_LEFT")
-        sh.text("本館と縁を切った独立基礎（単体で補修・更新可）。東西は開放", t(sw[2] + 300, sw[1] - 900), 1.3, "A-TEXT", "MIDDLE_LEFT")
+        sh.text(f"玄関南 約{(h.porch[1] - sw[3]) / 1000:.1f}mに目隠し壁（自立・独立基礎 L{(sw[2] - sw[0]):,.0f}×H{h.spec['exterior']['screen_wall']['height']:,}、A-02参照）", t(11000, -3600), 1.3, "A-TEXT", "MIDDLE_LEFT")
         # 二重框・下足入れ
         g = h.genkan
         sh.line(t(g["doma"][0], g["doma"][3]), t(g["doma"][2], g["doma"][3]), "A-VIS", lineweight=35)
@@ -430,7 +430,7 @@ def floor_plan(h, floor, number):
         sh.rect(*t(z[0], z[1]), *t(z[2], z[3]), "A-HIDDEN")
         sh.text("トレッドミル後方 安全帯2.0m", t((z[0] + z[2]) / 2, z[1] + 300), 1.3, "A-TEXT", "MIDDLE_CENTER")
 
-    sh.north_arrow(sh.P(395, 268), 7)
+    sh.north_arrow(sh.P(395, 268), 7, rot=h.facade_az)
     sh.view_title(names[floor], "1:100", (24, 22))
     sh.text(f"{floor[:-1]}FL = 設計GL+{fl:,}（TP+{tp(h, fl):.2f}）／天井高 CH={h.ch[floor]:,}", (24, 15), 2.4, "A-TEXT", paper=True)
     cy = side_panel(sh, 284, 282, [("h", "凡例")])
@@ -475,7 +475,7 @@ def roof_plan(h, number):
     sh.text("屋上: 外断熱防水（シート防水）、水勾配 1/50", t(h.W / 2, h.D / 2), 2.2, "A-TEXT", "MIDDLE_CENTER")
     sh.text("太陽光パネルは設置しない（庭のソーラーパーゴラに集約）", t(h.W / 2, h.D / 2 - 1200), 1.8, "A-TEXT", "MIDDLE_CENTER")
     sh.text("排煙機の排気口・給気ダンパーは外壁面（機械室）に設置", t(h.W / 2, h.D / 2 - 2200), 1.6, "A-TEXT", "MIDDLE_CENTER")
-    sh.north_arrow(sh.P(395, 268), 7)
+    sh.north_arrow(sh.P(395, 268), 7, rot=h.facade_az)
     sh.view_title("屋根伏図", "1:100", (24, 22))
     sh.text(f"RFL = 設計GL+{h.fl['RF']:,}／パラペット天端 GL+{h.parapet_top:,}", (24, 15), 2.4, "A-TEXT", paper=True)
     return sh
@@ -485,7 +485,12 @@ def roof_plan(h, number):
 def elevations(h, number):
     sh = frame(h, number, "立面図", 200)
     o = h.outer_dims()
-    layout = [("S", "南立面図", (40, 175)), ("E", "東立面図", (240, 175)), ("N", "北立面図", (40, 70)), ("W", "西立面図", (240, 70))]
+    g = h.facade_az
+
+    def lab(k, base):
+        card = {"S": "南", "W": "西", "N": "北", "E": "東"}[k]
+        return f"{card}立面図（{card}から{abs(g):.1f}°{'西' if g > 0 else '東'}回りの面）"
+    layout = [("S", lab("S", 0), (40, 175)), ("E", lab("E", -90), (240, 175)), ("N", lab("N", 180), (40, 70)), ("W", lab("W", 90), (240, 70))]
     for view, title, paper in layout:
         uv = uv_fn(view)
         us = [uv(x, y, 0)[0] for x in (o[0], o[2]) for y in (o[1], o[3])]
@@ -861,6 +866,45 @@ def energy_sheet(h, number):
                                  ("t", "影損失は各月21日・30分ごとの太陽位置で本館・塀・隣家（高さ6.5m仮定）の影を追跡して算定。パーゴラは本館の西9mで、冬の朝に一部が影に入る（12月 直達の約5%）"),
                                  ("t", "パーゴラ・カーポートとも屋根と柱をもつため建築物として扱われる見込み（建築面積に算入・確認申請が必要）。余剰電力は売電または将来のEV充電に充てる"),
                                  ("t", "実施設計で、発電量シミュレーション（建物・塀の影）と住宅の一次エネルギー計算で確定する")], width=205)
+    return sh
+
+
+def orientation_sheet(h, number):
+    import performance as PF
+    import sightshade as SS
+    sh = frame(h, number, "建物の向きと日射取得", 1, label="—")
+    g = h.facade_az
+    sh.text(f"建物の向きと日射取得 — 南側道路に平行・直交（南面は真南から {abs(g):.1f}° {'西' if g > 0 else '東'}向き）", (12, 280), 3.6, "A-TEXT", paper=True)
+    w0, w1 = SS.window_solar(h, 0.0), SS.window_solar(h)
+    names = {"S": "南面", "E": "東面", "N": "北面", "W": "西面"}
+    rows = [["外壁面", "窓ガラス m²", "向き（真北基準→道路基準）", "暖房期 取得 kWh", "冷房期 取得 kWh"]]
+    for k in ("S", "E", "N", "W"):
+        a0 = PF.SHGC
+        base = SS.SIDE_AZ[k]
+        rows.append([names[k], f"{w1['glass'][k]:.2f}", f"{base:+.0f}° → {base + g:+.1f}°（真南から西回り）",
+                     f"{w0['heat'][k]:,.0f} → {w1['heat'][k]:,.0f}", f"{w0['cool'][k]:,.0f} → {w1['cool'][k]:,.0f}"])
+    rows.append(["合計", f"{sum(w1['glass'].values()):.2f}", "", f"{sum(w0['heat'].values()):,.0f} → {sum(w1['heat'].values()):,.0f}",
+                 f"{sum(w0['cool'].values()):,.0f} → {sum(w1['cool'].values()):,.0f}"])
+    sh.text("(1) 窓からの日射取得（日射熱取得率 0.30・日照率 45%）", (12, 271), 2.8, "A-TEXT", paper=True)
+    y = sh.table(12, 268, [24, 26, 66, 40, 40], rows, row_h=5.2, h=2.0)
+    h0, h1 = PF.heat_load(h, gamma=0.0), PF.heat_load(h)
+    e1 = PF.energy(h, h1)
+    rows = [["項目", "真北基準（回転前）", "南側道路基準（計画）", "差"],
+            ["冷房ピークの窓日射取得 kW", f"{w0['peak']:.2f}", f"{w1['peak']:.2f}", f"{(w1['peak'] - w0['peak']) * 1000:+.0f} W"],
+            ["冷房 顕熱 設計負荷 kW", f"{h0['cool_s']:.2f}", f"{h1['cool_s']:.2f}", f"{(h1['cool_s'] - h0['cool_s']) * 1000:+.0f} W"],
+            ["年間 暖房熱量 kWh（日射取得控除後）", f"{h0['heat_kwh']:,.0f}", f"{h1['heat_kwh']:,.0f}", f"{h1['heat_kwh'] - h0['heat_kwh']:+,.0f}"],
+            ["年間 冷房・除湿熱量 kWh", f"{h0['cool_kwh']:,.0f}", f"{h1['cool_kwh']:,.0f}", f"{h1['cool_kwh'] - h0['cool_kwh']:+,.0f}"],
+            ["パーゴラ（傾斜10°）の年間日射 kWh/m²", f"{SS.annual_poa(10, 0):,.0f}", f"{SS.annual_poa(10, g):,.0f}", f"{(e1['f_pg'] - 1) * 100:+.2f}%"],
+            ["カーポート（傾斜3°）の年間日射 kWh/m²", f"{SS.annual_poa(3, 0):,.0f}", f"{SS.annual_poa(3, g):,.0f}", f"{(e1['f_cp'] - 1) * 100:+.2f}%"],
+            ["影損失（パーゴラ／カーポート）", "—", f"{e1['shade']['pergola']['loss'] * 100:.2f}%／{e1['shade']['carport']['loss'] * 100:.2f}%", ""],
+            ["年間発電量 kWh", "—", f"{e1['pv_gen']:,.0f}（需要 {e1['total']:,.0f} の {e1['pv_gen'] / e1['total'] * 100:.0f}%）", ""]]
+    sh.text("(2) 冷暖房負荷・発電量への影響", (12, y - 6), 2.8, "A-TEXT", paper=True)
+    y = sh.table(12, y - 9, [70, 40, 64, 30], rows, row_h=5.2, h=2.0)
+    side_panel(sh, 12, y - 6, [("h", "評価"),
+        ("t", f"建物・ソーラーパーゴラ・カーポート・目隠し壁を、南側道路の道路境界線（真東西から{abs(g):.1f}°傾く）に平行・直交させた。南面は真南から{abs(g):.1f}°{'西' if g > 0 else '東'}を向く"),
+        ("t", "窓の日射取得は、東面が冬に少し増え、西面が冬・夏とも少し減る。合計ではほぼ変わらない（窓が小さい FIX 窓中心の外皮のため、方位の影響は小さい）"),
+        ("t", "太陽光は真南から12°程度の振れでは年間日射の減少が 0.2%未満で、発電量への影響は無視できる"),
+        ("t", "敷地との関係では、建物と道路・塀が平行になり、南側の駐車場・アプローチの配置に無駄がなくなる。北側水路から11.0m、東側道路から10.0m、隣地から9.8m（いずれも がけ条例の2H 以上）")], width=300)
     return sh
 
 

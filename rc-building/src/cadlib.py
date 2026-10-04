@@ -195,15 +195,21 @@ class Sheet:
         self.text(label, (x + side * 2.0 * S if side > 0 else x2, z + 0.6 * S), 2.2, "A-SYMB",
                   "LEFT" if side > 0 else "LEFT")
 
-    def north_arrow(self, c, r=8.0):
+    def north_arrow(self, c, r=8.0, rot=0.0):
+        """方位記号。rot: 真北の向き（用紙上方から反時計回り、度）。"""
         S = self.S
         cx, cy = c
+        a = math.radians(rot)
+
+        def R(dx, dy):
+            return (cx + (dx * math.cos(a) - dy * math.sin(a)) * S, cy + (dx * math.sin(a) + dy * math.cos(a)) * S)
         self.circle(c, r * S, "A-SYMB")
-        self.pline([(cx, cy + r * S), (cx - 0.35 * r * S, cy - 0.6 * r * S), (cx, cy - 0.3 * r * S),
-                    (cx + 0.35 * r * S, cy - 0.6 * r * S)], "A-SYMB", closed=True)
+        self.pline([R(0, r), R(-0.35 * r, -0.6 * r), R(0, -0.3 * r), R(0.35 * r, -0.6 * r)], "A-SYMB", closed=True)
         h = self.msp.add_hatch(color=7, dxfattribs={"layer": "A-SYMB"})
-        h.paths.add_polyline_path([(cx, cy + r * S), (cx, cy - 0.3 * r * S), (cx + 0.35 * r * S, cy - 0.6 * r * S)])
-        self.text("N", (cx, cy + r * S + 1.5 * S), 3.5, "A-SYMB", "BOTTOM_CENTER")
+        h.paths.add_polyline_path([R(0, r), R(0, -0.3 * r), R(0.35 * r, -0.6 * r)])
+        self.text("N", R(0, r + 2.2), 3.5, "A-SYMB", "MIDDLE_CENTER", rot=rot)
+        if abs(rot) > 0.1:
+            self.text(f"真北 {abs(rot):.1f}°{'西' if rot > 0 else '東'}振れ（建物は南側道路に平行）", (cx, cy - (r + 2.5) * S), 1.6, "A-SYMB", "TOP_CENTER")
 
     def view_title(self, s, scale_txt, p, paper=True, h=4.0):
         if paper:

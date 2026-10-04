@@ -113,10 +113,39 @@ class House:
             self.boxes.extend(self._wall_boxes(w))
 
     # ------------------------------------------------------------ site
+    def _orientation(self):
+        """建物の向き: south_road のとき南側道路の道路境界線に X 軸を合わせる（回転角 alpha、反時計回り正）。"""
+        mode = self.spec["building"].get("orientation", "north")
+        self.alpha = 0.0
+        if mode == "south_road":
+            P, C = self.gsi["site"]["pts"], self.gsi["site"]["cls"]
+            for i, c in enumerate(C):
+                if c == "南側道路":
+                    p, q = P[i], P[(i + 1) % len(P)]
+                    ang = math.atan2(q[1] - p[1], q[0] - p[0])
+                    if ang > math.pi / 2:
+                        ang -= math.pi
+                    elif ang < -math.pi / 2:
+                        ang += math.pi
+                    self.alpha = ang
+        # 建物中心（世界座標 m）を回転の中心とする
+        self.pivot = (self.ox + self.W / 2000.0, self.oy + self.D / 2000.0)
+        # 南面の方位角（真南から西回り正、度）
+        self.facade_az = -math.degrees(self.alpha)
+
     def m2mm(self, x, y):
-        return ((x - self.ox) * 1000.0, (y - self.oy) * 1000.0)
+        """世界座標（国土地理院ローカル m）→ 建物座標 mm（建物の軸に合わせて回転）。"""
+        dx, dy = x - self.pivot[0], y - self.pivot[1]
+        c, s = math.cos(-self.alpha), math.sin(-self.alpha)
+        return ((dx * c - dy * s) * 1000.0 + self.W / 2, (dx * s + dy * c) * 1000.0 + self.D / 2)
+
+    def mm2m(self, x, y):
+        dx, dy = (x - self.W / 2) / 1000.0, (y - self.D / 2) / 1000.0
+        c, s = math.cos(self.alpha), math.sin(self.alpha)
+        return (dx * c - dy * s + self.pivot[0], dx * s + dy * c + self.pivot[1])
 
     def _site(self):
+        self._orientation()
         pts = [self.m2mm(*p) for p in self.gsi["site"]["pts"]]
         self.site_pts = pts
         self.site_kind = self.gsi["site"]["kind"]
@@ -139,7 +168,7 @@ class House:
     def ground(self, x, y):
         """DEM による地盤高（設計GL基準 mm）。x, y はモデル座標 mm。"""
         d = self._dem
-        xm, ym = x / 1000.0 + self.ox, y / 1000.0 + self.oy
+        xm, ym = self.mm2m(x, y)
         fx, fy = (xm - d["x0"]) / d["step"], (ym - d["y0"]) / d["step"]
         i0, j0 = int(math.floor(fx)), int(math.floor(fy))
         i0 = max(0, min(d["nx"] - 2, i0))
@@ -490,7 +519,7 @@ class House:
         self.pergola_h = pg["height"]
         # 駐車場（南側の帯状部分）＋3台用ソーラーカーポート
         cp = ex["carport"]
-        cx0, cy0 = 5600, -25700
+        cx0, cy0 = 13000, -27400
         self.carport = (cx0, cy0, cx0 + cp["w"], cy0 + cp["d"])
         self.stalls = [(cx0 + 300 + i * 2800, cy0 + 300, cx0 + 300 + i * 2800 + 2600, cy0 + 300 + 5500) for i in range(3)]
         pave = Polygon([(cx0 - 1200, -31000), (cx0 + cp["w"] + 1500, -31000), (cx0 + cp["w"] + 1500, cy0 + cp["d"] + 900),
@@ -502,15 +531,15 @@ class House:
         gp1 = gates[1][2]
         gm = ((gp0[0] + gp1[0]) / 2, (gp0[1] + gp1[1]) / 2)
         # アプローチ: 目隠し壁の西側から回り込み、壁の内側で玄関階段に至る（クランク）
-        self.approach = LineString([(gm[0], gm[1] + 200), (3300, -22000), (4300, -16000), (4300, -4300), (9100, -4300),
+        self.approach = LineString([(gm[0], gm[1] + 200), (gm[0], -26000), (12000, -21000), (13900, -17000), (13900, -4300), (9100, -4300),
                                     (9100, self.porch[1])]).buffer(750, cap_style=2, join_style=2)
         # 雨水貯留槽・浸透施設（西側の庭）
-        self.tank = (-23500, 20000, -18500, 25000)
-        self.trench = [LineString([(-24000, 35500), (-9500, 32600), (-500, 30400)]),
-                       LineString([(-25500, 34000), (-28800, 17000), (-31000, 9500)])]
-        self.infil_pits = [(-24000, 35500), (-9500, 32600), (-500, 30400), (-28800, 17000), (-31000, 9500), (3000, -25000)]
+        self.tank = (-23500, 22000, -18500, 27000)
+        self.trench = [LineString([(-29500, 28000), (-15000, 28100), (-1000, 27800)]),
+                       LineString([(-30500, 26500), (-31500, 13000), (-32300, 1000)])]
+        self.infil_pits = [(-29500, 28000), (-15000, 28100), (-1000, 27800), (-31500, 13000), (-32300, 1000), (11000, -16000)]
         # 塀の排水口（フラップ弁）＝ 低い位置
-        self.flap = [(-32500, 8800), (1000, -29200)]
+        self.flap = [(-33200, -600), (12000, -30600)]
         self.ext_storage = dict(
             dotcon_area=pave.area / 1e6,
             dotcon_l=pave.area / 1e6 * ex["dotcon_storage_l_per_m2"],
