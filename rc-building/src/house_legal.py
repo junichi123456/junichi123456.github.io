@@ -175,10 +175,24 @@ def checks(h):
     wins = [op for op in h.openings(exterior=True) if op.kind == "window"]
     add("ブリーフ", "窓の仕様", "施主指示（v4.5）", "全窓 Low-E ガラスのトリプルサッシ",
         f"全{len(wins)}か所 {gz['frame']}・Low-E トリプル（Ar・Low-E {gz['low_e']}面）、Uw≦{gz['uw']:.2f}。南北 日射取得型・東西 遮熱型", OK)
+    import interior as IN
+    sp = s["interior"]
+    add("ブリーフ", "インテリアの一貫方針", "施主指示（v4.6）", "安全なデザイン、清掃・メンテナンスが簡易",
+        f"危険{len(IN.SAFETY)}項目・手入れ{len(IN.MAINTENANCE)}項目の対策を全室に適用（I-01）、仕上げを室の種類ごとに統一（I-02）", OK)
+    for c in IN.stair_checks(h):
+        add("安全", f"{c['name']} の寸法", "品確法 評価方法基準（高齢者等配慮 等級5相当）",
+            f"勾配≦6/7、{sp['stair']['step_rule'][0]}≦2R+T≦{sp['stair']['step_rule'][1]}、蹴込み≦{sp['stair']['max_nosing_gap']}",
+            f"R{c['riser']:.1f}・T{c['tread']}・勾配{c['slope']:.2f}・2R+T={c['rule']:.0f}、蹴込み板あり", judge(c["ok_slope"] and c["ok_rule"]))
+    hg, fg = sp["head_gap"], sp["finger_gap"]
+    gg = IN.guard_gaps(h)
+    bad = [v for g in gg for v in g["gaps"] if hg[0] <= v <= hg[1] or fg[0] <= v <= fg[1]]
+    add("安全", "階段開口の手すり壁（頭部・指の挟み込み）", "施主指示（v4.6）",
+        f"H{sp['guard_height']:,}以上、{hg[0]}〜{hg[1]}mm・{fg[0]}〜{fg[1]}mm のすき間なし",
+        f"手すり壁{len(gg)}か所 H{sp['guard_height']:,}（パネル・手すり子なし）、端部は壁に接する。階段の間の壁は 2FL+{sp['guard_height']:,} まで連続", judge(not bad))
     import sightshade as SS
     uv = SS.uv_exposure(h)
     add("ブリーフ", "紫外線対策", "施主指示（v4.5）", "日照による紫外線をカットする設備",
-        f"全窓 UVカット合わせガラス（紫外線透過率{gz['tuv'] * 100:.0f}%以下）＋南・東・西の窓{len(h.blinds)}か所に外付け電動ブラインド（{us['months'][0]}〜{us['months'][-1]}月 自動）→ 室内に入る紫外線 約{uv['cases'][-1][2] / uv['tot_inc'] * 100:.1f}%（M-03）", OK)
+        f"全窓 UVカット合わせガラス（紫外線透過率{gz['tuv'] * 100:.0f}%以下）＋南・東・西の窓{len(h.blinds)}か所に外付け電動スクリーン（{us['months'][0]}〜{us['months'][-1]}月 自動）→ 室内に入る紫外線 約{uv['cases'][-1][2] / uv['tot_inc'] * 100:.1f}%（M-03）", OK)
     add("集団規定", "用途地域の制限", "法48条・別表第2", f"{site['zoning']}：住宅は建築可", "一戸建ての住宅", CHK)
     add("集団規定", "接道", "法43条", "道路に2m以上接する", f"南側道路 約13.9m・東側道路 約81.8m", OK)
     add("集団規定", "建ぺい率", "法53条", f"{site['coverage_limit'] * 100:.0f}%以下（角地緩和は不使用）",

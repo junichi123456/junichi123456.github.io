@@ -375,8 +375,7 @@ def floor_plan(h, floor, number):
     zmin = fl - 1 if floor == "1F" else fl - h.H["1F"] / 2 - 1
     proj = project(h.boxes, "plan", cut=-cut, depth_limit=-zmin if floor == "2F" else -(h.fgl - 1),
                    filt=lambda b: not ((b.cat in ("glass", "door") and b.z0 < cut < b.z1)
-                                       or (b.cat == "stair" and b.level != "EXT" and b.z1 > cut)
-                                       or (b.cat == "partition" and b.tag == "手すり壁" and floor == "2F")))
+                                       or (b.cat == "stair" and b.level != "EXT" and b.z1 > cut)))
     emit(sh, proj, t)
     grid(h, sh, t)
     plan_dims(h, sh, t, floor)
@@ -401,6 +400,17 @@ def floor_plan(h, floor, number):
             if op.label:
                 opening_tag(sh, t, op, offset=650)
     stair_marks(h, sh, t, floor)
+    if floor == "2F":
+        # 階段まわりの手すり壁（すき間なしのパネル）を塗りつぶしで示す
+        from shapely.geometry import box as sbox
+        gs = [b for _, b in h.guards] + [b for b in h.boxes if b.tag == "手すり壁"]
+        polys = [sbox(*t(b.x0, b.y0), *t(b.x1, b.y1)) for b in gs]
+        sh.hatch_polys(polys, solid=True, color=8)
+        for _, b in h.guards[:1]:
+            p = t((b.x0 + b.x1) / 2, b.y0)
+            q = (p[0] + 1 * sh.S, p[1] - 3 * sh.S)
+            sh.line(p, q, "A-SYMB")
+            sh.text(f"手すり壁 H{h.spec['interior']['guard_height']:,}（すき間なし）", (q[0] + 0.5 * sh.S, q[1]), 1.6, "A-TEXT", "MIDDLE_LEFT")
     room_labels(h, sh, t, floor)
     flows(h, sh, t, floor)
     if floor == "1F":
@@ -448,10 +458,10 @@ def floor_plan(h, floor, number):
                   ("t", "ジム床: 積載荷重 5,000N/m²（提案）・浮き床。天井は直天井（CH 約2,900）を推奨"),
                   ("t", "ジムの窓: 外部扉を廃止し、窓は天井際の FIX 高窓（窓台 FL+2,000、防犯合わせガラス・トリプル Low-E）に集約"),
                   ("t", "防音: ジムは浮き床＋遮音ドア Ts-35、機械室・WIC を緩衝帯として居室Aと分離。真上は2階シアター（騒音ゾーンを上下に集約）"),
-                  ("t", "排煙: LDK・ジム・居室Aは機械排煙（令126条の3）。窓は全窓 FIX の樹脂サッシ・Low-E トリプル（UVカット合わせ、1階は防犯 CP 兼用）。南・東・西は外付け電動ブラインド（M-03）")]
+                  ("t", "排煙: LDK・ジム・居室Aは機械排煙（令126条の3）。窓は全窓 FIX の樹脂サッシ・Low-E トリプル（UVカット合わせ、1階は防犯 CP 兼用）。南・東・西は外付け電動スクリーン（M-03）")]
     else:
         notes += [("t", "回遊③: ホール→図書室→南廊下→ホール。回遊④: ホール→洗面→階段2ホール→図書室→ホール"),
-                  ("t", "窓: 全窓 FIX（樹脂サッシ・Low-E トリプル・UVカット合わせガラス、Uw≦0.90）。南・東・西は外付け電動ブラインド（M-03）。排煙は各居室の天井排煙口による機械排煙（A-10 参照）"),
+                  ("t", "窓: 全窓 FIX（樹脂サッシ・Low-E トリプル・UVカット合わせガラス、Uw≦0.90）。南・東・西は外付け電動スクリーン（M-03）。排煙は各居室の天井排煙口による機械排煙（A-10 参照）"),
                   ("t", "防音: シアターは前室（音響ロック）＋両開き遮音扉 Ts-40。主寝室とは前室・WIC の2層で分離"),
                   ("t", "居室B・C・D は収納・WIC を間に挟んで隣室と分離（戸境に収納）"),
                   ("t", "ファミリークローゼット: 1階ランドリーから階段2で直結")]
@@ -512,7 +522,7 @@ def elevations(h, number):
         p = t(u_lo, -2400)
         sh.text(title, p, 3.2, "A-TEXT", "BOTTOM_LEFT")
     sh.text(f"外壁: {h.spec['finish']['exterior']}", (18, 36), 2.2, "A-TEXT", paper=True)
-    sh.text("窓: 全窓 FIX 樹脂サッシ・Low-E トリプル（UVカット合わせ）。南・東・西の窓上の箱は外付け電動ブラインドのボックス（M-03）", (18, 30), 2.2, "A-TEXT", paper=True)
+    sh.text("窓: 全窓 FIX 樹脂サッシ・Low-E トリプル（UVカット合わせ）。南・東・西の窓上の箱は外付け電動スクリーンのボックス（M-03）", (18, 30), 2.2, "A-TEXT", paper=True)
     return sh
 
 
@@ -796,7 +806,7 @@ def openings_smoke_sheet(h, number):
     sh.text("(4) ジム開口部の改善（防犯・熱貫流）", (190, y2 - 6), 2.8, "A-TEXT", paper=True)
     y2 = sh.table(190, y2 - 9, [32, 80, 96], rows, row_h=5.0, h=2.0)
     notes = [("h", "窓の仕様（全窓 FIX）"),
-             ("t", f"枠: 樹脂サッシ、ガラス: 全窓 Low-E トリプル（アルゴン）＋室外側 UVカット合わせガラス（紫外線約99%カット）、Uw≦{HL.U_WIN:.2f} W/m²K。南・東・西は外付け電動ブラインド（M-03）"),
+             ("t", f"枠: 樹脂サッシ、ガラス: 全窓 Low-E トリプル（アルゴン）＋室外側 UVカット合わせガラス（紫外線約99%カット）、Uw≦{HL.U_WIN:.2f} W/m²K。南・東・西は外付け電動スクリーン（M-03）"),
              ("t", "1階: 外側を防犯合わせガラス（CP 認定品）。2階: 合わせガラス。窓台: 居室 FL+1,000、ジム FL+2,000"),
              ("t", "換気は全館空調・全熱交換（窓に依存しない）。排煙時は機械室の給気ダンパーが連動して開く"),
              ("t", "排煙機: 西・東系統の各機械室に 120m³/分×1台。排煙口は各居室の天井、手動開放装置は床から0.8〜1.5m。予備電源は蓄電池（駐車場PV と連携、30分以上）")]
@@ -886,7 +896,7 @@ def orientation_sheet(h, number):
                      f"{w0['heat'][k]:,.0f} → {w1['heat'][k]:,.0f}", f"{w0['cool'][k]:,.0f} → {w1['cool'][k]:,.0f}"])
     rows.append(["合計", f"{sum(w1['glass'].values()):.2f}", "", f"{sum(w0['heat'].values()):,.0f} → {sum(w1['heat'].values()):,.0f}",
                  f"{sum(w0['cool'].values()):,.0f} → {sum(w1['cool'].values()):,.0f}"])
-    sh.text("(1) 窓からの日射取得（Low-E 南北 g0.45・東西 g0.28、外付けブラインド 5〜9月、日照率 45%）", (12, 271), 2.8, "A-TEXT", paper=True)
+    sh.text("(1) 窓からの日射取得（Low-E 南北 g0.45・東西 g0.28、外付けスクリーン 5〜9月、日照率 45%）", (12, 271), 2.8, "A-TEXT", paper=True)
     y = sh.table(12, 268, [24, 26, 66, 40, 40], rows, row_h=5.2, h=2.0)
     h0, h1 = PF.heat_load(h, gamma=0.0), PF.heat_load(h)
     e1 = PF.energy(h, h1)
@@ -910,16 +920,16 @@ def orientation_sheet(h, number):
 
 
 def glazing_uv_sheet(h, number):
-    """窓仕様（全窓 樹脂サッシ・Low-E トリプル）と紫外線対策（UVカット合わせガラス・外付け電動ブラインド）。"""
+    """窓仕様（全窓 樹脂サッシ・Low-E トリプル）と紫外線対策（UVカット合わせガラス・外付け電動スクリーン）。"""
     import performance as PF
     import sightshade as SS
     from shapely.geometry import box as sbox
     gz, us = h.spec["glazing"], h.spec["uv_shading"]
     sh = frame(h, number, "窓仕様・紫外線対策", 1, label="—")
-    sh.text("窓仕様・紫外線対策 — 全窓 樹脂サッシ＋Low-E トリプルガラス、UVカット合わせガラス＋外付け電動ブラインド", (12, 280), 3.6, "A-TEXT", paper=True)
+    sh.text("窓仕様・紫外線対策 — 全窓 樹脂サッシ＋Low-E トリプルガラス、UVカット合わせガラス＋外付け電動スクリーン", (12, 280), 3.6, "A-TEXT", paper=True)
     names = {"S": "南", "E": "東", "N": "北", "W": "西"}
     blinded = {id(op) for op, _ in h.blinds}
-    rows = [["記号", "階", "名称", "方位", "W×H", "Low-E の種類", "g", "外付けブラインド"]]
+    rows = [["記号", "階", "名称", "方位", "W×H", "Low-E の種類", "g", "外付けスクリーン"]]
     for op in sorted((o for o in h.openings(exterior=True) if o.kind == "window"), key=lambda o: (o.floor, "SEWN".index(o.side), o.u0)):
         t = gz["types"][gz["side_type"][op.side]]
         rows.append([op.label, op.floor, op.name.replace("FIX", "FIX "), names[op.side], f"{op.width:,.0f}×{op.height:,.0f}",
@@ -932,7 +942,7 @@ def glazing_uv_sheet(h, number):
             ["ガラス（2階）", gz["build_2f"]],
             ["Low-E", f"膜 {gz['low_e']}面、Ug {gz['ug']:.2f} W/m²K。南・北は日射取得型（冬の日射を取り込む）、東・西は遮熱型（朝夕の低い日射を防ぐ）"],
             ["紫外線", f"室外側の合わせガラス中間膜で紫外線を約{(1 - gz['tuv']) * 100:.0f}%カット（透過率 {gz['tuv'] * 100:.0f}%以下）。全窓共通"],
-            ["外付けブラインド", f"{us['type']}。{'・'.join(names[k] for k in us['sides'])}面の窓 {len(h.blinds)}か所、{us['months'][0]}〜{us['months'][-1]}月は日射センサーで自動降下（遮蔽係数 {us['fc']:.2f}）"]]
+            ["外付けスクリーン", f"{us['type']}。{'・'.join(names[k] for k in us['sides'])}面の窓 {len(h.blinds)}か所、{us['months'][0]}〜{us['months'][-1]}月は日射センサーで自動降下（遮蔽係数 {us['fc']:.2f}）"]]
     sh.text("(2) 窓の仕様（全窓共通）", (12, y - 6), 2.8, "A-TEXT", paper=True)
     y = sh.table(12, y - 9, [30, 142], rows, row_h=5.0, h=2.0)
     # (3) 紫外線
@@ -946,7 +956,7 @@ def glazing_uv_sheet(h, number):
     base = PF.heat_load(h, shgc=PF.SHGC, blinds=False)
     noblind = PF.heat_load(h, blinds=False)
     plan = PF.heat_load(h)
-    rows = [["項目", "旧（全窓 遮熱型・ブラインドなし）", "Low-E 使い分けのみ", "本計画（＋外付けブラインド）"],
+    rows = [["項目", "旧（全窓 遮熱型・スクリーンなし）", "Low-E 使い分けのみ", "本計画（＋外付けスクリーン）"],
             ["冷房ピークの窓日射取得 kW", f"{base['solar']:.2f}", f"{noblind['solar']:.2f}", f"{plan['solar']:.2f}"],
             ["冷房 顕熱 設計負荷 kW", f"{base['cool_s']:.2f}", f"{noblind['cool_s']:.2f}", f"{plan['cool_s']:.2f}"],
             ["暖房期の窓日射取得 kWh", f"{sum(base['ws']['heat'].values()):,.0f}", f"{sum(noblind['ws']['heat'].values()):,.0f}", f"{sum(plan['ws']['heat'].values()):,.0f}"],
@@ -971,23 +981,22 @@ def glazing_uv_sheet(h, number):
     ins = R(20, 200, 120, 420, "A-CUT-LGS")
     sh.hatch_polys([ins], pattern="ANSI37", spacing=0.6, layer="A-CUT-INS")
     R(0, 200, 20, 420, "A-CUT-LGS")
-    R(-30, 0, 120, 200, "A-DOOR", lineweight=35)                       # ブラインドボックス
-    for j in range(5):
-        R(-10, 30 + j * 30, 100, 45 + j * 30, "A-DOOR")                 # 巻き上げたスラット
+    R(-30, 0, 120, 200, "A-DOOR", lineweight=35)                       # スクリーンボックス
+    sh.circle(Q(45, 110), 55 * k, "A-DOOR")                            # 巻き取った生地（ローラー）
+    sh.circle(Q(45, 110), 20 * k, "A-DOOR")
     R(125, -80, 205, 0, "A-DOOR", lineweight=35)                       # サッシ枠（上枠）
     R(140, -420, 190, -80, "A-GLAZ", lineweight=25)                    # ガラス（トリプル 約50mm）
     for xg in (148, 168):
         sh.line(Q(xg, -420), Q(xg, -80), "A-GLAZ")
-    for j in range(9):                                                 # 下ろしたスラット
-        zz = -40 - j * 42
-        sh.line(Q(-5, zz), Q(85, zz - 18), "A-DOOR")
-    sh.line(Q(40, -10), Q(40, -420), "A-HIDDEN")                       # ガイドレール
+    sh.line(Q(45, 55), Q(45, -400), "A-DOOR", lineweight=35)           # 下ろした生地
+    R(15, -420, 75, -400, "A-DOOR")                                    # 下端バー
+    R(30, -400, 60, 0, "A-HIDDEN")                                     # 両側の ZIP レール（奥）
     sh.line(Q(370, -420), Q(370, 420), "A-VIS")
     sh.line(Q(-60, -430), Q(400, -430), "A-HIDDEN")
     labels = [((300, 400), "RC 壁 250"), ((70, 340), "外断熱 100"), ((10, 270), "外装 20"),
-              ((60, 100), f"ブラインドボックス H{us['box']['h']}×D{us['box']['d']}（外断熱層に埋込）"),
+              ((60, 100), f"スクリーンボックス H{us['box']['h']}×D{us['box']['d']}（外断熱層に埋込）"),
               ((180, -40), "樹脂サッシ（FIX）"), ((165, -170), "Low-E トリプル（Ar）＋室外側 UVカット合わせ"),
-              ((40, -290), "スラット（電動・角度制御）"), ((40, -390), "ガイドレール")]
+              ((45, -290), "生地（開口率5%・UVカット・雨で洗われる）"), ((60, -390), "ZIP レール（生地端を保持・羽根なし）")]
     for (x_, z_), t_ in labels:
         p = Q(x_, z_)
         q = sh.P(px0 + 58, py0 + z_ * k)
@@ -998,11 +1007,81 @@ def glazing_uv_sheet(h, number):
     sh.text("室内", Q(390, 430), 2.2, "A-TEXT")
     notes = [("h", "紫外線対策の考え方"),
              ("t", "① ガラス: 全窓の室外側を UVカット中間膜の合わせガラスとし、紫外線を約99%止める（家具・床の退色、肌への影響を抑える）。1階は防犯合わせガラス（CP）を兼ねる"),
-             ("t", "② 外付け電動ブラインド: 南・東・西の窓は、日射と紫外線をガラスの外で止める。夏（5〜9月）は日射センサーで自動降下、冬は上げて日射を取り込む。強風時は自動で巻き上げる"),
-             ("t", "③ Low-E の使い分け: 南・北は日射取得型で冬の暖房を助け、夏の南面はブラインドで遮る。東・西は低い朝夕日を防ぐ遮熱型"),
+             ("t", "② 外付け電動スクリーン（ZIP型）: 南・東・西の窓は、日射と紫外線をガラスの外で止める。羽根（スラット）がなく、ほこりが溜まらず清掃不要に近い。夏（5〜9月）は日射センサーで自動降下、冬は上げて日射を取り込む。強風時は自動で巻き上げる"),
+             ("t", "③ Low-E の使い分け: 南・北は日射取得型で冬の暖房を助け、夏の南面はスクリーンで遮る。東・西は低い朝夕日を防ぐ遮熱型"),
              ("t", "④ 屋外: 玄関庇（出2.0m）、ソーラーパーゴラ（被覆率70%）、カーポート屋根が、屋外の作業・乗降時の日よけになる"),
-             ("t", "数値は概算（日射の5%を紫外線とし、ガラスの透過率は代表値）。実施設計でガラス・ブラインドのメーカー値により確定する")]
+             ("t", "数値は概算（日射の5%を紫外線とし、ガラスの透過率は代表値）。実施設計でガラス・スクリーンのメーカー値により確定する")]
     side_panel(sh, 200, 146, notes, width=195)
+    return sh
+
+
+def interior_policy_sheet(h, number):
+    """内装設計方針: 安全（子どもの挟み込み・転落ほか）と清掃・メンテナンスの容易さ。"""
+    import interior as IN
+    sp = h.spec["interior"]
+    sh = frame(h, number, "内装設計方針（安全・清掃性）", 1, label="—")
+    sh.text("内装設計方針 — 「すばらしいデザインは安全であるべき」「清掃とメンテナンスが簡易であるべき」", (12, 280), 3.6, "A-TEXT", paper=True)
+    rows = [["危険", "対策（設計で決めること）", "対象"]] + [list(r) for r in IN.SAFETY]
+    sh.text("(1) 安全 — 危険をデザインでなくす", (12, 271), 2.8, "A-TEXT", paper=True)
+    y = sh.table(12, 268, [24, 136, 28], rows, row_h=5.2, h=1.8)
+    rows = [["部位", "清掃・メンテナンスを簡単にする選び方"]] + [list(r) for r in IN.MAINTENANCE]
+    sh.text("(2) 清掃・メンテナンス — 手入れの頻度を減らす", (12, y - 6), 2.8, "A-TEXT", paper=True)
+    y = sh.table(12, y - 9, [24, 164], rows, row_h=5.2, h=1.8)
+    st = sp["stair"]
+    rows = [["階段", "蹴上 R", "踏面 T", "勾配 R/T（≦6/7）", f"2R+T（{st['step_rule'][0]}〜{st['step_rule'][1]}）", "有効幅", "蹴込み", "判定"]]
+    for c in IN.stair_checks(h):
+        rows.append([c["name"], f"{c['riser']:.1f}", f"{c['tread']:.0f}", f"{c['slope']:.3f}", f"{c['rule']:.0f}", f"{c['width']:,.0f}",
+                     f"{st['max_nosing_gap']}以下（蹴込み板あり）", "OK" if c["ok_slope"] and c["ok_rule"] else "NG"])
+    sh.text("(3) 階段の寸法（品確法 高齢者等配慮 等級5相当で確認）", (205, 271), 2.8, "A-TEXT", paper=True)
+    y2 = sh.table(205, 268, [16, 16, 16, 30, 30, 16, 40, 12], rows, row_h=5.0, h=2.0)
+    hg = sp["head_gap"]
+    rows = [["位置", "長さ", "高さ", "端部のすき間", "判定"]]
+    for g in IN.guard_gaps(h):
+        gaps = "・".join("0（壁に接する）" if v < 1 else (f"{v:,.0f}（降り口の通路）" if v > hg[1] else f"{v:.0f}") for v in g["gaps"])
+        bad = any(hg[0] <= v <= hg[1] or sp["finger_gap"][0] <= v <= sp["finger_gap"][1] for v in g["gaps"])
+        rows.append([f"{g['stair']} 2階開口", f"{g['length']:,.0f}", f"{g['height']:,.0f}", gaps, "NG" if bad else "OK"])
+    rows.append(["階段の間の手すり壁", "全長", f"2FL+{sp['guard_height']:,}", "上下の階段で連続（すき間なし）", "OK"])
+    sh.text(f"(4) 手すり壁・腰壁（頭部 {hg[0]}〜{hg[1]}mm・指 {sp['finger_gap'][0]}〜{sp['finger_gap'][1]}mm のすき間をつくらない）", (205, y2 - 6), 2.8, "A-TEXT", paper=True)
+    y2 = sh.table(205, y2 - 9, [40, 18, 22, 80, 16], rows, row_h=5.0, h=2.0)
+    # 手すり壁の模式図（手すり子・横桟なしのパネル）
+    bx, by = 215, y2 - 52
+    sh.text("(5) 手すり壁の考え方（模式図）", (205, y2 - 6), 2.8, "A-TEXT", paper=True)
+    for k, (title, panel) in enumerate((("採用: すき間のないパネル", True), ("不採用: 手すり子・横桟", False))):
+        x0 = bx + k * 60
+        sh.rect(*sh.P(x0, by), *sh.P(x0 + 40, by + 30), "A-VIS" if panel else "A-HIDDEN", lineweight=35)
+        if panel:
+            sh.hatch_polys([sbox_(sh, x0, by, x0 + 40, by + 30)], pattern="ANSI37", spacing=1.2, layer="A-CUT-INS")
+        else:
+            for xx in range(1, 8):
+                sh.line(sh.P(x0 + xx * 5, by), sh.P(x0 + xx * 5, by + 30), "A-HIDDEN")
+            sh.line(sh.P(x0, by + 8), sh.P(x0 + 40, by + 8), "A-HIDDEN")
+            sh.text("すき間に頭・足がかり", (x0 + 20, by + 14), 1.8, "A-TEXT", "MIDDLE_CENTER", paper=True)
+        sh.line(sh.P(x0 - 2, by + 30), sh.P(x0 + 42, by + 30), "A-VIS", lineweight=50)
+        sh.text(title, (x0, by - 5), 2.0, "A-TEXT", paper=True)
+    sh.text(f"H{sp['guard_height']:,}", (bx - 2, by + 15), 1.8, "A-TEXT", "MIDDLE_RIGHT", paper=True)
+    side_panel(sh, 205, by - 12, [("h", "一貫させること"),
+        ("t", sp["principles"][0]), ("t", sp["principles"][1]),
+        ("t", "見た目のための凹凸（オープン棚・間接照明の溝・格子・スリット）は、危険かほこり溜まりになるなら採用しない。意匠は素材の質感・色・光（窓の位置）でつくる"),
+        ("t", "各室の仕上げは I-02 内装仕上表による。建具金物（指はさみ防止・ソフトクローズ・非常解錠）は A-09 建具表の全建具に適用")], width=195)
+    return sh
+
+
+def sbox_(sh, x0, y0, x1, y1):
+    from shapely.geometry import box as sbox
+    a, b = sh.P(x0, y0), sh.P(x1, y1)
+    return sbox(a[0], a[1], b[0], b[1])
+
+
+def finish_sheet(h, number):
+    import interior as IN
+    sh = frame(h, number, "内装仕上表", 1, label="—")
+    sh.text("内装仕上表 — 安全で、掃除と手入れが簡単な仕上げに統一", (12, 280), 3.6, "A-TEXT", paper=True)
+    rows = [["階", "室名", "面積", "床", "巾木", "壁", "天井", "安全・清掃の要点"]]
+    for f, n, c, a, (fl, sk, wa, ce, note) in IN.finish_schedule(h):
+        rows.append([f, n + (f" ×{c}" if c > 1 else ""), f"{a:.1f}", fl, sk, wa, ce, note])
+    y = sh.table(12, 272, [8, 32, 10, 72, 44, 64, 36, 126], rows, row_h=4.4, h=1.65)
+    sh.text("共通: 出隅 R10（手の届く高さ）、コンセントはシャッター付き、床見切りは面一、建具は上吊り引戸を優先（床レールなし）。数量・品番は実施設計で決める",
+            (12, y - 5), 2.2, "A-TEXT", paper=True)
     return sh
 
 

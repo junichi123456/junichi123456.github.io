@@ -112,6 +112,7 @@ class House:
         for w in self.walls:
             self.boxes.extend(self._wall_boxes(w))
         self._blind_boxes()
+        self._stair_guards()
 
     # ------------------------------------------------------------ site
     def _orientation(self):
@@ -432,7 +433,8 @@ class House:
         for s in self.stairs:
             xm = (s.x0 + s.x1) / 2
             y0, y1 = sorted([s.y_entry, s.y_turn])
-            self.boxes.append(Box(xm - 50, y0, self.fl["1F"], xm + 50, y1, self.fl["1F"] + 1100 + H / 2, "partition", "lgs",
+            # 上下の階段の間は 2FL+1,100 まで立ち上げた手すり壁（すき間なし・2階で吹抜け側への転落を防ぐ）
+            self.boxes.append(Box(xm - 50, y0, self.fl["1F"], xm + 50, y1, self.fl["2F"] + 1100, "partition", "lgs",
                                   level="1F", tag="手すり壁"))
         e = self.t / 2
         outer = (-e, -e, self.W + e, self.D + e)
@@ -589,8 +591,58 @@ class House:
                                       exterior=key[4], count=len(groups[key]),
                                       floors=sorted({o.floor for o in groups[key]}), alt_entry=False))
 
+    def _stair_guards(self):
+        """2階の階段開口のうち、壁のない縁に手すり壁（腰壁 H1,100・すき間なし）を設ける。降り口は除く。"""
+        from shapely.geometry import Point, box as sbox
+        z = self.fl["2F"] + 500
+        solid = [sbox(b.x0, b.y0, b.x1, b.y1) for b in self.boxes
+                 if b.cat in ("wall", "partition") and b.z0 < z < b.z1 and b.tag != "手すり壁"]
+        self.guards = []
+        gh = self.spec.get("interior", {}).get("guard_height", 1100)
+        z0, z1 = self.fl["2F"], self.fl["2F"] + gh
+        for s in self.stairs:
+            x0, y0, x1, y1 = s.hole
+            xb0, xb1 = (s.x1 - s.width, s.x1) if s.direction > 0 else (s.x0, s.x0 + s.width)   # 2階の降り口
+            # (固定座標, 範囲, 縁の向き, 内側へのずれ, 降り口の範囲)
+            edges = [("x", y0, (x0, x1), +1, (xb0, xb1) if s.y_entry == y0 else None),
+                     ("x", y1, (x0, x1), -1, (xb0, xb1) if s.y_entry == y1 else None),
+                     ("y", x0, (y0, y1), +1, None), ("y", x1, (y0, y1), -1, None)]
+            for ax, c, (a, b), inward, gap in edges:
+                n, step = 40, (b - a) / 40
+                us = [a + k * step for k in range(n + 1)]
+
+                def pt(u):
+                    return Point(u, c) if ax == "x" else Point(c, u)
+                state = []
+                for u in us:
+                    if gap and gap[0] - 1 <= u <= gap[1] + 1:
+                        state.append("gap")
+                    elif any(p.distance(pt(u)) < 160 for p in solid):
+                        state.append("wall")
+                    else:
+                        state.append("open")
+                k = 0
+                while k <= n:
+                    if state[k] != "open":
+                        k += 1
+                        continue
+                    m = k
+                    while m + 1 <= n and state[m + 1] == "open":
+                        m += 1
+                    # 端は隣の壁へ 160 重ねる。降り口側は中央の手すり壁（降り口の縁）で止める。すき間を残さない
+                    lo = a if k == 0 else (gap[1] if state[k - 1] == "gap" else us[k - 1] - 160)
+                    hi = b if m == n else (gap[0] if state[m + 1] == "gap" else us[m + 1] + 160)
+                    lo, hi = max(a, lo), min(b, hi)
+                    cc = c + inward * 50
+                    bx = (Box(lo, cc - 50, z0, hi, cc + 50, z1, "partition", "lgs", level="2F", tag="腰壁（転落防止）") if ax == "x"
+                          else Box(cc - 50, lo, z0, cc + 50, hi, z1, "partition", "lgs", level="2F", tag="腰壁（転落防止）"))
+                    if hi - lo > 300:
+                        self.boxes.append(bx)
+                        self.guards.append((s.name, bx))
+                    k = m + 1
+
     def _blind_boxes(self):
-        """外付け電動ブラインドのボックス（窓上、外断熱層に埋め込み、外装面から30mm出す）。"""
+        """外付け電動スクリーンのボックス（窓上、外断熱層に埋め込み、外装面から30mm出す）。"""
         us = self.spec.get("uv_shading")
         self.blinds = []
         if not us:
@@ -602,13 +654,13 @@ class House:
                 continue
             a, b, z0, z1 = op.u0 - 50, op.u1 + 50, op.z1, op.z1 + bh
             if op.side == "S":
-                bx = Box(a, -e - 30, z0, b, -e - 30 + bd, z1, "blind", "sash", level=op.floor, tag="外付けブラインド")
+                bx = Box(a, -e - 30, z0, b, -e - 30 + bd, z1, "blind", "sash", level=op.floor, tag="外付けスクリーン")
             elif op.side == "N":
-                bx = Box(a, self.D + e + 30 - bd, z0, b, self.D + e + 30, z1, "blind", "sash", level=op.floor, tag="外付けブラインド")
+                bx = Box(a, self.D + e + 30 - bd, z0, b, self.D + e + 30, z1, "blind", "sash", level=op.floor, tag="外付けスクリーン")
             elif op.side == "W":
-                bx = Box(-e - 30, a, z0, -e - 30 + bd, b, z1, "blind", "sash", level=op.floor, tag="外付けブラインド")
+                bx = Box(-e - 30, a, z0, -e - 30 + bd, b, z1, "blind", "sash", level=op.floor, tag="外付けスクリーン")
             else:
-                bx = Box(self.W + e + 30 - bd, a, z0, self.W + e + 30, b, z1, "blind", "sash", level=op.floor, tag="外付けブラインド")
+                bx = Box(self.W + e + 30 - bd, a, z0, self.W + e + 30, b, z1, "blind", "sash", level=op.floor, tag="外付けスクリーン")
             self.boxes.append(bx)
             self.blinds.append((op, bx))
 

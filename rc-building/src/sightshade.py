@@ -236,7 +236,7 @@ def glazing_g(h, side):
 
 
 def blind_factor(h, side, month, blinds=True):
-    """外付けブラインドを下ろす時期・方位なら遮蔽係数 fc、それ以外は 1。"""
+    """外付けスクリーンを下ろす時期・方位なら遮蔽係数 fc、それ以外は 1。"""
     us = h.spec.get("uv_shading")
     if not blinds or not us or side not in us["sides"] or month not in us["months"]:
         return 1.0
@@ -288,7 +288,7 @@ def uv_exposure(h):
         if op.kind == "window" and op.side in glass:
             glass[op.side] += op.width * op.height / 1e6
     inc = {k: 0.0 for k in SIDE_AZ}      # 窓面に当たる UV
-    blind = {k: 0.0 for k in SIDE_AZ}    # ブラインド通過後（ガラスに当たる UV）
+    blind = {k: 0.0 for k in SIDE_AZ}    # スクリーン通過後（ガラスに当たる UV）
     peak = {k: 0.0 for k in SIDE_AZ}     # 夏の最大 UV 強度 W/m²（窓面）
     for alt, az, dni, m in sun_positions(0.5):
         dhi, _ = _sky(alt, dni)
@@ -301,5 +301,5 @@ def uv_exposure(h):
     tot_inc, tot_bl = sum(inc.values()), sum(blind.values())
     cases = [(n, t, tot_inc * t) for n, t in UV_GLASS]
     cases.append(("本計画: UVカット合わせ Low-E トリプル", tuv, tot_inc * tuv))
-    cases.append(("本計画＋外付けブラインド（5〜9月 S・E・W）", tuv * tot_bl / tot_inc if tot_inc else 0, tot_bl * tuv))
+    cases.append(("本計画＋外付けスクリーン（5〜9月 S・E・W）", tuv * tot_bl / tot_inc if tot_inc else 0, tot_bl * tuv))
     return dict(glass=glass, inc=inc, blind=blind, peak=peak, tot_inc=tot_inc, tot_blind=tot_bl, tuv=tuv, frac=frac, cases=cases)
