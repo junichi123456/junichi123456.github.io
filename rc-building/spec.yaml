@@ -102,7 +102,39 @@ interior:     # インテリアの一貫方針（施主指示 v4.6）: 「すば
   finger_gap: [8, 25]        # 指が挟まる開口寸法
   stair: {max_slope: 0.857, step_rule: [550, 650], max_nosing_gap: 30}   # 勾配6/7以下、550≦2R+T≦650、蹴込み30以下（品確法 高齢者等配慮 等級5相当）
   corner_r: 10               # 出隅の丸め R（mm、手の届く高さ）
+  furniture: 突っ張り（床・天井）＋家具自体の構造で転倒を防ぐ。RC 壁には固定しない（外断熱の躯体に穴をあけない）
   child_lock_h: 1400         # 子どもの手が届かない補助錠の高さ（mm）
+
+wifi:         # 館内 Wi-Fi（v4.7）: 天井 AP を PoE 有線で接続、5GHz で受信 -67dBm 以上を床面の98%以上
+  standard: Wi-Fi 7（6GHz/5GHz/2.4GHz）天井埋込 AP・PoE＋・有線バックホール（Cat6A）
+  freq_mhz: 5500
+  eirp_dbm: 20
+  target_dbm: -67
+  target_cover: 0.98
+  grid: 500
+
+smart:        # 建物の制御（v4.7）: スクリーン・照明・空調・掃除ロボットを共通の制御基盤でつなぎ、bot から API で操作できる
+  bus: KNX（有線）＋ Matter over Thread/Wi-Fi（ゲートウェイ）
+  api: ローカル API（ゲートウェイ）＋ HEMS（ECHONET Lite）
+  safety: 強風・凍結・火災・停電時は自動制御・手元スイッチが bot の指令より優先
+  lighting_schedule:          # 時刻 → (色温度 K, 明るさ %)
+    - [0, 2200, 10]
+    - [5, 2200, 10]
+    - [6, 3000, 50]
+    - [8, 5000, 100]
+    - [16, 4500, 100]
+    - [18, 3000, 70]
+    - [20, 2700, 40]
+    - [22, 2200, 15]
+    - [24, 2200, 10]
+  robots: {floors: [1F, 2F], dock: 自動ゴミ収集・給排水直結（水拭き）, max_step: 5, under_clear: [0, 250]}
+
+exterior_lighting:   # 防虫の外構照明（v4.7）
+  cct: 2200          # 色温度 K（アンバー寄り・青/紫外をほとんど含まない）
+  cutoff: full       # 上方光束なし（下向き・遮光）
+  sensor: true       # 人感センサーで必要なときだけ点灯（タイマー併用）
+  bollard_h: 600
+  spacing: 6000
 
 exterior:
   carport: {w: 8800, d: 6100, h: 2500, kwp_per_m2: 0.19}   # 3台用ソーラーカーポート（パーゴラの影・被覆率による損失を補う）

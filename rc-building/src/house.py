@@ -534,8 +534,10 @@ class House:
         gp1 = gates[1][2]
         gm = ((gp0[0] + gp1[0]) / 2, (gp0[1] + gp1[1]) / 2)
         # アプローチ: 目隠し壁の西側から回り込み、壁の内側で玄関階段に至る（クランク）
-        self.approach = LineString([(gm[0], gm[1] + 200), (gm[0], -26000), (12000, -21000), (13900, -17000), (13900, -4300), (9100, -4300),
-                                    (9100, self.porch[1])]).buffer(750, cap_style=2, join_style=2)
+        self.approach_line = LineString([(gm[0], gm[1] + 200), (gm[0], -26000), (12000, -21000), (13900, -17000), (13900, -4300), (9100, -4300),
+                                         (9100, self.porch[1])])
+        self.approach = self.approach_line.buffer(750, cap_style=2, join_style=2)
+        self._exterior_lights(gates)
         # 雨水貯留槽・浸透施設（西側の庭）
         self.tank = (-23500, 22000, -18500, 27000)
         self.trench = [LineString([(-29500, 28000), (-15000, 28100), (-1000, 27800)]),
@@ -547,6 +549,28 @@ class House:
             dotcon_area=pave.area / 1e6,
             dotcon_l=pave.area / 1e6 * ex["dotcon_storage_l_per_m2"],
             tank_m3=ex["retention_tank_m3"])
+
+    def _exterior_lights(self, gates):
+        """防虫の外構照明（低色温度・下向き・人感センサー）。玄関ドアの真上には付けず、足元を照らす。"""
+        el = self.spec["exterior_lighting"]
+        L = self.approach_line
+        lights = []
+        n = int(L.length // el["spacing"])
+        for i in range(n + 1):
+            d = min(L.length - 1500, 1500 + i * el["spacing"])
+            p = L.interpolate(d)
+            q = L.interpolate(min(L.length, d + 10))
+            ang = math.atan2(q.y - p.y, q.x - p.x)
+            off = 950                                                   # 通路の脇（幅1.5m の外側）
+            lights.append(("ボラード", (p.x - math.sin(ang) * off, p.y + math.cos(ang) * off)))
+        x0, y0, x1, y1 = self.porch
+        lights.append(("足元灯（外部階段）", (x0 + 200, (y0 + y1) / 2)))
+        lights.append(("足元灯（外部階段）", (x1 - 200, (y0 + y1) / 2)))
+        cx0, cy0, cx1, cy1 = self.carport
+        lights += [("カーポート下 ダウンライト", ((cx0 + cx1) / 2 + dx, (cy0 + cy1) / 2)) for dx in (-2800, 0, 2800)]
+        for name, a, b in gates[:2]:
+            lights.append((f"門灯（{name}・低位置）", ((a[0] + b[0]) / 2, (a[1] + b[1]) / 2 + 600)))
+        self.ext_lights = lights
 
     def ground_outside(self, x, y):
         """境界点 (x, y) の外側 2.5m の地盤高。"""

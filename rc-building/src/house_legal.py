@@ -189,6 +189,26 @@ def checks(h):
     add("安全", "階段開口の手すり壁（頭部・指の挟み込み）", "施主指示（v4.6）",
         f"H{sp['guard_height']:,}以上、{hg[0]}〜{hg[1]}mm・{fg[0]}〜{fg[1]}mm のすき間なし",
         f"手すり壁{len(gg)}か所 H{sp['guard_height']:,}（パネル・手すり子なし）、端部は壁に接する。階段の間の壁は 2FL+{sp['guard_height']:,} まで連続", judge(not bad))
+    import services as SV
+    import wifi as WF
+    add("ブリーフ", "家具の転倒防止", "施主指示（v4.7）", "RC 壁に固定しない。突っ張り・家具の構造で耐震・転倒耐性",
+        "背の高い収納・本棚は床・天井の突っ張り（天井下地補強）＋幅広の脚・背面連結・低重心・耐震ラッチ。ジム機器は自重・広い脚で安定", OK)
+    rp = SV.robot_plan(h)
+    add("ブリーフ", "床清掃（掃除ロボット）", "施主指示（v4.7）", "床清掃は可能な限りロボット（レールは可）",
+        "・".join(f"{f} {v['area']:.0f}m²" for f, v in rp.items()) + f"、段差{s['smart']['robots']['max_step']}mm以下、各階にドック（自動ゴミ収集・給排水直結）", OK)
+    add("ブリーフ", "便器", "施主指示（v4.7）", "タンクレスにしない", "全トイレ タンク式便器（フチなし・防汚）", OK)
+    add("ブリーフ", "スクリーンの bot 制御", "施主指示（v4.7）", "全館のスクリーンを bot から操作できる",
+        f"全{len(h.blinds)}台 KNX/Matter 対応モーター→ゲートウェイのローカル API（認証付き）。強風・凍結時の安全動作が優先", OK)
+    ls = SV.lighting_curve(h)
+    add("ブリーフ", "照明（時刻で変化）", "施主指示（v4.7）", "時刻に応じて色温度と明るさが変わる LED",
+        f"全室 調光・調色 LED（{min(k for _, k, _ in ls)}〜{max(k for _, k, _ in ls)}K・{min(b for *_, b in ls)}〜{max(b for *_, b in ls)}%）を時刻スケジュールで制御（E-02）", OK)
+    for f in ("1F", "2F"):
+        r = WF.plan(h, f)
+        add("ブリーフ", f"Wi-Fi（{f}）", "施主指示（v4.7）", f"5GHz 受信 {s['wifi']['target_dbm']}dBm 以上を床面の{s['wifi']['target_cover'] * 100:.0f}%以上",
+            f"天井 AP {len(r['aps'])}台（PoE 有線）→ {r['cover'] * 100:.0f}%（概算、竣工時に実測）", judge(r["cover"] >= s["wifi"]["target_cover"]))
+    el = s["exterior_lighting"]
+    add("ブリーフ", "外構の防虫", "施主指示（v4.7）", "敷地内で虫が発生・集中しない工夫",
+        f"外構照明 {len(h.ext_lights)}台を {el['cct']}K・下向き・人感センサー、日没後はスクリーンで光漏れ防止、たまり水をつくらない ほか{len(SV.INSECT)}項目（E-03）", OK)
     import sightshade as SS
     uv = SS.uv_exposure(h)
     add("ブリーフ", "紫外線対策", "施主指示（v4.5）", "日照による紫外線をカットする設備",

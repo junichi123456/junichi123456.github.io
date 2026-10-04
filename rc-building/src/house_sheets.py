@@ -1080,8 +1080,175 @@ def finish_sheet(h, number):
     for f, n, c, a, (fl, sk, wa, ce, note) in IN.finish_schedule(h):
         rows.append([f, n + (f" ×{c}" if c > 1 else ""), f"{a:.1f}", fl, sk, wa, ce, note])
     y = sh.table(12, 272, [8, 32, 10, 72, 44, 64, 36, 126], rows, row_h=4.4, h=1.65)
-    sh.text("共通: 出隅 R10（手の届く高さ）、コンセントはシャッター付き、床見切りは面一、建具は上吊り引戸を優先（床レールなし）。数量・品番は実施設計で決める",
+    sh.text("共通: 出隅 R10（手の届く高さ）、コンセントはシャッター付き、床の段差5mm以下（掃除ロボット走行）、照明は調光・調色 LED、家具は突っ張り式（RC 壁に固定しない）。数量・品番は実施設計で決める",
             (12, y - 5), 2.2, "A-TEXT", paper=True)
+    return sh
+
+
+def wifi_sheet(h, number):
+    """館内 Wi-Fi の電波計画（受信強度の分布と AP 配置）。"""
+    import wifi as WF
+    from shapely.geometry import box as sbox
+    from shapely.ops import unary_union
+    w = h.spec["wifi"]
+    sh = frame(h, number, "Wi-Fi 電波計画", 200)
+    sh.text(f"館内 Wi-Fi 電波計画 — 5GHz 帯で受信 {w['target_dbm']}dBm 以上を床面の{w['target_cover'] * 100:.0f}%以上（壁の減衰込みの概算）", (12, 280), 3.6, "A-TEXT", paper=True)
+    bands = [(-60, 999, 3, "−60dBm 以上（高速）"), (w["target_dbm"], -60, 4, f"{w['target_dbm']}〜−60dBm（快適）"),
+             (-75, w["target_dbm"], 2, f"−75〜{w['target_dbm']}dBm（つながるが遅い）"), (-999, -75, 1, "−75dBm 未満（不安定）")]
+    res = []
+    for k, f in enumerate(("1F", "2F")):
+        r = WF.plan(h, f)
+        res.append(r)
+        t = T(sh, (0, 0), (22 + k * 112, 150))
+        g = r["grid"] / 2
+        cut = h.fl[f] + 1200
+        solid = unary_union([sbox(*t(b.x0, b.y0), *t(b.x1, b.y1)) for b in h.boxes
+                             if b.cat == "wall" and b.level != "EXT" and b.z0 < cut < b.z1])
+        for lo, hi, col, _ in bands:
+            polys = [sbox(*t(x - g, y - g), *t(x + g, y + g)) for (x, y), v in zip(r["pts"], r["rssi"]) if lo <= v < hi]
+            if polys:
+                u = unary_union(polys).difference(solid)
+                sh.hatch_polys(list(iter_polygons(u)), solid=True, color=col)
+        for b in h.boxes:
+            if b.cat in ("wall", "partition") and b.level != "EXT" and b.z0 < cut < b.z1 and b.mat != "insul":
+                sh.rect(*t(b.x0, b.y0), *t(b.x1, b.y1), "A-CUT" if b.cat == "wall" else "A-CUT-LGS", lineweight=35 if b.cat == "wall" else 18)
+        for n, (x, y, name) in enumerate(r["aps"], 1):
+            sh.circle(t(x, y), 1.6 * sh.S, "A-CUT", lineweight=35)
+            sh.text(f"AP{f[0]}-{n}", t(x, y), 1.4, "A-TEXT", "MIDDLE_CENTER")
+        sh.text(f"{'1階' if f == '1F' else '2階'}（AP {len(r['aps'])}台・目標を満たす面積 {r['cover'] * 100:.0f}%）", t(0, -1500), 2.6, "A-TEXT", "TOP_LEFT")
+    y = 128
+    for lo, hi, col, lab in bands:
+        sh.hatch_polys([sbox(*sh.P(22, y), *sh.P(28, y + 3.5))], solid=True, color=col)
+        sh.text(lab, (30, y + 0.5), 2.0, "A-TEXT", paper=True)
+        y -= 5.5
+    rows = [["AP", "設置位置（天井）", "階"]]
+    for r in res:
+        for n, (x, y_, name) in enumerate(r["aps"], 1):
+            rows.append([f"AP{r['floor'][0]}-{n}", name, r["floor"]])
+    sh.text("(1) アクセスポイント", (250, 271), 2.8, "A-TEXT", paper=True)
+    yy = sh.table(250, 268, [18, 64, 12], rows, row_h=4.6, h=1.9)
+    side_panel(sh, 250, yy - 6, [("h", "計画の考え方"),
+        ("t", f"機器: {w['standard']}。各 AP は PoE＋の有線（Cat6A）で機械室（東系統）のネットワークラックに集める（無線中継に頼らない）"),
+        ("t", "壁式 RC は内部の耐力壁も RC 250mm で、5GHz は1枚で約25dB 減衰する。床スラブも厚いため、各階に AP を置き、RC 壁で囲まれた区画ごとに電波を届ける"),
+        ("t", f"計算: 送信 {w['eirp_dbm']}dBm、自由空間損失＋通過する壁の減衰（RC 25dB・間仕切 4dB・扉 4dB）。0.5m メッシュで受信強度を求め、目標を満たす面積が最大になる位置に AP を1台ずつ追加"),
+        ("t", "シアター・ジムは遮音のため扉が重く、それぞれ室内に AP を置くと安定する（必要に応じて実施設計で追加）。外構（菜園・駐車場）は屋外用 AP を別途"),
+        ("t", "実施設計で、機種の送信出力・アンテナ特性を用いて現地測定（竣工後のサイトサーベイ）で確認する")], width=150)
+    return sh
+
+
+def control_sheet(h, number):
+    """制御（bot 連携）・時刻で変わる照明・掃除ロボット。"""
+    import services as SV
+    sm = h.spec["smart"]
+    sh = frame(h, number, "制御・照明・掃除ロボット計画", 1, label="—")
+    sh.text("制御・照明・掃除ロボット計画 — スクリーン・照明・空調・ロボットを bot から操作できる共通の制御基盤", (12, 280), 3.6, "A-TEXT", paper=True)
+    # (1) 構成図
+    sh.text("(1) 制御の構成", (12, 271), 2.8, "A-TEXT", paper=True)
+    boxes = [("bot（AI エージェント・スマホ）", 14, 252), ("ゲートウェイ（ローカル API・認証）", 14, 236),
+             ("KNX（有線）", 14, 220), ("Matter（Thread/Wi-Fi）", 74, 220), ("ECHONET Lite（HEMS）", 134, 220)]
+    for lab, x, y in boxes:
+        sh.rect(*sh.P(x, y), *sh.P(x + (178 if lab.startswith(("bot", "ゲート")) else 56), y + 9), "A-VIS", lineweight=35)
+        sh.text(lab, (x + 3, y + 3), 2.2, "A-TEXT", paper=True)
+    for x in (42, 102, 162):
+        sh.line(sh.P(x, 236), sh.P(x, 229), "A-VIS", lineweight=25)
+    sh.line(sh.P(103, 252), sh.P(103, 245), "A-VIS", lineweight=25)
+    devs = [(14, f"外付けスクリーン {len(h.blinds)}台", "照明（調光・調色）", "日射・風・雨センサー"),
+            (74, "掃除ロボット 2台", "スマートロック（ジム）", ""), (134, "全館空調 2系統", "全熱交換・調湿", "太陽光・蓄電池")]
+    for x, *ds in devs:
+        sh.line(sh.P(x + 28, 220), sh.P(x + 28, 214), "A-VIS", lineweight=25)
+        yy = 210
+        for d in ds:
+            if d:
+                sh.text("・" + d, (x + 2, yy), 2.0, "A-TEXT", paper=True)
+                yy -= 4.5
+    sh.text(f"優先順位: {sm['safety']}", (14, 192), 2.0, "A-LEGAL-TEXT", paper=True)
+    rows = [["対象", "機器", "操作", "優先・安全"]] + [list(r) for r in SV.CONTROL]
+    y = sh.table(12, 186, [22, 62, 52, 56], rows, row_h=5.2, h=1.65)
+    # (2) 照明スケジュールのグラフ
+    gx0, gy0, gw, gh = 222, 196, 170, 62
+    sh.text("(2) 照明の時刻スケジュール（全室共通の初期値・室ごと/bot で変更可）", (gx0 - 10, 271), 2.8, "A-TEXT", paper=True)
+    sh.rect(*sh.P(gx0, gy0), *sh.P(gx0 + gw, gy0 + gh), "G-TABLE")
+    cur = SV.lighting_curve(h)
+    for hr in range(0, 25, 3):
+        x = gx0 + gw * hr / 24
+        sh.line(sh.P(x, gy0), sh.P(x, gy0 + gh), "A-HIDDEN")
+        sh.text(f"{hr}時", (x, gy0 - 4), 1.8, "A-TEXT", "MIDDLE_CENTER", paper=True)
+    kmin, kmax = 2000, 5500
+    ptsK = [sh.P(gx0 + gw * hr / 24, gy0 + gh * (k - kmin) / (kmax - kmin)) for hr, k, _ in cur]
+    ptsB = [sh.P(gx0 + gw * hr / 24, gy0 + gh * b / 100) for hr, _, b in cur]
+    sh.pline(ptsK, "A-FLOOD", lineweight=50)
+    sh.pline(ptsB, "A-CUT", lineweight=50)
+    for k in (2200, 3000, 4000, 5000):
+        yk = gy0 + gh * (k - kmin) / (kmax - kmin)
+        sh.text(f"{k}K", (gx0 - 2, yk), 1.7, "A-TEXT", "MIDDLE_RIGHT", paper=True)
+    for b in (0, 50, 100):
+        sh.text(f"{b}%", (gx0 + gw + 2, gy0 + gh * b / 100), 1.7, "A-TEXT", "MIDDLE_LEFT", paper=True)
+    sh.text("── 色温度（左軸）", (gx0, gy0 - 10), 2.0, "A-FLOOD", paper=True)
+    sh.text("── 明るさ（右軸）", (gx0 + 50, gy0 - 10), 2.0, "A-TEXT", paper=True)
+    rows = [["時刻", "色温度", "明るさ", "ねらい"],
+            ["0〜5時", "2200K", "10%", "夜間の移動は足元だけ（眠りを妨げない）"],
+            ["6〜8時", "3000→5000K", "50→100%", "朝日に合わせて上げる（目覚め）"],
+            ["8〜16時", "5000→4500K", "100%", "昼の活動・ジム"],
+            ["18〜22時", "3000→2200K", "70→15%", "夕方から暖色・暗めへ（就寝前）"]]
+    y2 = sh.table(212, gy0 - 14, [24, 30, 26, 100], rows, row_h=5.0, h=1.8)
+    # (3) 掃除ロボット
+    rp = SV.robot_plan(h)
+    rows = [["階", "清掃範囲", "室数", "ドック"]] + [[f, f"{v['area']:.0f}m²", str(v["rooms"]), v["dock"]] for f, v in rp.items()]
+    sh.text("(3) 掃除ロボット（床清掃はロボットが行う）", (12, y - 6), 2.8, "A-TEXT", paper=True)
+    y = sh.table(12, y - 9, [14, 30, 16, 60], rows, row_h=5.0, h=1.9)
+    side_panel(sh, 12, y - 5, [("t", r) for r in SV.ROBOT_RULES], width=190)
+    side_panel(sh, 212, y2 - 6, [("h", "照明の仕様"),
+        ("t", "全室 埋込 LED（調光 1〜100%・調色 2200〜5000K、DALI-2 DT8）。時刻スケジュールで自動変化し、室ごと・bot から変更できる"),
+        ("t", "シアターは上映時に自動で消灯・足元灯のみ。ジムは運動時 5000K・100%"),
+        ("h", "スクリーンの bot 制御"),
+        ("t", f"全{len(h.blinds)}台を個別・グループ（方位・室）で操作でき、位置を bot に返す。日没後の自動降下で光漏れを防ぐ（虫を寄せない、E-03）"),
+        ("t", "強風（10m/s 以上）・凍結時はセンサーで自動巻上げ、この間は bot の降下指令を受け付けない")], width=190)
+    return sh
+
+
+def insect_sheet(h, number):
+    """外構の防虫計画（照明の色・向き・時間、たまり水、建物まわり）。"""
+    import services as SV
+    el = h.spec["exterior_lighting"]
+    sh = frame(h, number, "外構照明・防虫計画図", 500)
+    t = fit(h, sh, (110, 158))
+    site_base(h, sh, t, contours=False)
+    fence_draw(h, sh, t)
+    house_outline(h, sh, t)
+    ap = h.approach.intersection(h.site.buffer(-h.fence_t))
+    for p in iter_polygons(ap):
+        sh.pline(t.pts(p.exterior.coords), "A-PAVE", closed=True)
+    cp, pg = h.carport, h.pergola
+    sh.rect(*t(cp[0], cp[1]), *t(cp[2], cp[3]), "A-HIDDEN")
+    sh.rect(*t(pg[0], pg[1]), *t(pg[2], pg[3]), "A-HIDDEN")
+    # 防草砂利帯（建物まわり 1.0m）
+    o = h.outer_dims()
+    from shapely.geometry import box as sbox
+    band = sbox(o[0] - 1000, o[1] - 1000, o[2] + 1000, o[3] + 1000).difference(sbox(*o))
+    sh.hatch_polys([Polygon(t.pts(p.exterior.coords), [t.pts(r.coords) for r in p.interiors]) for p in iter_polygons(band)],
+                   pattern="DOTS", spacing=1.0, layer="A-PAVE")
+    for name, (x, y) in h.ext_lights:
+        c = t(x, y)
+        sh.circle(c, 0.9 * sh.S, "A-FLOOD", lineweight=35)
+        sh.line((c[0] - 0.9 * sh.S, c[1]), (c[0] + 0.9 * sh.S, c[1]), "A-FLOOD")
+    sh.text(f"外構照明 {len(h.ext_lights)}台（{el['cct']}K・下向き・人感センサー）", t(15500, -9000), 1.6, "A-TEXT", "MIDDLE_LEFT")
+    sh.text("北側（水路側）は照明なし", t(-10000, 33000), 1.6, "A-TEXT", "MIDDLE_CENTER")
+    sh.text("建物まわり 防草砂利帯 幅1.0m", t(h.W / 2, o[3] + 2500), 1.5, "A-TEXT", "MIDDLE_CENTER")
+    tk = h.tank
+    sh.rect(*t(tk[0], tk[1]), *t(tk[2], tk[3]), "A-DRAIN")
+    sh.text("貯留槽（密閉・防虫網）", t((tk[0] + tk[2]) / 2, tk[3] + 1500), 1.5, "A-TEXT", "MIDDLE_CENTER")
+    sh.north_arrow(sh.P(205, 60), 6, rot=h.facade_az)
+    sh.view_title("外構照明・防虫計画図", "1:500", (18, 22))
+    rows = [["項目", "虫を寄せない・発生させない工夫"]] + [list(r) for r in SV.INSECT]
+    sh.text("防虫の工夫", (222, 271), 2.8, "A-TEXT", paper=True)
+    y = sh.table(222, 268, [24, 160], rows, row_h=5.2, h=1.8)
+    cnt = {}
+    for n, _ in h.ext_lights:
+        k = n.split("（")[0]
+        cnt[k] = cnt.get(k, 0) + 1
+    rows = [["器具", "台数", "仕様"]] + [[k, str(v), f"{el['cct']}K・全カットオフ・人感" + ("・H600" if k == "ボラード" else "")] for k, v in cnt.items()]
+    sh.text("外構照明の器具", (222, y - 6), 2.8, "A-TEXT", paper=True)
+    sh.table(222, y - 9, [60, 16, 108], rows, row_h=5.0, h=1.9)
     return sh
 
 
