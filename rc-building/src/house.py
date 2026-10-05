@@ -550,6 +550,11 @@ class House:
             self.boxes.append(Box(*r[:2], self.fgl - 400, *r[2:], self.garbage_screen_top, "wall", level="EXT", tag="ゴミ置き目隠し壁"))
         self.boxes.append(Box(*self.garbage_box[:2], self.fgl, *self.garbage_box[2:], self.fgl + gb["h"],
                               "door", "door", level="EXT", tag="ゴミ収集ボックス"))
+        # 強盗対策: 門の塀に貫通型宅配ボックス（外から入れて内から取る）
+        db = self.spec["security"]["delivery_box"]
+        self.delivery_box = (db["x"][0], y_g - db["d"] / 2 + self.fence_t / 2, db["x"][1], y_g + db["d"] / 2 + self.fence_t / 2)
+        self.boxes.append(Box(*self.delivery_box[:2], self.fgl + 400, *self.delivery_box[2:], self.fgl + 1300, "door", "door",
+                              level="EXT", tag="宅配ボックス"))
         # 車両盗難対策: 車両門扉の内側に電動昇降ボラード
         vs = self.spec["vehicle_security"]["bollards"]
         gv0, gv1 = ex["gate_vehicle_x"]

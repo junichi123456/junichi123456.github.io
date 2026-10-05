@@ -476,7 +476,7 @@ def floor_plan(h, floor, number):
                   ("t", "ジム床: 積載荷重 5,000N/m²（提案）・浮き床。天井は直天井（CH 約2,900）を推奨"),
                   ("t", "ジムの窓: 外部扉を廃止し、窓は天井際の FIX 高窓（窓台 FL+2,000、防犯合わせガラス・トリプル Low-E）に集約"),
                   ("t", "防音: ジムは浮き床＋遮音ドア Ts-35、機械室・WIC を緩衝帯として居室Aと分離。真上は2階シアター（騒音ゾーンを上下に集約）"),
-                  ("t", "排煙: LDK・ジム・居室Aは機械排煙（令126条の3）。窓は全窓 FIX の樹脂サッシ・Low-E トリプル（UVカット合わせ、1階は防犯 CP 兼用）。南・東・西は外付け電動スクリーン（M-03）")]
+                  ("t", "排煙: LDK・ジム・居室Aは機械排煙（令126条の3）。窓は全窓 FIX の樹脂サッシ・Low-E トリプル（UVカット防犯合わせ CP、全窓）。南・東・西は外付け電動スクリーン（M-03）")]
     else:
         notes += [("t", "回遊③: ホール→図書室→南廊下→ホール。回遊④: ホール→洗面→階段2ホール→図書室→ホール"),
                   ("t", "窓: 全窓 FIX（樹脂サッシ・Low-E トリプル・UVカット合わせガラス、Uw≦0.90）。南・東・西は外付け電動スクリーン（M-03）。排煙は各居室の天井排煙口による機械排煙（A-10 参照）"),
@@ -825,7 +825,7 @@ def openings_smoke_sheet(h, number):
     y2 = sh.table(190, y2 - 9, [32, 80, 96], rows, row_h=5.0, h=2.0)
     notes = [("h", "窓の仕様（全窓 FIX）"),
              ("t", f"枠: 樹脂サッシ、ガラス: 全窓 Low-E トリプル（アルゴン）＋室外側 UVカット合わせガラス（紫外線約99%カット）、Uw≦{HL.U_WIN:.2f} W/m²K。南・東・西は外付け電動スクリーン（M-03）"),
-             ("t", "1階: 外側を防犯合わせガラス（CP 認定品）。2階: 合わせガラス。窓台: 居室 FL+1,000、ジム FL+2,000"),
+             ("t", "全窓（1・2階）: 外側を防犯合わせガラス（CP 認定品）。窓台: 居室 FL+1,000、ジム FL+2,000"),
              ("t", "換気は全館空調・全熱交換（窓に依存しない）。排煙時は機械室の給気ダンパーが連動して開く"),
              ("t", "排煙機: 西・東系統の各機械室に 120m³/分×1台。排煙口は各居室の天井、手動開放装置は床から0.8〜1.5m。予備電源は蓄電池（駐車場PV と連携、30分以上）")]
     side_panel(sh, 190, y2 - 6, notes, width=210)
@@ -1024,7 +1024,7 @@ def glazing_uv_sheet(h, number):
     sh.text("屋外", Q(-60, 430), 2.2, "A-TEXT")
     sh.text("室内", Q(390, 430), 2.2, "A-TEXT")
     notes = [("h", "紫外線対策の考え方"),
-             ("t", "① ガラス: 全窓の室外側を UVカット中間膜の合わせガラスとし、紫外線を約99%止める（家具・床の退色、肌への影響を抑える）。1階は防犯合わせガラス（CP）を兼ねる"),
+             ("t", "① ガラス: 全窓の室外側を UVカット中間膜の合わせガラスとし、紫外線を約99%止める（家具・床の退色、肌への影響を抑える）。1・2階とも防犯合わせガラス（CP）を兼ねる"),
              ("t", "② 外付け電動スクリーン（ZIP型）: 南・東・西の窓は、日射と紫外線をガラスの外で止める。羽根（スラット）がなく、ほこりが溜まらず清掃不要に近い。夏（5〜9月）は日射センサーで自動降下、冬は上げて日射を取り込む。強風時は自動で巻き上げる"),
              ("t", "③ Low-E の使い分け: 南・北は日射取得型で冬の暖房を助け、夏の南面はスクリーンで遮る。東・西は低い朝夕日を防ぐ遮熱型"),
              ("t", "④ 屋外: 玄関庇（出2.0m）、ソーラーパーゴラ（被覆率70%）、カーポート屋根が、屋外の作業・乗降時の日よけになる"),
@@ -1356,6 +1356,48 @@ def gate_detail(h, number):
              ("t", f"鍵: {vs['key_box']}（リレーアタック対策）"),
              ("t", f"監視: {vs['camera']}。{vs['sensor']}。勝手口は廃止し、出入口は南の2か所に限る")]
     side_panel(sh, 250, 270, notes, width=150)
+    return sh
+
+
+def security_sheet(h, number):
+    """強盗（闇バイト型）対策: 手口ごとの評価と、敷地〜避難室までの防御の層。"""
+    import security as SC
+    sec = h.spec["security"]
+    sh = frame(h, number, "防犯計画（強盗対策）", 500)
+    t = fit(h, sh, (95, 150))
+    site_base(h, sh, t, contours=False)
+    fence_draw(h, sh, t)
+    house_outline(h, sh, t)
+    # 塀の内側のビームセンサー（塀から 0.6m 内側の破線）
+    inner = h.site.buffer(-h.fence_t - 600, join_style=2)
+    for p in iter_polygons(inner):
+        sh.pline(t.pts(p.exterior.coords), "A-DRAIN")
+    for x, y in sec["cameras"]:
+        c = t(x, y)
+        sh.rect(c[0] - 0.8 * sh.S, c[1] - 0.6 * sh.S, c[0] + 0.8 * sh.S, c[1] + 0.6 * sh.S, "A-FLOOD", lineweight=35)
+    db = h.delivery_box
+    sh.rect(*t(db[0], db[1]), *t(db[2], db[3]), "A-DOOR", lineweight=35)
+    ic = t(sec["intercom_x"], h.y_gate - 300)
+    sh.circle(ic, 0.6 * sh.S, "A-DOOR")
+    sh.text("インターホン・宅配ボックス", t(sec["intercom_x"] + 3000, h.y_gate - 2600), 1.5, "A-TEXT", "MIDDLE_LEFT")
+    for bx, by in h.bollards:
+        sh.circle(t(bx, by), 0.4 * sh.S, "A-CUT")
+    # 避難室
+    r = [r_ for r_ in h.rooms if r_.name == sec["safe_room"]][0]
+    sh.hatch_polys([sbox(*t(r.rect[0], r.rect[1]), *t(r.rect[2], r.rect[3]))], solid=True, color=1)
+    sh.text("2階 避難室（WIC）", t(r.rect[2] + 1500, (r.rect[1] + r.rect[3]) / 2), 1.6, "A-LEGAL-TEXT", "MIDDLE_LEFT")
+    sh.text("玄関（唯一の出入口・CP 防犯扉）", t(h.entrance.u1 + 4500, -1500), 1.5, "A-TEXT", "MIDDLE_LEFT")
+    sh.north_arrow(sh.P(185, 60), 6, rot=h.facade_az)
+    sh.view_title("防犯計画図", "1:500", (18, 22))
+    legend(sh, 18, 46, [("A-FLOOD", "赤外線カメラ", "line"), ("A-DRAIN", "赤外線ビームセンサー（塀の内側）", "line"),
+                        ("A-LEGAL-TEXT", "避難室", "line")])
+    rows = [["層", "対策"]] + [list(r_) for r_ in SC.LAYERS]
+    sh.text("(1) 防御の層 — 見せて諦めさせる → 入らせない → 時間をかけさせる → 知らせる → 逃げ込む", (200, 271), 2.6, "A-TEXT", paper=True)
+    y = sh.table(200, 268, [22, 186], rows, row_h=5.0, h=1.8)
+    rows = [["手口", "これまでの構成", "追加する対策", "判定"]] + [list(r_) for r_ in SC.THREATS]
+    sh.text("(2) 手口ごとの評価（これまでの構成で十分か）", (200, y - 5), 2.6, "A-TEXT", paper=True)
+    y = sh.table(200, y - 8, [38, 40, 112, 18], rows, row_h=5.0, h=1.55, pad=6.0)
+    side_panel(sh, 200, y - 5, [("h", "住まい方（設備だけでは防げない部分）")] + [("t", o) for o in SC.OPERATION], width=208)
     return sh
 
 

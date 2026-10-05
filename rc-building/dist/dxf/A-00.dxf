@@ -493,7 +493,7 @@ $SKPOLY
   9
 $TDCREATE
  40
-2461319.208472222
+2461319.2360300925
   9
 $TDUCREATE
  40
@@ -501,7 +501,7 @@ $TDUCREATE
   9
 $TDUPDATE
  40
-2461319.208472222
+2461319.2360300925
   9
 $TDUUPDATE
  40
@@ -553,7 +553,7 @@ $SPLINESEGS
   9
 $HANDSEED
   5
-173
+177
   9
 $SURFTAB1
  70
@@ -933,11 +933,11 @@ $PSTYLEMODE
   9
 $FINGERPRINTGUID
   2
-{0DAE76FF-0A15-4AA2-BC79-56282B7CA42C}
+{CC23B4A2-DDA9-400A-ACDC-5D30C7519484}
   9
 $VERSIONGUID
   2
-{7B825690-E215-40E4-90A7-70966A69C915}
+{6D4D78AF-A64D-42FD-A234-5B22AB7F4FDF}
   9
 $EXTNAMES
 290
@@ -1327,9 +1327,9 @@ ISM
   0
 CLASS
   1
-ACDBPLACEHOLDER
+LAYOUT
   2
-AcDbPlaceHolder
+AcDbLayout
   3
 ObjectDBX Classes
  90
@@ -1343,9 +1343,9 @@ ObjectDBX Classes
   0
 CLASS
   1
-LAYOUT
+ACDBPLACEHOLDER
   2
-AcDbLayout
+AcDbPlaceHolder
   3
 ObjectDBX Classes
  90
@@ -4331,7 +4331,7 @@ AcAecLayerStandard
   0
 APPID
   5
-170
+174
 330
 3
 100
@@ -4345,7 +4345,7 @@ HATCHBACKGROUNDCOLOR
   0
 APPID
   5
-171
+175
 330
 3
 100
@@ -6169,7 +6169,7 @@ JIS
 340
 8A
 342
-173
+177
 371
 13
 372
@@ -6291,7 +6291,7 @@ _CLOSEDBLANK
   0
 BLOCK_RECORD
   5
-173
+177
 330
 9
 100
@@ -6611,9 +6611,9 @@ AcDbBlockEnd
   0
 BLOCK
   5
-174
+178
 330
-173
+177
 100
 AcDbEntity
   8
@@ -6637,9 +6637,9 @@ _DOT
   0
 LINE
   5
-176
+17A
 330
-173
+177
 100
 AcDbEntity
   8
@@ -6665,9 +6665,9 @@ AcDbLine
   0
 LWPOLYLINE
   5
-177
+17B
 330
-173
+177
 100
 AcDbEntity
   8
@@ -6699,9 +6699,9 @@ AcDbPolyline
   0
 ENDBLK
   5
-175
+179
 330
-173
+177
 100
 AcDbEntity
   8
@@ -11277,7 +11277,7 @@ AcDbText
  40
 2.4
   1
-M-01
+S-04
   7
 JP
  11
@@ -11309,7 +11309,7 @@ AcDbText
  40
 2.4
   1
-室内環境・冷暖房負荷・必要発電量（概算）
+防犯計画（強盗対策）
   7
 JP
  11
@@ -11341,7 +11341,7 @@ AcDbText
  40
 2.4
   1
-—
+1:500
   7
 JP
  11
@@ -11399,7 +11399,7 @@ AcDbText
  40
 2.4
   1
-M-02
+M-01
   7
 JP
  11
@@ -11431,7 +11431,7 @@ AcDbText
  40
 2.4
   1
-建物の向きと日射取得
+室内環境・冷暖房負荷・必要発電量（概算）
   7
 JP
  11
@@ -11521,7 +11521,7 @@ AcDbText
  40
 2.4
   1
-M-03
+M-02
   7
 JP
  11
@@ -11553,7 +11553,7 @@ AcDbText
  40
 2.4
   1
-窓仕様・紫外線対策
+建物の向きと日射取得
   7
 JP
  11
@@ -11643,7 +11643,7 @@ AcDbText
  40
 2.4
   1
-I-01
+M-03
   7
 JP
  11
@@ -11675,7 +11675,7 @@ AcDbText
  40
 2.4
   1
-内装設計方針（安全・清掃性）
+窓仕様・紫外線対策
   7
 JP
  11
@@ -11765,7 +11765,7 @@ AcDbText
  40
 2.4
   1
-I-02
+I-01
   7
 JP
  11
@@ -11797,7 +11797,7 @@ AcDbText
  40
 2.4
   1
-内装仕上表
+内装設計方針（安全・清掃性）
   7
 JP
  11
@@ -11887,7 +11887,7 @@ AcDbText
  40
 2.4
   1
-E-01
+I-02
   7
 JP
  11
@@ -11919,7 +11919,7 @@ AcDbText
  40
 2.4
   1
-Wi-Fi 電波計画
+内装仕上表
   7
 JP
  11
@@ -11951,7 +11951,7 @@ AcDbText
  40
 2.4
   1
-1:200
+—
   7
 JP
  11
@@ -12009,7 +12009,7 @@ AcDbText
  40
 2.4
   1
-E-02
+E-01
   7
 JP
  11
@@ -12041,7 +12041,7 @@ AcDbText
  40
 2.4
   1
-制御・照明・掃除ロボット計画
+Wi-Fi 電波計画
   7
 JP
  11
@@ -12073,7 +12073,7 @@ AcDbText
  40
 2.4
   1
-—
+1:200
   7
 JP
  11
@@ -12131,7 +12131,7 @@ AcDbText
  40
 2.4
   1
-E-03
+E-02
   7
 JP
  11
@@ -12163,7 +12163,7 @@ AcDbText
  40
 2.4
   1
-外構照明・防虫計画図
+制御・照明・掃除ロボット計画
   7
 JP
  11
@@ -12195,7 +12195,7 @@ AcDbText
  40
 2.4
   1
-1:500
+—
   7
 JP
  11
@@ -12233,7 +12233,7 @@ AcDbPolyline
  20
 54.80000000000014
   0
-LWPOLYLINE
+TEXT
   5
 16C
 330
@@ -12241,23 +12241,31 @@ LWPOLYLINE
 100
 AcDbEntity
   8
-G-TABLE
+A-TEXT
 100
-AcDbPolyline
- 90
-2
- 70
-0
+AcDbText
  10
-236.0
+237.0
  20
-233.0
- 10
-236.0
- 20
-54.80000000000014
+51.20000000000014
+ 30
+0.0
+ 40
+2.4
+  1
+E-03
+  7
+JP
+ 11
+237.0
+ 21
+51.20000000000014
+ 31
+0.0
+100
+AcDbText
   0
-LWPOLYLINE
+TEXT
   5
 16D
 330
@@ -12265,23 +12273,31 @@ LWPOLYLINE
 100
 AcDbEntity
   8
-G-TABLE
+A-TEXT
 100
-AcDbPolyline
- 90
-2
- 70
-0
+AcDbText
  10
-256.0
+257.0
  20
-233.0
- 10
-256.0
- 20
-54.80000000000014
+51.20000000000014
+ 30
+0.0
+ 40
+2.4
+  1
+外構照明・防虫計画図
+  7
+JP
+ 11
+257.0
+ 21
+51.20000000000014
+ 31
+0.0
+100
+AcDbText
   0
-LWPOLYLINE
+TEXT
   5
 16E
 330
@@ -12289,21 +12305,29 @@ LWPOLYLINE
 100
 AcDbEntity
   8
-G-TABLE
+A-TEXT
 100
-AcDbPolyline
- 90
-2
- 70
-0
+AcDbText
  10
-368.0
+369.0
  20
-233.0
- 10
-368.0
- 20
-54.80000000000014
+51.20000000000014
+ 30
+0.0
+ 40
+2.4
+  1
+1:500
+  7
+JP
+ 11
+369.0
+ 21
+51.20000000000014
+ 31
+0.0
+100
+AcDbText
   0
 LWPOLYLINE
   5
@@ -12314,6 +12338,104 @@ LWPOLYLINE
 AcDbEntity
   8
 G-TABLE
+370
+18
+100
+AcDbPolyline
+ 90
+2
+ 70
+0
+ 10
+236.0
+ 20
+48.20000000000014
+ 10
+398.0
+ 20
+48.20000000000014
+  0
+LWPOLYLINE
+  5
+170
+330
+17
+100
+AcDbEntity
+  8
+G-TABLE
+100
+AcDbPolyline
+ 90
+2
+ 70
+0
+ 10
+236.0
+ 20
+233.0
+ 10
+236.0
+ 20
+48.20000000000014
+  0
+LWPOLYLINE
+  5
+171
+330
+17
+100
+AcDbEntity
+  8
+G-TABLE
+100
+AcDbPolyline
+ 90
+2
+ 70
+0
+ 10
+256.0
+ 20
+233.0
+ 10
+256.0
+ 20
+48.20000000000014
+  0
+LWPOLYLINE
+  5
+172
+330
+17
+100
+AcDbEntity
+  8
+G-TABLE
+100
+AcDbPolyline
+ 90
+2
+ 70
+0
+ 10
+368.0
+ 20
+233.0
+ 10
+368.0
+ 20
+48.20000000000014
+  0
+LWPOLYLINE
+  5
+173
+330
+17
+100
+AcDbEntity
+  8
+G-TABLE
 100
 AcDbPolyline
  90
@@ -12327,7 +12449,7 @@ AcDbPolyline
  10
 398.0
  20
-54.80000000000014
+48.20000000000014
   0
 ENDSEC
   0
@@ -13419,7 +13541,7 @@ CREATED_BY_EZDXF
   3
 WRITTEN_BY_EZDXF
 350
-172
+176
   0
 DICTIONARYVAR
   5
@@ -13431,7 +13553,7 @@ DictionaryVariables
 280
 0
   1
-1.4.4 @ 2026-10-05T05:00:12.697811+00:00
+1.4.4 @ 2026-10-05T05:39:53.566493+00:00
   0
 VISUALSTYLE
   5
@@ -19985,7 +20107,7 @@ strokes_ogs.tif
   0
 DICTIONARYVAR
   5
-172
+176
 330
 2D
 100
@@ -19993,7 +20115,7 @@ DictionaryVariables
 280
 0
   1
-1.4.4 @ 2026-10-05T05:00:12.721445+00:00
+1.4.4 @ 2026-10-05T05:39:53.580855+00:00
   0
 ENDSEC
   0

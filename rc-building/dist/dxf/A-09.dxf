@@ -493,7 +493,7 @@ $SKPOLY
   9
 $TDCREATE
  40
-2461319.2081944444
+2461319.235752315
   9
 $TDUCREATE
  40
@@ -501,7 +501,7 @@ $TDUCREATE
   9
 $TDUPDATE
  40
-2461319.20875
+2461319.236296296
   9
 $TDUUPDATE
  40
@@ -933,11 +933,11 @@ $PSTYLEMODE
   9
 $FINGERPRINTGUID
   2
-{BE58CC18-0FBB-48AC-9875-C29977187543}
+{A0445D44-0EA0-4047-B358-79EB3C0FA0C8}
   9
 $VERSIONGUID
   2
-{3B74CA19-A3B9-4261-8A4E-E63BF25DF628}
+{338A0422-67B8-46C1-A148-3F262314EB28}
   9
 $EXTNAMES
 290
@@ -1327,9 +1327,9 @@ ISM
   0
 CLASS
   1
-ACDBPLACEHOLDER
+LAYOUT
   2
-AcDbPlaceHolder
+AcDbLayout
   3
 ObjectDBX Classes
  90
@@ -1343,9 +1343,9 @@ ObjectDBX Classes
   0
 CLASS
   1
-LAYOUT
+ACDBPLACEHOLDER
   2
-AcDbLayout
+AcDbPlaceHolder
   3
 ObjectDBX Classes
  90
@@ -20815,7 +20815,7 @@ AcDbText
  40
 100.0
   1
-ガラス: Low-E トリプル＋UVカット合わせ・FIX
+ガラス: Low-E トリプル＋UVカット防犯合わせ（CP）・FIX
   7
 JP
  11
@@ -21209,7 +21209,7 @@ AcDbText
  40
 100.0
   1
-ガラス: Low-E トリプル＋UVカット合わせ・FIX
+ガラス: Low-E トリプル＋UVカット防犯合わせ（CP）・FIX
   7
 JP
  11
@@ -21603,7 +21603,7 @@ AcDbText
  40
 100.0
   1
-ガラス: Low-E トリプル＋UVカット合わせ・FIX
+ガラス: Low-E トリプル＋UVカット防犯合わせ（CP）・FIX
   7
 JP
  11
@@ -22391,7 +22391,7 @@ AcDbText
  40
 100.0
   1
-ガラス: Low-E トリプル＋UVカット合わせ・FIX
+ガラス: Low-E トリプル＋UVカット防犯合わせ（CP）・FIX
   7
 JP
  11
@@ -22785,7 +22785,7 @@ AcDbText
  40
 100.0
   1
-ガラス: Low-E トリプル＋UVカット合わせ・FIX
+ガラス: Low-E トリプル＋UVカット防犯合わせ（CP）・FIX
   7
 JP
  11
@@ -23179,7 +23179,7 @@ AcDbText
  40
 100.0
   1
-ガラス: Low-E トリプル＋UVカット合わせ・FIX
+ガラス: Low-E トリプル＋UVカット防犯合わせ（CP）・FIX
   7
 JP
  11
@@ -28451,7 +28451,7 @@ DictionaryVariables
 280
 0
   1
-1.4.4 @ 2026-10-05T04:59:48.592208+00:00
+1.4.4 @ 2026-10-05T05:39:29.260135+00:00
   0
 VISUALSTYLE
   5
@@ -35013,7 +35013,7 @@ DictionaryVariables
 280
 0
   1
-1.4.4 @ 2026-10-05T05:00:36.126486+00:00
+1.4.4 @ 2026-10-05T05:40:16.170587+00:00
   0
 ENDSEC
   0

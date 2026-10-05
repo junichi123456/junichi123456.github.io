@@ -493,7 +493,7 @@ $SKPOLY
   9
 $TDCREATE
  40
-2461319.208425926
+2461319.2359837964
   9
 $TDUCREATE
  40
@@ -501,7 +501,7 @@ $TDUCREATE
   9
 $TDUPDATE
  40
-2461319.2090972224
+2461319.236701389
   9
 $TDUUPDATE
  40
@@ -933,11 +933,11 @@ $PSTYLEMODE
   9
 $FINGERPRINTGUID
   2
-{E6B8E99E-32EC-45F5-A697-F37D9D50B4F6}
+{05142EFA-583F-434F-AC32-8170143FA813}
   9
 $VERSIONGUID
   2
-{B4B4B4E4-CB90-456C-8660-0402F9558952}
+{8A5F6758-11E0-4A0D-B813-606C2893FE51}
   9
 $EXTNAMES
 290
@@ -1327,9 +1327,9 @@ ISM
   0
 CLASS
   1
-ACDBPLACEHOLDER
+LAYOUT
   2
-AcDbPlaceHolder
+AcDbLayout
   3
 ObjectDBX Classes
  90
@@ -1343,9 +1343,9 @@ ObjectDBX Classes
   0
 CLASS
   1
-LAYOUT
+ACDBPLACEHOLDER
   2
-AcDbLayout
+AcDbPlaceHolder
   3
 ObjectDBX Classes
  90
@@ -11843,7 +11843,7 @@ AcDbText
  40
 2.0
   1
-外 合わせ（UVカット中間膜）6.8 + Ar16 + 4 + Ar16 + Low-E 5
+外 防犯合わせ（CP・UVカット中間膜 60mil）8.8 + Ar16 + 4 + Ar16 + Low-E 5
   7
 JP
  11
@@ -16043,7 +16043,7 @@ AcDbText
  40
 2.1
   1
-① ガラス: 全窓の室外側を UVカット中間膜の合わせガラスとし、紫外線を約99%止める（家具・床の退色、肌への影響を抑える）。1階は防犯合わ
+① ガラス: 全窓の室外側を UVカット中間膜の合わせガラスとし、紫外線を約99%止める（家具・床の退色、肌への影響を抑える）。1・2階とも防犯
   7
 JP
  11
@@ -16075,7 +16075,7 @@ AcDbText
  40
 2.1
   1
-せガラス（CP）を兼ねる
+合わせガラス（CP）を兼ねる
   7
 JP
  11
@@ -17349,7 +17349,7 @@ DictionaryVariables
 280
 0
   1
-1.4.4 @ 2026-10-05T05:00:08.265531+00:00
+1.4.4 @ 2026-10-05T05:39:49.486165+00:00
   0
 VISUALSTYLE
   5
@@ -23911,7 +23911,7 @@ DictionaryVariables
 280
 0
   1
-1.4.4 @ 2026-10-05T05:01:06.128349+00:00
+1.4.4 @ 2026-10-05T05:40:51.111259+00:00
   0
 ENDSEC
   0

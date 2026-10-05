@@ -221,14 +221,14 @@ class Sheet:
         self.text(f"S={scale_txt}", (p[0] + w + 4 * self.S, p[1]), 2.8, "A-TEXT", "BOTTOM_LEFT")
 
     # ------------------------------------------------------------- tables
-    def table(self, x, y, cols, rows, row_h=6.0, h=2.2, header=True, layer="G-TABLE"):
+    def table(self, x, y, cols, rows, row_h=6.0, h=2.2, header=True, layer="G-TABLE", pad=2.0):
         """用紙座標 (x, y)=左上。cols: 列幅リスト。rows: 文字列の 2 次元リスト。
         長い文字列は列幅で折り返し、行高を自動拡張する。戻り値: 下端 y。"""
         cy = y
         total_w = sum(cols)
         self.pline([self.P(x, y), self.P(x + total_w, y)], layer, lineweight=35)
         for ri, row in enumerate(rows):
-            wrapped = [_wrap(str(c), w - 2.0, h) for c, w in zip(row, cols)]
+            wrapped = [_wrap(str(c), w - pad, h) for c, w in zip(row, cols)]
             n = max(len(wl) for wl in wrapped)
             rh = max(row_h, n * h * 1.45 + 1.8)
             cx = x
