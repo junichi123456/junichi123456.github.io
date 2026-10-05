@@ -46,7 +46,7 @@ def main():
         hs.openings_smoke_sheet(h, "A-10"),
     ]
     body += legal_sheets(h, 11, rows)
-    body += [hs.wall_plan(h, "S-01", wall_rows), hs.details(h, "S-02"), hs.seismic_sheet(h, "S-03"), hs.security_sheet(h, "S-04"), hs.energy_sheet(h, "M-01"), hs.orientation_sheet(h, "M-02"), hs.glazing_uv_sheet(h, "M-03"), hs.interior_policy_sheet(h, "I-01"), hs.finish_sheet(h, "I-02"), hs.wifi_sheet(h, "E-01"), hs.control_sheet(h, "E-02"), hs.insect_sheet(h, "E-03")]
+    body += [hs.wall_plan(h, "S-01", wall_rows), hs.details(h, "S-02"), hs.seismic_sheet(h, "S-03"), hs.security_sheet(h, "S-04"), hs.energy_sheet(h, "M-01"), hs.orientation_sheet(h, "M-02"), hs.glazing_uv_sheet(h, "M-03"), hs.lifestyle_sheet(h, "M-04"), hs.interior_policy_sheet(h, "I-01"), hs.finish_sheet(h, "I-02"), hs.wifi_sheet(h, "E-01"), hs.control_sheet(h, "E-02"), hs.insect_sheet(h, "E-03")]
     dl = [(s.number, s.title, s.scale_label) for s in body]
     cover = hs.cover(h, [("A-00", "表紙・図面リスト・計画概要", "—")] + dl, sm)
     sheets = [cover] + body

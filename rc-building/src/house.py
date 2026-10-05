@@ -585,12 +585,20 @@ class House:
             garden = garden.difference(Polygon([(b[0], b[1]), (b[2], b[1]), (b[2], b[3]), (b[0], b[3])]))
         self.dotcon_garden = garden.intersection(site.buffer(-self.fence_t))
         self.trench = []
+        # 日なたのプランター菜園（v4.13）: 脚付きプランターを Dotcon+ の上に
+        fm = self.spec["farm"]
+        fx0, fy0, fx1, fy1 = self.farm = tuple(fm["rect"])
+        aisle = ((fy1 - fy0) - fm["rows"] * fm["row_w"]) / (fm["rows"] + 1)
+        self.planters = [(fx0 + 500, fy0 + aisle + k * (fm["row_w"] + aisle), fx1 - 500, fy0 + aisle + k * (fm["row_w"] + aisle) + fm["row_w"])
+                         for k in range(fm["rows"])]
+        self.dotcon_farm = Polygon([(fx0, fy0), (fx1, fy0), (fx1, fy1), (fx0, fy1)])
         self.infil_pits = [(11000, -16000)]
         # 塀の排水口（フラップ弁）＝ 低い位置
         self.flap = [(-33200, -600), (23800, y_g)]
-        area = (self.dotcon.area + self.dotcon_garden.area) / 1e6
+        area = (self.dotcon.area + self.dotcon_garden.area + self.dotcon_farm.area) / 1e6
         self.ext_storage = dict(
-            dotcon_area=area, dotcon_area_parking=self.dotcon.area / 1e6, dotcon_area_garden=self.dotcon_garden.area / 1e6,
+            dotcon_area=area, dotcon_area_parking=self.dotcon.area / 1e6,
+            dotcon_area_garden=(self.dotcon_garden.area + self.dotcon_farm.area) / 1e6,
             dotcon_l=area * ex["dotcon_storage_l_per_m2"],
             tank_m3=ex["retention_tank_m3"])
 

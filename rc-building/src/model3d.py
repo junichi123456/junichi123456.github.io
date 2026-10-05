@@ -103,6 +103,12 @@ def export_glb(h, path):
         m = trimesh.creation.box(extents=[(b[2] - b[0]) * S, (b[3] - b[1]) * S, 0.25])
         m.apply_translation([(b[0] + b[2]) / 2 * S, (b[1] + b[3]) / 2 * S, (zb + 125) * S])
         parts[("菜園", "-", (0.45, 0.33, 0.20, 1.0))].append(m)
+    fm = h.spec["farm"]                                                  # 日なたのプランター菜園
+    parts[("外構（Dotcon+舗装）", "-", (0.62, 0.66, 0.60, 1.0))].append(_prism(poly_m(h.dotcon_farm.exterior.coords), (h.fgl - 150) * S, (h.fgl + 20) * S))
+    for b in h.planters:
+        m = trimesh.creation.box(extents=[(b[2] - b[0]) * S, (b[3] - b[1]) * S, fm["planter_h"] * S])
+        m.apply_translation([(b[0] + b[2]) / 2 * S, (b[1] + b[3]) / 2 * S, (h.fgl + fm["leg"] + fm["planter_h"] / 2) * S])
+        parts[("菜園", "-", (0.45, 0.33, 0.20, 1.0))].append(m)
     for p in getattr(h.dotcon_garden, "geoms", [h.dotcon_garden]):      # 菜園まわりの Dotcon+
         parts[("外構（Dotcon+舗装）", "-", (0.62, 0.66, 0.60, 1.0))].append(_prism(poly_m(p.exterior.coords) if not p.interiors else
                                                                              Polygon([(x * S, y * S) for x, y in p.exterior.coords],

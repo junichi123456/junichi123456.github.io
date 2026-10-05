@@ -493,7 +493,7 @@ $SKPOLY
   9
 $TDCREATE
  40
-2461319.2359837964
+2461319.249965278
   9
 $TDUCREATE
  40
@@ -501,7 +501,7 @@ $TDUCREATE
   9
 $TDUPDATE
  40
-2461319.236701389
+2461319.250752315
   9
 $TDUUPDATE
  40
@@ -933,11 +933,11 @@ $PSTYLEMODE
   9
 $FINGERPRINTGUID
   2
-{05142EFA-583F-434F-AC32-8170143FA813}
+{41BF7D37-1A7A-4C7D-8FA3-99B80CF9148F}
   9
 $VERSIONGUID
   2
-{8A5F6758-11E0-4A0D-B813-606C2893FE51}
+{934A2C28-95A8-4E13-926E-1B03F88423F0}
   9
 $EXTNAMES
 290
@@ -1327,9 +1327,9 @@ ISM
   0
 CLASS
   1
-LAYOUT
+ACDBPLACEHOLDER
   2
-AcDbLayout
+AcDbPlaceHolder
   3
 ObjectDBX Classes
  90
@@ -1343,9 +1343,9 @@ ObjectDBX Classes
   0
 CLASS
   1
-ACDBPLACEHOLDER
+LAYOUT
   2
-AcDbPlaceHolder
+AcDbLayout
   3
 ObjectDBX Classes
  90
@@ -12145,7 +12145,7 @@ AcDbText
  40
 2.0
   1
-外付け電動スクリーン（ZIP型・両側レールで生地を保持・日射/風センサー連動）。南・東・西面の窓 11か所
+外付け電動スクリーン（ZIP型・両側レールで生地を保持・日射/風センサー連動、寝室は完全遮光の生地）。南
   7
 JP
  11
@@ -12177,7 +12177,7 @@ AcDbText
  40
 2.0
   1
-、5〜9月は日射センサーで自動降下（遮蔽係数 0.15）
+・東・西面の窓 11か所、5〜9月は日射センサーで自動降下（遮蔽係数 0.15）
   7
 JP
  11
@@ -17349,7 +17349,7 @@ DictionaryVariables
 280
 0
   1
-1.4.4 @ 2026-10-05T05:39:49.486165+00:00
+1.4.4 @ 2026-10-05T05:59:57.771434+00:00
   0
 VISUALSTYLE
   5
@@ -23911,7 +23911,7 @@ DictionaryVariables
 280
 0
   1
-1.4.4 @ 2026-10-05T05:40:51.111259+00:00
+1.4.4 @ 2026-10-05T06:01:05.380437+00:00
   0
 ENDSEC
   0

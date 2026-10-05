@@ -294,6 +294,12 @@ def exterior_plan(h, number):
     # 舗装
     sh.hatch_polys([Polygon(t.pts(h.dotcon.exterior.coords))], pattern="NET", spacing=0.9, layer="A-PAVE")
     sh.pline(t.pts(h.dotcon.exterior.coords), "A-PAVE", closed=True)
+    fr = h.farm                                      # 日なたのプランター菜園（Dotcon+ の上）
+    sh.hatch_polys([sbox(*t(fr[0], fr[1]), *t(fr[2], fr[3]))], pattern="NET", spacing=0.9, layer="A-PAVE")
+    sh.rect(*t(fr[0], fr[1]), *t(fr[2], fr[3]), "A-PAVE")
+    for pl in h.planters:
+        sh.rect(*t(pl[0], pl[1]), *t(pl[2], pl[3]), "A-VIS", lineweight=25)
+    sh.text("日なたのプランター菜園", t(fr[2] + 600, (fr[1] + fr[3]) / 2), 1.6, "A-TEXT", "MIDDLE_LEFT")
     for p in iter_polygons(h.dotcon_garden):          # 菜園まわりの Dotcon+（通路・北と西の帯）
         sh.hatch_polys([Polygon(t.pts(p.exterior.coords), [t.pts(r.coords) for r in p.interiors])], pattern="NET", spacing=0.9, layer="A-PAVE")
         sh.pline(t.pts(p.exterior.coords), "A-PAVE", closed=True)
@@ -1398,6 +1404,64 @@ def security_sheet(h, number):
     sh.text("(2) 手口ごとの評価（これまでの構成で十分か）", (200, y - 5), 2.6, "A-TEXT", paper=True)
     y = sh.table(200, y - 8, [38, 40, 112, 18], rows, row_h=5.0, h=1.55, pad=6.0)
     side_panel(sh, 200, y - 5, [("h", "住まい方（設備だけでは防げない部分）")] + [("t", o) for o in SC.OPERATION], width=208)
+    return sh
+
+
+def lifestyle_sheet(h, number):
+    """Blueprint 型の暮らしへの対応: 寝室の換気（1部屋1人）、睡眠、水、日なたのプランター菜園。"""
+    import lifestyle as LS
+    ls, fm = h.spec["lifestyle"], h.spec["farm"]
+    sh = frame(h, number, "暮らし方への対応（睡眠・空気・水・菜園）", 1, label="—")
+    sh.text("暮らし方への対応 — 睡眠・空気・水・食（菜園）・運動・測定（寝室は1部屋に1人）", (12, 280), 3.6, "A-TEXT", paper=True)
+    bv = LS.bedroom_ventilation(h)
+    rows = [["寝室", "階", "容積", "基本換気 0.5回/h", "就寝中 CO2", "計画換気", "就寝中 CO2"]]
+    for r in bv["rows"]:
+        rows.append([r["name"], r["floor"], f"{r['V']:.0f}m³", f"{r['q0']:.0f}m³/h", f"{r['c_base']:,.0f}ppm",
+                     f"{r['q']:.0f}m³/h（{r['ach']:.2f}回/h）", f"{r['c_plan']:,.0f}ppm"])
+    sh.text(f"(1) 寝室の空気 — 就寝中の CO2 を {ls['co2_target']}ppm 以下に（1人 {ls['co2_sleep_m3h'] * 1000:.0f}L/h、外気 {ls['co2_outdoor']}ppm）", (12, 271), 2.8, "A-TEXT", paper=True)
+    y = sh.table(12, 268, [22, 10, 18, 30, 24, 42, 24], rows, row_h=5.0, h=1.9)
+    side_panel(sh, 12, y - 4, [
+        ("t", f"寝室ごとに CO2 センサーで換気量を自動で増やす（需要制御）。必要量は1人 約{bv['need']:.0f}m³/h。増える換気は合計 約{bv['dq']:.0f}m³/h で、"
+              f"全熱交換で回収するため冷暖房の増加は年 約{bv['extra_kwh']:,.0f}kWh"),
+        ("t", ls["filter"])], width=180)
+    sp = [("睡眠", f"{ls['blackout']}。{ls['bedroom_setpoint']}。夜（{ls['night'][0]}〜{ls['night'][1]}時）は照明 2200K・10% 以下、寝室の Wi-Fi AP は表示灯を消し電波を止める"),
+          ("水", ls["water"]),
+          ("運動・測定", ls["measure"]),
+          ("温冷浴", "サウナは設けない（施主判断）")]
+    sh.text("(2) 睡眠・水・測定", (12, y - 26), 2.8, "A-TEXT", paper=True)
+    y = sh.table(12, y - 29, [24, 158], [["項目", "計画"]] + [list(r) for r in sp], row_h=5.0, h=1.9, pad=6.0)
+    # 菜園
+    fs = LS.farm_sun(h)
+    rows = [["場所", "面積", "直達日射の影損失（年）", "12月", "6月"],
+            ["日なたのプランター菜園（建物の南）", f"植付 {fs['area']:.1f}m²", f"{fs['farm']['direct_loss'] * 100:.1f}%",
+             f"{fs['farm']['by_month'][12] * 100:.0f}%", f"{fs['farm']['by_month'][6] * 100:.0f}%"],
+            ["パーゴラの下（パネル被覆70%）", "—", f"約{fs['under_pergola'] * 100:.0f}%（半日陰）", "—", "—"]]
+    sh.text("(3) 菜園 — 基本はプランター、日当たりで作物を分ける", (200, 271), 2.8, "A-TEXT", paper=True)
+    y2 = sh.table(200, 268, [62, 26, 46, 22, 22], rows, row_h=5.0, h=1.9)
+    y2 = sh.table(200, y2 - 4, [40, 138], [["場所", "向く作物（家庭菜園で育てられるもの）"]] + [list(r) for r in LS.CROPS], row_h=5.0, h=1.9, pad=6.0)
+    # プランターの断面（模式図）
+    sh.text("(4) プランターと床（模式図 1:20）— 床を傷めない置き方", (200, y2 - 6), 2.8, "A-TEXT", paper=True)
+    k = 1 / 20.0
+    for n, (x0p, title, slab) in enumerate(((210, "標準: Dotcon+ の上に脚付きプランター", False), (310, "将来: RC 土間（基礎）の上の農場", True))):
+        by = y2 - 50
+
+        def Q(x, z, x0p=x0p, by=by):
+            return sh.P(x0p + x * k, by + z * k)
+        base = sbox(*Q(0, -150), *Q(1500, 0))
+        sh.hatch_polys([base], pattern="ANSI31" if slab else "NET", spacing=0.8, layer="A-PAVE")
+        sh.rect(*Q(0, -150), *Q(1500, 0), "A-CUT", lineweight=35)
+        for xl in (250, 1150):
+            sh.rect(*Q(xl, 0), *Q(xl + 60, fm["leg"]), "A-VIS")
+        sh.rect(*Q(200, fm["leg"]), *Q(1300, fm["leg"] + fm["planter_h"]), "A-VIS", lineweight=35)
+        sh.rect(*Q(240, fm["leg"] + 60), *Q(1260, fm["leg"] + fm["planter_h"] - 80), "A-HIDDEN")
+        sh.text(title, (x0p, by - 13), 2.0, "A-TEXT", paper=True)
+        sh.text(f"脚で {fm['leg']}mm 浮かせる（土・水が床に触れない）", (x0p, by - 17), 1.7, "A-TEXT", paper=True)
+        sh.text("Dotcon+（透水・水が溜まらない）" if not slab else "RC 土間 t150・勾配1/100・吸水防止材", (x0p, by - 21), 1.7, "A-TEXT", paper=True)
+    side_panel(sh, 200, y2 - 80, [("h", "床（基礎）の劣化を抑える考え方"),
+        ("t", "土・肥料・水を床に直接触れさせない（脚で浮かせ、受け皿は置かない）。コンクリートを傷めるのは、長く湿った状態と肥料の酸・塩分、根の侵入"),
+        ("t", f"将来 RC 土間の上を農場にする場合: {fm['slab_option']}"),
+        ("t", "受け皿・水たまりをつくらない（蚊の発生を防ぐ、E-03）。プランターは底から排水し、水は Dotcon+ に浸透させる"),
+        ("t", "土は購入した培養土を使う（旧店舗跡地の土は検査するまで使わない）")], width=205)
     return sh
 
 

@@ -202,6 +202,14 @@ def checks(h):
     vs_ = s["vehicle_security"]
     add("ブリーフ", "車両盗難対策", "施主指示（v4.10）", "車両の盗難を防ぐ",
         f"電動スライド門扉（施錠・こじ開け検知）＋内側の電動昇降ボラード{len(h.bollards)}本、前向き駐車、電波遮断キーボックス（リレーアタック対策）、赤外線カメラ・ビームセンサー → bot 通知", OK)
+    import lifestyle as LS
+    bv = LS.bedroom_ventilation(h)
+    add("ブリーフ", "寝室の空気（1部屋1人）", "施主指示（v4.13）", f"就寝中の CO2 {s['lifestyle']['co2_target']}ppm 以下",
+        "・".join(f"{r['name']} {r['c_plan']:,.0f}ppm" for r in bv["rows"]) + f"（CO2 センサーで換気量を自動調整、冷暖房増 年約{bv['extra_kwh']:,.0f}kWh）",
+        judge(all(r["c_plan"] <= s["lifestyle"]["co2_target"] + 1 for r in bv["rows"])))
+    fs = LS.farm_sun(h)
+    add("ブリーフ", "菜園（プランター）", "施主指示（v4.13）", "家庭菜園で育つ野菜をプランターで。床（基礎）の劣化を抑える",
+        f"日なたのプランター菜園 植付{fs['area']:.1f}m²（影損失 年{fs['farm']['direct_loss'] * 100:.1f}%）を Dotcon+ の上に脚付きで設置。パーゴラ下は半日陰の作物", OK)
     import security as SC
     add("ブリーフ", "強盗（闇バイト型）対策", "施主指示（v4.12）", "侵入・押し入り強盗への対策強化",
         f"手口{len(SC.THREATS)}項目を評価し対策を追加（S-04）: 門のインターホンと貫通型宅配ボックス、忍び返し、全窓 CP 防犯合わせ、玄関 CP 防犯扉・2ロック、"
