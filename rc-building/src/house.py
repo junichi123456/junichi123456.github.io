@@ -532,9 +532,13 @@ class House:
         gb, gs = ex["garbage_box"], ex["garbage_screen"]
         west = LineString([(-1e6, y_g - gb["d"] / 2), (1e6, y_g - gb["d"] / 2)]).intersection(site)
         x_w = min(c[0] for g in getattr(west, "geoms", [west]) for c in g.coords) + self.fence_t + gb["gap"]
-        by1 = y_g - gb["gap"]
-        self.garbage_box = (x_w, by1 - gb["d"], x_w + gb["w"], by1)
         ys = gs["y"]
+        if "south_gap" in gb:                 # 目隠し壁の北面から south_gap 離して置く（南寄せ）
+            by0 = ys + gs["t"] + gb["south_gap"]
+            self.garbage_box = (x_w, by0, x_w + gb["w"], by0 + gb["d"])
+        else:
+            by1 = y_g - gb["gap"]
+            self.garbage_box = (x_w, by1 - gb["d"], x_w + gb["w"], by1)
         wall_w = LineString([(-1e6, ys), (1e6, ys)]).intersection(site)
         xw0 = min(c[0] for g in getattr(wall_w, "geoms", [wall_w]) for c in g.coords) + self.fence_t / 2
         self.garbage_screen = (xw0, ys, gs["x_end"], ys + gs["t"])

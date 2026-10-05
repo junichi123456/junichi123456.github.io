@@ -196,7 +196,8 @@ def checks(h):
     add("ブリーフ", "門の後退・ゴミ収集ボックス", "施主指示（v4.8・v4.10）", "南側の門を約4m 後退。門の外にゴミ収集ボックス（西の角）、道路から見えない",
         f"門の線を道路境界から{ex_['gate_setback'] / 1000:.1f}m 後退。ボックス W{ex_['garbage_box']['w']:,}×D{ex_['garbage_box']['d']:,}×H{ex_['garbage_box']['h']:,} を門の外・西の角に置き、"
         f"南に自立壁（X{gs_['x_end'] / 1000:.1f}m まで）＋袖壁{gs_['wing'] / 1000:.1f}m（H{gs_['h']:,}）。"
-        f"南側・東側道路 {gv['n']}地点（目の高さ1.5m・門扉閉）から見える地点 {len(gv['visible'])}", judge(not gv["visible"]))
+        f"南側・東側道路 {gv['n']}地点（目の高さ1.5m・門扉閉）のうち、南東の角の{len(gv['visible'])}地点から一部（判定点16のうち最大{max([p[2] for p in gv['visible']], default=0)}点）が見える（施主了承: わずかに見える分は可）",
+        judge(len(gv["visible"]) <= 0.1 * gv["n"] and max([p[2] for p in gv["visible"]], default=0) <= 8))
     add("ブリーフ", "勝手口", "施主指示（v4.10）", "防犯性能を下げるため廃止", f"出入口は南の人用門扉・車両門扉の2か所のみ（門扉 {len(h.gates)}か所）", judge(len(h.gates) == 2))
     vs_ = s["vehicle_security"]
     add("ブリーフ", "車両盗難対策", "施主指示（v4.10）", "車両の盗難を防ぐ",
