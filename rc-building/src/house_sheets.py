@@ -742,7 +742,7 @@ def details(h, number):
     sh.dim((x + 2900, y), (x + 2900, y + 600), (x + 2900, y), 90)
     sh.text("着脱式止水板", (x, y + 300), 2.0, "A-TEXT", "MIDDLE_CENTER")
     sh.text("(4) 車両門扉部 着脱式止水板 H600（立面）S=1:30", P(25, 278), 3.0, "A-TEXT")
-    sh.text("車両門扉 W5,000・人用 W1,200・勝手口 W1,000。止水板は門扉の近くに保管", P(25, 272), 1.9, "A-TEXT")
+    sh.text("車両門扉 W5,000・人用 W1,200（勝手口なし）。止水板は門扉の近くに保管", P(25, 272), 1.9, "A-TEXT")
     side_panel(sh, 250, 270, [("h", "特記"),
                               ("t", "RC塀は令62条の8（補強コンクリートブロック造の塀）の対象外。風圧力・地震力に対する構造計算で安全を確認する"),
                               ("t", "東側の坂道沿いで塀が道路との高低差（2m超）を受ける区間は、擁壁として工作物確認申請の対象（令138条）"),
@@ -1309,12 +1309,13 @@ def gate_detail(h, number):
     sh.line(t(x0, y1), t(x1, y0), "A-DOOR")
     sh.text("ゴミ収集ボックス", t((x0 + x1) / 2, y1 + 450), 2.0, "A-TEXT", "MIDDLE_CENTER")
     # 道路からの視線（ボックスの角へ）。壁に当たる所で止める
-    scr = [sbox(*r) for r in h.garbage_screens]
+    scr = [sbox(*r) for r in h.garbage_screens] + [ln.buffer(h.fence_t) for ln in h.fence_lines]   # 視線は目隠し壁か塀で止まる
     for vx, vy in [(7145, road[0][1] - 1500), (10000, road[0][1] - 1500), (14000, road[0][1] - 1500), (19000, road[0][1] - 1500), (23932, -32403)]:
         for tx in (x0, x1):
             ln = LineString([(vx, vy), (tx, y0)])
             hits = [ln.intersection(s_) for s_ in scr]
-            ds = [ln.project(Point(g.coords[0])) for g in hits if not g.is_empty]
+            ds = [min(ln.project(Point(c)) for g_ in getattr(g, "geoms", [g]) for c in (g_.exterior.coords if g_.geom_type == "Polygon" else g_.coords))
+                  for g in hits if not g.is_empty]
             end = ln.interpolate(min(ds)) if ds else Point(tx, y0)
             sh.line(t(vx, vy), t(end.x, end.y), "A-FLOOD")
         sh.circle(t(vx, vy), 0.8 * sh.S, "A-FLOOD")
@@ -1323,18 +1324,35 @@ def gate_detail(h, number):
     # 寸法
     vdim(sh, t, [road[0][1], h.y_gate], 26500)
     sh.text(f"門の後退 {ex['gate_setback'] / 1000:.1f}m", t(26900, (road[0][1] + h.y_gate) / 2), 1.8, "A-TEXT", "MIDDLE_LEFT")
-    w0 = h.garbage_screen
+    w0, wg = h.garbage_screens[0], h.garbage_screens[-1]
     hdim(sh, t, [w0[0], x0, x1, w0[2]], w0[1] - 900)
-    vdim(sh, t, [w0[3], y0, y1, h.y_gate], x1 + 4200)
+    vdim(sh, t, [w0[1], w0[3], wg[3], h.y_gate], w0[2] + 900)
+    sh.text(f"出入口 {(h.y_gate - wg[3]) / 1000:.2f}m", t(w0[2] + 1500, (wg[3] + h.y_gate) / 2), 1.6, "A-TEXT", "MIDDLE_LEFT")
     hdim(sh, t, [h.gates[1][1][0], h.gates[1][2][0], h.gates[0][1][0], h.gates[0][2][0]], h.y_gate + 1800)
+    # 車両盗難対策: 電動昇降ボラード・カメラ
+    vs = h.spec["vehicle_security"]
+    for bx, by in h.bollards:
+        sh.circle(t(bx, by), vs["bollards"]["d"] / 2, "A-CUT", lineweight=35)
+        sh.hatch_polys([Point(*t(bx, by)).buffer(vs["bollards"]["d"] / 2)], solid=True, color=8)
+    sh.text(f"電動昇降ボラード ×{len(h.bollards)}（門の内側）", t(h.bollards[-1][0] + 600, h.bollards[-1][1]), 1.8, "A-TEXT", "MIDDLE_LEFT")
+    for cx, cy, lab in [(h.gates[1][1][0] - 300, h.y_gate + 400, "CAM"), (h.gates[0][2][0] + 300, h.y_gate + 400, "CAM")]:
+        sh.rect(*t(cx - 200, cy - 150), *t(cx + 200, cy + 150), "A-FLOOD")
+        sh.text(lab, t(cx, cy + 500), 1.4, "A-FLOOD", "MIDDLE_CENTER")
     sh.view_title("門まわり平面詳細図", "1:100", (18, 22))
     notes = [("h", "計画の考え方"),
              ("t", f"南側の門（人用・車両）を道路境界から {ex['gate_setback'] / 1000:.1f}m 後退させ、門の前を車1台分の待避・ゴミ出しのスペースとする（門を開ける間、車が道路に止まらない）"),
-             ("t", f"ゴミ収集ボックス W{gb['w']:,}×D{gb['d']:,}×H{gb['h']:,} を両門扉の中間・門の外に置く。収集作業者は門を通らずに出し入れできる"),
-             ("t", f"ボックスの前 {gs['front'] / 1000:.2f}m に自立目隠し壁 L{(gs['x'][1] - gs['x'][0]) / 1000:.1f}m×H{gs['h'] / 1000:.1f}m、東端に北へ {gs['wing'] / 1000:.1f}m の袖壁（L形）。西端から回り込んで出し入れする"),
+             ("t", f"ゴミ収集ボックス W{gb['w']:,}×D{gb['d']:,}×H{gb['h']:,} を門の外・西の角（西の塀と門の塀に沿わせる）に置き、扉は東向き。収集作業者は門を通らずに出し入れできる"),
+             ("t", f"ボックスの南に自立目隠し壁（西の塀から X{gs['x_end'] / 1000:.1f}m まで）H{gs['h'] / 1000:.1f}m、東端に北へ {gs['wing'] / 1000:.1f}m の袖壁。袖壁と門の塀の間（約{(h.y_gate - h.garbage_screens[-1][3]) / 1000:.2f}m）から出し入れする"),
              ("t", "道路からは壁しか見えず、ボックスの存在はわからない（南側・東側道路、目の高さ1.5m、門扉を閉じた状態で確認）"),
              ("t", "壁は RC（独立基礎）で門・塀と同じ仕上げ。ボックスは金属製の置き型（基礎に固定しない＝建築物に当たらない想定）。中は臭気がこもらないよう上部に通気"),
-             ("t", "防虫: ボックスは密閉型・蓋付き、近くに照明を置かない（収集は日中）")]
+             ("t", "防虫: ボックスは密閉型・蓋付き、近くに照明を置かない（収集は日中）"),
+             ("t", "人用門扉は東へ移し（X12.4〜13.6m）、アプローチは門を入ってすぐ西へ寄せ、西の塀沿いを北へ進む"),
+             ("h", "車両盗難対策"),
+             ("t", f"門: {vs['gate']}"),
+             ("t", f"電動昇降ボラード {vs['bollards']['n']}本（φ{vs['bollards']['d']}・地上高{vs['bollards']['h']}）を車両門扉の内側に設け、夜間・不在時は上げる。門扉を壊されても車を出せない"),
+             ("t", f"駐車: {vs['wheel_stop']}"),
+             ("t", f"鍵: {vs['key_box']}（リレーアタック対策）"),
+             ("t", f"監視: {vs['camera']}。{vs['sensor']}。勝手口は廃止し、出入口は南の2か所に限る")]
     side_panel(sh, 250, 270, notes, width=150)
     return sh
 

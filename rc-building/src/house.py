@@ -496,11 +496,7 @@ class House:
         gate_line = LineString([(xs[0], y_g), (xs[-1], y_g)])
         gates = [("車両門扉", (ex["gate_vehicle_x"][0], y_g), (ex["gate_vehicle_x"][1], y_g)),
                  ("門扉（人）", (ex["gate_person_x"][0], y_g), (ex["gate_person_x"][1], y_g))]
-        # 東側道路の南端（地盤差の小さい位置）勝手口
-        e_edges = [e for e, c in zip(self.site_edges, self.edge_class) if c == "東側道路"]
-        Le = LineString([p for e in e_edges for p in (e[0], e[1])])
-        tot = Le.length
-        gates.append(("勝手口", Le.interpolate(tot - 9000).coords[0], Le.interpolate(tot - 8000).coords[0]))
+        # 勝手口は設けない（v4.10、防犯性能を下げるため廃止）
         self.gates = gates
         self.forecourt = Polygon([p for p in site.exterior.coords]).intersection(
             Polygon([(-1e6, -1e6), (1e6, -1e6), (1e6, y_g), (-1e6, y_g)]))
@@ -532,30 +528,36 @@ class House:
             Polygon([(-1e6, -1e6), (1e6, -1e6), (1e6, y_road + 1), (-1e6, y_road + 1)]))))
         if self.dotcon.geom_type != "Polygon":
             self.dotcon = max(getattr(self.dotcon, "geoms", [self.dotcon]), key=lambda g: g.area)
-        # ゴミ収集ボックス（門の外・人用門扉と車両門扉の中間）と、その前の自立目隠し壁
+        # ゴミ収集ボックス（門の外・西の角、v4.10）: 西の塀と門の塀に沿わせ、扉は東向き。南に目隠し壁＋東端の袖壁
         gb, gs = ex["garbage_box"], ex["garbage_screen"]
-        xm = (ex["gate_person_x"][1] + ex["gate_vehicle_x"][0]) / 2
+        west = LineString([(-1e6, y_g - gb["d"] / 2), (1e6, y_g - gb["d"] / 2)]).intersection(site)
+        x_w = min(c[0] for g in getattr(west, "geoms", [west]) for c in g.coords) + self.fence_t + gb["gap"]
         by1 = y_g - gb["gap"]
-        self.garbage_box = (xm - gb["w"] / 2, by1 - gb["d"], xm + gb["w"] / 2, by1)
-        sy1 = self.garbage_box[1] - gs["front"]
-        self.garbage_screen = (gs["x"][0], sy1 - gs["t"], gs["x"][1], sy1)
+        self.garbage_box = (x_w, by1 - gb["d"], x_w + gb["w"], by1)
+        ys = gs["y"]
+        wall_w = LineString([(-1e6, ys), (1e6, ys)]).intersection(site)
+        xw0 = min(c[0] for g in getattr(wall_w, "geoms", [wall_w]) for c in g.coords) + self.fence_t / 2
+        self.garbage_screen = (xw0, ys, gs["x_end"], ys + gs["t"])
         self.garbage_screens = [self.garbage_screen]
-        if gs.get("wing"):                    # 東端の袖壁（北へ折り返し、東寄りの斜めの視線を切る）
-            self.garbage_screens.append((gs["x"][1] - gs["t"], sy1, gs["x"][1], sy1 + gs["wing"]))
-        if gs.get("wing_w"):                  # 西端の袖壁
-            self.garbage_screens.append((gs["x"][0], sy1, gs["x"][0] + gs["t"], sy1 + gs["wing_w"]))
+        if gs.get("wing"):
+            self.garbage_screens.append((gs["x_end"] - gs["t"], ys + gs["t"], gs["x_end"], ys + gs["t"] + gs["wing"]))
         self.garbage_screen_top = self.fgl + gs["h"]
         for r in self.garbage_screens:
             self.boxes.append(Box(*r[:2], self.fgl - 400, *r[2:], self.garbage_screen_top, "wall", level="EXT", tag="ゴミ置き目隠し壁"))
         self.boxes.append(Box(*self.garbage_box[:2], self.fgl, *self.garbage_box[2:], self.fgl + gb["h"],
                               "door", "door", level="EXT", tag="ゴミ収集ボックス"))
+        # 車両盗難対策: 車両門扉の内側に電動昇降ボラード
+        vs = self.spec["vehicle_security"]["bollards"]
+        gv0, gv1 = ex["gate_vehicle_x"]
+        self.bollards = [(gv0 + (gv1 - gv0) * (k + 1) / (vs["n"] + 1), y_g + vs["setback"]) for k in range(vs["n"])]
         # アプローチ（人用門扉 → 玄関ポーチ）
         gp0 = gates[1][1]
         gp1 = gates[1][2]
         gm = ((gp0[0] + gp1[0]) / 2, (gp0[1] + gp1[1]) / 2)
         # アプローチ: 人用門扉 → カーポートの西 → 玄関の目隠し壁の東から回り込み、壁の内側で玄関階段に至る
-        self.approach_line = LineString([(gm[0], gm[1] + 200), (10600, -13000), (13100, -9000), (13100, -4300), (9100, -4300),
-                                         (9100, self.porch[1])])
+        # 人用門扉から少し北で西へ寄せ、西の塀沿いを北へ（カーポートの西）
+        self.approach_line = LineString([(gm[0], gm[1] + 200), (gm[0], y_g + 1600), (10850, y_g + 3600), (10850, -13000), (13100, -9000),
+                                         (13100, -4300), (9100, -4300), (9100, self.porch[1])])
         self.approach = self.approach_line.buffer(750, cap_style=2, join_style=2)
         self._exterior_lights(gates)
         # 雨水貯留槽（西側の庭、地下・菜園の散水に利用）

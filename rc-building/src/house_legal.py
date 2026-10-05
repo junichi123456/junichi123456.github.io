@@ -192,10 +192,15 @@ def checks(h):
     import sightshade as SS_
     ex_ = s["exterior"]
     gv = SS_.garbage_visibility(h)
-    add("ブリーフ", "門の後退・ゴミ収集ボックス", "施主指示（v4.8）", "南側の門を約4m 後退。門の外・人用門扉と車両門扉の中間にゴミ収集ボックス、道路から見えない",
-        f"門の線を道路境界から{ex_['gate_setback'] / 1000:.1f}m 後退。ボックス W{ex_['garbage_box']['w']:,}×D{ex_['garbage_box']['d']:,}×H{ex_['garbage_box']['h']:,} を両門扉の中間に置き、"
-        f"前に自立壁 L{(ex_['garbage_screen']['x'][1] - ex_['garbage_screen']['x'][0]) / 1000:.1f}m＋袖壁{ex_['garbage_screen']['wing'] / 1000:.1f}m（H{ex_['garbage_screen']['h']:,}）。"
+    gs_ = ex_["garbage_screen"]
+    add("ブリーフ", "門の後退・ゴミ収集ボックス", "施主指示（v4.8・v4.10）", "南側の門を約4m 後退。門の外にゴミ収集ボックス（西の角）、道路から見えない",
+        f"門の線を道路境界から{ex_['gate_setback'] / 1000:.1f}m 後退。ボックス W{ex_['garbage_box']['w']:,}×D{ex_['garbage_box']['d']:,}×H{ex_['garbage_box']['h']:,} を門の外・西の角に置き、"
+        f"南に自立壁（X{gs_['x_end'] / 1000:.1f}m まで）＋袖壁{gs_['wing'] / 1000:.1f}m（H{gs_['h']:,}）。"
         f"南側・東側道路 {gv['n']}地点（目の高さ1.5m・門扉閉）から見える地点 {len(gv['visible'])}", judge(not gv["visible"]))
+    add("ブリーフ", "勝手口", "施主指示（v4.10）", "防犯性能を下げるため廃止", f"出入口は南の人用門扉・車両門扉の2か所のみ（門扉 {len(h.gates)}か所）", judge(len(h.gates) == 2))
+    vs_ = s["vehicle_security"]
+    add("ブリーフ", "車両盗難対策", "施主指示（v4.10）", "車両の盗難を防ぐ",
+        f"電動スライド門扉（施錠・こじ開け検知）＋内側の電動昇降ボラード{len(h.bollards)}本、前向き駐車、電波遮断キーボックス（リレーアタック対策）、赤外線カメラ・ビームセンサー → bot 通知", OK)
     cp_ = h.carport
     add("ブリーフ", "駐車場の位置", "施主指示（v4.8）", "約8m 北へ",
         f"カーポートを 8.0m 北へ（建物南面から {(-0.245 * 1000 - cp_[3]) / 1000:.1f}m、門から {(cp_[1] - h.y_gate) / 1000:.1f}m の前面通路）。アプローチはカーポートの西を通す", OK)
