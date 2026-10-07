@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ルカリオZ軸 対面サイクル</title>
+<meta name="description" content="ポケモンチャンピオンズ シングル（レギュレーションM-C）向けにClaude Codeが組んだ構築と、ダメージ計算・構築診断のレポート">
+<style>
+:root{--bg:#f7f7f5;--fg:#1d1d1f;--sub:#5f6368;--card:#fff;--line:#dcdcd8;--accent:#2f5bd3;--g2:#d8f0dc;--g1:#eef7ef;--g0:#fbf3d9;--gx:#f8dcdc;--x4:#e5484d;--x2:#f3a5a7;--h:#bfd8ff;--z:#9bb7e8;--me:#e8eefc}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#141518;--fg:#e8e8ea;--sub:#a0a4ab;--card:#1d1f23;--line:#33363c;--accent:#8aa8ff;--g2:#1f4227;--g1:#1d3022;--g0:#3d3519;--gx:#4a2224;--x4:#b3373b;--x2:#6e3133;--h:#24406b;--z:#2f4f86;--me:#22304f}}
+:root[data-theme="dark"]{--bg:#141518;--fg:#e8e8ea;--sub:#a0a4ab;--card:#1d1f23;--line:#33363c;--accent:#8aa8ff;--g2:#1f4227;--g1:#1d3022;--g0:#3d3519;--gx:#4a2224;--x4:#b3373b;--x2:#6e3133;--h:#24406b;--z:#2f4f86;--me:#22304f}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.7 "Hiragino Sans","Noto Sans JP",system-ui,sans-serif}
+main{max-width:1080px;margin:0 auto;padding:24px 16px 64px}
+h1{font-size:1.7rem;line-height:1.3;margin:.2em 0}
+h2{font-size:1.25rem;margin:2.2em 0 .6em;padding-bottom:.3em;border-bottom:2px solid var(--line)}
+h3{font-size:1.05rem;margin:1.6em 0 .5em}
+p,li{max-width:72ch}
+.lead{color:var(--sub)}
+.sub{color:var(--sub);font-size:.85em}
+.num,.mono{font-variant-numeric:tabular-nums;font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px 16px}
+.card header{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap}
+.card h3{margin:0;font-size:1.1rem}
+.role{font-size:.8rem;color:var(--accent);font-weight:600}
+dl{display:grid;grid-template-columns:5em 1fr;gap:2px 8px;margin:10px 0;font-size:.9rem}
+dt{color:var(--sub)}dd{margin:0}
+.moves{display:grid;grid-template-columns:1fr 1fr;gap:4px;padding:0;margin:8px 0;list-style:none}
+.moves li{background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:2px 8px;font-size:.9rem}
+.card p{font-size:.88rem;margin:.4em 0 0}
+.scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+table{border-collapse:collapse;font-size:.88rem;background:var(--card)}
+th,td{border:1px solid var(--line);padding:4px 8px;text-align:left;vertical-align:top}
+thead th{background:var(--bg);position:sticky;top:0}
+.grid td{text-align:center;min-width:3.2em}
+.g2{background:var(--g2)}.g1{background:var(--g1)}.g0{background:var(--g0)}.gx{background:var(--gx)}
+.types td{text-align:center;min-width:3.4em}
+.x4{background:var(--x4);color:#fff;font-weight:700}.x2{background:var(--x2)}.h{background:var(--h)}.z{background:var(--z)}
+tr.me td{background:var(--me);font-weight:700}
+.kpi{display:flex;flex-wrap:wrap;gap:10px;margin:14px 0}
+.kpi div{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:8px 14px}
+.kpi b{display:block;font-size:1.25rem}
+.note{background:var(--card);border-left:4px solid var(--accent);padding:10px 14px;border-radius:4px}
+ol li,ul li{margin:.25em 0}
+a{color:var(--accent)}
+</style>
+</head>
+<body>
+<main>
+<p class=sub>ポケモンチャンピオンズ／シングルバトル／レギュレーションM-C（2026/9/9〜12/2）</p>
+<h1>メガルカリオZ軸 対面サイクル構築</h1>
+<p class=lead>使用率（シーズンM-6、10/5集計）の上位30体超の採用型を入力し、自作のダメージ計算機（Lv50・能力ポイント制）で全対面を計算したうえで組んだ6体と、その運用方針です。</p>
+
+<div class=kpi>
+<div><span class=sub>ルール</span><b>6→3 見せ合い</b></div>
+<div><span class=sub>ギミック</span><b>メガシンカ 1体</b></div>
+<div><span class=sub>能力ポイント</span><b>合計66／各32</b></div>
+<div><span class=sub>時間</span><b>持ち時間7分・選択45秒</b></div>
+</div>
+
+<h2>1. 前提にした環境</h2>
+<p>シングルM-6の使用率上位は ガブリアス／ボーマンダ／アシレーヌ／セグレイブ／ルカリオ／グソクムシャ／カバルドン／ブリジュラス／サーフゴー／ミミッキュ。M-Cで追加されたメガ（ボーマンダ・ガブリアスZ・ルカリオZ・セグレイブ・グソクムシャ・アブソルZ）が上位を占めています。</p>
+<ul>
+<li>メガシンカは1体のみ。テラスタル・こだわりハチマキ／メガネ・とつげきチョッキ・くろいヘドロは未実装です。</li>
+<li>調整点として、まひの行動不能は12.5%、こおりは3ターン以内に必ず解ける、時間切れは引き分けになります。没収技はブリジュラスのボディプレス・ミラーコート・メタルバースト、ガオガエンのとんぼがえり・はたきおとす、カイリュー・ゲンガーのアンコールなど。</li>
+<li>タスキ持ちが多いです（セグレイブ51%、キラフロル62%、パーモット90%、エースバーン26%）。そのため「ステロ＋先制技・連続行動」の価値が高い環境です。</li>
+</ul>
+
+<h2>2. 構築</h2>
+<div class=cards>
+{{TEAM}}
+</div>
+
+<h3>コンセプト</h3>
+<ol>
+<li><b>鋼・水妖精・地竜の三角形。</b>ルカリオ（炎・地面・格闘が弱点）をガブリアスとアシレーヌが受け、ガブの氷・竜・妖精弱点はルカリオとアシレーヌが受けます。アシレーヌの電気・毒・草弱点はガブ（電気無効・毒半減）とルカリオ（毒無効・草半減）が受けます。</li>
+<li><b>「はどうのぼうご」で物理接触環境に強いエース。</b>グソクムシャのアイアンヘッドは3割弱しか入りません。ミミッキュのじゃれつくは4割前後、ボーマンダの捨て身はタイプ等倍×半減です。ルカリオを止められるのは非接触の地面・炎・格闘だけなので、それをガブ・ロトム・ギャラドスで切ります。</li>
+<li><b>補完枠で上位メガを個別に見ます。</b>ボーマンダはギャラドスのゆきなだれ、アシレーヌのムンフォ、ミミッキュ。リザードンYはガブの岩石封じとロトム。グソクムシャとメタグロスはロトム。エースバーン・バシャーモはギャラドス。</li>
+</ol>
+
+<h2>3. 構築診断</h2>
+<h3>タイプ相性（防御）</h3>
+<div class=scroll><table class=types><thead><tr><th></th>{{HEAD}}<th>弱</th><th>耐</th></tr></thead><tbody>
+{{TYPES}}
+</tbody></table></div>
+<p class=sub>ふゆう・ひこうは地面を無効として表示。ミミッキュは化けの皮で全タイプ1回は実質無効です。</p>
+<p>弱点が2体以上重なるのは電気（アシレーヌ・ギャラドス×4）と岩（ロトム・ギャラドス）だけです。電気は地面のガブリアスが無効で、岩はルカリオ・ガブが半減するため、選出単位では穴になりにくいです。一方、エスパーとゴーストは半減以下で受けられるメンバーがいません（一貫しています）。メガゲンガーとサーフゴーにはミミッキュ・ルカリオの上から殴る手段を用意しています。</p>
+
+<h3>素早さライン</h3>
+<div class=scroll><table><thead><tr><th>実数値</th><th>ポケモン（太字=自分）</th></tr></thead><tbody>
+{{SPEED}}
+</tbody></table></div>
+<p class=sub>ルカリオZは最速帯223で、メガガブリアスZ・メガアブソルZ・ミラーとは同速です。ガブリアスは最速169で、メガリザードンY（152）とメガメタグロス（162）を抜けますが、エースバーン・メガボーマンダ（172）には抜かれます。</p>
+
+<h3>環境上位との1対1簡易判定</h3>
+<p class=sub>◎=有利（3発以上耐えて勝つ）○=勝ち △=同速・互角 ×=不利。お互いの最大打点・素早さ・タスキ・化けの皮・おにびを考慮した簡易モデルです。積み技・交代・急所・追加効果は含みません。セルにカーソルを合わせると打点が出ます。</p>
+<div class=scroll><table class=grid><thead><tr><th>順位</th><th>相手（採用率トップの型）</th><th>S</th>{{HEAD}}<th>勝ち数</th></tr></thead><tbody>
+{{GRID}}
+</tbody></table></div>
+
+<h2>4. ダメージ計算</h2>
+<p class=sub>乱数16段階・4096分率の補正チェーン・五捨五超入で計算。相手の型は使用率データの最多採用（性格・能力P・持ち物）です。</p>
+{{CALCS}}
+
+<h2>5. 選出</h2>
+<div class=scroll><table><thead><tr><th>相手の傾向</th><th>選出</th><th>狙い</th></tr></thead><tbody>
+{{PLANS}}
+</tbody></table></div>
+
+<h2>6. 立ち回りの原則</h2>
+<ol>
+<li><b>初手ガブリアス：</b>まずステルスロックを撒きます。相手がリザY・ゲンガー・ルカリオ・キラフロルなら攻撃を優先します（がんせきふうじ／じしんで確1）。タスキがあるので2行動を前提に組みます。</li>
+<li><b>ルカリオは「起点を作ってから」出します。</b>ステロ込みでタスキを潰し、相手の地面・炎・格闘技持ちを削ってから、わるだくみ1回で全抜きを狙います。+2ラスターカノンでボーマンダ・アシレーヌを確1〜確2にできます。相手がふいうち持ち（グソクムシャ・アブソルZ・ドドゲザン）でも、接触技は半減なので積み得です。</li>
+<li><b>アシレーヌのアンコール：</b>竜舞・剣舞・悪巧み・ステロ・あくびを見たら即座に打ちます。固定させた相手の前でめいそう、アリア、ムンフォと進めます。</li>
+<li><b>ヒートロトム：</b>鋼・虫・草への後出し枠です。おにびは物理アタッカー全般に打ちます（メガセグレイブのねつこうかんと炎タイプには無効）。オバヒ後は特攻ダウンを引きずるので、ボルトチェンジで引きます。</li>
+<li><b>ギャラドス：</b>相手のボーマンダとガブリアスの前に投げてゆきなだれを打ちます（後攻になると威力2倍）。速い積みアタッカーにはでんじは、受けループやカバルドンにはちょうはつを使います。</li>
+<li><b>ミミッキュ：</b>相手の高速アタッカーを化けの皮で受けてから倒す最終ストッパーです。つるぎのまいは相手が交代・積みを読める時だけ使います。</li>
+<li><b>時間切れは引き分けです。</b>受け回しに付き合わず、アンコール・ちょうはつで能動的に崩します。</li>
+</ol>
+
+<h2>7. 弱点と今後の調整候補</h2>
+<ul>
+<li><b>メガセグレイブ（ねつこうかん）：</b>おにび無効で耐久も高く、ギャラドスでは削り切れません。対策はアシレーヌとルカリオのはどうだんです。ルカリオのはどうだんはメガ相手だと乱数1発（6%）なので、ステロ込みで落とします。</li>
+<li><b>メガボーマンダの竜舞+1：</b>S258でルカリオZ（223）も抜かれます。積まれる前にアンコール、ゆきなだれ、+2ラスカで処理するか、ミミッキュの皮で受けます。</li>
+<li><b>雨・晴れの天候パ：</b>アシレーヌは晴れ下でアリアが半減します。リザY相手ではガブの選出をほぼ必須にします。</li>
+<li><b>調整候補：</b>ルカリオの「あくのはどう→しんくうは」で、ステロが撒けない試合のタスキ対策になります。アシレーヌの「アンコール→アクアジェット」で上から縛られる対面を減らせます。ギャラドスの「でんじは→パワーウィップ」でカバルドン・ラグラージを見られます。</li>
+</ul>
+
+<h2>8. 方法と出典</h2>
+<p>ルール・追加ポケモン・調整内容はGame8／GameWith、使用率と採用型はdamekei（ゲーム内バトルデータ、10/2集計）とgamewith.ai（シーズンM-6、10/5集計）を参照しました。種族値・技データはdamekeiのデータを使い、M-C追加メガの種族値はGame8の記載と照合しました。計算機と診断スクリプトは <a href="tool/">tool/</a> にあり、<code>python3 report.py</code> でこのページを再生成できます。</p>
+<p class=sub>用語：<a href="https://gamewith.jp/pokemon-champions/546449">GameWith 対戦の用語一覧</a>／<a href="https://pokedoctor.jp/glossary">ポケドクター 用語集</a>。本ページは非公式のファン制作物です。</p>
+</main>
+</body>
+</html>

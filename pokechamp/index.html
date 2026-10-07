@@ -1,0 +1,293 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ルカリオZ軸 対面サイクル</title>
+<meta name="description" content="ポケモンチャンピオンズ シングル（レギュレーションM-C）向けにClaude Codeが組んだ構築と、ダメージ計算・構築診断のレポート">
+<style>
+:root{--bg:#f7f7f5;--fg:#1d1d1f;--sub:#5f6368;--card:#fff;--line:#dcdcd8;--accent:#2f5bd3;--g2:#d8f0dc;--g1:#eef7ef;--g0:#fbf3d9;--gx:#f8dcdc;--x4:#e5484d;--x2:#f3a5a7;--h:#bfd8ff;--z:#9bb7e8;--me:#e8eefc}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#141518;--fg:#e8e8ea;--sub:#a0a4ab;--card:#1d1f23;--line:#33363c;--accent:#8aa8ff;--g2:#1f4227;--g1:#1d3022;--g0:#3d3519;--gx:#4a2224;--x4:#b3373b;--x2:#6e3133;--h:#24406b;--z:#2f4f86;--me:#22304f}}
+:root[data-theme="dark"]{--bg:#141518;--fg:#e8e8ea;--sub:#a0a4ab;--card:#1d1f23;--line:#33363c;--accent:#8aa8ff;--g2:#1f4227;--g1:#1d3022;--g0:#3d3519;--gx:#4a2224;--x4:#b3373b;--x2:#6e3133;--h:#24406b;--z:#2f4f86;--me:#22304f}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.7 "Hiragino Sans","Noto Sans JP",system-ui,sans-serif}
+main{max-width:1080px;margin:0 auto;padding:24px 16px 64px}
+h1{font-size:1.7rem;line-height:1.3;margin:.2em 0}
+h2{font-size:1.25rem;margin:2.2em 0 .6em;padding-bottom:.3em;border-bottom:2px solid var(--line)}
+h3{font-size:1.05rem;margin:1.6em 0 .5em}
+p,li{max-width:72ch}
+.lead{color:var(--sub)}
+.sub{color:var(--sub);font-size:.85em}
+.num,.mono{font-variant-numeric:tabular-nums;font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px 16px}
+.card header{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap}
+.card h3{margin:0;font-size:1.1rem}
+.role{font-size:.8rem;color:var(--accent);font-weight:600}
+dl{display:grid;grid-template-columns:5em 1fr;gap:2px 8px;margin:10px 0;font-size:.9rem}
+dt{color:var(--sub)}dd{margin:0}
+.moves{display:grid;grid-template-columns:1fr 1fr;gap:4px;padding:0;margin:8px 0;list-style:none}
+.moves li{background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:2px 8px;font-size:.9rem}
+.card p{font-size:.88rem;margin:.4em 0 0}
+.scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+table{border-collapse:collapse;font-size:.88rem;background:var(--card)}
+th,td{border:1px solid var(--line);padding:4px 8px;text-align:left;vertical-align:top}
+thead th{background:var(--bg);position:sticky;top:0}
+.grid td{text-align:center;min-width:3.2em}
+.g2{background:var(--g2)}.g1{background:var(--g1)}.g0{background:var(--g0)}.gx{background:var(--gx)}
+.types td{text-align:center;min-width:3.4em}
+.x4{background:var(--x4);color:#fff;font-weight:700}.x2{background:var(--x2)}.h{background:var(--h)}.z{background:var(--z)}
+tr.me td{background:var(--me);font-weight:700}
+.kpi{display:flex;flex-wrap:wrap;gap:10px;margin:14px 0}
+.kpi div{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:8px 14px}
+.kpi b{display:block;font-size:1.25rem}
+.note{background:var(--card);border-left:4px solid var(--accent);padding:10px 14px;border-radius:4px}
+ol li,ul li{margin:.25em 0}
+a{color:var(--accent)}
+</style>
+</head>
+<body>
+<main>
+<p class=sub>ポケモンチャンピオンズ／シングルバトル／レギュレーションM-C（2026/9/9〜12/2）</p>
+<h1>メガルカリオZ軸 対面サイクル構築</h1>
+<p class=lead>使用率（シーズンM-6、10/5集計）の上位30体超の採用型を入力し、自作のダメージ計算機（Lv50・能力ポイント制）で全対面を計算したうえで組んだ6体と、その運用方針です。</p>
+
+<div class=kpi>
+<div><span class=sub>ルール</span><b>6→3 見せ合い</b></div>
+<div><span class=sub>ギミック</span><b>メガシンカ 1体</b></div>
+<div><span class=sub>能力ポイント</span><b>合計66／各32</b></div>
+<div><span class=sub>時間</span><b>持ち時間7分・選択45秒</b></div>
+</div>
+
+<h2>1. 前提にした環境</h2>
+<p>シングルM-6の使用率上位は ガブリアス／ボーマンダ／アシレーヌ／セグレイブ／ルカリオ／グソクムシャ／カバルドン／ブリジュラス／サーフゴー／ミミッキュ。M-Cで追加されたメガ（ボーマンダ・ガブリアスZ・ルカリオZ・セグレイブ・グソクムシャ・アブソルZ）が上位を占めています。</p>
+<ul>
+<li>メガシンカは1体のみ。テラスタル・こだわりハチマキ／メガネ・とつげきチョッキ・くろいヘドロは未実装です。</li>
+<li>調整点として、まひの行動不能は12.5%、こおりは3ターン以内に必ず解ける、時間切れは引き分けになります。没収技はブリジュラスのボディプレス・ミラーコート・メタルバースト、ガオガエンのとんぼがえり・はたきおとす、カイリュー・ゲンガーのアンコールなど。</li>
+<li>タスキ持ちが多いです（セグレイブ51%、キラフロル62%、パーモット90%、エースバーン26%）。そのため「ステロ＋先制技・連続行動」の価値が高い環境です。</li>
+</ul>
+
+<h2>2. 構築</h2>
+<div class=cards>
+<article class=card><header><h3>メガルカリオZ</h3><span class=role>エース／抜きエース</span></header>
+<dl><dt>タイプ</dt><dd>かくとう・はがね</dd><dt>特性</dt><dd>はどうのぼうご</dd><dt>持ち物</dt><dd>ルカリオナイトZ</dd>
+<dt>性格</dt><dd>おくびょう</dd><dt>能力P</dt><dd>H2 C32 S32</dd><dt>実数値</dt><dd class=mono>147-108-90-216-90-223</dd></dl>
+<ul class=moves><li>わるだくみ</li><li>はどうだん</li><li>あくのはどう</li><li>ラスターカノン</li></ul><p>S151族の最速帯(実数値223)。接触技半減の「はどうのぼうご」で環境に多い物理接触アタッカー(グソクムシャ・ミミッキュ・セグレイブの氷柱/つぶて・ボーマンダの捨て身)に強く、わるだくみ1回で鋼・水・ドラゴンをまとめて縛る。</p></article>
+<article class=card><header><h3>ガブリアス</h3><span class=role>先発／ステルスロック</span></header>
+<dl><dt>タイプ</dt><dd>ドラゴン・じめん</dd><dt>特性</dt><dd>さめはだ</dd><dt>持ち物</dt><dd>きあいのタスキ</dd>
+<dt>性格</dt><dd>ようき</dd><dt>能力P</dt><dd>H2 A32 S32</dd><dt>実数値</dt><dd class=mono>185-182-115-90-105-169</dd></dl>
+<ul class=moves><li>じしん</li><li>げきりん</li><li>がんせきふうじ</li><li>ステルスロック</li></ul><p>タスキで行動保証、ステロでタスキ(セグレイブ51%・キラフロル62%・エースバーン)と化けの皮以外の削りを入れる。がんせきふうじでリザードンY確1と後続のS操作。ルカリオの地面・炎弱点を受ける。</p></article>
+<article class=card><header><h3>アシレーヌ</h3><span class=role>特殊受け／ドラゴン対策</span></header>
+<dl><dt>タイプ</dt><dd>みず・フェアリー</dd><dt>特性</dt><dd>げきりゅう</dd><dt>持ち物</dt><dd>オボンのみ</dd>
+<dt>性格</dt><dd>ひかえめ</dd><dt>能力P</dt><dd>H32 B20 C14</dd><dt>実数値</dt><dd class=mono>187-84-114-176-136-80</dd></dl>
+<ul class=moves><li>うたかたのアリア</li><li>ムーンフォース</li><li>めいそう</li><li>アンコール</li></ul><p>最大の流行枠であるボーマンダ・ガブリアス(メガZ含む)・セグレイブにタイプ有利。アンコールで積み技(竜舞・悪巧み・剣舞・ステロ)を固定して起点を作り返す。</p></article>
+<article class=card><header><h3>ヒートロトム</h3><span class=role>クッション／対鋼・虫・草</span></header>
+<dl><dt>タイプ</dt><dd>でんき・ほのお</dd><dt>特性</dt><dd>ふゆう</dd><dt>持ち物</dt><dd>たべのこし</dd>
+<dt>性格</dt><dd>ずぶとい</dd><dt>能力P</dt><dd>H32 B32 D2</dd><dt>実数値</dt><dd class=mono>157-76-174-125-129-106</dd></dl>
+<ul class=moves><li>オーバーヒート</li><li>ボルトチェンジ</li><li>おにび</li><li>いたみわけ</li></ul><p>グソクムシャ・ゴリランダー・マスカーニャ・アーマーガア・メタグロス・サーフゴーにオバヒが通る。浮遊で地面無効、おにびで物理全般を機能停止。</p></article>
+<article class=card><header><h3>ミミッキュ</h3><span class=role>行動保証ストッパー</span></header>
+<dl><dt>タイプ</dt><dd>ゴースト・フェアリー</dd><dt>特性</dt><dd>ばけのかわ</dd><dt>持ち物</dt><dd>いのちのたま</dd>
+<dt>性格</dt><dd>いじっぱり</dd><dt>能力P</dt><dd>H1 A32 B1 S32</dd><dt>実数値</dt><dd class=mono>131-156-101-63-125-148</dd></dl>
+<ul class=moves><li>じゃれつく</li><li>かげうち</li><li>つるぎのまい</li><li>シャドークロー</li></ul><p>化けの皮で1発保証。メガガブリアスZ・サザンドラ・メガゲッコウガ・アブソルZなど高速アタッカーへの切り返し。</p></article>
+<article class=card><header><h3>ギャラドス</h3><span class=role>物理受け／いかく</span></header>
+<dl><dt>タイプ</dt><dd>みず・ひこう</dd><dt>特性</dt><dd>いかく</dd><dt>持ち物</dt><dd>ゴツゴツメット</dd>
+<dt>性格</dt><dd>わんぱく</dd><dt>能力P</dt><dd>H32 A2 B32</dd><dt>実数値</dt><dd class=mono>202-147-144-72-120-101</dd></dl>
+<ul class=moves><li>たきのぼり</li><li>ゆきなだれ</li><li>でんじは</li><li>ちょうはつ</li></ul><p>いかく＋ゴツメで物理の削りを稼ぐ。ゆきなだれ(後攻威力2倍)でボーマンダ・ガブリアスを確1。炎・格闘を半減しエースバーン・バシャーモ・オオニューラを止める。</p></article>
+</div>
+
+<h3>コンセプト</h3>
+<ol>
+<li><b>鋼・水妖精・地竜の三角形。</b>ルカリオ（炎・地面・格闘が弱点）をガブリアスとアシレーヌが受け、ガブの氷・竜・妖精弱点はルカリオとアシレーヌが受けます。アシレーヌの電気・毒・草弱点はガブ（電気無効・毒半減）とルカリオ（毒無効・草半減）が受けます。</li>
+<li><b>「はどうのぼうご」で物理接触環境に強いエース。</b>グソクムシャのアイアンヘッドは3割弱しか入りません。ミミッキュのじゃれつくは4割前後、ボーマンダの捨て身はタイプ等倍×半減です。ルカリオを止められるのは非接触の地面・炎・格闘だけなので、それをガブ・ロトム・ギャラドスで切ります。</li>
+<li><b>補完枠で上位メガを個別に見ます。</b>ボーマンダはギャラドスのゆきなだれ、アシレーヌのムンフォ、ミミッキュ。リザードンYはガブの岩石封じとロトム。グソクムシャとメタグロスはロトム。エースバーン・バシャーモはギャラドス。</li>
+</ol>
+
+<h2>3. 構築診断</h2>
+<h3>タイプ相性（防御）</h3>
+<div class=scroll><table class=types><thead><tr><th></th><th>メガルカリオZ</th><th>ガブリアス</th><th>アシレーヌ</th><th>ヒートロトム</th><th>ミミッキュ</th><th>ギャラドス</th><th>弱</th><th>耐</th></tr></thead><tbody>
+<tr><th>ノーマル</th><td class="h">½</td><td class=""></td><td class=""></td><td class=""></td><td class="z">無</td><td class=""></td><td class=num>0</td><td class=num>2</td></tr>
+<tr><th>ほのお</th><td class="x2">×2</td><td class="h">½</td><td class="h">½</td><td class="h">½</td><td class=""></td><td class="h">½</td><td class=num>1</td><td class=num>4</td></tr>
+<tr><th>みず</th><td class=""></td><td class=""></td><td class="h">½</td><td class="x2">×2</td><td class=""></td><td class="h">½</td><td class=num>1</td><td class=num>2</td></tr>
+<tr><th>でんき</th><td class=""></td><td class="z">無</td><td class="x2">×2</td><td class="h">½</td><td class=""></td><td class="x4">×4</td><td class=num>2</td><td class=num>2</td></tr>
+<tr><th>くさ</th><td class="h">½</td><td class=""></td><td class="x2">×2</td><td class="h">½</td><td class=""></td><td class=""></td><td class=num>1</td><td class=num>2</td></tr>
+<tr><th>こおり</th><td class="h">½</td><td class="x4">×4</td><td class="h">½</td><td class="h">½</td><td class=""></td><td class=""></td><td class=num>1</td><td class=num>3</td></tr>
+<tr><th>かくとう</th><td class="x2">×2</td><td class=""></td><td class="h">½</td><td class=""></td><td class="z">無</td><td class="h">½</td><td class=num>1</td><td class=num>3</td></tr>
+<tr><th>どく</th><td class="z">無</td><td class="h">½</td><td class="x2">×2</td><td class=""></td><td class=""></td><td class=""></td><td class=num>1</td><td class=num>2</td></tr>
+<tr><th>じめん</th><td class="x2">×2</td><td class=""></td><td class=""></td><td class="z">無</td><td class=""></td><td class="z">無</td><td class=num>1</td><td class=num>2</td></tr>
+<tr><th>ひこう</th><td class=""></td><td class=""></td><td class=""></td><td class="h">½</td><td class=""></td><td class=""></td><td class=num>0</td><td class=num>1</td></tr>
+<tr><th>エスパー</th><td class=""></td><td class=""></td><td class=""></td><td class=""></td><td class=""></td><td class=""></td><td class=num>0</td><td class=num>0</td></tr>
+<tr><th>むし</th><td class="h">¼</td><td class=""></td><td class="h">½</td><td class="h">½</td><td class="h">¼</td><td class="h">½</td><td class=num>0</td><td class=num>5</td></tr>
+<tr><th>いわ</th><td class="h">¼</td><td class="h">½</td><td class=""></td><td class="x2">×2</td><td class=""></td><td class="x2">×2</td><td class=num>2</td><td class=num>2</td></tr>
+<tr><th>ゴースト</th><td class=""></td><td class=""></td><td class=""></td><td class=""></td><td class="x2">×2</td><td class=""></td><td class=num>1</td><td class=num>0</td></tr>
+<tr><th>ドラゴン</th><td class="h">½</td><td class="x2">×2</td><td class="z">無</td><td class=""></td><td class="z">無</td><td class=""></td><td class=num>1</td><td class=num>3</td></tr>
+<tr><th>あく</th><td class="h">½</td><td class=""></td><td class="h">½</td><td class=""></td><td class=""></td><td class=""></td><td class=num>0</td><td class=num>2</td></tr>
+<tr><th>はがね</th><td class="h">½</td><td class=""></td><td class=""></td><td class="h">¼</td><td class="x2">×2</td><td class="h">½</td><td class=num>1</td><td class=num>3</td></tr>
+<tr><th>フェアリー</th><td class=""></td><td class="x2">×2</td><td class=""></td><td class="h">½</td><td class=""></td><td class=""></td><td class=num>1</td><td class=num>1</td></tr>
+</tbody></table></div>
+<p class=sub>ふゆう・ひこうは地面を無効として表示。ミミッキュは化けの皮で全タイプ1回は実質無効です。</p>
+<p>弱点が2体以上重なるのは電気（アシレーヌ・ギャラドス×4）と岩（ロトム・ギャラドス）だけです。電気は地面のガブリアスが無効で、岩はルカリオ・ガブが半減するため、選出単位では穴になりにくいです。一方、エスパーとゴーストは半減以下で受けられるメンバーがいません（一貫しています）。メガゲンガーとサーフゴーにはミミッキュ・ルカリオの上から殴る手段を用意しています。</p>
+
+<h3>素早さライン</h3>
+<div class=scroll><table><thead><tr><th>実数値</th><th>ポケモン（太字=自分）</th></tr></thead><tbody>
+<tr class=""><td class=num>288</td><td>マスカーニャ(スカーフ)</td></tr>
+<tr class=""><td class=num>258</td><td>メガボーマンダ(竜舞+1)</td></tr>
+<tr class=""><td class=num>253</td><td>スカーフガブリアス</td></tr>
+<tr class=""><td class=num>225</td><td>サザンドラ(スカーフ)</td></tr>
+<tr class="me"><td class=num>223</td><td>メガルカリオZ</td></tr>
+<tr class=""><td class=num>223</td><td>メガルカリオＺ</td></tr>
+<tr class=""><td class=num>223</td><td>メガガブリアスZ(CS)</td></tr>
+<tr class=""><td class=num>223</td><td>メガアブソルＺ</td></tr>
+<tr class=""><td class=num>214</td><td>スカーフイダイトウ</td></tr>
+<tr class=""><td class=num>213</td><td>メガゲッコウガ</td></tr>
+<tr class=""><td class=num>200</td><td>メガゲンガー</td></tr>
+<tr class=""><td class=num>172</td><td>メガボーマンダ</td></tr>
+<tr class=""><td class=num>172</td><td>オオニューラ</td></tr>
+<tr class=""><td class=num>172</td><td>パーモット</td></tr>
+<tr class=""><td class=num>171</td><td>エースバーン</td></tr>
+<tr class="me"><td class=num>169</td><td>ガブリアス</td></tr>
+<tr class=""><td class=num>169</td><td>タスキガブリアス</td></tr>
+<tr class=""><td class=num>162</td><td>メガメタグロス</td></tr>
+<tr class=""><td class=num>152</td><td>メガリザードンＹ</td></tr>
+<tr class=""><td class=num>151</td><td>キラフロル</td></tr>
+<tr class="me"><td class=num>148</td><td>ミミッキュ</td></tr>
+<tr class=""><td class=num>148</td><td>ミミッキュ</td></tr>
+<tr class=""><td class=num>139</td><td>セグレイブ</td></tr>
+<tr class=""><td class=num>137</td><td>ブリジュラス</td></tr>
+<tr class=""><td class=num>136</td><td>サーフゴー</td></tr>
+<tr class=""><td class=num>107</td><td>ゴリランダー</td></tr>
+<tr class="me"><td class=num>106</td><td>ヒートロトム</td></tr>
+<tr class="me"><td class=num>101</td><td>ギャラドス</td></tr>
+<tr class="me"><td class=num>80</td><td>アシレーヌ</td></tr>
+<tr class=""><td class=num>67</td><td>カバルドン</td></tr>
+<tr class=""><td class=num>60</td><td>メガグソクムシャ</td></tr>
+</tbody></table></div>
+<p class=sub>ルカリオZは最速帯223で、メガガブリアスZ・メガアブソルZ・ミラーとは同速です。ガブリアスは最速169で、メガリザードンY（152）とメガメタグロス（162）を抜けますが、エースバーン・メガボーマンダ（172）には抜かれます。</p>
+
+<h3>環境上位との1対1簡易判定</h3>
+<p class=sub>◎=有利（3発以上耐えて勝つ）○=勝ち △=同速・互角 ×=不利。お互いの最大打点・素早さ・タスキ・化けの皮・おにびを考慮した簡易モデルです。積み技・交代・急所・追加効果は含みません。セルにカーソルを合わせると打点が出ます。</p>
+<div class=scroll><table class=grid><thead><tr><th>順位</th><th>相手（採用率トップの型）</th><th>S</th><th>メガルカリオZ</th><th>ガブリアス</th><th>アシレーヌ</th><th>ヒートロトム</th><th>ミミッキュ</th><th>ギャラドス</th><th>勝ち数</th></tr></thead><tbody>
+<tr><td class=num>1</td><th>メガガブリアスZ(CS)</th><td class=num>223</td><td class="gx" title="はどうだん 50-60%">×</td><td class="g1" title="げきりん 128-150%">○</td><td class="g2" title="ムーンフォース 98-117%">◎</td><td class="gx" title="オーバーヒート 24-28%">×</td><td class="g2" title="じゃれつく 107-126%">◎</td><td class="gx" title="ゆきなだれ 35-41%">×</td><td class=num>3</td></tr>
+<tr><td class=num>1</td><th>スカーフガブリアス</th><td class=num>253</td><td class="gx" title="はどうだん 50-60%">×</td><td class="g1" title="げきりん 117-137%">○</td><td class="gx" title="ムーンフォース 98-117%">×</td><td class="gx" title="オーバーヒート 24-28%">×</td><td class="g2" title="じゃれつく 97-115%">◎</td><td class="g2" title="ゆきなだれ 63-76%">◎</td><td class=num>3</td></tr>
+<tr><td class=num>1</td><th>タスキガブリアス</th><td class=num>169</td><td class="gx" title="はどうだん 50-60%">×</td><td class="g0" title="げきりん 117-137%">△</td><td class="gx" title="ムーンフォース 98-117%">×</td><td class="gx" title="オーバーヒート 24-28%">×</td><td class="g2" title="じゃれつく 97-115%">◎</td><td class="g2" title="ゆきなだれ 63-76%">◎</td><td class=num>2</td></tr>
+<tr><td class=num>2</td><th>メガボーマンダ</th><td class=num>172</td><td class="gx" title="ラスターカノン 53-62%">×</td><td class="gx" title="げきりん 96-113%">×</td><td class="gx" title="ムーンフォース 99-119%">×</td><td class="g2" title="ボルトチェンジ 27-32%">◎</td><td class="gx" title="じゃれつく 79-96%">×</td><td class="g2" title="ゆきなだれ 51-63%">◎</td><td class=num>2</td></tr>
+<tr><td class=num>3</td><th>アシレーヌ</th><td class=num>80</td><td class="gx" title="ラスターカノン 39-45%">×</td><td class="gx" title="じしん 49-58%">×</td><td class="g0" title="ムーンフォース 37-45%">△</td><td class="gx" title="ボルトチェンジ 40-48%">×</td><td class="g2" title="じゃれつく 49-58%">◎</td><td class="gx" title="たきのぼり 16-19%">×</td><td class=num>1</td></tr>
+<tr><td class=num>4</td><th>セグレイブ</th><td class=num>139</td><td class="gx" title="はどうだん 97-114%">×</td><td class="g1" title="げきりん 114-136%">○</td><td class="g2" title="ムーンフォース 94-111%">◎</td><td class="gx" title="オーバーヒート 46-54%">×</td><td class="g2" title="じゃれつく 98-116%">◎</td><td class="gx" title="たきのぼり 16-19%">×</td><td class=num>3</td></tr>
+<tr><td class=num>4</td><th>メガセグレイブ</th><td class=num>139</td><td class="gx" title="はどうだん 85-101%">×</td><td class="g1" title="げきりん 95-113%">○</td><td class="gx" title="ムーンフォース 82-97%">×</td><td class="gx" title="オーバーヒート 40-48%">×</td><td class="g1" title="じゃれつく 79-95%">○</td><td class="gx" title="ゆきなだれ 13-16%">×</td><td class=num>2</td></tr>
+<tr><td class=num>5</td><th>メガルカリオＺ</th><td class=num>223</td><td class="g0" title="はどうだん 148-176%">△</td><td class="g1" title="じしん 155-184%">○</td><td class="g2" title="ムーンフォース 71-84%">◎</td><td class="g1" title="オーバーヒート 139-165%">○</td><td class="gx" title="じゃれつく 39-46%">×</td><td class="gx" title="たきのぼり 25-30%">×</td><td class=num>3</td></tr>
+<tr><td class=num>6</td><th>メガグソクムシャ</th><td class=num>60</td><td class="g2" title="はどうだん 38-45%">◎</td><td class="gx" title="じしん 30-35%">×</td><td class="gx" title="うたかたのアリア 35-42%">×</td><td class="g2" title="オーバーヒート 145-171%">◎</td><td class="gx" title="シャドークロー 24-28%">×</td><td class="gx" title="たきのぼり 19-23%">×</td><td class=num>2</td></tr>
+<tr><td class=num>7</td><th>カバルドン</th><td class=num>67</td><td class="gx" title="はどうだん 37-44%">×</td><td class="g2" title="げきりん 38-45%">◎</td><td class="g2" title="うたかたのアリア 68-81%">◎</td><td class="g2" title="オーバーヒート 35-41%">◎</td><td class="gx" title="じゃれつく 32-38%">×</td><td class="g2" title="たきのぼり 40-48%">◎</td><td class=num>4</td></tr>
+<tr><td class=num>8</td><th>ブリジュラス</th><td class=num>137</td><td class="g1" title="はどうだん 138-163%">○</td><td class="g1" title="じしん 83-98%">○</td><td class="gx" title="ムーンフォース 66-79%">×</td><td class="gx" title="オーバーヒート 65-77%">×</td><td class="gx" title="じゃれつく 42-50%">×</td><td class="gx" title="たきのぼり 13-16%">×</td><td class=num>2</td></tr>
+<tr><td class=num>9</td><th>サーフゴー</th><td class=num>136</td><td class="g1" title="あくのはどう 72-85%">○</td><td class="gx" title="げきりん 33-38%">×</td><td class="gx" title="うたかたのアリア 49-59%">×</td><td class="g1" title="オーバーヒート 102-121%">○</td><td class="g1" title="シャドークロー 85-101%">○</td><td class="gx" title="たきのぼり 35-42%">×</td><td class=num>3</td></tr>
+<tr><td class=num>10</td><th>ミミッキュ</th><td class=num>148</td><td class="g2" title="ラスターカノン 119-142%">◎</td><td class="gx" title="じしん 78-92%">×</td><td class="gx" title="ムーンフォース 58-69%">×</td><td class="g2" title="オーバーヒート 57-67%">◎</td><td class="g0" title="シャドークロー 121-145%">△</td><td class="g2" title="たきのぼり 51-60%">◎</td><td class=num>3</td></tr>
+<tr><td class=num>11</td><th>ゴリランダー</th><td class=num>107</td><td class="g1" title="はどうだん 53-62%">○</td><td class="g1" title="げきりん 54-64%">○</td><td class="gx" title="ムーンフォース 51-60%">×</td><td class="g2" title="オーバーヒート 99-117%">◎</td><td class="g2" title="じゃれつく 46-55%">◎</td><td class="g2" title="ゆきなだれ 30-36%">◎</td><td class=num>5</td></tr>
+<tr><td class=num>12</td><th>メガリザードンＹ</th><td class=num>152</td><td class="gx" title="あくのはどう 32-37%">×</td><td class="g1" title="がんせきふうじ 111-132%">○</td><td class="gx" title="うたかたのアリア 86-102%">×</td><td class="gx" title="ボルトチェンジ 48-58%">×</td><td class="g2" title="シャドークロー 54-64%">◎</td><td class="gx" title="たきのぼり 86-105%">×</td><td class=num>2</td></tr>
+<tr><td class=num>13</td><th>マスカーニャ</th><td class=num>288</td><td class="g2" title="はどうだん 142-169%">◎</td><td class="gx" title="げきりん 89-106%">×</td><td class="g1" title="ムーンフォース 137-162%">○</td><td class="g2" title="オーバーヒート 133-158%">◎</td><td class="g1" title="じゃれつく 150-178%">○</td><td class="g2" title="ゆきなだれ 50-59%">◎</td><td class=num>5</td></tr>
+<tr><td class=num>14</td><th>アーマーガア</th><td class=num>87</td><td class="g2" title="はどうだん 45-53%">◎</td><td class="gx" title="げきりん 18-20%">×</td><td class="g2" title="うたかたのアリア 41-49%">◎</td><td class="g2" title="オーバーヒート 83-100%">◎</td><td class="g2" title="シャドークロー 23-27%">◎</td><td class="g2" title="たきのぼり 20-23%">◎</td><td class=num>5</td></tr>
+<tr><td class=num>15</td><th>キラフロル</th><td class=num>151</td><td class="gx" title="ラスターカノン 121-144%">×</td><td class="g2" title="じしん 233-278%">◎</td><td class="gx" title="うたかたのアリア 112-132%">×</td><td class="gx" title="ボルトチェンジ 32-38%">×</td><td class="gx" title="シャドークロー 46-54%">×</td><td class="gx" title="たきのぼり 76-91%">×</td><td class=num>1</td></tr>
+<tr><td class=num>16</td><th>オオニューラ</th><td class=num>172</td><td class="gx" title="ラスターカノン 63-75%">×</td><td class="g1" title="じしん 164-195%">○</td><td class="gx" title="ムーンフォース 60-71%">×</td><td class="g2" title="オーバーヒート 59-69%">◎</td><td class="g2" title="じゃれつく 83-97%">◎</td><td class="g2" title="たきのぼり 54-63%">◎</td><td class=num>4</td></tr>
+<tr><td class=num>17</td><th>エースバーン</th><td class=num>171</td><td class="gx" title="はどうだん 66-78%">×</td><td class="gx" title="じしん 139-164%">×</td><td class="gx" title="うたかたのアリア 120-143%">×</td><td class="gx" title="ボルトチェンジ 33-40%">×</td><td class="gx" title="シャドークロー 55-64%">×</td><td class="g2" title="たきのぼり 89-107%">◎</td><td class=num>1</td></tr>
+<tr><td class=num>18</td><th>ギャラドス</th><td class=num>101</td><td class="g2" title="あくのはどう 27-32%">◎</td><td class="gx" title="げきりん 42-50%">×</td><td class="gx" title="ムーンフォース 39-47%">×</td><td class="g2" title="ボルトチェンジ 83-101%">◎</td><td class="g2" title="じゃれつく 35-43%">◎</td><td class="gx" title="ゆきなだれ 11-14%">×</td><td class=num>3</td></tr>
+<tr><td class=num>19</td><th>スカーフイダイトウ</th><td class=num>214</td><td class="gx" title="あくのはどう 70-83%">×</td><td class="gx" title="げきりん 74-87%">×</td><td class="g2" title="ムーンフォース 51-60%">◎</td><td class="gx" title="ボルトチェンジ 53-64%">×</td><td class="gx" title="シャドークロー 96-115%">×</td><td class="gx" title="たきのぼり 20-23%">×</td><td class=num>1</td></tr>
+<tr><td class=num>20</td><th>メガメタグロス</th><td class=num>162</td><td class="gx" title="あくのはどう 65-76%">×</td><td class="g1" title="じしん 78-93%">○</td><td class="gx" title="うたかたのアリア 44-52%">×</td><td class="g2" title="オーバーヒート 92-108%">◎</td><td class="gx" title="シャドークロー 61-75%">×</td><td class="gx" title="たきのぼり 25-31%">×</td><td class=num>2</td></tr>
+<tr><td class=num>21</td><th>ギルガルド</th><td class=num>80</td><td class="gx" title="あくのはどう 49-59%">×</td><td class="g1" title="じしん 77-91%">○</td><td class="gx" title="うたかたのアリア 34-40%">×</td><td class="g2" title="オーバーヒート 69-83%">◎</td><td class="g1" title="シャドークロー 60-72%">○</td><td class="gx" title="たきのぼり 25-31%">×</td><td class=num>3</td></tr>
+<tr><td class=num>23</td><th>メガゲッコウガ</th><td class=num>213</td><td class="g2" title="はどうだん 130-154%">◎</td><td class="gx" title="げきりん 85-101%">×</td><td class="g1" title="ムーンフォース 125-149%">○</td><td class="gx" title="ボルトチェンジ 68-81%">×</td><td class="g2" title="じゃれつく 143-169%">◎</td><td class="gx" title="たきのぼり 23-28%">×</td><td class=num>3</td></tr>
+<tr><td class=num>24</td><th>メガカイリュー</th><td class=num>152</td><td class="gx" title="ラスターカノン 40-48%">×</td><td class="g1" title="げきりん 111-130%">○</td><td class="g2" title="ムーンフォース 79-93%">◎</td><td class="gx" title="ボルトチェンジ 20-25%">×</td><td class="g2" title="じゃれつく 90-108%">◎</td><td class="gx" title="ゆきなだれ 60-71%">×</td><td class=num>3</td></tr>
+<tr><td class=num>25</td><th>メガカメックス</th><td class=num>128</td><td class="gx" title="はどうだん 44-53%">×</td><td class="g1" title="げきりん 53-64%">○</td><td class="g2" title="ムーンフォース 42-51%">◎</td><td class="gx" title="ボルトチェンジ 45-55%">×</td><td class="g2" title="じゃれつく 45-55%">◎</td><td class="gx" title="たきのぼり 15-17%">×</td><td class=num>3</td></tr>
+<tr><td class=num>27</td><th>パーモット</th><td class=num>172</td><td class="g1" title="はどうだん 84-99%">○</td><td class="gx" title="じしん 155-184%">×</td><td class="gx" title="ムーンフォース 161-189%">×</td><td class="g2" title="オーバーヒート 78-93%">◎</td><td class="gx" title="じゃれつく 156-186%">×</td><td class="gx" title="たきのぼり 51-60%">×</td><td class=num>2</td></tr>
+<tr><td class=num>28</td><th>ウォッシュロトム</th><td class=num>106</td><td class="gx" title="はどうだん 48-57%">×</td><td class="g2" title="げきりん 46-54%">◎</td><td class="gx" title="ムーンフォース 48-56%">×</td><td class="gx" title="ボルトチェンジ 25-29%">×</td><td class="g2" title="じゃれつく 38-45%">◎</td><td class="gx" title="たきのぼり 12-15%">×</td><td class=num>2</td></tr>
+<tr><td class=num>31</td><th>メガゲンガー</th><td class=num>200</td><td class="g1" title="あくのはどう 83-99%">○</td><td class="g1" title="じしん 150-180%">○</td><td class="gx" title="うたかたのアリア 57-68%">×</td><td class="gx" title="オーバーヒート 59-70%">×</td><td class="g1" title="シャドークロー 120-142%">○</td><td class="gx" title="たきのぼり 49-58%">×</td><td class=num>3</td></tr>
+<tr><td class=num>36</td><th>サザンドラ</th><td class=num>225</td><td class="gx" title="はどうだん 107-125%">×</td><td class="g1" title="げきりん 133-157%">○</td><td class="g2" title="ムーンフォース 201-241%">◎</td><td class="gx" title="オーバーヒート 25-30%">×</td><td class="g2" title="じゃれつく 225-267%">◎</td><td class="gx" title="ゆきなだれ 37-44%">×</td><td class=num>3</td></tr>
+<tr><td class=num>39</td><th>メガバシャーモ</th><td class=num>152</td><td class="gx" title="はどうだん 63-75%">×</td><td class="g1" title="じしん 131-157%">○</td><td class="g2" title="うたかたのアリア 115-135%">◎</td><td class="gx" title="ボルトチェンジ 32-38%">×</td><td class="gx" title="じゃれつく 66-78%">×</td><td class="g2" title="たきのぼり 85-101%">◎</td><td class=num>3</td></tr>
+<tr><td class=num>54</td><th>メガアブソルＺ</th><td class=num>223</td><td class="g0" title="ラスターカノン 87-102%">△</td><td class="g1" title="げきりん 108-129%">○</td><td class="g1" title="ムーンフォース 166-196%">○</td><td class="g2" title="オーバーヒート 81-96%">◎</td><td class="g1" title="じゃれつく 183-216%">○</td><td class="g2" title="たきのぼり 59-70%">◎</td><td class=num>5</td></tr>
+</tbody></table></div>
+
+<h2>4. ダメージ計算</h2>
+<p class=sub>乱数16段階・4096分率の補正チェーン・五捨五超入で計算。相手の型は使用率データの最多採用（性格・能力P・持ち物）です。</p>
+<h3>メガルカリオZ（エース）</h3><div class=scroll><table class=calc><thead><tr><th>攻撃側</th><th>技</th><th>防御側</th><th>ダメージ</th><th>割合・確定数</th><th>条件</th></tr></thead><tbody><tr><td>メガルカリオZ</td><td>はどうだん</td><td>ブリジュラス</td><td class=num>230〜272</td><td>137.7-162.9% 確定1発</td><td class=sub></td></tr>
+<tr><td>メガルカリオZ</td><td>はどうだん</td><td>セグレイブ</td><td class=num>186〜218</td><td>97.4-114.1% 乱数1発(81.2%)</td><td class=sub></td></tr>
+<tr><td>メガルカリオZ</td><td>ラスターカノン</td><td>メガボーマンダ</td><td class=num>178〜210</td><td>104.1-122.8% 確定1発</td><td class=sub>攻撃側+2</td></tr>
+<tr><td>メガルカリオZ</td><td>ラスターカノン</td><td>アシレーヌ</td><td class=num>144〜169</td><td>77.0-90.4% 確定2発</td><td class=sub>攻撃側+2</td></tr>
+<tr><td>メガルカリオZ</td><td>はどうだん</td><td>メガグソクムシャ</td><td class=num>138〜163</td><td>75.8-89.6% 確定2発</td><td class=sub>攻撃側+2</td></tr>
+<tr><td>メガルカリオZ</td><td>あくのはどう</td><td>サーフゴー</td><td class=num>118〜140</td><td>72.0-85.4% 確定2発</td><td class=sub></td></tr>
+<tr><td>メガルカリオZ</td><td>あくのはどう</td><td>メガゲンガー</td><td class=num>114〜136</td><td>83.2-99.3% 確定2発</td><td class=sub></td></tr>
+<tr><td>メガルカリオZ</td><td>ラスターカノン</td><td>メガアブソルＺ</td><td class=num>123〜145</td><td>86.6-102.1% 乱数1発(18.8%)</td><td class=sub></td></tr>
+<tr><td>メガグソクムシャ</td><td>アイアンヘッド</td><td>メガルカリオZ</td><td class=num>36〜42</td><td>24.5-28.6% 乱数4発</td><td class=sub></td></tr>
+<tr><td>ミミッキュ</td><td>シャドークロー</td><td>メガルカリオZ</td><td class=num>88〜105</td><td>59.9-71.4% 確定2発</td><td class=sub>攻撃側+2</td></tr>
+<tr><td>メガボーマンダ</td><td>じしん</td><td>メガルカリオZ</td><td class=num>180〜214</td><td>122.4-145.6% 確定1発</td><td class=sub></td></tr>
+<tr><td>アシレーヌ</td><td>ムーンフォース</td><td>メガルカリオZ</td><td class=num>105〜124</td><td>71.4-84.4% 確定2発</td><td class=sub></td></tr></tbody></table></div>
+<h3>ガブリアス（先発・ステロ）</h3><div class=scroll><table class=calc><thead><tr><th>攻撃側</th><th>技</th><th>防御側</th><th>ダメージ</th><th>割合・確定数</th><th>条件</th></tr></thead><tbody><tr><td>ガブリアス</td><td>がんせきふうじ</td><td>メガリザードンＹ</td><td class=num>172〜204</td><td>111.0-131.6% 確定1発</td><td class=sub></td></tr>
+<tr><td>ガブリアス</td><td>じしん</td><td>メガルカリオＺ</td><td class=num>228〜270</td><td>155.1-183.7% 確定1発</td><td class=sub></td></tr>
+<tr><td>ガブリアス</td><td>げきりん</td><td>メガボーマンダ</td><td class=num>164〜194</td><td>95.9-113.5% 乱数1発(68.8%)</td><td class=sub></td></tr>
+<tr><td>ガブリアス</td><td>げきりん</td><td>メガガブリアスZ(CS)</td><td class=num>236〜278</td><td>127.6-150.3% 確定1発</td><td class=sub></td></tr>
+<tr><td>ガブリアス</td><td>じしん</td><td>メガゲンガー</td><td class=num>206〜246</td><td>150.4-179.6% 確定1発</td><td class=sub></td></tr>
+<tr><td>ガブリアス</td><td>じしん</td><td>キラフロル</td><td class=num>372〜444</td><td>232.5-277.5% 確定1発</td><td class=sub></td></tr>
+<tr><td>メガガブリアスZ(CS)</td><td>りゅうせいぐん</td><td>ガブリアス</td><td class=num>270〜320</td><td>145.9-173.0% 確定1発</td><td class=sub></td></tr></tbody></table></div>
+<h3>アシレーヌ（ドラゴン受け・めいそう）</h3><div class=scroll><table class=calc><thead><tr><th>攻撃側</th><th>技</th><th>防御側</th><th>ダメージ</th><th>割合・確定数</th><th>条件</th></tr></thead><tbody><tr><td>アシレーヌ</td><td>ムーンフォース</td><td>メガボーマンダ</td><td class=num>170〜204</td><td>99.4-119.3% 乱数1発(93.8%)</td><td class=sub></td></tr>
+<tr><td>アシレーヌ</td><td>ムーンフォース</td><td>メガガブリアスZ(CS)</td><td class=num>182〜216</td><td>98.4-116.8% 乱数1発(87.5%)</td><td class=sub></td></tr>
+<tr><td>アシレーヌ</td><td>ムーンフォース</td><td>セグレイブ</td><td class=num>180〜212</td><td>94.2-111.0% 乱数1発(62.5%)</td><td class=sub></td></tr>
+<tr><td>アシレーヌ</td><td>うたかたのアリア</td><td>カバルドン</td><td class=num>218〜258</td><td>101.4-120.0% 確定1発</td><td class=sub>攻撃側+1</td></tr>
+<tr><td>アシレーヌ</td><td>うたかたのアリア</td><td>メガルカリオＺ</td><td class=num>100〜118</td><td>68.0-80.3% 確定2発</td><td class=sub></td></tr>
+<tr><td>メガボーマンダ</td><td>すてみタックル</td><td>アシレーヌ</td><td class=num>154〜183</td><td>82.4-97.9% 確定2発</td><td class=sub></td></tr>
+<tr><td>メガガブリアスZ(CS)</td><td>だいちのちから</td><td>アシレーヌ</td><td class=num>49〜58</td><td>26.2-31.0% 確定4発</td><td class=sub></td></tr>
+<tr><td>メガルカリオＺ</td><td>ラスターカノン</td><td>アシレーヌ</td><td class=num>144〜169</td><td>77.0-90.4% 確定2発</td><td class=sub>攻撃側+2</td></tr></tbody></table></div>
+<h3>ヒートロトム（鋼・草・虫の処理）</h3><div class=scroll><table class=calc><thead><tr><th>攻撃側</th><th>技</th><th>防御側</th><th>ダメージ</th><th>割合・確定数</th><th>条件</th></tr></thead><tbody><tr><td>ヒートロトム</td><td>オーバーヒート</td><td>メガグソクムシャ</td><td class=num>264〜312</td><td>145.1-171.4% 確定1発</td><td class=sub></td></tr>
+<tr><td>ヒートロトム</td><td>オーバーヒート</td><td>ゴリランダー</td><td class=num>204〜242</td><td>98.6-116.9% 乱数1発(87.5%)</td><td class=sub></td></tr>
+<tr><td>ヒートロトム</td><td>オーバーヒート</td><td>マスカーニャ</td><td class=num>204〜242</td><td>133.3-158.2% 確定1発</td><td class=sub></td></tr>
+<tr><td>ヒートロトム</td><td>オーバーヒート</td><td>サーフゴー</td><td class=num>168〜198</td><td>102.4-120.7% 確定1発</td><td class=sub></td></tr>
+<tr><td>ヒートロトム</td><td>オーバーヒート</td><td>メガメタグロス</td><td class=num>144〜170</td><td>91.7-108.3% 乱数1発(50.0%)</td><td class=sub></td></tr>
+<tr><td>ヒートロトム</td><td>ボルトチェンジ</td><td>ギャラドス</td><td class=num>168〜204</td><td>83.2-101.0% 乱数1発(6.2%)</td><td class=sub></td></tr>
+<tr><td>メガボーマンダ</td><td>すてみタックル</td><td>ヒートロトム</td><td class=num>37〜44</td><td>23.6-28.0% 乱数4発</td><td class=sub>攻撃側+1 / やけど</td></tr>
+<tr><td>ゴリランダー</td><td>グラススライダー</td><td>ヒートロトム</td><td class=num>30〜35</td><td>19.1-22.3% 5発以上</td><td class=sub>GF</td></tr>
+<tr><td>メガリザードンＹ</td><td>りゅうのはどう</td><td>ヒートロトム</td><td class=num>58〜69</td><td>36.9-43.9% 確定3発</td><td class=sub></td></tr></tbody></table></div>
+<h3>ミミッキュ（ストッパー）</h3><div class=scroll><table class=calc><thead><tr><th>攻撃側</th><th>技</th><th>防御側</th><th>ダメージ</th><th>割合・確定数</th><th>条件</th></tr></thead><tbody><tr><td>ミミッキュ</td><td>じゃれつく</td><td>メガボーマンダ</td><td class=num>273〜322</td><td>159.6-188.3% 確定1発</td><td class=sub>攻撃側+2</td></tr>
+<tr><td>ミミッキュ</td><td>じゃれつく</td><td>メガガブリアスZ(CS)</td><td class=num>198〜234</td><td>107.0-126.5% 確定1発</td><td class=sub></td></tr>
+<tr><td>ミミッキュ</td><td>じゃれつく</td><td>サザンドラ</td><td class=num>380〜452</td><td>224.9-267.5% 確定1発</td><td class=sub></td></tr>
+<tr><td>ミミッキュ</td><td>シャドークロー</td><td>メガゲンガー</td><td class=num>164〜195</td><td>119.7-142.3% 確定1発</td><td class=sub></td></tr>
+<tr><td>ミミッキュ</td><td>じゃれつく</td><td>メガアブソルＺ</td><td class=num>260〜307</td><td>183.1-216.2% 確定1発</td><td class=sub></td></tr>
+<tr><td>ミミッキュ</td><td>シャドークロー</td><td>サーフゴー</td><td class=num>281〜330</td><td>171.3-201.2% 確定1発</td><td class=sub>攻撃側+2</td></tr>
+<tr><td>ミミッキュ</td><td>シャドークロー</td><td>メガリザードンＹ</td><td class=num>165〜195</td><td>106.5-125.8% 確定1発</td><td class=sub>攻撃側+2</td></tr></tbody></table></div>
+<h3>ギャラドス（物理受け・対ボーマンダ）</h3><div class=scroll><table class=calc><thead><tr><th>攻撃側</th><th>技</th><th>防御側</th><th>ダメージ</th><th>割合・確定数</th><th>条件</th></tr></thead><tbody><tr><td>ギャラドス</td><td>ゆきなだれ</td><td>メガボーマンダ</td><td class=num>180〜212</td><td>105.3-124.0% 確定1発</td><td class=sub>威力2倍</td></tr>
+<tr><td>ギャラドス</td><td>ゆきなだれ</td><td>タスキガブリアス</td><td class=num>232〜276</td><td>125.4-149.2% 確定1発</td><td class=sub>威力2倍</td></tr>
+<tr><td>ギャラドス</td><td>たきのぼり</td><td>エースバーン</td><td class=num>140〜168</td><td>89.2-107.0% 乱数1発(37.5%)</td><td class=sub></td></tr>
+<tr><td>ギャラドス</td><td>たきのぼり</td><td>メガバシャーモ</td><td class=num>134〜158</td><td>85.4-100.6% 乱数1発(6.2%)</td><td class=sub></td></tr>
+<tr><td>メガボーマンダ</td><td>すてみタックル</td><td>ギャラドス</td><td class=num>123〜145</td><td>60.9-71.8% 確定2発</td><td class=sub>攻撃側+1 / いかく後</td></tr>
+<tr><td>エースバーン</td><td>ダストシュート</td><td>ギャラドス</td><td class=num>58〜69</td><td>28.7-34.2% 乱数3発(1.3%)</td><td class=sub>いかく後</td></tr>
+<tr><td>オオニューラ</td><td>フェイタルクロー</td><td>ギャラドス</td><td class=num>42〜51</td><td>20.8-25.2% 乱数4発</td><td class=sub>いかく後</td></tr>
+<tr><td>メガアブソルＺ</td><td>シャドークロー</td><td>ギャラドス</td><td class=num>57〜67</td><td>28.2-33.2% 確定4発</td><td class=sub>いかく後</td></tr>
+<tr><td>メガルカリオＺ</td><td>あくのはどう</td><td>ギャラドス</td><td class=num>108〜128</td><td>53.5-63.4% 確定2発</td><td class=sub>攻撃側+2</td></tr></tbody></table></div>
+
+<h2>5. 選出</h2>
+<div class=scroll><table><thead><tr><th>相手の傾向</th><th>選出</th><th>狙い</th></tr></thead><tbody>
+<tr><th>基本選出</th><td>ガブリアス ＋ メガルカリオZ ＋ アシレーヌ</td><td>先発ガブでステロ→がんせきふうじ/じしんで1体削る。タスキ潰れ後はルカリオで悪巧み→全抜き、残りをアシレーヌのアンコールとムンフォで詰める。</td></tr>
+<tr><th>ドラゴン多め(ボーマンダ・ガブ・セグレイブ・カイリュー)</th><td>アシレーヌ ＋ ギャラドス ＋ ミミッキュ/ルカリオ</td><td>いかくギャラドスで竜舞を受け、ゆきなだれ。アシレーヌはアンコールで積みを固定。セグレイブ(タスキ)はルカリオのはどうだんで処理。</td></tr>
+<tr><th>鋼・虫・草が多い(グソクムシャ・ゴリランダー・アーマーガア・メタグロス)</th><td>ヒートロトム ＋ メガルカリオZ ＋ ガブリアス</td><td>ロトムのオバヒ・ボルチェンで対面を回し、ルカリオ(接触半減)で起点を作る。</td></tr>
+<tr><th>メガリザードンY入り</th><td>ガブリアス ＋ ヒートロトム ＋ アシレーヌ</td><td>ガブは最速なのでリザY(152)より速く、がんせきふうじ確1。ロトムはソラビ3割弱・りゅうのはどう4割前後で後投げできる。</td></tr>
+<tr><th>炎格闘・高速物理(エースバーン・バシャーモ・オオニューラ)</th><td>ギャラドス ＋ ガブリアス ＋ アシレーヌ</td><td>いかく後のダストシュートでも3割程度。たきのぼりでエースバーン乱1、バシャーモを削る。</td></tr>
+<tr><th>カバルドン・ステロ起点系</th><td>アシレーヌ ＋ メガルカリオZ ＋ ヒートロトム</td><td>めいそう+1のアリアでカバルドン確1。あくびはロトムでいなす。</td></tr>
+</tbody></table></div>
+
+<h2>6. 立ち回りの原則</h2>
+<ol>
+<li><b>初手ガブリアス：</b>まずステルスロックを撒きます。相手がリザY・ゲンガー・ルカリオ・キラフロルなら攻撃を優先します（がんせきふうじ／じしんで確1）。タスキがあるので2行動を前提に組みます。</li>
+<li><b>ルカリオは「起点を作ってから」出します。</b>ステロ込みでタスキを潰し、相手の地面・炎・格闘技持ちを削ってから、わるだくみ1回で全抜きを狙います。+2ラスターカノンでボーマンダ・アシレーヌを確1〜確2にできます。相手がふいうち持ち（グソクムシャ・アブソルZ・ドドゲザン）でも、接触技は半減なので積み得です。</li>
+<li><b>アシレーヌのアンコール：</b>竜舞・剣舞・悪巧み・ステロ・あくびを見たら即座に打ちます。固定させた相手の前でめいそう、アリア、ムンフォと進めます。</li>
+<li><b>ヒートロトム：</b>鋼・虫・草への後出し枠です。おにびは物理アタッカー全般に打ちます（メガセグレイブのねつこうかんと炎タイプには無効）。オバヒ後は特攻ダウンを引きずるので、ボルトチェンジで引きます。</li>
+<li><b>ギャラドス：</b>相手のボーマンダとガブリアスの前に投げてゆきなだれを打ちます（後攻になると威力2倍）。速い積みアタッカーにはでんじは、受けループやカバルドンにはちょうはつを使います。</li>
+<li><b>ミミッキュ：</b>相手の高速アタッカーを化けの皮で受けてから倒す最終ストッパーです。つるぎのまいは相手が交代・積みを読める時だけ使います。</li>
+<li><b>時間切れは引き分けです。</b>受け回しに付き合わず、アンコール・ちょうはつで能動的に崩します。</li>
+</ol>
+
+<h2>7. 弱点と今後の調整候補</h2>
+<ul>
+<li><b>メガセグレイブ（ねつこうかん）：</b>おにび無効で耐久も高く、ギャラドスでは削り切れません。対策はアシレーヌとルカリオのはどうだんです。ルカリオのはどうだんはメガ相手だと乱数1発（6%）なので、ステロ込みで落とします。</li>
+<li><b>メガボーマンダの竜舞+1：</b>S258でルカリオZ（223）も抜かれます。積まれる前にアンコール、ゆきなだれ、+2ラスカで処理するか、ミミッキュの皮で受けます。</li>
+<li><b>雨・晴れの天候パ：</b>アシレーヌは晴れ下でアリアが半減します。リザY相手ではガブの選出をほぼ必須にします。</li>
+<li><b>調整候補：</b>ルカリオの「あくのはどう→しんくうは」で、ステロが撒けない試合のタスキ対策になります。アシレーヌの「アンコール→アクアジェット」で上から縛られる対面を減らせます。ギャラドスの「でんじは→パワーウィップ」でカバルドン・ラグラージを見られます。</li>
+</ul>
+
+<h2>8. 方法と出典</h2>
+<p>ルール・追加ポケモン・調整内容はGame8／GameWith、使用率と採用型はdamekei（ゲーム内バトルデータ、10/2集計）とgamewith.ai（シーズンM-6、10/5集計）を参照しました。種族値・技データはdamekeiのデータを使い、M-C追加メガの種族値はGame8の記載と照合しました。計算機と診断スクリプトは <a href="tool/">tool/</a> にあり、<code>python3 report.py</code> でこのページを再生成できます。</p>
+<p class=sub>用語：<a href="https://gamewith.jp/pokemon-champions/546449">GameWith 対戦の用語一覧</a>／<a href="https://pokedoctor.jp/glossary">ポケドクター 用語集</a>。本ページは非公式のファン制作物です。</p>
+</main>
+</body>
+</html>
