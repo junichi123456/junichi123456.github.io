@@ -6,8 +6,8 @@ Data: data/pokemon.json, data/moves.json (exported from damekei.com bundles).
 import json, os, math, itertools
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-_P = json.load(open(os.path.join(HERE, 'data/pokemon.json')))
-_M = json.load(open(os.path.join(HERE, 'data/moves.json')))
+_P = json.load(open(os.path.join(HERE, 'data', 'pokemon.json'), encoding='utf-8'))
+_M = json.load(open(os.path.join(HERE, 'data', 'moves.json'), encoding='utf-8'))
 POKE = {}
 _PREFIX = {'blade': 'ブレード', 'heat': 'ヒート', 'wash': 'ウォッシュ', 'frost': 'フロスト', 'fan': 'スピン', 'mow': 'カット',
            'alola': 'アローラ', 'galar': 'ガラル', 'hisui': 'ヒスイ'}
@@ -393,7 +393,7 @@ def show(att, dfn, move, chip=0, **kw):
     return f"{att.label} {move} → {dfn.label}: {r[0]}-{r[-1]} ({ko_text(r, dfn.stat['hp'], chip)})"
 
 
-_L = json.load(open(os.path.join(HERE, 'data/learnsets.json')))
+_L = json.load(open(os.path.join(HERE, 'data', 'learnsets.json'), encoding='utf-8'))
 _MID = {m['id']: m for m in _M}
 
 

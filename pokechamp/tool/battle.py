@@ -884,6 +884,10 @@ def fmt_action(st, a):
 
 
 def main():
+    try:
+        sys.stdout.reconfigure(encoding='utf-8')
+    except Exception:
+        pass
     if len(sys.argv) >= 3 and sys.argv[1] == 'select':
         best, top, _ = select([x for x in sys.argv[2:] if not x.startswith('--')])
         print('選出順: ' + ' → '.join(best))

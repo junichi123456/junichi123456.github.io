@@ -277,6 +277,10 @@ def knowledge():
 
 
 def main():
+    try:
+        sys.stdout.reconfigure(encoding='utf-8')
+    except Exception:
+        pass
     a = sys.argv[1:]
     if not a:
         print(__doc__); return
