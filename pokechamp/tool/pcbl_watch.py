@@ -1,5 +1,14 @@
 """Pokemon Champions Battle Logger (PCBL) のライブ画面を読み取り続ける。
 
+■ ウィンドウ版（PCBL の Live Scan が専用ウィンドウで動いている場合）
+  pip install pillow pygetwindow
+  python pcbl_watch.py --list                      ウィンドウ一覧を表示
+  python pcbl_watch.py --window "Champions"        タイトルにこの文字を含むウィンドウを2秒おきに撮影
+  → ../logs/live/latest.png（最新の画面）と shots/ に変化があった時の画像を保存。
+    対戦中の Claude はこの画像を見て状況を読む。
+
+■ ブラウザ版（http://127.0.0.1:8000/live で表示される場合）
+
 PCBL が PC 上で表示している Live Scan 画面（既定 http://127.0.0.1:8000/live）をブラウザで開き、
 表示されている文字とスクリーンショットを数秒おきに保存する。PCBL の内部データや通信は読まない
 （人が画面を見るのと同じ情報だけを使う）。
@@ -63,17 +72,82 @@ def parse(text, names, moves):
     return {'turn': int(turn.group(1)) if turn else None, 'pokemon': found, 'moves': mv[-12:]}
 
 
+def _dpi_aware():
+    try:
+        import ctypes
+        ctypes.windll.shcore.SetProcessDpiAwareness(2)
+    except Exception:
+        pass
+
+
+def list_windows():
+    import pygetwindow as gw
+    for w in gw.getAllWindows():
+        if w.title.strip() and w.width > 200:
+            print(f'{w.title}  ({w.width}x{w.height})')
+
+
+def watch_window(title, interval):
+    """Capture the PCBL window by title every `interval` seconds; keep images that changed."""
+    _dpi_aware()
+    import pygetwindow as gw
+    from PIL import ImageGrab, ImageChops
+    shots = os.path.join(OUT, 'shots')
+    os.makedirs(shots, exist_ok=True)
+    last = None
+    print(f'「{title}」を含むウィンドウを撮影します → {os.path.normpath(OUT)}  (Ctrl+C で終了)')
+    while True:
+        wins = [w for w in gw.getWindowsWithTitle(title) if w.width > 200 and w.height > 200]
+        if not wins:
+            print(f'「{title}」を含むウィンドウが見つかりません。--list でタイトルを確認してください。5秒後に再試行')
+            time.sleep(5); continue
+        w = wins[0]
+        if w.isMinimized:
+            print('ウィンドウが最小化されています。表示してください'); time.sleep(3); continue
+        try:
+            img = ImageGrab.grab(bbox=(w.left, w.top, w.right, w.bottom), all_screens=True)
+        except Exception as e:
+            print('撮影失敗:', e); time.sleep(interval); continue
+        small = img.convert('L').resize((160, 90))
+        changed = last is None or ImageChops.difference(small, last).getbbox() is not None and \
+            sum(ImageChops.difference(small, last).histogram()[16:]) > 40
+        if changed:
+            last = small
+            ts = time.strftime('%Y%m%d-%H%M%S')
+            img.save(os.path.join(OUT, 'latest.png'))
+            img.save(os.path.join(shots, f'{ts}.png'))
+            json.dump({'time': ts, 'window': w.title, 'size': [w.width, w.height]},
+                      open(os.path.join(OUT, 'latest.json'), 'w', encoding='utf-8'), ensure_ascii=False)
+            print(ts, 'updated')
+        time.sleep(interval)
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--url', default='http://127.0.0.1:8000/live')
     ap.add_argument('--interval', type=float, default=2.0)
     ap.add_argument('--headed', action='store_true', help='ブラウザを表示する')
     ap.add_argument('--chrome', help='使うブラウザの実行ファイル（省略時は自動）')
+    ap.add_argument('--window', help='PCBL のウィンドウタイトルの一部（ウィンドウ版）')
+    ap.add_argument('--list', action='store_true', help='ウィンドウ一覧を表示')
     a = ap.parse_args()
     try:
         sys.stdout.reconfigure(encoding='utf-8')
     except Exception:
         pass
+    os.makedirs(OUT, exist_ok=True)
+    if a.list or a.window:
+        try:
+            import pygetwindow  # noqa
+            from PIL import ImageGrab  # noqa
+        except ImportError:
+            print('pip install pillow pygetwindow を実行してください'); return 1
+        if a.list:
+            list_windows(); return 0
+        try:
+            watch_window(a.window, a.interval)
+        except KeyboardInterrupt:
+            return 0
     try:
         from playwright.sync_api import sync_playwright
     except ImportError:
