@@ -18,6 +18,12 @@ description: ポケモンチャンピオンズ（シングル）の対戦中に�
 
 ## 手順
 
+0. **PCBL（Battle Logger）の画面読み取りを起動**（PC上のセッションで、PCBLの Live Scan が動いているとき）:
+   `cd pokechamp/tool && python pcbl_watch.py` をバックグラウンドで実行し続ける。
+   画面の文字が `pokechamp/logs/live/latest.txt`、スクリーンショットが `latest.png`、拾ったポケモン名・HP%・ターン・技が `parsed.json` に数秒おきに更新される。
+   見せ合い・各ターンの情報はまずここから読む（足りなければ `latest.png` を画像として見る。それでも不明な点だけユーザーに聞く）。
+   初回は `latest.txt` と `latest.png` を見比べ、名前・HP%の読み取りが正しいか確認する。
+   起動できない場合は `pip install playwright` を実行（Edge/Chrome があればそれを使う）。
 1. **開始前**: `pokechamp/logs/TRENDS.md` を読み、要対策の相手と想定外の型を頭に入れる（チャットには書かない）。
 2. **見せ合い**: 相手6体が分かったら
    `cd pokechamp/tool && python3 battle.py select <相手6体>`
