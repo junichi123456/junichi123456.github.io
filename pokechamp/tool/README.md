@@ -37,3 +37,7 @@ python3 battle.py turn state.json 20                                            
 - 選出: 相手6体から使用率と相性で相手の選出3体を推定し、自分の全60通り（3体×先発）を対戦シミュレーションで評価します。
 - 行動: 両者同時選択の局面木を最大5ターン分探索し、残りを貪欲ロールアウトで延長して計8ターン先まで評価します（相手は最善応手と平均の混合）。
 - `state.json` の形式は `battle.py` 冒頭のコメントを参照。Battle Logger のライブ表示（HP%・場のポケモン・使用技）を写して使います。
+
+## 対戦ログの蓄積と学習（learn.py）
+
+対戦ごとに `select → turn（毎ターン記録）→ end` で `../logs/battles.jsonl` に追記されます。`end` のたびに `knowledge.json`（相手ごとの選出率・先発率・観測した技/持ち物・スカーフ疑い、自分の選出別勝率）と `TRENDS.md`（傾向と対策）が更新され、`battle.py` が次の対戦から読み込みます。手順は `.claude/skills/pokechamp-battle/SKILL.md`。

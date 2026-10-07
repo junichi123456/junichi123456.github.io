@@ -607,8 +607,61 @@ def build_side(names, sets_fn, hp=None):
     return side
 
 
+try:
+    import learn as _learn
+    KNOW = _learn.knowledge()
+except Exception:
+    KNOW = {'n_battles': 0, 'species': {}, 'my_orders': {}, 'vs': {}}
+_OPP_CACHE = {}
+
+
+def _with_learning(base_name_, mon):
+    """Overlay moves/items observed in our own battle logs onto the usage-based set."""
+    if mon is None: return None
+    k = KNOW['species'].get(base_name_)
+    if not k: return mon
+    obs = [m for m in k.get('moves', {}) if m in MOVE]
+    moves = (obs + [m for m in mon.moves if m not in obs])[:4]
+    item = mon.item
+    items = k.get('items', {})
+    if items:
+        top, c = max(items.items(), key=lambda x: x[1])
+        if c >= 2 or c / max(1, k.get('picked', 1)) >= 0.5:
+            if not (('ナイト' in str(item)) ^ ('ナイト' in top)):
+                item = top
+    if k.get('scarf_evidence', 0) >= 2 and 'ナイト' not in str(item):
+        item = 'こだわりスカーフ'
+    if moves == mon.moves and item == mon.item: return mon
+    return Mon(mon.species, mon.nature, mon.spv, mon.ability, item, moves, label=mon.label)
+
+
 def opp_sets(n):
-    return meta_set(BASE_OF.get(norm(n), norm(n)))
+    b = BASE_OF.get(norm(n), norm(n))
+    if b not in _OPP_CACHE:
+        base, mega = meta_set(b)
+        _OPP_CACHE[b] = (_with_learning(b, base), _with_learning(b, mega))
+    return _OPP_CACHE[b]
+
+
+def pick_rate(b, prior=0.5, strength=3):
+    k = KNOW['species'].get(b, {})
+    return (k.get('picked', 0) + prior * strength) / (k.get('seen', 0) + strength)
+
+
+def lead_rate(b, strength=3):
+    k = KNOW['species'].get(b, {})
+    return (k.get('led', 0) + strength / 3) / (k.get('picked', 0) + strength)
+
+
+def history_bonus(order_, opp_names):
+    """Small bonus from our past results with these mons vs these opponents."""
+    tot, n = 0.0, 0
+    for m in order_:
+        for o in opp_names:
+            g, w = KNOW['vs'].get(f'{m}|{BASE_OF.get(norm(o), norm(o))}', [0, 0])
+            if g:
+                tot += (w + 1.5) / (g + 3) - 0.5; n += g
+    return 20 * tot * n / (n + 6) if n else 0.0
 
 
 def mine(n):
@@ -674,7 +727,7 @@ def opp_pick_weights(opp6, my6):
             o = BM(mm[1] or mm[0]); x = BM(mon)
             st = State(); st.weather = st.terrain = None
             sc += matchup(x, o, st)
-        w[n] = u * math.exp(0.35 * sc)
+        w[n] = u * math.exp(0.35 * sc) * pick_rate(base) / 0.5
     return w
 
 
@@ -697,11 +750,12 @@ def select(opp6, seconds=40):
             score = 0
             for p, c in trip:
                 sub = 0
-                for olead in c:
+                lw = [lead_rate(BASE_OF.get(norm(x), norm(x))) for x in c]
+                for olead, l in zip(c, lw):
                     oorder = [olead] + [x for x in c if x != olead]
                     st = new_state(order_, oorder)
-                    sub += quick_play(st)
-                score += p / tot * sub / 3
+                    sub += l / sum(lw) * quick_play(st)
+                score += p / tot * (sub + history_bonus(order_, c))
             results.append((score, order_))
     results.sort(key=lambda x: -x[0])
     # stage 2: replay the best candidates with 2-turn search for our side
@@ -710,10 +764,11 @@ def select(opp6, seconds=40):
         score = 0
         for p, c in trip[:5]:
             sub = 0
-            for olead in c:
+            lw = [lead_rate(BASE_OF.get(norm(x), norm(x))) for x in c]
+            for olead, l in zip(c, lw):
                 oorder = [olead] + [x for x in c if x != olead]
-                sub += smart_play(new_state(order_, oorder))
-            score += p * sub / 3
+                sub += l / sum(lw) * smart_play(new_state(order_, oorder))
+            score += p * (sub + history_bonus(order_, c))
         t2.append((score / sum(p for p, _ in trip[:5]), order_))
     t2.sort(key=lambda x: -x[0])
     results = t2 + results[12:]
@@ -789,8 +844,15 @@ def fmt_action(st, a):
 
 def main():
     if len(sys.argv) >= 3 and sys.argv[1] == 'select':
-        best, top, _ = select(sys.argv[2:])
+        best, top, _ = select([x for x in sys.argv[2:] if not x.startswith('--')])
         print('選出順: ' + ' → '.join(best))
+        if '--no-log' not in sys.argv:
+            try:  # start a battle record so turns can be appended with learn.py
+                _learn.start()
+                r = _learn.cur(); r['opp_team'] = [BASE_OF.get(norm(x), norm(x)) for x in sys.argv[2:] if not x.startswith('--')]
+                r['my_order'] = best; _learn._save(_learn.CURRENT, r)
+            except Exception:
+                pass
     elif len(sys.argv) >= 3 and sys.argv[1] == 'turn':
         js = json.load(open(sys.argv[2], encoding='utf-8'))
         sec = float(sys.argv[3]) if len(sys.argv) > 3 else 20
