@@ -87,7 +87,39 @@ def list_windows():
             print(f'{w.title}  ({w.width}x{w.height})')
 
 
-def watch_window(title, interval):
+def grab_background(hwnd, w, h):
+    """Capture a window even when other windows cover it (Win32 PrintWindow). Returns PIL image or None."""
+    try:
+        import ctypes
+        from ctypes import wintypes
+        from PIL import Image
+        u32, g32 = ctypes.windll.user32, ctypes.windll.gdi32
+        hdc = u32.GetWindowDC(hwnd)
+        mdc = g32.CreateCompatibleDC(hdc)
+        bmp = g32.CreateCompatibleBitmap(hdc, w, h)
+        g32.SelectObject(mdc, bmp)
+        ok = u32.PrintWindow(hwnd, mdc, 2)  # PW_RENDERFULLCONTENT
+
+        class BMI(ctypes.Structure):
+            _fields_ = [('biSize', wintypes.DWORD), ('biWidth', ctypes.c_long), ('biHeight', ctypes.c_long),
+                        ('biPlanes', wintypes.WORD), ('biBitCount', wintypes.WORD), ('biCompression', wintypes.DWORD),
+                        ('biSizeImage', wintypes.DWORD), ('biXPelsPerMeter', ctypes.c_long),
+                        ('biYPelsPerMeter', ctypes.c_long), ('biClrUsed', wintypes.DWORD), ('biClrImportant', wintypes.DWORD)]
+        bmi = BMI(ctypes.sizeof(BMI), w, -h, 1, 32, 0, 0, 0, 0, 0, 0)
+        buf = ctypes.create_string_buffer(w * h * 4)
+        g32.GetDIBits(mdc, bmp, 0, h, buf, ctypes.byref(bmi), 0)
+        g32.DeleteObject(bmp); g32.DeleteDC(mdc); u32.ReleaseDC(hwnd, hdc)
+        if not ok:
+            return None
+        img = Image.frombuffer('RGB', (w, h), buf, 'raw', 'BGRX', 0, 1)
+        if img.convert('L').getextrema()[1] < 10:  # all black → not supported by this window
+            return None
+        return img
+    except Exception:
+        return None
+
+
+def watch_window(title, interval, background=False):
     """Capture the PCBL window by title every `interval` seconds; keep images that changed."""
     _dpi_aware()
     import pygetwindow as gw
@@ -104,8 +136,13 @@ def watch_window(title, interval):
         w = wins[0]
         if w.isMinimized:
             print('ウィンドウが最小化されています。表示してください'); time.sleep(3); continue
+        img = grab_background(w._hWnd, w.width, w.height) if background else None
+        if background and img is None and not getattr(watch_window, '_warned', False):
+            print('背面キャプチャに失敗したため通常の画面撮影に切り替えます（PCBLを前面に出してください）')
+            watch_window._warned = True
         try:
-            img = ImageGrab.grab(bbox=(w.left, w.top, w.right, w.bottom), all_screens=True)
+            if img is None:
+                img = ImageGrab.grab(bbox=(w.left, w.top, w.right, w.bottom), all_screens=True)
         except Exception as e:
             print('撮影失敗:', e); time.sleep(interval); continue
         small = img.convert('L').resize((160, 90))
@@ -130,6 +167,7 @@ def main():
     ap.add_argument('--chrome', help='使うブラウザの実行ファイル（省略時は自動）')
     ap.add_argument('--window', help='PCBL のウィンドウタイトルの一部（ウィンドウ版）')
     ap.add_argument('--list', action='store_true', help='ウィンドウ一覧を表示')
+    ap.add_argument('--background', action='store_true', help='他のウィンドウに隠れていても撮影する（Win32 PrintWindow）')
     a = ap.parse_args()
     try:
         sys.stdout.reconfigure(encoding='utf-8')
@@ -145,7 +183,7 @@ def main():
         if a.list:
             list_windows(); return 0
         try:
-            watch_window(a.window, a.interval)
+            watch_window(a.window, a.interval, a.background)
         except KeyboardInterrupt:
             return 0
     try:
