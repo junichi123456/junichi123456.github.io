@@ -93,7 +93,12 @@ def main():
         if b is None:
             print('ブラウザを起動できません:', err); return 1
         page = b.new_page(viewport={'width': 1600, 'height': 1000})
-        page.goto(a.url, wait_until='domcontentloaded')
+        while True:  # wait until PCBL is up
+            try:
+                page.goto(a.url, wait_until='domcontentloaded'); break
+            except Exception as e:
+                print(f'{a.url} に接続できません（PCBL が起動していない／URLが違う可能性）。5秒後に再試行します: {str(e).splitlines()[0]}')
+                time.sleep(5)
         print(f'watching {a.url} → {os.path.normpath(OUT)}  (Ctrl+C で終了)')
         while True:
             try:
