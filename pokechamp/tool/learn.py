@@ -92,6 +92,13 @@ def record_turn(t):
         for k_src, k in (('opp_item', 'item'), ('opp_ability', 'ability')):
             if t.get(k_src): rv[k] = t[k_src]
         if t.get('opp_mega'): rv['mega'] = True
+        rv.setdefault('obs', [])
+        for o in t.get('obs', []):
+            rv['obs'].append(o)
+        if mv and not mv.endswith('に交代'):
+            rv['obs'].append({'kind': 'move', 'move': mv})
+        if t.get('opp_item'): rv['obs'].append({'kind': 'item', 'item': t['opp_item']})
+        if t.get('opp_mega'): rv['obs'].append({'kind': 'mega'})
         # speed observation only when both used a move of equal priority
         first = t.get('first')
         my_act, op_act = t.get('my_action', ''), t.get('opp_action', '')
@@ -154,7 +161,8 @@ def max_speed(species):
 def rebuild():
     B = [b for b in battles() if b.get('result')]
     sp = defaultdict(lambda: {'seen': 0, 'picked': 0, 'led': 0, 'w_seen': 0, 'w_picked': 0, 'moves': Counter(),
-                              'items': Counter(), 'abilities': Counter(), 'mega': 0, 'scarf_evidence': 0})
+                              'items': Counter(), 'abilities': Counter(), 'mega': 0, 'scarf_evidence': 0,
+                              'inferred': Counter()})
     my_orders = defaultdict(lambda: [0, 0])  # tuple(order) -> [games, wins]
     my_mon = defaultdict(lambda: [0, 0])
     vs = defaultdict(lambda: [0, 0])  # (my mon, opp species picked) -> [games, wins]
@@ -173,6 +181,14 @@ def rebuild():
             if rv.get('item'): sp[s]['items'][rv['item']] += 1
             if rv.get('ability'): sp[s]['abilities'][rv['ability']] += 1
             if rv.get('mega'): sp[s]['mega'] += 1
+            if rv.get('obs'):
+                try:
+                    import infer
+                    post = infer.posterior(s, rv['obs'])
+                    if post and post[0][0] >= 0.3:
+                        sp[s]['inferred'][post[0][1].key] += 1
+                except Exception:
+                    pass
             for mine in rv.get('faster_than', []):
                 if my_spd.get(mine, 0) >= max_speed(s):
                     sp[s]['scarf_evidence'] += 1
@@ -191,7 +207,8 @@ def rebuild():
         'wins': sum(1 for b in B if b['result'] == 'win'),
         'species': {k: {**{kk: vv for kk, vv in v.items() if not isinstance(vv, Counter)},
                         'moves': dict(v['moves'].most_common()), 'items': dict(v['items'].most_common()),
-                        'abilities': dict(v['abilities'].most_common())} for k, v in sp.items()},
+                        'abilities': dict(v['abilities'].most_common()),
+                        'inferred': dict(v['inferred'].most_common())} for k, v in sp.items()},
         'my_orders': {' → '.join(k): v for k, v in my_orders.items()},
         'my_mon': dict(my_mon),
         'vs': dict(vs),
@@ -214,6 +231,8 @@ def write_trends(k):
         lr = v['led'] / v['picked'] if v['picked'] else 0
         wr = f"{v['w_picked'] / v['picked'] * 100:.0f}%" if v['picked'] else '-'
         items = '、'.join(f'{i}×{c}' for i, c in v['items'].items()) + ('、スカーフ疑い' if v['scarf_evidence'] else '')
+        if v.get('inferred'):
+            items += '／推定型: ' + '、'.join(f'{k}×{c}' for k, c in list(v['inferred'].items())[:2])
         L.append(f"| {s} | {v['seen']} | {pr * 100:.0f}% | {lr * 100:.0f}% | {wr} | {'、'.join(list(v['moves'])[:6])} | {items} |")
     L += ['', '## 自分の選出', '', '| 選出順 | 回数 | 勝率 |', '|---|---|---|']
     for o, (g, w) in sorted(k['my_orders'].items(), key=lambda x: -x[1][0]):
@@ -233,12 +252,12 @@ def write_trends(k):
         L.append(f"- **{s}**: 選出{v['picked']}回で勝率{v['w_picked'] / v['picked'] * 100:.0f}%、こちらを{k['ko_by'].get(s, 0)}体倒した{hint}")
     L += ['', '## 予想外の型（使用率データと違った点）', '']
     try:
-        from battle import meta_set
+        from sets import candidates
         found = False
         for s, v in S.items():
             if not v['moves']: continue
-            base, mega = meta_set(s)
-            exp = set((mega or base).moves)
+            exp = set()
+            for c in candidates(s)[:6]: exp |= set(c.pool) if c.source == 'usage' else set(c.base.moves)
             odd = [m for m in v['moves'] if m not in exp]
             if odd:
                 found = True

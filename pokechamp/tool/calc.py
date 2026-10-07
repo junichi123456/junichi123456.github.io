@@ -11,11 +11,16 @@ _M = json.load(open(os.path.join(HERE, 'data/moves.json')))
 POKE = {}
 _PREFIX = {'blade': 'ブレード', 'heat': 'ヒート', 'wash': 'ウォッシュ', 'frost': 'フロスト', 'fan': 'スピン', 'mow': 'カット',
            'alola': 'アローラ', 'galar': 'ガラル', 'hisui': 'ヒスイ'}
+_FORM_NAME = {'eternal': '{}(えいえんのはな)', 'low-key': '{}(ロー)', 'dusk': '{}(たそがれ)', 'midnight': '{}(まよなか)',
+              'super': '{}(ギガだましゅ)', 'small': '{}(こだましゅ)', 'large': '{}(おおだましゅ)',
+              'paldea-blaze-breed': 'パルデア{}(ほのお)', 'paldea-aqua-breed': 'パルデア{}(みず)', 'paldea-combat-breed': 'パルデア{}'}
 for p in _P:
     if p['form'] in _PREFIX:
         POKE.setdefault(_PREFIX[p['form']] + p['ja'], p)
     elif p['form'] == 'female':
         POKE.setdefault(p['ja'] + '♀', p)
+    elif p['form'] in _FORM_NAME:
+        POKE.setdefault(_FORM_NAME[p['form']].format(p['ja']), p)
     else:
         POKE.setdefault(p['ja'], p)
 MOVE = {m['ja']: m for m in _M}
@@ -66,7 +71,9 @@ NATURE = {  # name: (up, down)
     'わんぱく': ('def', 'spa'), 'ずぶとい': ('def', 'atk'), 'しんちょう': ('spd', 'spa'), 'おだやか': ('spd', 'atk'),
     'ゆうかん': ('atk', 'spe'), 'れいせい': ('spa', 'spe'), 'のんき': ('def', 'spe'), 'なまいき': ('spd', 'spe'),
     'むじゃき': ('spe', 'spd'), 'せっかち': ('spe', 'def'), 'やんちゃ': ('atk', 'spd'), 'うっかりや': ('spa', 'spd'),
-    'まじめ': (None, None),
+    'まじめ': (None, None), 'さみしがり': ('atk', 'def'), 'おっとり': ('spa', 'def'), 'おとなしい': ('spd', 'def'),
+    'のうてんき': ('def', 'spd'), 'がんばりや': (None, None), 'すなお': (None, None), 'てれや': (None, None),
+    'きまぐれ': (None, None), 'ゆうかん ': ('atk', 'spe'), 'いじっぱり ': ('atk', 'spa'),
 }
 STATS = ['hp', 'atk', 'def', 'spa', 'spd', 'spe']
 _BS = ['hp', 'attack', 'defense', 'specialAttack', 'specialDefense', 'speed']

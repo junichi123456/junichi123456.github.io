@@ -2,12 +2,16 @@
 
   python3 battle.py select <相手6体...>      選出順を出す
   python3 battle.py turn state.json [秒数]   次の行動を出す（5〜8ターン先読み）
+  python3 battle.py infer <相手> [obs.json]  相手の型の事後確率（上位5）
 
 State JSON (logger の表示を写す):
 {
   "me":  [{"name": "ガブリアス", "hp": 185, "status": null, "boosts": {}, "item": true, "mega": false}, ...],
   "opp": [{"name": "ボーマンダ", "hp_pct": 100, "status": null, "boosts": {}, "item": true, "mega": false,
-           "moves_seen": ["すてみタックル"]}, ...],   # 未判明の控えは predicted で補完
+           "moves_seen": ["すてみタックル"], "item_seen": null,
+           "obs": [ ...infer.py の観測... ]}, ...],
+  # 相手の型は sets.py の候補（使用率258種＋役割推定）を infer.py で観測から絞り込んで決める。
+  # learn.py turn で記録した観測（logs/current.json）も自動で読み込む。
   "active_me": 0, "active_opp": 0,
   "rocks_me": false, "rocks_opp": false,   # 自分側/相手側にステロがあるか
   "mega_used_me": false, "mega_used_opp": false,
@@ -607,6 +611,8 @@ def build_side(names, sets_fn, hp=None):
     return side
 
 
+import infer as _infer
+import sets as _sets
 try:
     import learn as _learn
     KNOW = _learn.knowledge()
@@ -635,12 +641,45 @@ def _with_learning(base_name_, mon):
     return Mon(mon.species, mon.nature, mon.spv, mon.ability, item, moves, label=mon.label)
 
 
-def opp_sets(n):
+def prior_boost_for(b):
+    k = KNOW['species'].get(b)
+    if not k: return None
+    inferred, items = k.get('inferred', {}), k.get('items', {})
+    def f(c):
+        w = 1 + 2 * inferred.get(c.key, 0)
+        if items:
+            hit = items.get(c.base.item, 0) + (sum(v for i, v in items.items() if 'ナイト' in i) if c.mega else 0)
+            w *= (1 + hit) if hit else 1 / (1 + sum(items.values()))
+        return w
+    return f
+
+
+MY_TYPES = tuple(tuple(m.types) for m in TEAM)
+
+
+def opp_sets(n, obs=()):
+    """Most probable (base, mega) set: usage/role candidates × our past logs × this battle's observations."""
     b = BASE_OF.get(norm(n), norm(n))
-    if b not in _OPP_CACHE:
-        base, mega = meta_set(b)
-        _OPP_CACHE[b] = (_with_learning(b, base), _with_learning(b, mega))
-    return _OPP_CACHE[b]
+    obs = list(obs)
+    key = (b, json.dumps(obs, ensure_ascii=False, sort_keys=True))
+    if key not in _OPP_CACHE:
+        if b in POKE:
+            base, mega, _ = _infer.best_set(b, obs, MY_TYPES, prior_boost_for(b))
+            if not obs:
+                base, mega = _with_learning(b, base), _with_learning(b, mega)
+        else:
+            base, mega = meta_set(b)
+        _OPP_CACHE[key] = (base, mega)
+    return _OPP_CACHE[key]
+
+
+def battle_obs(species):
+    """Observations already recorded for this species in the running battle (logs/current.json)."""
+    try:
+        rec = _learn._load(_learn.CURRENT, None) or {}
+        return list(rec.get('opp_revealed', {}).get(species, {}).get('obs', []))
+    except Exception:
+        return []
 
 
 def pick_rate(b, prior=0.5, strength=3):
@@ -719,7 +758,7 @@ def opp_pick_weights(opp6, my6):
     w = {}
     for n in opp6:
         base = BASE_OF.get(norm(n), norm(n))
-        u = 1.0 / (1 + USAGE_RANK.get(base, 60) / 15)
+        u = (1.0 / (1 + _sets.usage_rank(base) / 30)) ** 0.5  # minor picks are usually brought on purpose
         b, m = opp_sets(n)
         mon = m or b
         sc = 0
@@ -797,10 +836,12 @@ def load_state(js):
         me.append(m)
     opp = []
     for d in js['opp']:
-        base, mega = opp_sets(d['name'])
         nm = norm(d['name'])
-        if mega is None and nm.startswith('メガ'):
-            base, mega = opp_sets(BASE_OF.get(nm, nm))
+        bname = BASE_OF.get(nm, nm)
+        obs = list(d.get('obs', [])) + battle_obs(bname) + [{'kind': 'move', 'move': mv} for mv in d.get('moves_seen', [])]
+        if d.get('item_seen'): obs.append({'kind': 'item', 'item': d['item_seen']})
+        if d.get('mega') or nm.startswith('メガ'): obs.append({'kind': 'mega'})
+        base, mega = opp_sets(bname, obs)
         m = BM(base, mega)
         if d.get('mega') or nm.startswith('メガ'):
             if mega: m.cur = mega; m.name = mega.species
@@ -863,7 +904,16 @@ def main():
         depth, res = decide(st, sec)
         print(f"次: {fmt_action(st, res[0][1])}")
         if '-v' in sys.argv:
+            for m in st.sides[1]:
+                print('  相手推定:', m.name, m.cur.nature, m.cur.sp_str(), m.cur.item, m.moves)
             print('depth', depth, [(round(v, 2), fmt_action(st, a)) for v, a in res])
+    elif len(sys.argv) >= 3 and sys.argv[1] == 'infer':
+        sp = BASE_OF.get(norm(sys.argv[2]), norm(sys.argv[2]))
+        obs = json.load(open(sys.argv[3], encoding='utf-8')) if len(sys.argv) > 3 else []
+        obs = obs + battle_obs(sp)
+        for p, c in _infer.posterior(sp, obs, MY_TYPES, prior_boost_for(sp))[:5]:
+            m = c.mega or c.base
+            print(f"{p:.2f} {c.key} {m.stat_str()} {c.base.moves}")
     else:
         print(__doc__)
 
