@@ -9,7 +9,12 @@
       "Bash(python3 battle.py *)",
       "Bash(python3 learn.py *)",
       "Bash(python3 pokechamp/tool/battle.py *)",
-      "Bash(python3 pokechamp/tool/learn.py *)"
+      "Bash(python3 pokechamp/tool/learn.py *)",
+      "Bash(python wait_event.py *)",
+      "Bash(python pokechamp/tool/wait_event.py *)",
+      "Bash(python wait_event.py)",
+      "Bash(python pokechamp/tool/wait_event.py)",
+      "Read(pokechamp/logs/live/**)"
     ]
   },
   "hooks": {
@@ -19,7 +24,9 @@
           {
             "type": "command",
             "command": "python",
-            "args": ["pokechamp/tool/hook_latest.py"],
+            "args": [
+              "pokechamp/tool/hook_latest.py"
+            ],
             "timeout": 10
           }
         ]

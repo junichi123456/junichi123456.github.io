@@ -16,6 +16,18 @@ description: ポケモンチャンピオンズ（シングル）の対戦中に�
 次に何をするか：<技名 / ○○に交代 / メガシンカ＋技名>
 ```
 
+## 自動進行モード（ユーザーのチャット不要・推奨）
+
+ユーザーが `python game_watch.py --password <OBSのWebSocketパスワード>` を起動していれば（`pokechamp/logs/live/game_state.json` が数秒以内に更新されている）、次のループで進める。ユーザーにチャットや合図を求めない。
+
+1. `cd pokechamp/tool && python wait_event.py` を **バックグラウンド実行**（run_in_background）して待つ。終了すると自動で起こされる。
+2. 出力 JSON の `phase` で分岐し、`image`（その瞬間のゲーム画面）を Read で読む:
+   - `preview`（選出画面）: 右側の相手6体を画像から特定する。名前は出ないので見た目とタイプアイコンで判断し、迷ったら `python battle.py types <タイプ1> [タイプ2]` で候補（使用率順）を確認。`python battle.py select <6体>` を実行し「選出順」を出力。
+   - `command`（自分の行動選択画面）: 画面と `pokechamp/logs/live/latest.txt`（PCBLの表示）から場の状況・HP%・前ターンの出来事を読み、観測を `learn.py turn` に記録、state.json を作って `python battle.py turn state.json` を実行し「次に何をするか」を出力。
+   - `timeout`: 何も出力せず 1 に戻る。
+3. 出力したら **すぐに 1 に戻って** 次を待つ。対戦終了（勝敗画面）を画像で確認したら `learn.py end` で記録し、そのまま次の対戦を待つ。
+4. 画像の読み取りから出力まで 10 秒以内を目標にする（選出は90秒、行動は45秒の制限）。
+
 ## 手順
 
 0. **PCBL（Battle Logger）の画面読み取りを起動**（PC上のセッションで、PCBLの Live Scan が動いているとき）:

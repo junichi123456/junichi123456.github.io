@@ -917,6 +917,17 @@ def main():
             for m in st.sides[1]:
                 print('  相手推定:', m.name, m.cur.nature, m.cur.sp_str(), m.cur.item, m.moves)
             print('depth', depth, [(round(v, 2), fmt_action(st, a)) for v, a in res])
+    elif len(sys.argv) >= 3 and sys.argv[1] == 'types':
+        # 選出画面のタイプアイコンから相手候補を絞る: python battle.py types ほのお かくとう
+        from calc import JT
+        rev = {v: k for k, v in JT.items()}
+        want = {rev.get(t, t) for t in sys.argv[2:]}
+        rows = []
+        for n, p in POKE.items():
+            if p.get('champ') and set(p['types']) == want and not (p.get('form') and 'mega' in p['form']):
+                rows.append((_sets.usage_rank(n), n))
+        for r, n in sorted(rows)[:12]:
+            print(f"{n}（使用率{r if r < 300 else '圏外'}位）")
     elif len(sys.argv) >= 3 and sys.argv[1] == 'infer':
         sp = BASE_OF.get(norm(sys.argv[2]), norm(sys.argv[2]))
         obs = json.load(open(sys.argv[3], encoding='utf-8')) if len(sys.argv) > 3 else []

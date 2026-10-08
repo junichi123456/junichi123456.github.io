@@ -58,3 +58,17 @@ python pcbl_watch.py            # Edge / Chrome を自動で使う。--headed �
 ```
 
 `parsed.json` にはポケモン名・HP%・ターン数・技名を拾った結果が入ります（画面の文字から拾う簡易方式）。
+
+## 自動進行（game_watch.py / wait_event.py）
+
+PCBL のライブスキャンは選出画面を拾わないため、OBS が受け取っているゲーム映像を直接見て「選出画面」「自分の行動選択画面」を検出します。
+
+```
+pip install obsws-python winsdk pillow pygetwindow
+python game_watch.py --password <OBS WebSocketのパスワード>   # OBSのツール→WebSocketサーバー設定
+```
+
+- 映像は OBS WebSocket の `GetSourceScreenshot`、文字は Windows 標準の日本語 OCR で読みます。
+- 選出画面（「選出してください」）と行動選択画面（自分の技名が2つ以上 or 「たたかう」等）を検出すると `../logs/live/game_events.jsonl` に追記します。
+- 対戦中の Claude は `python wait_event.py` をバックグラウンドで実行して待ち、検出のたびに自動で起こされて判断します。ユーザーがターンごとにチャットを送る必要はありません。
+- `python battle.py types ほのお かくとう` で、タイプの組み合わせから相手の候補を使用率順に出せます（選出画面は相手の名前が出ないため）。
