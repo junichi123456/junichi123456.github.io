@@ -20,11 +20,11 @@ GLYPH = json.load(open(os.path.join(HERE, 'data', 'type_glyphs.json'), encoding=
 N = GLYPH['size']
 CACHE = os.path.join(HERE, 'data', 'home_cache')
 
-# 16:9 の選出画面における相手6枠の位置（画面幅・高さに対する割合）
-SLOT_Y0, SLOT_DY, SLOT_H = 0.1639, 0.1178, 0.1066
-SPRITE_X = (0.8296, 0.9086)
-ICON_X = [(0.9097, 0.9334), (0.9368, 0.9605)]
-ICON_Y_OFF, ICON_H = 0.0103, 0.043
+# 16:9 の選出画面（1280x720 実機キャプチャで計測）における相手6枠の位置（画面幅・高さに対する割合）
+SLOT_Y0, SLOT_DY, SLOT_H = 0.143, 0.1167, 0.107
+SPRITE_X = (0.838, 0.907)
+ICON_X = [(0.9094, 0.9336), (0.9367, 0.9609)]
+ICON_Y_OFF, ICON_H = 0.0098, 0.0486
 
 
 def usage_rank(n):
@@ -35,7 +35,14 @@ def usage_rank(n):
         return 300
 
 
-GLYPH_INT = {t: int(s, 2) for t, s in GLYPH['glyphs'].items()}
+GAME_GLYPH_P = os.path.join(HERE, 'data', 'type_glyphs_game.json')
+try:
+    GAME_GLYPH = json.load(open(GAME_GLYPH_P, encoding='utf-8'))
+except FileNotFoundError:
+    GAME_GLYPH = {}
+# templates per type: op.gg glyph + glyphs captured from real game screens (learned with --learn)
+TEMPLATES = [(t, int(s, 2)) for t, s in GLYPH['glyphs'].items()] + \
+            [(t, int(b, 2)) for t, lst in GAME_GLYPH.items() for b in lst]
 
 
 def white_mask(img):
@@ -52,7 +59,7 @@ def match_type(icon):
     if bin(m).count('1') < N * N * 0.04:
         return None, 0.0
     best, bs = None, -1.0
-    for t, gv in GLYPH_INT.items():
+    for t, gv in TEMPLATES:
         u = bin(m | gv).count('1')
         iou = bin(m & gv).count('1') / u if u else 0
         if iou > bs:
@@ -106,11 +113,12 @@ def slots(img):
     # the frame is already trimmed to the game picture, so only small corrections are searched
     for sx in (0.99, 1.0, 1.01):
         for sy in (0.97, 0.985, 1.0, 1.015, 1.03):
-            for dy in [x / 1000 for x in range(-15, 16, 5)]:
+            for dy in [x / 1000 for x in range(-30, 31, 5)]:
                 for dx in [x / 1000 for x in range(-10, 11, 5)]:
                     sc = read_slots(small, dx, dy, sx, sy, False)[1] - 2 * (abs(dx) + abs(dy))
                     if sc > best[4]:
                         best = (dx, dy, sx, sy, sc)
+    slots.layout = best[:4]
     return read_slots(img, *best[:4])[0]
 
 
@@ -179,17 +187,45 @@ def font(size):
     return ImageFont.load_default()
 
 
+def learn(img, labels):
+    """Store the icon glyphs of a real screen under their correct types."""
+    rev = {v: k for k, v in JT.items()}
+    slots(img)
+    dx, dy, sx, sy = slots.layout
+    W, H = img.size
+    X = lambda f: int((dx + sx * f) * W)
+    Y = lambda f: int((dy + sy * f) * H)
+    added = 0
+    for i, lab in enumerate(labels):
+        ts = [rev.get(t, t) for t in lab.split('/')]
+        iy = SLOT_Y0 + SLOT_DY * i + ICON_Y_OFF
+        boxes = [ICON_X[1]] if len(ts) == 1 else ICON_X
+        for t, (x0, x1) in zip(ts, boxes):
+            m = white_mask(img.crop((X(x0), Y(iy), X(x1), Y(iy + ICON_H))))
+            b = format(m, f'0{N * N}b')
+            lst = GAME_GLYPH.setdefault(t, [])
+            if b not in lst:
+                lst.append(b); added += 1
+    json.dump(GAME_GLYPH, open(GAME_GLYPH_P, 'w', encoding='utf-8'))
+    print(f'{added} 個のアイコンを学習しました（{len(GAME_GLYPH)} タイプ）')
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('image')
     ap.add_argument('--out', default=None)
     ap.add_argument('--k', type=int, default=10)
+    ap.add_argument('--learn', nargs=6, metavar='TYPES',
+                    help='正解のタイプを6枠分（例: むし/みず じめん エスパー/ノーマル ...）指定してアイコンを学習')
     a = ap.parse_args()
     try:
         sys.stdout.reconfigure(encoding='utf-8')
     except Exception:
         pass
     img = trim(Image.open(a.image).convert('RGB'))
+    if a.learn:
+        learn(img, a.learn)
+        return
     res = slots(img)
     T = 150
     sheet = Image.new('RGB', (T * (a.k + 1), T * 6), 'white')
