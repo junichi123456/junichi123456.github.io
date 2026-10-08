@@ -589,16 +589,19 @@ def rollout(st, n):
     return st
 
 
-def decide(st, seconds=20.0, horizon=8):
-    """Iterative deepening: full tree for `depth` turns + greedy rollout up to `horizon` turns (5〜8手先)."""
+def decide(st, seconds=8.0, horizon=8):
+    """Iterative deepening within a hard time budget: full tree for `depth` turns + greedy rollout
+    up to `horizon` turns (5〜8手先). Always returns an answer (1-ply fallback if time is very short)."""
     t0 = time.time()
     best = None
-    for depth in range(2, horizon + 1):
-        s = Search(t0 + seconds * (3 if depth <= 3 else 1), roll=max(0, horizon - depth))
+    for depth in range(1, horizon + 1):
+        s = Search(t0 + seconds, roll=max(0, horizon - depth))
         try:
             best = (depth, s.root(st, depth))
         except TimeoutError:
             break
+    if best is None:
+        best = (0, [(0.0, a) for a in prune(st, 0, actions(st, 0), 6)])
     return best
 
 
@@ -770,7 +773,8 @@ def opp_pick_weights(opp6, my6):
     return w
 
 
-def select(opp6, seconds=40):
+def select(opp6, seconds=8.0):
+    t_end = time.time() + seconds
     my_names = [BASE_OF.get(m.species, m.species) for m in TEAM]
     w = opp_pick_weights(opp6, list(MY.values()))
     trip = []
@@ -800,6 +804,8 @@ def select(opp6, seconds=40):
     # stage 2: replay the best candidates with 2-turn search for our side
     t2 = []
     for _, order_ in results[:12]:
+        if time.time() > t_end and t2:
+            break
         score = 0
         for p, c in trip[:5]:
             sub = 0
@@ -900,7 +906,7 @@ def main():
                 pass
     elif len(sys.argv) >= 3 and sys.argv[1] == 'turn':
         js = json.load(open(sys.argv[2], encoding='utf-8'))
-        sec = float(sys.argv[3]) if len(sys.argv) > 3 else 20
+        sec = float(sys.argv[3]) if len(sys.argv) > 3 and not sys.argv[3].startswith('-') else 7
         st = load_state(js)
         if not st.active(0).alive:
             j = best_switch(st, 0)

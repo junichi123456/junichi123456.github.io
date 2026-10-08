@@ -1,0 +1,29 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(pokechamp/logs/**)",
+      "Bash(python battle.py *)",
+      "Bash(python learn.py *)",
+      "Bash(python pokechamp/tool/battle.py *)",
+      "Bash(python pokechamp/tool/learn.py *)",
+      "Bash(python3 battle.py *)",
+      "Bash(python3 learn.py *)",
+      "Bash(python3 pokechamp/tool/battle.py *)",
+      "Bash(python3 pokechamp/tool/learn.py *)"
+    ]
+  },
+  "hooks": {
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python",
+            "args": ["pokechamp/tool/hook_latest.py"],
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}
