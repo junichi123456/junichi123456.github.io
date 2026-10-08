@@ -22,7 +22,11 @@ description: ポケモンチャンピオンズ（シングル）の対戦中に�
 
 1. `cd pokechamp/tool && python wait_event.py` を **バックグラウンド実行**（run_in_background）して待つ。終了すると自動で起こされる。
 2. 出力 JSON の `phase` で分岐し、`image`（その瞬間のゲーム画面）を Read で読む:
-   - `preview`（選出画面）: 右側の相手6体を画像から特定する。名前は出ないので見た目とタイプアイコンで判断し、迷ったら `python battle.py types <タイプ1> [タイプ2]` で候補（使用率順）を確認。`python battle.py select <6体>` を実行し「選出順」を出力。
+   - `preview`（選出画面）: 相手の名前は表示されない（3Dモデルの小さな絵とタイプアイコンのみ）。
+     イベントの `identify`（各枠のタイプ判定と候補）と `identify_sheet`（左端=画面の枠、右=候補の HOME 3Dモデル画像）を Read で見て、6体を見比べて確定する。
+     タイプは必ず `identify` の判定（アイコンの記号の形で判定）を使い、色で推測しない。特に **どく=紫地に丘と丸**、**むし=黄緑地の記号**、**ゴースト=紫地のおばけ** は見間違えやすい。
+     候補に一致する絵が無いときだけ、別タイプの読み違いを疑って `python identify.py <画像>` を再実行する。
+     確定したら `python battle.py select <6体>` を実行し「選出順」を出力。
    - `command`（自分の行動選択画面）: 画面と `pokechamp/logs/live/latest.txt`（PCBLの表示）から場の状況・HP%・前ターンの出来事を読み、観測を `learn.py turn` に記録、state.json を作って `python battle.py turn state.json` を実行し「次に何をするか」を出力。
    - `timeout`: 何も出力せず 1 に戻る。
 3. 出力したら **すぐに 1 に戻って** 次を待つ。対戦終了（勝敗画面）を画像で確認したら `learn.py end` で記録し、そのまま次の対戦を待つ。

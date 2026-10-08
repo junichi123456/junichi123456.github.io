@@ -144,9 +144,20 @@ def main():
             ts = time.strftime('%Y-%m-%dT%H:%M:%S')
             snap = os.path.join(OUT, f'game_{seq:04d}_{phase}.png')
             img.save(snap)
+            ev = {'seq': seq, 'phase': phase, 'time': ts, 'image': snap, 'text': text}
+            if phase == 'preview':
+                # identify the opponent's six right away: type icons + reference sheet
+                try:
+                    import subprocess
+                    sheet = os.path.join(OUT, f'game_{seq:04d}_identify.png')
+                    r = subprocess.run([sys.executable, os.path.join(HERE, 'identify.py'), snap, '--out', sheet],
+                                       capture_output=True, text=True, encoding='utf-8', timeout=20)
+                    ev['identify'] = r.stdout
+                    ev['identify_sheet'] = sheet
+                except Exception as e:
+                    ev['identify'] = f'identify failed: {e}'
             with open(ev_p, 'a', encoding='utf-8') as f:
-                f.write(json.dumps({'seq': seq, 'phase': phase, 'time': ts, 'image': snap, 'text': text},
-                                   ensure_ascii=False) + '\n')
+                f.write(json.dumps(ev, ensure_ascii=False) + '\n')
             print(ts, '検出:', phase, f'#{seq}')
         last_phase = phase
         tmp = state_p + '.tmp'
