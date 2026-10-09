@@ -823,7 +823,44 @@ def select(opp6, seconds=8.0):
 
 
 # ---------------------------------------------------------------- state loading
+def field_defaults(js):
+    """Fill in what state.json leaves out from logs/live/field_state.json (written by game_watch.py
+    from the battle messages): weather/terrain, hazards, mega used, and per-mon boosts, consumed
+    items, status and moves seen."""
+    try:
+        live = os.path.join(_learn.LOGS, 'live', 'field_state.json')
+        fs = json.load(open(live, encoding='utf-8'))
+    except Exception:
+        return js
+    js = dict(js)
+    for k in ('weather', 'weather_turns', 'terrain', 'terrain_turns', 'rocks_me', 'rocks_opp'):
+        if k not in js and fs.get(k) is not None:
+            js[k] = fs[k]
+    if 'mega_used_me' not in js: js['mega_used_me'] = fs['mega_used']['me']
+    if 'mega_used_opp' not in js: js['mega_used_opp'] = fs['mega_used']['opp']
+    for side in ('me', 'opp'):
+        out = []
+        for d in js.get(side, []):
+            d = dict(d)
+            nm = norm(d['name']); base = BASE_OF.get(nm, nm)
+            info = fs['mons'][side].get(base)
+            if info:
+                if 'boosts' not in d and info.get('boosts'): d['boosts'] = info['boosts']
+                if 'status' not in d and info.get('status'): d['status'] = info['status']
+                if 'item' not in d and info.get('item_consumed'): d['item'] = False
+                if info.get('mega') and 'mega' not in d: d['mega'] = True
+                if side == 'opp':
+                    seen = d.get('moves_seen', [])
+                    d['moves_seen'] = seen + [m for m in info.get('moves_seen', []) if m not in seen]
+                    if not d.get('item_seen') and info.get('items_seen'):
+                        d['item_seen'] = info['items_seen'][0]
+            out.append(d)
+        js[side] = out
+    return js
+
+
 def load_state(js):
+    js = field_defaults(js)
     st = State()
     me = []
     for d in js['me']:

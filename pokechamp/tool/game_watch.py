@@ -172,6 +172,11 @@ def main():
     except Exception:
         pass
     det = Detector()
+    import msgparse
+    field_p = os.path.join(OUT, 'field_state.json')
+    tracker = msgparse.FieldTracker(field_p)
+    turn_lines, last_lines = [], set()
+    log_p = os.path.join(OUT, 'battle_messages.jsonl')
     print(f'ゲーム画面の監視を開始 → {os.path.normpath(OUT)}  (Ctrl+C で終了)')
     while True:
         t0 = time.time()
@@ -185,6 +190,12 @@ def main():
         phase = classify(text)
         img.save(os.path.join(OUT, 'game.tmp.png'))
         os.replace(os.path.join(OUT, 'game.tmp.png'), os.path.join(OUT, 'game.png'))
+        # collect battle messages shown between screens (new lines only, in order of appearance)
+        lines = [l.strip() for l in text.splitlines() if l.strip()]
+        new = [l for l in lines if l not in last_lines]
+        last_lines = set(lines)
+        if new and not det.in_preview:
+            turn_lines.extend(new)
         event = det.update(phase, time.time())
         if event:
             phase = event
@@ -193,7 +204,20 @@ def main():
             snap = os.path.join(OUT, f'game_{seq:04d}_{phase}.png')
             img.save(snap)
             ev = {'seq': seq, 'phase': phase, 'time': ts, 'image': snap, 'text': text}
+            if phase == 'command':
+                # what happened since the previous decision: moves, stat changes, weather, items, ...
+                turn = msgparse.parse_turn(turn_lines)
+                tracker.apply(turn)
+                ev['turn_events'] = {k: v for k, v in turn.items() if v}
+                ev['field_state'] = field_p
+                with open(log_p, 'a', encoding='utf-8') as f:
+                    f.write(json.dumps({'seq': seq, 'time': ts, 'lines': turn_lines, 'parsed': ev['turn_events']},
+                                       ensure_ascii=False) + '\n')
+                turn_lines = []
             if phase == 'preview':
+                tracker = msgparse.FieldTracker(field_p)  # new battle
+                tracker.save()
+                turn_lines = []
                 # identify the opponent's six right away: type icons + reference sheet
                 try:
                     import subprocess

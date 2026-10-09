@@ -30,7 +30,10 @@ description: ポケモンチャンピオンズ（シングル）の対戦中に�
      対戦後、相手6体のタイプが確定したら（判定が違っていた場合は特に）
      `python identify.py <その選出画面の画像> --learn <枠1のタイプ> ... <枠6のタイプ>`（複合は「むし/みず」）で
      実画面のアイコンを学習させる。未学習のタイプ（あく・ドラゴン・こおり）が出たら必ず学習させる。
-   - `command`（自分の行動選択画面）: 画面と `pokechamp/logs/live/latest.txt`（PCBLの表示）から場の状況・HP%・前ターンの出来事を読み、観測を `learn.py turn` に記録、state.json を作って `python battle.py turn state.json` を実行し「次に何をするか」を出力。
+   - `command`（自分の行動選択画面）: イベントの `turn_events` に、前の判断以降に流れた戦闘メッセージから抜き出した出来事（使われた技と行動順・能力ランク変化・天候/フィールドの開始と終了・持ち物の消費・状態異常・ステロ・交代・ひんし・メガシンカ・特性・急所）が入っている。累積した場の状態は `pokechamp/logs/live/field_state.json`。
+     画面（`image`）からは HP%（と必要なら場のポケモン）だけを読み、state.json は場のポケモンとHPだけ書けばよい（天候・フィールド・ランク・消費した持ち物・状態異常・ステロ・メガ・判明した技は battle.py が field_state.json から自動で補う。画面で明らかに違うときだけ state.json に明記して上書きする）。
+     `turn_events` を観測として `learn.py turn` に記録（moves→move、items→item、first→order、ダメージ%→dealt/taken）し、`python battle.py turn state.json` を実行して「次に何をするか」を出力。
+     メッセージの読み取り結果は `pokechamp/logs/live/battle_messages.jsonl` に生の行と一緒に残る。抜き出しに失敗している言い回しを見つけたら `msgparse.py` の文言を直す（対戦の合間に）。
    - `timeout`: 何も出力せず 1 に戻る。
 3. 出力したら **すぐに 1 に戻って** 次を待つ。対戦終了（勝敗画面）を画像で確認したら `learn.py end` で記録し、そのまま次の対戦を待つ。
 4. 画像の読み取りから出力まで 10 秒以内を目標にする（選出は90秒、行動は45秒の制限）。
