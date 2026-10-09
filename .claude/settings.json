@@ -25,7 +25,8 @@
             "type": "command",
             "command": "python",
             "args": [
-              "pokechamp/tool/hook_latest.py"
+              "-c",
+              "import os,runpy\nd=os.environ.get('CLAUDE_PROJECT_DIR') or os.getcwd()\nfor _ in range(4):\n    p=os.path.join(d,'pokechamp','tool','hook_latest.py')\n    if os.path.exists(p):\n        runpy.run_path(p,run_name='__main__')\n        break\n    d=os.path.dirname(d)\n"
             ],
             "timeout": 10
           }
