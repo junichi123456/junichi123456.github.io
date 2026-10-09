@@ -16,8 +16,11 @@ State JSON (logger の表示を写す):
   "rocks_me": false, "rocks_opp": false,   # 自分側/相手側にステロがあるか
   "mega_used_me": false, "mega_used_opp": false,
   "weather": null, "weather_turns": 0, "terrain": null, "terrain_turns": 0,
-  "opp_last_move": null
+  "opp_last_move": null, "trick_room": 0        # トリックルームの残りターン
 }
+各ポケモンに任意で: "last_move"（こだわり固定）, "rampage": true（げきりん等の継続中）, "sub": 25（みがわりHP%）,
+"glaive": true（前ターンにきょけんとつげき）, "toxn": 2（もうどくの経過ターン）, "status": "psn"/"tox"/...
+確率: 乱数（確定/乱数KOを分岐）・命中・急所・まひ(12.5%行動不能)は直近1手を確率分岐、それ以降は期待値で評価。
 """
 import copy, itertools, json, math, os, sys, time
 from functools import lru_cache
@@ -81,7 +84,7 @@ def meta_set(base):
     return generic_set(base), None
 
 
-GOOD_STATUS = {'つるぎのまい', 'りゅうのまい', 'わるだくみ', 'めいそう', 'ステルスロック', 'おにび', 'でんじは', 'あくび', 'はねやすめ',
+GOOD_STATUS = {'どくどく', 'キノコのほうし', 'さいみんじゅつ', 'ねむりごな', 'つるぎのまい', 'りゅうのまい', 'わるだくみ', 'めいそう', 'ステルスロック', 'おにび', 'でんじは', 'あくび', 'はねやすめ',
                'じこさいせい', 'なまける', 'ちょうのまい', 'からをやぶる', 'キングシールド', 'まもる', 'アンコール', 'ちょうはつ'}
 
 
@@ -149,12 +152,24 @@ PHAZE = {'ふきとばし', 'ほえる', 'ドラゴンテール'}
 PROTECT = {'まもる', 'キングシールド', 'みきり', 'トーチカ'}
 DRAIN = {'きゅうけつ': .5, 'ドレインパンチ': .5, 'ギガドレイン': .5, 'ドレインキッス': .75}
 SLOW_PIVOT_ALWAYS_FIRST = {'であいがしら', 'ねこだまし'}
+CHOICE = {'こだわりスカーフ', 'こだわりハチマキ', 'こだわりメガネ'}
+RAMPAGE = {'げきりん', 'あばれる', 'はなびらのまい'}
+SLEEP_MOVES = {'キノコのほうし', 'ねむりごな', 'さいみんじゅつ', 'くさぶえ', 'ダークホール'}
+POWDER = {'キノコのほうし', 'ねむりごな'}
+BLOCKED_BY_SUB = {'おにび', 'でんじは', 'あくび', 'どくどく'} | SLEEP_MOVES
+SOUND = {'ハイパーボイス', 'ばくおんぱ', 'りんしょう', 'むしのさざめき', 'スケイルノイズ', 'ブレイククロー', 'オーバードライブ',
+         'サイコノイズ', 'みわくのボイス', 'フレアソング', 'うたかたのアリア', 'いびき'}
+ALWAYS_CRIT = {'あんこくきょうだ', 'すいりゅうれんだ', 'トリックフラワー', 'こおりのいぶき', 'やまあらし'}
+TRAP = {'かげふみ', 'ありじごく', 'じりょく'}
+PARA_P = 0.125   # full paralysis chance
+CRIT_P = 1 / 24
 
 
 class BM:
     """Battle mon (mutable)."""
     __slots__ = ('base', 'mega', 'cur', 'hp', 'maxhp', 'status', 'boosts', 'item', 'disguise', 'can_mega', 'moves',
-                 'sleep', 'encore', 'taunt', 'yawn', 'side', 'name', 'revealed', 'first_turn', 'prot')
+                 'sleep', 'encore', 'taunt', 'yawn', 'side', 'name', 'revealed', 'first_turn', 'prot', 'lock', 'rampage',
+                 'glaive', 'toxn', 'sub', 'dbond')
 
     def __init__(self, base, mega=None, hp_frac=1.0):
         self.base, self.mega, self.cur = base, mega, base
@@ -173,6 +188,12 @@ class BM:
         self.name = base.species
         self.first_turn = True
         self.prot = 0
+        self.lock = None      # choice-locked move
+        self.rampage = None   # (move, forced turns left) for げきりん etc.
+        self.glaive = 0       # きょけんとつげき: takes double damage until end of next turn
+        self.toxn = 0         # toxic counter
+        self.sub = 0          # substitute HP
+        self.dbond = False    # みちづれ active
 
     def clone(self):
         n = BM.__new__(BM)
@@ -180,6 +201,7 @@ class BM:
         n.boosts = self.boosts.copy(); n.item, n.disguise, n.can_mega = self.item, self.disguise, self.can_mega
         n.moves = self.moves; n.sleep, n.encore, n.taunt, n.yawn = self.sleep, self.encore, self.taunt, self.yawn
         n.name, n.first_turn, n.prot = self.name, self.first_turn, self.prot
+        n.lock, n.rampage, n.glaive, n.toxn, n.sub, n.dbond = self.lock, self.rampage, self.glaive, self.toxn, self.sub, self.dbond
         return n
 
     @property
@@ -196,14 +218,14 @@ class BM:
 
 
 class State:
-    __slots__ = ('sides', 'act', 'rocks', 'mega_used', 'weather', 'wt', 'terrain', 'tt', 'turn', 'last')
+    __slots__ = ('sides', 'act', 'rocks', 'mega_used', 'weather', 'wt', 'terrain', 'tt', 'turn', 'last', 'tr')
 
     def clone(self):
         n = State.__new__(State)
         n.sides = [[m.clone() for m in s] for s in self.sides]
         n.act = list(self.act); n.rocks = list(self.rocks); n.mega_used = list(self.mega_used)
         n.weather, n.wt, n.terrain, n.tt, n.turn = self.weather, self.wt, self.terrain, self.tt, self.turn
-        n.last = list(self.last)
+        n.last = list(self.last); n.tr = self.tr
         return n
 
     def active(self, i):
@@ -217,7 +239,8 @@ class State:
 _DMG = {}
 
 
-def dmg(att, dfn, move, st):
+def rolls(att, dfn, move, st, crit=False):
+    """16 damage rolls (ascending) of att's move into dfn in the current state."""
     a, d = att.cur, dfn.cur
     mv = MOVE[move]
     if mv['cat'] == 'physical':
@@ -228,8 +251,10 @@ def dmg(att, dfn, move, st):
         ab = att.boosts['defn']
     full = dfn.hp == dfn.maxhp
     terr = st.terrain
+    knock = move == 'はたきおとす' and removable(dfn)
+    crit = crit or move in ALWAYS_CRIT
     key = (id(a), a.item if att.item else None, id(d), dfn.item, move, ab, db, att.status == 'brn', full and d.ability in ('マルチスケイル',),
-           st.weather, terr, dfn.disguise)
+           st.weather, terr, dfn.disguise, crit, dfn.glaive > 0, knock)
     r = _DMG.get(key)
     if r is None:
         aa = a
@@ -241,17 +266,71 @@ def dmg(att, dfn, move, st):
         if a.species == 'ギルガルド':
             aa = Mon('ブレードギルガルド', a.nature, a.spv, 'バトルスイッチ', att.item, a.moves)
         if d.ability == 'ばけのかわ' and dfn.disguise:
-            r = (0, 0)
+            r = (0,) * 16
         else:
-            rolls = calc(aa, dd, move, atk_boost=ab, def_boost=db, burned=att.status == 'brn', weather=st.weather,
-                         terrain=terr, def_full_hp=full)
-            r = (rolls[7], rolls[0])
+            r = tuple(calc(aa, dd, move, atk_boost=ab, def_boost=db, burned=att.status == 'brn', weather=st.weather,
+                           terrain=terr, def_full_hp=full, crit=crit, glaive=dfn.glaive > 0,
+                           extra_power_mod=6144 if knock else None))
         _DMG[key] = r
     return r
 
 
+def dmg(att, dfn, move, st):
+    r = rolls(att, dfn, move, st)
+    return r[7], r[0]
+
+
+def removable(m):
+    return bool(m.item) and 'ナイト' not in m.item and m.cur is not m.mega
+
+
+def hit_prob(a, d, move, st):
+    acc = MOVE[move]['acc']
+    if not acc or acc >= 100 or d.glaive or 'ノーガード' in (a.cur.ability, d.cur.ability):
+        return 1.0
+    if move == 'ふぶき' and st.weather == 'snow': return 1.0
+    if move in ('かみなり', 'ぼうふう') and st.weather == 'rain': return 1.0
+    if move in ('かみなり', 'ぼうふう') and st.weather == 'sun': acc = 50
+    if move == 'どくどく' and 'poison' in a.cur.types: return 1.0
+    if a.cur.ability == 'ふくがん': acc = acc * 1.3
+    return min(1.0, acc / 100)
+
+
+def chance(st, i, act, oact):
+    """Luck outcomes of side i's action as [(prob, spec)]: full paralysis, miss, KO / no-KO roll, crit.
+    The roll is given as an index into the 16 rolls so it stays valid if the state changes mid-turn."""
+    if act[0] != 'm': return [(1.0, None)]
+    a = st.active(i)
+    if not a.alive or (a.status == 'slp' and a.sleep > 0): return [(1.0, None)]
+    move = act[1]
+    d = st.sides[1 - i][oact[1]] if oact[0] == 's' else st.active(1 - i)
+    pp = PARA_P if a.status == 'par' else 0.0
+    acc = hit_prob(a, d, move, st)
+    hits = [(1.0, ('r', 7))]
+    if MOVE[move]['cat'] != 'status' and d.alive:
+        r = rolls(a, d, move, st)
+        hp = d.sub if (d.sub and move not in SOUND) else d.hp
+        k = sum(1 for x in r if x < hp)  # rolls that do not KO
+        if move in ALWAYS_CRIT:
+            hits = [(1.0, ('c',))]
+        else:
+            if 0 < k < 16:
+                hits = [(k / 16, ('r', (k - 1) // 2)), (1 - k / 16, ('r', (k + 15) // 2))]
+            if k > 0 and d.cur.ability not in ('シェルアーマー', 'カブトアーマー') and rolls(a, d, move, st, True)[7] >= hp:
+                hits = [(p * (1 - CRIT_P), sp) for p, sp in hits] + [(CRIT_P, ('c',))]
+    out = []
+    if pp: out.append((pp, ('skip',)))
+    if acc < 1: out.append(((1 - pp) * (1 - acc), ('miss',)))
+    out += [((1 - pp) * acc * p, sp) for p, sp in hits]
+    return out
+
+
 def legal_moves(m):
     mv = [x for x in m.moves if x in MOVE]
+    if m.rampage and m.rampage[0] in mv:
+        return [m.rampage[0]]
+    if m.lock and m.item in CHOICE and m.lock in mv:
+        return [m.lock]
     if m.encore and m.encore[0] in mv:
         return [m.encore[0]]
     if m.taunt:
@@ -262,10 +341,23 @@ def legal_moves(m):
 def actions(st, i):
     m = st.active(i)
     acts = [('m', x) for x in legal_moves(m)] if m.alive else []
+    if m.alive and (m.rampage or trapped(st, i)):
+        return acts
     for j, b in enumerate(st.sides[i]):
         if j != st.act[i] and b.alive:
             acts.append(('s', j))
     return acts
+
+
+def trapped(st, i):
+    m, o = st.active(i), st.active(1 - i)
+    if not o.alive or 'ghost' in m.cur.types or m.item == 'きれいなぬけがら':
+        return False
+    ab = o.cur.ability
+    if ab == 'かげふみ': return m.cur.ability != 'かげふみ'
+    if ab == 'ありじごく': return 'flying' not in m.cur.types and m.cur.ability != 'ふゆう' and m.item != 'ふうせん'
+    if ab == 'じりょく': return 'steel' in m.cur.types
+    return False
 
 
 def apply_boost(m, ch):
@@ -286,6 +378,7 @@ def switch_in(st, i, j):
     old = st.active(i)
     old.boosts = dict(atk=0, defn=0, spa=0, spd=0, spe=0)
     old.encore = None; old.taunt = 0; old.yawn = 0
+    old.lock = None; old.rampage = None; old.sub = 0; old.dbond = False; old.toxn = 0
     if old.cur.ability == 'さいせいりょく' and old.alive:
         old.hp = min(old.maxhp, old.hp + old.maxhp // 3)
     st.act[i] = j
@@ -338,43 +431,77 @@ def matchup(m, o, st):
 
 
 def use_move(st, i, move, fx):
+    """luck = fx['luck<i>']: None = expected value (deep nodes), ('skip',) full paralysis, ('miss',),
+    ('r', k) roll index k, ('c',) critical hit."""
     a = st.active(i); d = st.active(1 - i)
     if not a.alive: return
     if a.status == 'slp':
         if a.sleep > 0:
             a.sleep -= 1; return
         a.status = None
+    if fx.get('flinch_' + str(i)):
+        return
+    luck = fx.get('luck' + str(i))
+    if luck == ('skip',):
+        a.rampage = None
+        return
     mv = MOVE[move]
+    prev = st.last[i]
     st.last[i] = move
-    if d.cur.species != d.base.species or True:
-        pass
+    a.dbond = False
+    if a.item in CHOICE: a.lock = move
+    if move in RAMPAGE:
+        a.rampage = None if a.rampage else (move, 1)
+    elif a.rampage:
+        a.rampage = None
+    miss = luck == ('miss',)
     if mv['cat'] == 'status':
+        if miss:
+            return
+        blocked = d.prot or (d.sub and move in BLOCKED_BY_SUB)
         if move in SETUP and SETUP[move]:
             apply_boost(a, SETUP[move])
         elif move == 'ステルスロック':
             st.rocks[1 - i] = True
         elif move == 'おにび':
-            if d.status is None and 'fire' not in d.cur.types and d.cur.ability not in ('ねつこうかん', 'みずのベール') and not d.prot:
+            if d.status is None and 'fire' not in d.cur.types and d.cur.ability not in ('ねつこうかん', 'みずのベール') and not blocked:
                 d.status = 'brn'
         elif move == 'でんじは':
-            if d.status is None and 'electric' not in d.cur.types and eff('electric', d.cur.types) > 0 and not d.prot:
+            if d.status is None and 'electric' not in d.cur.types and eff('electric', d.cur.types) > 0 and not blocked:
                 d.status = 'par'
+        elif move == 'どくどく':
+            if d.status is None and not set(d.cur.types) & {'poison', 'steel'} and not blocked:
+                d.status, d.toxn = 'tox', 0
+        elif move in SLEEP_MOVES:
+            grounded = 'flying' not in d.cur.types and d.cur.ability != 'ふゆう'
+            if d.status is None and not blocked and not (move in POWDER and ('grass' in d.cur.types or d.cur.ability == 'ぼうじん')) \
+                    and not (grounded and st.terrain in ('electric', 'misty')) and d.cur.ability not in ('ふみん', 'やる気'):
+                d.status, d.sleep = 'slp', 2
         elif move == 'あくび':
-            if d.status is None and not d.yawn and not d.prot: d.yawn = 2
+            if d.status is None and not d.yawn and not blocked: d.yawn = 2
         elif move in HEAL:
             a.hp = min(a.maxhp, a.hp + int(a.maxhp * HEAL[move]))
         elif move == 'いたみわけ':
-            tot = (a.hp + d.hp) // 2; a.hp = min(a.maxhp, tot); d.hp = min(d.maxhp, tot)
+            if not d.sub:
+                tot = (a.hp + d.hp) // 2; a.hp = min(a.maxhp, tot); d.hp = min(d.maxhp, tot)
         elif move == 'アンコール':
             if st.last[1 - i] and not d.prot: d.encore = (st.last[1 - i], 3)
         elif move == 'ちょうはつ':
             if not d.prot: d.taunt = 3
         elif move in PROTECT:
             a.prot = 1
+        elif move == 'みがわり':
+            if not a.sub and a.hp > a.maxhp // 4:
+                a.hp -= a.maxhp // 4; a.sub = a.maxhp // 4
+        elif move == 'みちづれ':
+            a.dbond = prev != 'みちづれ'
+        elif move == 'トリックルーム':
+            st.tr = 0 if st.tr else 5
         elif move in PHAZE:
             pass
         return
     if d.prot:
+        a.rampage = None
         return
     if move in SLOW_PIVOT_ALWAYS_FIRST and not a.first_turn:
         return
@@ -384,21 +511,51 @@ def use_move(st, i, move, fx):
         return
     if not d.alive:
         return
-    mean, lo = dmg(a, d, move, st)
+    if miss:
+        a.rampage = None
+        return
+    if luck is None:  # expected value: weight by accuracy and full paralysis
+        f = hit_prob(a, d, move, st) * (1 - PARA_P if a.status == 'par' else 1.0)
+        dmg_ = int(rolls(a, d, move, st)[7] * f)
+    elif luck[0] == 'c':
+        dmg_ = rolls(a, d, move, st, True)[7]
+    else:
+        dmg_ = rolls(a, d, move, st)[luck[1]]
     if move == 'ゆきなだれ' and fx.get('hit_' + str(i)):
-        mean *= 2
-    if mean == 0 and d.cur.ability == 'ばけのかわ' and d.disguise:
+        dmg_ *= 2
+    if move == 'きょけんとつげき':
+        a.glaive = 2
+    if d.sub and move not in SOUND and a.cur.ability != 'すりぬけ':
+        dealt = min(d.sub, dmg_)
+        d.sub -= dealt
+        fx['hit_' + str(1 - i)] = True
+        if move in RECOIL and RECOIL[move]: a.hp -= int(dealt * RECOIL[move])
+        if a.item == 'いのちのたま' and dealt > 0: a.hp -= a.maxhp // 10
+        if move in SELF_DROP and SELF_DROP[move]: apply_boost(a, SELF_DROP[move])
+        a.hp = max(0, a.hp)
+        if move in PIVOT and a.hp > 0: fx['pivot_' + str(i)] = True
+        return
+    if dmg_ == 0 and d.cur.ability == 'ばけのかわ' and d.disguise:
         d.disguise = False
         d.hp = max(0, d.hp - d.maxhp // 8)
         return
+    if dmg_ == 0:
+        return
     full = d.hp == d.maxhp
-    dealt = min(d.hp, mean)
-    if d.item == 'きあいのタスキ' and full and mean >= d.hp:
-        dealt = d.hp - 1; d.item = None
+    dealt = min(d.hp, dmg_)
+    if full and dmg_ >= d.hp:
+        if d.item == 'きあいのタスキ':
+            dealt = d.hp - 1; d.item = None
+        elif d.cur.ability == 'がんじょう' and a.cur.ability != 'かたやぶり':
+            dealt = d.hp - 1
     d.hp -= dealt
     fx['hit_' + str(1 - i)] = True
+    if move == 'ねこだまし' and d.cur.ability != 'せいしんりょく':
+        fx['flinch_' + str(1 - i)] = True
     if move == 'でんこうそうげき':
         a.cur = copy.copy(a.cur); a.cur.types = [t for t in a.cur.types if t != 'electric'] or ['normal']
+    if move == 'はたきおとす' and removable(d):
+        d.item = None
     # after-effects
     if d.hp > 0 and d.item == 'オボンのみ' and d.hp * 2 <= d.maxhp:
         d.hp += d.maxhp // 4; d.item = None
@@ -419,6 +576,8 @@ def use_move(st, i, move, fx):
         apply_boost(d, TARGET_DROP[move])
     if move == 'ドラゴンテール' and d.hp > 0:
         fx['phaze_' + str(1 - i)] = True
+    if d.hp <= 0 and d.dbond:
+        a.hp = 0
     a.hp = max(0, a.hp)
     if move in PIVOT and a.hp > 0:
         fx['pivot_' + str(i)] = True
@@ -431,6 +590,15 @@ def end_of_turn(st):
         if st.weather == 'sand' and not set(m.cur.types) & {'rock', 'ground', 'steel'} and m.cur.ability not in ('すなかき', 'すながくれ', 'すなのちから', 'ぼうじん'):
             m.hp -= m.maxhp // 16
         if m.status == 'brn': m.hp -= m.maxhp // 16
+        if m.status in ('psn', 'tox'):
+            if m.cur.ability == 'ポイズンヒール':
+                m.hp = min(m.maxhp, m.hp + m.maxhp // 8)
+            elif m.status == 'psn':
+                m.hp -= m.maxhp // 8
+            else:
+                m.toxn = min(15, m.toxn + 1)
+                m.hp -= max(1, m.maxhp * m.toxn // 16)
+        if m.glaive: m.glaive -= 1
         if m.item == 'たべのこし': m.hp = min(m.maxhp, m.hp + m.maxhp // 16)
         if st.terrain == 'grassy' and 'flying' not in m.cur.types and m.cur.ability != 'ふゆう':
             m.hp = min(m.maxhp, m.hp + m.maxhp // 16)
@@ -450,6 +618,7 @@ def end_of_turn(st):
     if st.tt:
         st.tt -= 1
         if not st.tt: st.terrain = None
+    if st.tr: st.tr -= 1
     st.turn += 1
 
 
@@ -459,15 +628,17 @@ def order(st, a0, a1):
         if a[0] == 's': return (10, 0)
         pr = PRIORITY.get(a[1], 0)
         if a[1] == 'グラススライダー' and st.terrain == 'grassy': pr = 1
-        return (pr, m.speed(st))
+        return (pr, -m.speed(st) if st.tr else m.speed(st))
     k0, k1 = key(0, a0), key(1, a1)
     return [0, 1] if k0 > k1 else [1, 0]  # ties: opponent first (pessimistic)
 
 
-def step(st, a0, a1):
+def step(st, a0, a1, luck=None):
     st = st.clone()
     acts = [a0, a1]
     fx = {}
+    if luck:
+        fx['luck0'], fx['luck1'] = luck
     # switches first
     for i in order(st, a0, a1):
         if acts[i][0] == 's':
@@ -507,8 +678,11 @@ def side_value(side, st, i):
         b = m.boosts
         boost = 0.08 * max(b['atk'], b['spa'], 0) + 0.05 * max(b['spe'], 0) + 0.03 * (b['defn'] + b['spd'])
         boost -= 0.06 * max(-min(b['atk'], 0), -min(b['spa'], 0))
-        stat_pen = {'brn': 0.15 if m.cur.stat['atk'] > m.cur.stat['spa'] else 0.05, 'par': 0.12, 'slp': 0.2}.get(m.status, 0)
+        stat_pen = {'brn': 0.15 if m.cur.stat['atk'] > m.cur.stat['spa'] else 0.05, 'par': 0.12, 'slp': 0.2,
+                    'psn': 0.08, 'tox': 0.15}.get(m.status, 0)
+        if m.status in ('psn', 'tox') and m.cur.ability == 'ポイズンヒール': stat_pen = -0.05
         v += 1.0 + 1.2 * f + boost - stat_pen + (0.05 if m.item == 'きあいのタスキ' else 0) + (0.08 if m.disguise else 0)
+        v += 0.4 * m.sub / m.maxhp
     if st.rocks[i]:
         v -= 0.1 * sum(1 for m in side if m.alive)
     return v
@@ -537,7 +711,12 @@ def prune(st, i, acts, k):
                 s = 0.35 if a[1] in GOOD_STATUS else 0.0
                 if a[1] in SETUP and me.hp < me.maxhp * 0.5: s -= 0.3
                 if a[1] == 'ステルスロック' and st.rocks[1 - i]: s = -1
-                if a[1] in ('おにび', 'でんじは', 'あくび') and op.status: s = -1
+                if (a[1] in ('おにび', 'でんじは', 'あくび', 'どくどく') or a[1] in SLEEP_MOVES) and (op.status or op.sub): s = -1
+                if a[1] == 'みがわり': s = 0.3 if not me.sub and me.hp > me.maxhp // 2 else -1
+                if a[1] == 'みちづれ': s = 0.6 if me.hp < me.maxhp * 0.35 and st.last[i] != 'みちづれ' else -0.5
+                if a[1] == 'トリックルーム':
+                    slower = sum(1 for m in st.sides[i] if m.alive and m.speed(st) < op.speed(st))
+                    s = 0.5 if not st.tr and slower >= 2 else -0.6
                 if a[1] in HEAL and me.hp > me.maxhp * 0.7: s = -0.5
             else:
                 s = min(dmg(me, op, a[1], st)[0] / max(op.hp, 1), 1.2)
@@ -547,11 +726,23 @@ def prune(st, i, acts, k):
 
 
 class Search:
-    def __init__(self, deadline, k_me=3, k_opp=2, pess=0.6, roll=3):
+    def __init__(self, deadline, k_me=3, k_opp=2, pess=0.6, roll=3, chance=1):
         self.deadline, self.k_me, self.k_opp, self.pess, self.roll = deadline, k_me, k_opp, pess, roll
+        self.chance = chance
         self.nodes = 0
 
-    def value(self, st, depth):
+    def child(self, st, a, b, depth, ply):
+        """Value after (a, b). The first `chance` plies branch on luck (paralysis, miss, KO roll, crit);
+        deeper plies use expected damage."""
+        if ply >= self.chance:
+            return self.value(step(st, a, b), depth - 1, ply + 1)
+        o0, o1 = chance(st, 0, a, b), chance(st, 1, b, a)
+        if len(o0) == 1 and len(o1) == 1:
+            return self.value(step(st, a, b, (o0[0][1], o1[0][1])), depth - 1, ply + 1)
+        return sum(p0 * p1 * self.value(step(st, a, b, (s0, s1)), depth - 1, ply + 1)
+                   for p0, s0 in o0 for p1, s1 in o1 if p0 * p1 > 0)
+
+    def value(self, st, depth, ply=0):
         self.nodes += 1
         d = st.done()
         if d is not None:
@@ -564,7 +755,7 @@ class Search:
         op = prune(st, 1, actions(st, 1), self.k_opp)
         best = -1e9
         for a in my:
-            vals = [self.value(step(st, a, b), depth - 1) for b in op]
+            vals = [self.child(st, a, b, depth, ply) for b in op]
             v = self.pess * min(vals) + (1 - self.pess) * sum(vals) / len(vals)
             best = max(best, v)
         return best
@@ -574,7 +765,7 @@ class Search:
         op = prune(st, 1, actions(st, 1), self.k_opp + 1)
         res = []
         for a in my:
-            vals = [self.value(step(st, a, b), depth - 1) for b in op]
+            vals = [self.child(st, a, b, depth, 0) for b in op]
             res.append((self.pess * min(vals) + (1 - self.pess) * sum(vals) / len(vals), a))
         res.sort(key=lambda x: -x[0])
         return res
@@ -589,7 +780,7 @@ def rollout(st, n):
     return st
 
 
-def decide(st, seconds=8.0, horizon=8):
+def decide(st, seconds=10.0, horizon=8):
     """Iterative deepening within a hard time budget: full tree for `depth` turns + greedy rollout
     up to `horizon` turns (5〜8手先). Always returns an answer (1-ply fallback if time is very short)."""
     t0 = time.time()
@@ -720,7 +911,7 @@ def new_state(me_names, opp_names):
             if seen: m.can_mega = False
             seen = True
     st.act = [0, 0]; st.rocks = [False, False]; st.mega_used = [False, False]
-    st.weather = st.terrain = None; st.wt = st.tt = 0; st.turn = 1; st.last = [None, None]
+    st.weather = st.terrain = None; st.wt = st.tt = 0; st.turn = 1; st.last = [None, None]; st.tr = 0
     for i in (0, 1):
         st.act[i] = 0
         st.active(i).first_turn = True
@@ -767,13 +958,13 @@ def opp_pick_weights(opp6, my6):
         sc = 0
         for mm in my6:
             o = BM(mm[1] or mm[0]); x = BM(mon)
-            st = State(); st.weather = st.terrain = None
+            st = State(); st.weather = st.terrain = None; st.tr = 0
             sc += matchup(x, o, st)
         w[n] = u * math.exp(0.35 * sc) * pick_rate(base) / 0.5
     return w
 
 
-def select(opp6, seconds=8.0):
+def select(opp6, seconds=10.0):
     t_end = time.time() + seconds
     my_names = [BASE_OF.get(m.species, m.species) for m in TEAM]
     w = opp_pick_weights(opp6, list(MY.values()))
@@ -833,7 +1024,7 @@ def field_defaults(js):
     except Exception:
         return js
     js = dict(js)
-    for k in ('weather', 'weather_turns', 'terrain', 'terrain_turns', 'rocks_me', 'rocks_opp'):
+    for k in ('weather', 'weather_turns', 'terrain', 'terrain_turns', 'rocks_me', 'rocks_opp', 'trick_room'):
         if k not in js and fs.get(k) is not None:
             js[k] = fs[k]
     if 'mega_used_me' not in js: js['mega_used_me'] = fs['mega_used']['me']
@@ -849,6 +1040,8 @@ def field_defaults(js):
                 if 'status' not in d and info.get('status'): d['status'] = info['status']
                 if 'item' not in d and info.get('item_consumed'): d['item'] = False
                 if info.get('mega') and 'mega' not in d: d['mega'] = True
+                for k in ('sub', 'last_move', 'glaive', 'toxn', 'rampage'):
+                    if k not in d and info.get(k): d[k] = info[k]
                 if side == 'opp':
                     seen = d.get('moves_seen', [])
                     d['moves_seen'] = seen + [m for m in info.get('moves_seen', []) if m not in seen]
@@ -876,6 +1069,7 @@ def load_state(js):
         if d.get('item') is False: m.item = None
         if d.get('disguise') is False: m.disguise = False
         if d.get('sleep'): m.sleep = d['sleep']
+        extra_state(m, d)
         me.append(m)
     opp = []
     for d in js['opp']:
@@ -897,6 +1091,8 @@ def load_state(js):
         for mv in d.get('moves_seen', []):
             if mv in MOVE and mv not in m.moves:
                 m.moves = [mv] + m.moves[:3]
+        if d.get('item_seen'): m.item = d['item_seen'] if d.get('item') is not False else None
+        extra_state(m, d)
         opp.append(m)
     st.sides = [me, opp]
     st.act = [js.get('active_me', 0), js.get('active_opp', 0)]
@@ -910,7 +1106,25 @@ def load_state(js):
     st.weather, st.wt = js.get('weather'), js.get('weather_turns', 5 if js.get('weather') else 0)
     st.terrain, st.tt = js.get('terrain'), js.get('terrain_turns', 5 if js.get('terrain') else 0)
     st.turn = js.get('turn', 1); st.last = [None, js.get('opp_last_move')]
+    st.tr = js.get('trick_room', 0) or 0
+    for i, side in ((0, me), (1, opp)):  # locks only persist on the mon still in
+        for j, m in enumerate(side):
+            if j != st.act[i]: m.lock = m.rampage = None; m.sub = 0; m.glaive = 0
+    a1 = opp[st.act[1]]
+    if js.get('opp_last_move') and a1.item in CHOICE and not a1.lock: a1.lock = js['opp_last_move']
     return st
+
+
+def extra_state(m, d):
+    """Optional per-mon battle state: last_move (choice lock / rampage), sub (substitute HP %),
+    glaive (used きょけんとつげき last turn), toxn (toxic counter)."""
+    lm = d.get('last_move')
+    if lm in MOVE:
+        if m.item in CHOICE: m.lock = lm
+        if lm in RAMPAGE and d.get('rampage'): m.rampage = (lm, 1)
+    if d.get('sub'): m.sub = max(1, round(m.maxhp * (d['sub'] if d['sub'] is not True else 25) / 100))
+    if d.get('glaive'): m.glaive = 1
+    if d.get('toxn'): m.toxn = d['toxn']
 
 
 def fill_boosts(m, b):
@@ -943,7 +1157,7 @@ def main():
                 pass
     elif len(sys.argv) >= 3 and sys.argv[1] == 'turn':
         js = json.load(open(sys.argv[2], encoding='utf-8'))
-        sec = float(sys.argv[3]) if len(sys.argv) > 3 and not sys.argv[3].startswith('-') else 7
+        sec = float(sys.argv[3]) if len(sys.argv) > 3 and not sys.argv[3].startswith('-') else 10
         st = load_state(js)
         if not st.active(0).alive:
             j = best_switch(st, 0)

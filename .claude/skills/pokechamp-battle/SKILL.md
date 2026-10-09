@@ -36,7 +36,7 @@ description: ポケモンチャンピオンズ（シングル）の対戦中に�
      メッセージの読み取り結果は `pokechamp/logs/live/battle_messages.jsonl` に生の行と一緒に残る。抜き出しに失敗している言い回しを見つけたら `msgparse.py` の文言を直す（対戦の合間に）。
    - `timeout`: 何も出力せず 1 に戻る。
 3. 出力したら **すぐに 1 に戻って** 次を待つ。対戦終了（勝敗画面）を画像で確認したら `learn.py end` で記録し、そのまま次の対戦を待つ。
-4. 画像の読み取りから出力まで 10 秒以内を目標にする（選出は90秒、行動は45秒の制限）。
+4. 画像の読み取りから出力まで 13 秒以内を目標にする（選出は90秒、行動は45秒の制限）。
 
 ## 手順
 
@@ -48,7 +48,7 @@ description: ポケモンチャンピオンズ（シングル）の対戦中に�
    初回は `latest.txt` と `latest.png` を見比べ、名前・HP%の読み取りが正しいか確認する。
    起動できない場合は `pip install playwright` を実行（Edge/Chrome があればそれを使う）。
    **最新画面の自動読み込み**: `.claude/settings.json` の UserPromptSubmit フック（`pokechamp/tool/hook_latest.py`）が、latest.png が30分以内に更新されていれば毎回その場所を知らせる。知らされたら返答前に必ず Read で latest.png を読む（ユーザーにスクショを求めない）。
-   **時間制限**: 選出は `battle.py select`（約3秒）、各ターンは `battle.py turn state.json`（既定7秒）。画像読み取りを含め10秒以内に答える。
+   **時間制限**: 選出は `battle.py select`（約10秒）、各ターンは `battle.py turn state.json`（既定10秒）。画像読み取りを含め13秒以内に答える。
 1. **開始前**: `pokechamp/logs/TRENDS.md` を読み、要対策の相手と想定外の型を頭に入れる（チャットには書かない）。
 2. **見せ合い**: 相手6体が分かったら
    `cd pokechamp/tool && python3 battle.py select <相手6体>`
@@ -62,6 +62,7 @@ description: ポケモンチャンピオンズ（シングル）の対戦中に�
    - `move` / `item` / `ability` / `mega`: 判明したもの
    次に state.json を作り（形式は battle.py 冒頭）、
    `python battle.py turn state.json`
+   画面から分かれば state.json の各ポケモンに `last_move`（こだわり固定）・`rampage`・`sub`・`glaive`・`toxn`、全体に `trick_room`（残りターン）を書く（省略時は field_state.json から補完）。
    → 出力の行動を伝える。battle.py は `logs/current.json` の観測を自動で読み、候補（使用率258種の持ち物×性格×能力P、データが無ければ種族値からの役割推定）の事後確率を更新し、最も確からしい型で先読みする。
    推定が割れているときは `python3 battle.py infer <相手>` で上位候補を確認してよい（チャットには書かない）。
 4. **終了**: `python3 learn.py end win|lose|draw <負け筋メモ>`

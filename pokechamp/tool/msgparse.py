@@ -64,8 +64,13 @@ TERRAIN_START = [('grassy', ('草がいっぱいに生えた', 'くさがいっ�
 TERRAIN_END = ('草が消え去った', '電気が消え去った', '不思議な感じが消え去った', '霧が消え去った', 'もとにもどった足元',
                'フィールドが消え去った')
 STATUS = [('brn', ('やけどを負った', 'やけどをおった')), ('par', ('まひして', 'まひした')),
-          ('psn', ('もうどくをあびた', '猛毒を浴びた', 'どくをあびた', '毒を浴びた')),
+          ('tox', ('もうどくをあびた', '猛毒を浴びた')), ('psn', ('どくをあびた', '毒を浴びた')),
           ('slp', ('眠ってしまった', 'ねむってしまった')), ('frz', ('凍りついた', 'こおりついた'))]
+TR_START = ('時空をゆがめた', 'じくうをゆがめた')
+TR_END = ('時空が元に戻った', 'じくうがもとにもどった')
+SUB_UP = ('身代わりが現れた', 'みがわりがあらわれた', 'みがわりが現れた')
+SUB_DOWN = ('身代わりは消えてしまった', 'みがわりはきえてしまった', 'みがわりは消えてしまった')
+RAMPAGE = {'げきりん', 'あばれる', 'はなびらのまい'}
 CURE = ('治った', 'なおった', '目を覚ました', 'めをさました', '溶けた', 'とけた')
 ITEM_MSG = [('きあいのタスキ', True, ('きあいのタスキで',)), ('オボンのみ', True, ('オボンのみで', 'オボンのみを')),
             ('いのちのたま', False, ('いのちのたまで', '命が少し削られた', 'いのちがすこしけずられた')),
@@ -81,7 +86,7 @@ ITEM_MSG = [('きあいのタスキ', True, ('きあいのタスキで',)), ('�
 def parse_turn(lines):
     ev = {'moves': [], 'boosts': [], 'weather': None, 'weather_end': False, 'terrain': None, 'terrain_end': False,
           'items': [], 'status': [], 'cured': [], 'hazards': [], 'faint': [], 'switch': [], 'mega': [], 'crit': 0,
-          'super_effective': 0, 'abilities': []}
+          'super_effective': 0, 'abilities': [], 'trick_room': False, 'trick_room_end': False, 'sub': [], 'sub_end': []}
     seen = set()
     for raw in lines:
         s = norm(raw)
@@ -90,6 +95,14 @@ def parse_turn(lines):
         seen.add(s)
         side = side_of(s)
         name = find_name(s)
+        if any(k in s for k in TR_END):
+            ev['trick_room_end'] = True; continue
+        if any(k in s for k in TR_START):
+            ev['trick_room'] = True; continue
+        if name and any(k in s for k in SUB_UP):
+            ev['sub'].append({'side': side, 'mon': name}); continue
+        if name and any(k in s for k in SUB_DOWN):
+            ev['sub_end'].append({'side': side, 'mon': name}); continue
         # move use: 「(相手の)Xの Y！」
         mv = find_move(s)
         if name and mv and s.find(name) < s.find(mv) and not any(k in s for k in STAT) and 'で' not in s[s.find(mv) + len(mv):][:1]:
@@ -115,6 +128,7 @@ def parse_turn(lines):
         for st, keys in STATUS:
             if any(k in s for k in keys) and name:
                 ev['status'].append({'side': side, 'mon': name, 'status': st})
+                break
         if name and any(k in s for k in CURE) and not any(k in s for _, ks in STATUS for k in ks):
             ev['cured'].append({'side': side, 'mon': name})
         for item, consumed, keys in ITEM_MSG:
@@ -150,7 +164,7 @@ class FieldTracker:
 
     def __init__(self, path):
         self.path = path
-        self.s = {'turn': 0, 'weather': None, 'weather_turns': 0, 'terrain': None, 'terrain_turns': 0,
+        self.s = {'turn': 0, 'weather': None, 'weather_turns': 0, 'terrain': None, 'terrain_turns': 0, 'trick_room': 0,
                   'rocks_me': False, 'rocks_opp': False, 'active': {'me': None, 'opp': None},
                   'mons': {'me': {}, 'opp': {}}, 'mega_used': {'me': False, 'opp': False}, 'history': []}
 
@@ -172,6 +186,15 @@ class FieldTracker:
                 s[key] -= 1
                 if s[key] == 0:
                     s[t] = None
+        if s.get('trick_room'):
+            s['trick_room'] -= 1
+        if ev.get('trick_room_end'):
+            s['trick_room'] = 0
+        elif ev.get('trick_room'):
+            s['trick_room'] = 4  # 5 turns including the one it was set up on
+        for side in ('me', 'opp'):
+            for mm in s['mons'][side].values():
+                mm['glaive'] = False
         if ev['weather_end']:
             s['weather'], s['weather_turns'] = None, 0
         if ev['weather']:
@@ -183,7 +206,9 @@ class FieldTracker:
         for sw in ev['switch']:
             old = s['active'][sw['side']]
             if old:
-                self.mon(sw['side'], old)['boosts'] = {}
+                om = self.mon(sw['side'], old)
+                om['boosts'] = {}
+                om.update(sub=0, last_move=None, rampage=False, toxn=0)
             s['active'][sw['side']] = BASE.get(sw['mon'], sw['mon'])
             self.mon(sw['side'], sw['mon'])
         for m in ev['moves']:
@@ -192,6 +217,9 @@ class FieldTracker:
             mm = self.mon(m['side'], m['mon'])
             if m['move'] not in mm['moves_seen']:
                 mm['moves_seen'].append(m['move'])
+            mm['rampage'] = m['move'] in RAMPAGE and not (mm.get('rampage') and mm.get('last_move') == m['move'])
+            mm['last_move'] = m['move']
+            mm['glaive'] = m['move'] == 'きょけんとつげき'
         for b in ev['boosts']:
             mb = self.mon(b['side'], b['mon'])['boosts']
             mb[b['stat']] = max(-6, min(6, mb.get(b['stat'], 0) + b['delta']))
@@ -206,6 +234,15 @@ class FieldTracker:
                 mm['item_consumed'] = it['item']
         for st in ev['status']:
             self.mon(st['side'], st['mon'])['status'] = st['status']
+            self.mon(st['side'], st['mon'])['toxn'] = 0
+        for sb in ev.get('sub', []):
+            self.mon(sb['side'], sb['mon'])['sub'] = 25
+        for sb in ev.get('sub_end', []):
+            self.mon(sb['side'], sb['mon'])['sub'] = 0
+        for side in ('me', 'opp'):
+            act = s['active'][side]
+            if act and self.mon(side, act).get('status') == 'tox':
+                self.mon(side, act)['toxn'] = self.mon(side, act).get('toxn', 0) + 1
         for c in ev['cured']:
             self.mon(c['side'], c['mon'])['status'] = None
         for h in ev['hazards']:
