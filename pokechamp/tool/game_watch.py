@@ -21,7 +21,8 @@ import argparse, base64, io, json, os, sys, time
 HERE = os.path.dirname(os.path.abspath(__file__))
 OUT = os.path.join(os.environ.get('POKECHAMP_LOGS', os.path.join(HERE, '..', 'logs')), 'live')
 
-PREVIEW_KEYS = ('選出してください', '匹選出', '戦うポケモンを')
+# 選出画面にいる間ずっと見えている文字（カーソルを動かして中央が詳細表示に変わっても残るもの）
+PREVIEW_KEYS = ('選出してください', '匹選出', '戦うポケモンを', '選出完了', 'つよさの表示', '有利な相手', '不利な相手')
 COMMAND_KEYS = ('たたかう', 'わざを選', '技を選', 'メガシンカ', 'ポケモン交代', 'にげる', 'こうさん')
 
 
@@ -35,6 +36,51 @@ def team_moves():
 
 
 MY_MOVES = team_moves()
+
+
+class Detector:
+    """Turns noisy per-frame classifications into one event per screen.
+
+    - preview: once per team preview. Moving the cursor changes the centre panel (and can show our
+      own move names), so while the preview is up nothing else is emitted. The preview ends only
+      after it has been gone for PREVIEW_END seconds; a new preview needs PREVIEW_GAP seconds.
+    - command: once per move-selection screen. The screen must be seen on CONFIRM consecutive
+      frames, and the previous one must have been gone for COMMAND_RESET seconds (turn animation).
+    """
+    CONFIRM, PREVIEW_END, PREVIEW_GAP, COMMAND_RESET = 2, 6.0, 100.0, 3.0
+
+    def __init__(self):
+        self.raw_prev, self.streak = None, 0
+        self.in_preview, self.preview_seen, self.last_preview = False, 0.0, -1e9
+        self.command_armed, self.command_off_since = True, None
+
+    def update(self, raw, now):
+        self.streak = self.streak + 1 if raw == self.raw_prev else 1
+        self.raw_prev = raw
+        if raw == 'preview':
+            self.preview_seen = now
+        if self.in_preview and now - self.preview_seen > self.PREVIEW_END:
+            self.in_preview = False
+        if raw == 'preview' and self.streak >= self.CONFIRM and not self.in_preview:
+            self.in_preview = True
+            if now - self.last_preview > self.PREVIEW_GAP:
+                self.last_preview = now
+                self.command_armed = True
+                return 'preview'
+            return None
+        if self.in_preview:
+            return None
+        if raw == 'command':
+            self.command_off_since = None
+            if self.command_armed and self.streak >= self.CONFIRM:
+                self.command_armed = False
+                return 'command'
+        else:
+            if self.command_off_since is None:
+                self.command_off_since = now
+            if now - self.command_off_since >= self.COMMAND_RESET:
+                self.command_armed = True
+        return None
 
 
 def classify(text):
@@ -125,7 +171,7 @@ def main():
         seq = json.load(open(state_p, encoding='utf-8')).get('seq', 0)
     except Exception:
         pass
-    last_phase = None
+    det = Detector()
     print(f'ゲーム画面の監視を開始 → {os.path.normpath(OUT)}  (Ctrl+C で終了)')
     while True:
         t0 = time.time()
@@ -139,7 +185,9 @@ def main():
         phase = classify(text)
         img.save(os.path.join(OUT, 'game.tmp.png'))
         os.replace(os.path.join(OUT, 'game.tmp.png'), os.path.join(OUT, 'game.png'))
-        if phase != last_phase and phase in ('preview', 'command'):
+        event = det.update(phase, time.time())
+        if event:
+            phase = event
             seq += 1
             ts = time.strftime('%Y-%m-%dT%H:%M:%S')
             snap = os.path.join(OUT, f'game_{seq:04d}_{phase}.png')
@@ -159,7 +207,6 @@ def main():
             with open(ev_p, 'a', encoding='utf-8') as f:
                 f.write(json.dumps(ev, ensure_ascii=False) + '\n')
             print(ts, '検出:', phase, f'#{seq}')
-        last_phase = phase
         tmp = state_p + '.tmp'
         json.dump({'phase': phase, 'seq': seq, 'time': time.time(), 'text': text}, open(tmp, 'w', encoding='utf-8'),
                   ensure_ascii=False)
