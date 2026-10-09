@@ -19,6 +19,8 @@ PCBL のライブスキャンは選出画面を拾えないため、OBS が受�
 import argparse, base64, io, json, os, sys, time
 
 HERE = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, HERE)
+import safeio  # noqa: E402
 OUT = os.path.join(os.environ.get('POKECHAMP_LOGS', os.path.join(HERE, '..', 'logs')), 'live')
 
 # 選出画面にいる間ずっと見えている文字（カーソルを動かして中央が詳細表示に変わっても残るもの）
@@ -189,7 +191,7 @@ def main():
             continue
         phase = classify(text)
         img.save(os.path.join(OUT, 'game.tmp.png'))
-        os.replace(os.path.join(OUT, 'game.tmp.png'), os.path.join(OUT, 'game.png'))
+        safeio.replace(os.path.join(OUT, 'game.tmp.png'), os.path.join(OUT, 'game.png'))
         # collect battle messages shown between screens (new lines only, in order of appearance)
         lines = [l.strip() for l in text.splitlines() if l.strip()]
         new = [l for l in lines if l not in last_lines]
@@ -231,10 +233,7 @@ def main():
             with open(ev_p, 'a', encoding='utf-8') as f:
                 f.write(json.dumps(ev, ensure_ascii=False) + '\n')
             print(ts, '検出:', phase, f'#{seq}')
-        tmp = state_p + '.tmp'
-        json.dump({'phase': phase, 'seq': seq, 'time': time.time(), 'text': text}, open(tmp, 'w', encoding='utf-8'),
-                  ensure_ascii=False)
-        os.replace(tmp, state_p)
+        safeio.write_json(state_p, {'phase': phase, 'seq': seq, 'time': time.time(), 'text': text})
         time.sleep(max(0.0, a.interval - (time.time() - t0)))
 
 

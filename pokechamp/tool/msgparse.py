@@ -12,6 +12,7 @@ import json, os, re, sys
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 from calc import POKE, MOVE  # noqa: E402
+import safeio  # noqa: E402
 
 NAMES = sorted({n for n in POKE if len(n) >= 2}, key=len, reverse=True)
 ABILITIES = sorted({a for p in POKE.values() for a in p.get('ab', []) if len(a) >= 2}, key=len, reverse=True)
@@ -259,9 +260,7 @@ class FieldTracker:
         self.save()
 
     def save(self):
-        tmp = self.path + '.tmp'
-        json.dump(self.s, open(tmp, 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
-        os.replace(tmp, self.path)
+        safeio.write_json(self.path, self.s, indent=1)
 
 
 if __name__ == '__main__':

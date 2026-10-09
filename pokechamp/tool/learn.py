@@ -19,6 +19,8 @@ import json, os, sys, time, math
 from collections import Counter, defaultdict
 
 HERE = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, HERE)
+import safeio  # noqa: E402
 LOGS = os.environ.get('POKECHAMP_LOGS', os.path.join(HERE, '..', 'logs'))
 BATTLES = os.path.join(LOGS, 'battles.jsonl')
 CURRENT = os.path.join(LOGS, 'current.json')
@@ -46,9 +48,8 @@ def _load(p, default):
 
 def _save(p, obj):
     os.makedirs(os.path.dirname(p), exist_ok=True)
-    tmp = p + '.tmp'
-    json.dump(obj, open(tmp, 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
-    os.replace(tmp, p)
+    if not safeio.write_json(p, obj, indent=1):
+        raise OSError(f'could not write {p} (locked by another program)')
 
 
 def battles():
