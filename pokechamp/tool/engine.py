@@ -1343,6 +1343,7 @@ class Battle:
         if not m.can_mega or s.mega_used or not m.mega_form:
             return
         m.form = m.mega_form
+        m.stats = None
         m.ability = m.mega_form.ability
         m.types = None
         s.mega_used = True
@@ -2053,6 +2054,8 @@ class Battle:
             want = 'ギルガルド' if mid == 'kingsshield' else 'ブレードギルガルド'
             if m.form.ja != want and want in dex.SPECIES:
                 m.form = Form(want, m.nature, m.ap, 'stancechange')
+                if 'transformed' not in m.vol:
+                    m.stats = None   # formeChange recalculates the stored stats (Power Trick's swap is lost)
         if sa == 'longreach':
             self.contact = False
         if self.it(m) == 'punchingglove' and 'punch' in md.flags:
@@ -4150,3 +4153,67 @@ def make_mon(species_ja, nature='まじめ', ap=None, ability='', item='', moves
     m = Mon(base, mv, it, mega, side, idx)
     m.nature, m.ap = nature, ap
     return m
+
+
+# ---------------------------------------------------------------- quick estimates for search heuristics
+_ABSORB = {'voltabsorb': 'electric', 'waterabsorb': 'water', 'dryskin': 'water', 'eartheater': 'ground',
+           'lightningrod': 'electric', 'motordrive': 'electric', 'stormdrain': 'water', 'sapsipper': 'grass',
+           'flashfire': 'fire', 'wellbakedbody': 'fire', 'levitate': 'ground'}
+
+
+def estimate(st, i, mid, target=None):
+    """Expected damage of side i's active using move `mid` on the foe active (or `target`), as a fraction of
+    the target's current HP (0 for status moves / immunity). No state is changed. Accuracy and crits are folded
+    in as expectations; abilities, items, weather, terrain, screens and boosts are applied as in get_damage."""
+    B = Battle(st)
+    m = B.act(i)
+    tgt = target if target is not None else B.act(1 - i)
+    md = MOVES.get(mid)
+    if md is None or not m.alive or not tgt.alive or tgt.hp <= 0:
+        return 0.0
+    try:
+        B.user, B.move = m, md
+        B.ignore_ab = B.ab(m) in MOLD
+        B.infiltrates = B.ab(m) == 'infiltrator'
+        mtype, skin = B.move_type(m, md)
+        B.type, B.flags, B.cat = mtype, {'skin': skin}, md.cat
+        B.contact, B.secondaries, B.multihit = md.contact, list(md.secondaries), md.multihit
+        if md.cat == 'status':
+            return 0.0
+        if md.cat != 'status' and B.immune(tgt, mtype, md, m):
+            return 0.0
+        ta = B.tab(tgt)
+        if ta and _ABSORB.get(ta) == mtype or (ta == 'windrider' and 'wind' in md.flags) or \
+                (ta == 'bulletproof' and 'bullet' in md.flags) or (ta == 'soundproof' and 'sound' in md.flags):
+            return 0.0
+        if md.fixed == 'level':
+            d = 50.0
+        elif isinstance(md.fixed, int):
+            d = float(md.fixed)
+        else:
+            r = B.get_damage(m, tgt, md)
+            if r is None:
+                return 0.0
+            d = sum(r) / 16.0 if isinstance(r, list) else float(r)
+        hits = md.multihit
+        if isinstance(hits, list):
+            hits = 5 if B.ab(m) == 'skilllink' or (hits == [2, 5] and B.it(m) == 'loadeddice' and False) else \
+                (3.1 if hits == [2, 5] else hits[0])
+        if hits:
+            d *= hits
+        if B.ab(m) == 'parentalbond' and not md.multihit:
+            d *= 1.25
+        acc = md.acc
+        if acc is not True:
+            acc = min(100, acc * (1.3 if B.ab(m) == 'compoundeyes' else 1.0)) / 100.0
+            d *= acc
+        if 'substitute' in tgt.vol and 'sound' not in md.flags and 'bypasssub' not in md.flags and not B.infiltrates:
+            d = min(d, tgt.vol['substitute']) * 0.3
+        return d / max(1, tgt.hp)
+    except Exception:
+        return 0.0
+
+
+def action_speed_of(st, i):
+    B = Battle(st)
+    return B.action_speed(B.act(i))

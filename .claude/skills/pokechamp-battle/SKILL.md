@@ -62,8 +62,8 @@ description: ポケモンチャンピオンズ（シングル）の対戦中に�
    - `move` / `item` / `ability` / `mega`: 判明したもの
    次に state.json を作り（形式は battle.py 冒頭）、
    `python battle.py turn state.json`
-   画面から分かれば state.json の各ポケモンに `last_move`（こだわり固定）・`rampage`・`sub`・`glaive`・`toxn`、全体に `trick_room`（残りターン）を書く（省略時は field_state.json から補完）。
-   → 出力の行動を伝える。battle.py は `logs/current.json` の観測を自動で読み、候補（使用率258種の持ち物×性格×能力P、データが無ければ種族値からの役割推定）の事後確率を更新し、最も確からしい型で先読みする。
+   画面から分かれば state.json の各ポケモンに `last_move`（こだわり固定）・`rampage`・`sub`・`glaive`・`toxn`、全体に `trick_room`（残りターン）を書く（省略時は field_state.json から補完）。まきびし・どくびし・ねばねばネット・壁・おいかぜは `cond_me`/`cond_opp`、じゅうりょく・マジックルーム・ワンダールームは `pseudo` に書く。
+   → 出力の行動を伝える。battle.py は `logs/current.json` の観測を自動で読み、候補（使用率258種の持ち物×性格×能力P、データが無ければ種族値からの役割推定）の事後確率を更新し、最も確からしい型で、Showdown準拠の engine.py 上で5ターン木＋ロールアウトの計8ターン先まで読む（search.py、全CPUコア並列）。
    推定が割れているときは `python3 battle.py infer <相手>` で上位候補を確認してよい（チャットには書かない）。
 4. **終了**: `python3 learn.py end win|lose|draw <負け筋メモ>`
    → `logs/battles.jsonl` に追記され、`logs/knowledge.json` と `logs/TRENDS.md` が更新される。

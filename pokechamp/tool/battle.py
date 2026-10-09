@@ -1,8 +1,11 @@
 """Real-time battle assistant for Pokémon Champions singles (6→3).
 
   python3 battle.py select <相手6体...>      選出順を出す
-  python3 battle.py turn state.json [秒数]   次の行動を出す（5〜8ターン先読み）
+  python3 battle.py turn state.json [秒数]   次の行動を出す（5ターン木＋ロールアウトで8ターン先まで）
   python3 battle.py infer <相手> [obs.json]  相手の型の事後確率（上位5）
+
+対戦のシミュレーションは engine.py（Pokémon Showdown の Champions ルールを移植。全ての技・特性・持ち物・
+場の状態を実装し、Showdown と差分テスト済み）で行い、探索は search.py が担当する。
 
 State JSON (logger の表示を写す):
 {
@@ -14,13 +17,18 @@ State JSON (logger の表示を写す):
   # learn.py turn で記録した観測（logs/current.json）も自動で読み込む。
   "active_me": 0, "active_opp": 0,
   "rocks_me": false, "rocks_opp": false,   # 自分側/相手側にステロがあるか
+  "cond_me": {}, "cond_opp": {},           # 任意: {"spikes": 2, "toxicspikes": 1, "stickyweb": true,
+                                           #        "reflect": 3, "lightscreen": 2, "auroraveil": 4, "tailwind": 2}
   "mega_used_me": false, "mega_used_opp": false,
   "weather": null, "weather_turns": 0, "terrain": null, "terrain_turns": 0,
-  "opp_last_move": null, "trick_room": 0        # トリックルームの残りターン
+  "opp_last_move": null, "trick_room": 0,       # トリックルームの残りターン
+  "pseudo": {}                                  # 任意: {"gravity": 3, "magicroom": 2, "wonderroom": 4}
 }
 各ポケモンに任意で: "last_move"（こだわり固定）, "rampage": true（げきりん等の継続中）, "sub": 25（みがわりHP%）,
-"glaive": true（前ターンにきょけんとつげき）, "toxn": 2（もうどくの経過ターン）, "status": "psn"/"tox"/...
-確率: 乱数（確定/乱数KOを分岐）・命中・急所・まひ(12.5%行動不能)は直近1手を確率分岐、それ以降は期待値で評価。
+"glaive": true（前ターンにきょけんとつげき）, "toxn": 2（もうどくの経過ターン）, "status": "psn"/"tox"/...,
+"confusion"/"leechseed"/"perishsong"/"curse"/"saltcure"/"healblock"/"torment": true（場に出ている側のみ）
+確率: 1ターン目は乱数（確定/乱数KO）・命中・急所・まひ・追加効果・ねむり/こおりのターン数を確率分岐し、
+2ターン目以降は最もありうる結果（命中率・まひはダメージ期待値に反映）で読む。
 """
 import copy, itertools, json, math, os, sys, time
 from functools import lru_cache
@@ -926,6 +934,38 @@ def new_state(me_names, opp_names):
     return st
 
 
+def engine_game(me_names, opp_names):
+    """Engine state at the start of a game (leads sent out, switch-in abilities applied)."""
+    import search as _search, engine as _E
+    st = State()
+    st.sides = [build_side(me_names, mine), build_side(opp_names, opp_sets)]
+    seen = False
+    for m in st.sides[1]:
+        if m.can_mega:
+            if seen: m.can_mega = False
+            seen = True
+    st.act = [0, 0]; st.rocks = [False, False]; st.mega_used = [False, False]
+    st.weather = st.terrain = None; st.wt = st.tt = 0; st.turn = 1; st.last = [None, None]; st.tr = 0
+    return _E.start(_search.from_battle(st), chooser=_search.chooser)
+
+
+def _game_job(args):
+    order_, oorder, smart = args
+    import search as _search
+    return _search.play(engine_game(order_, oorder), smart=smart)
+
+
+def _run_games(jobs):
+    """Play many games in parallel (all CPU cores)."""
+    try:
+        import multiprocessing as mp
+        ctx = mp.get_context('fork') if hasattr(os, 'fork') else mp.get_context('spawn')
+        with ctx.Pool(os.cpu_count() or 1) as pool:
+            return pool.map(_game_job, jobs, chunksize=4)
+    except Exception:
+        return [_game_job(j) for j in jobs]
+
+
 def quick_play(st, max_turns=25):
     """both sides play 1-ply greedy (fast), return final evaluation."""
     for _ in range(max_turns):
@@ -965,7 +1005,8 @@ def opp_pick_weights(opp6, my6):
 
 
 def select(opp6, seconds=10.0):
-    t_end = time.time() + seconds
+    """Choose 3 of our 6 and the lead: every order is played out on the engine against the opponent's likely
+    picks and leads (greedy play), then the best 12 are replayed with a 1-turn look-ahead for our side."""
     my_names = [BASE_OF.get(m.species, m.species) for m in TEAM]
     w = opp_pick_weights(opp6, list(MY.values()))
     trip = []
@@ -976,41 +1017,33 @@ def select(opp6, seconds=10.0):
     trip.sort(key=lambda x: -x[0])
     trip = trip[:6]
     tot = sum(p for p, _ in trip)
-    results = []
-    t0 = time.time()
-    for mine3 in itertools.combinations(my_names, 3):
-        for lead in mine3:
-            order_ = [lead] + [x for x in mine3 if x != lead]
-            score = 0
-            for p, c in trip:
-                sub = 0
+
+    def score_orders(orders, trips, smart):
+        jobs, meta = [], []
+        for order_ in orders:
+            for p, c in trips:
                 lw = [lead_rate(BASE_OF.get(norm(x), norm(x))) for x in c]
                 for olead, l in zip(c, lw):
                     oorder = [olead] + [x for x in c if x != olead]
-                    st = new_state(order_, oorder)
-                    sub += l / sum(lw) * quick_play(st)
-                score += p / tot * (sub + history_bonus(order_, c))
-            results.append((score, order_))
-    results.sort(key=lambda x: -x[0])
-    # stage 2: replay the best candidates with 2-turn search for our side
-    t2 = []
-    for _, order_ in results[:12]:
-        if time.time() > t_end and t2:
-            break
-        score = 0
-        for p, c in trip[:5]:
-            sub = 0
-            lw = [lead_rate(BASE_OF.get(norm(x), norm(x))) for x in c]
-            for olead, l in zip(c, lw):
-                oorder = [olead] + [x for x in c if x != olead]
-                sub += l / sum(lw) * smart_play(new_state(order_, oorder))
-            score += p * (sub + history_bonus(order_, c))
-        t2.append((score / sum(p for p, _ in trip[:5]), order_))
-    t2.sort(key=lambda x: -x[0])
+                    jobs.append((order_, oorder, smart))
+                    meta.append((tuple(order_), p, c, l / sum(lw)))
+        vals = _run_games(jobs)
+        sc = {}
+        ptot = sum(p for p, _ in trips)
+        for (o, p, c, lw), v in zip(meta, vals):
+            sc[o] = sc.get(o, 0.0) + p / ptot * lw * v
+        for o in sc:
+            sc[o] += sum(p / ptot * history_bonus(list(o), c) for p, c in trips)
+        return sorted(((v, list(o)) for o, v in sc.items()), key=lambda x: -x[0])
+
+    orders = []
+    for mine3 in itertools.combinations(my_names, 3):
+        for lead in mine3:
+            orders.append([lead] + [x for x in mine3 if x != lead])
+    results = score_orders(orders, trip, False)
+    t2 = score_orders([o for _, o in results[:12]], trip[:5], True)
     results = t2 + results[12:]
-    best = results[0][1]
-    # order the back two: who is the better 2nd (switch-in) vs predicted picks
-    return best, results[:5], trip
+    return results[0][1], results[:5], trip
 
 
 # ---------------------------------------------------------------- state loading
@@ -1159,15 +1192,19 @@ def main():
         js = json.load(open(sys.argv[2], encoding='utf-8'))
         sec = float(sys.argv[3]) if len(sys.argv) > 3 and not sys.argv[3].startswith('-') else 10
         st = load_state(js)
-        if not st.active(0).alive:
-            j = best_switch(st, 0)
-            print(f"次: {st.sides[0][j].name}を出す"); return
-        depth, res = decide(st, sec)
-        print(f"次: {fmt_action(st, res[0][1])}")
+        import search as _search
+        est = _search.from_battle(st, js)
+        if not est.sides[0].mons[est.sides[0].act].alive:
+            opts = [j for j, m in enumerate(est.sides[0].mons) if m.alive]
+            j = _search.chooser(est, 0, opts)
+            print(f"次: {est.sides[0].mons[j].name}を出す"); return
+        depth, res, nodes = _search.decide(est, sec)
+        print(f"次: {_search.fmt(est, res[0][1])}")
         if '-v' in sys.argv:
             for m in st.sides[1]:
                 print('  相手推定:', m.name, m.cur.nature, m.cur.sp_str(), m.cur.item, m.moves)
-            print('depth', depth, [(round(v, 2), fmt_action(st, a)) for v, a in res])
+            print(f'木{depth}ターン+ロールアウト（計{_search.HORIZON}ターン） 局面数{nodes}',
+                  [(round(v, 2), _search.fmt(est, a)) for v, a in res])
     elif len(sys.argv) >= 3 and sys.argv[1] == 'types':
         # 選出画面のタイプアイコンから相手候補を絞る: python battle.py types ほのお かくとう
         from calc import JT
