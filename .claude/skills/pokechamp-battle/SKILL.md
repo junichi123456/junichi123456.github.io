@@ -20,7 +20,7 @@ description: ポケモンチャンピオンズ（シングル）の対戦中に�
 
 ユーザーが `python game_watch.py --password <OBSのWebSocketパスワード>` を起動していれば（`pokechamp/logs/live/game_state.json` が数秒以内に更新されている）、次のループで進める。ユーザーにチャットや合図を求めない。
 
-1. `cd pokechamp/tool && python wait_event.py` を **バックグラウンド実行**（run_in_background）して待つ。終了すると自動で起こされる。
+1. `cd pokechamp/tool && python wait_event.py` を **バックグラウンド実行**（run_in_background）して待つ。終了すると自動で起こされる。`--after` は付けない（前回渡したイベントの続きから待つので、判断している間に次の画面が来ていてもすぐ返る。出力の `missed` が1以上なら、その間に画面を飛ばしているので最新の画面で判断する）。
 2. 出力 JSON の `phase` で分岐し、`image`（その瞬間のゲーム画面）を Read で読む:
    - `preview`（選出画面）: 相手の名前は表示されない（3Dモデルの小さな絵とタイプアイコンのみ）。
      イベントの `identify`（各枠のタイプ判定と候補）と `identify_sheet`（左端=画面の枠、右=候補の HOME 3Dモデル画像）を Read で見て、6体を見比べて確定する。
