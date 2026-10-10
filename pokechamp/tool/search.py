@@ -579,6 +579,8 @@ def fmt(st, a):
         return '待機'
     if a[0] == 's':
         return f"{st.sides[0].mons[a[1]].name}に交代"
+    if a[1] == 'recharge':
+        return '（反動で動けない）'
     md = E.MOVES.get(a[1])
     name = md.ja if md else a[1]
     return ('メガシンカ＋' if len(a) > 2 and a[2] else '') + name

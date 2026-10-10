@@ -52,7 +52,9 @@ description: ポケモンチャンピオンズ（シングル）の対戦中に�
    起動できない場合は `pip install playwright` を実行（Edge/Chrome があればそれを使う）。
    **最新画面の自動読み込み**: `.claude/settings.json` の UserPromptSubmit フック（`pokechamp/tool/hook_latest.py`）が、latest.png が30分以内に更新されていれば毎回その場所を知らせる。知らされたら返答前に必ず Read で latest.png を読む（ユーザーにスクショを求めない）。
    **時間制限**: 選出は `battle.py select`（約10秒）、各ターンは `battle.py turn state.json`（既定10秒）。画像読み取りを含め13秒以内に答える。
-1. **開始前**: `pokechamp/logs/TRENDS.md` を読み、要対策の相手と想定外の型を頭に入れる（チャットには書かない）。
+1. **開始前**: `pokechamp/logs/TRENDS.md` と `pokechamp/logs/COUNTERS.md`（公開構築ごとの事前対策）を読み、要対策の相手と想定外の型を頭に入れる（チャットには書かない）。
+   相手の6体が `pokechamp/tool/data/known_teams.json` の構築と4体以上一致すると、`battle.py select` は事前に計算した選出を返し（「既知構築: …」と表示）、対戦中も相手の型を記事どおりとして読む（観測と矛盾したら通常の推定に戻る）。
+   ユーザーから構築記事（pokesol）のURLを渡されたら `python pokesol.py <URL>...` で取り込み、`python prep.py` で対策を作り直してコミットする。
 2. **見せ合い**: 相手6体が分かったら
    `cd pokechamp/tool && python3 battle.py select <相手6体>`
    → 出力の選出順を伝える（記録 `logs/current.json` が自動で作られる）。実際に選んだ順が違えば `python3 learn.py pick <順>` で直す。

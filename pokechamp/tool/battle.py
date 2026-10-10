@@ -859,12 +859,80 @@ def prior_boost_for(b):
 MY_TYPES = tuple(tuple(m.types) for m in TEAM)
 
 
+# ---------------------------------------------------------------- known teams (data/known_teams.json)
+def _load_known():
+    try:
+        p = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data', 'known_teams.json')
+        return json.load(open(p, encoding='utf-8'))['teams']
+    except Exception:
+        return []
+
+
+KNOWN_TEAMS = _load_known()
+_KNOWN_CTX = {'team': None}
+
+
+def _base(n):
+    return BASE_OF.get(norm(n), norm(n))
+
+
+def match_known(opp_names, min_overlap=4):
+    """The known team (from published team articles) that the opponent's six match, or None."""
+    bases = {_base(x) for x in opp_names}
+    best, bo = None, 0
+    for t in KNOWN_TEAMS:
+        o = len(bases & {_base(m['name']) for m in t['team']})
+        if o > bo:
+            best, bo = t, o
+    return best if bo >= min_overlap else None
+
+
+def set_known_context(opp_names):
+    _KNOWN_CTX['team'] = match_known(opp_names) if opp_names else None
+    _OPP_CACHE.clear()
+    return _KNOWN_CTX['team']
+
+
+def known_set(b, obs=()):
+    """(base, mega) from the matched known team, if it is consistent with what we have seen."""
+    t = _KNOWN_CTX['team']
+    if not t:
+        return None
+    for m in t['team']:
+        if _base(m['name']) != b:
+            continue
+        name = norm(m['name'])
+        is_mega = name != b and name in POKE
+        for o in obs:
+            k = o.get('kind')
+            if k == 'move' and o.get('move') not in m['moves']:
+                return None
+            if k == 'item' and o.get('item') not in (m['item'], None):
+                return None
+            if k == 'mega' and not is_mega:
+                return None
+        try:
+            if is_mega:
+                base = Mon(b, m['nature'], m['ap'], m['base_ability'], m['item'], m['moves'], label=b)
+                mega = Mon(name, m['nature'], m['ap'], m['ability'], m['item'], m['moves'], label=b)
+                return base, mega
+            return Mon(b, m['nature'], m['ap'], m['ability'], m['item'], m['moves'], label=b), None
+        except Exception:
+            return None
+    return None
+
+
 def opp_sets(n, obs=()):
-    """Most probable (base, mega) set: usage/role candidates × our past logs × this battle's observations."""
+    """Most probable (base, mega) set: a matching published team first, then usage/role candidates × our past
+    logs × this battle's observations."""
     b = BASE_OF.get(norm(n), norm(n))
     obs = list(obs)
     key = (b, json.dumps(obs, ensure_ascii=False, sort_keys=True))
     if key not in _OPP_CACHE:
+        ks = known_set(b, obs)
+        if ks:
+            _OPP_CACHE[key] = ks
+            return ks
         if b in POKE:
             base, mega, _ = _infer.best_set(b, obs, MY_TYPES, prior_boost_for(b))
             if not obs:
@@ -950,7 +1018,10 @@ def engine_game(me_names, opp_names):
 
 
 def _game_job(args):
-    order_, oorder, smart = args
+    order_, oorder, smart, kid = args
+    if kid != ((_KNOWN_CTX['team'] or {}).get('id')):   # spawn-start workers (Windows) begin without context
+        _KNOWN_CTX['team'] = next((t for t in KNOWN_TEAMS if t['id'] == kid), None)
+        _OPP_CACHE.clear()
     import search as _search
     return _search.play(engine_game(order_, oorder), smart=smart)
 
@@ -1004,10 +1075,11 @@ def opp_pick_weights(opp6, my6):
     return w
 
 
-def select(opp6, seconds=10.0):
+def select(opp6, seconds=10.0, ignore_stored=False, return_all=False):
     """Choose 3 of our 6 and the lead: every order is played out on the engine against the opponent's likely
     picks and leads (greedy play), then the best 12 are replayed with a 1-turn look-ahead for our side."""
     my_names = [BASE_OF.get(m.species, m.species) for m in TEAM]
+    kt = set_known_context(opp6)
     w = opp_pick_weights(opp6, list(MY.values()))
     trip = []
     for c in itertools.combinations(opp6, 3):
@@ -1016,16 +1088,35 @@ def select(opp6, seconds=10.0):
         trip.append((p, c))
     trip.sort(key=lambda x: -x[0])
     trip = trip[:6]
+    fixed = set()   # selections written in the team's article: lead first
+    if kt and kt.get('picks'):
+        by_base = {_base(x): x for x in opp6}
+        known = []
+        for pk in kt['picks']:
+            c = tuple(by_base.get(_base(x)) for x in pk['mons'])
+            if all(c) and len(set(c)) == 3:
+                known.append((pk['weight'], c))
+        if known:
+            hp = sum(p for p, _ in trip) or 1
+            kw = sum(p for p, _ in known)
+            trip = [(0.6 * p / kw, c) for p, c in known] + [(0.4 * p / hp, c) for p, c in trip if c not in [k for _, k in known]][:4]
+            fixed = {c for _, c in known}
+            trip.sort(key=lambda x: -x[0])
     tot = sum(p for p, _ in trip)
+    kid = kt['id'] if kt else None
 
     def score_orders(orders, trips, smart):
         jobs, meta = [], []
         for order_ in orders:
             for p, c in trips:
+                if c in fixed:
+                    jobs.append((order_, list(c), smart, kid))
+                    meta.append((tuple(order_), p, c, 1.0))
+                    continue
                 lw = [lead_rate(BASE_OF.get(norm(x), norm(x))) for x in c]
                 for olead, l in zip(c, lw):
                     oorder = [olead] + [x for x in c if x != olead]
-                    jobs.append((order_, oorder, smart))
+                    jobs.append((order_, oorder, smart, kid))
                     meta.append((tuple(order_), p, c, l / sum(lw)))
         vals = _run_games(jobs)
         sc = {}
@@ -1040,7 +1131,14 @@ def select(opp6, seconds=10.0):
     for mine3 in itertools.combinations(my_names, 3):
         for lead in mine3:
             orders.append([lead] + [x for x in mine3 if x != lead])
+    if kt and kt.get('counter') and not ignore_stored and not return_all:
+        # prepared offline by prep.py (both sides look ahead, real randomness): use it as is
+        c = kt['counter']
+        top = [(c['score'], c['order'])] + [(a['score'], a['order']) for a in c.get('alternatives', [])]
+        return c['order'], top, trip
     results = score_orders(orders, trip, False)
+    if return_all:
+        return results
     t2 = score_orders([o for _, o in results[:12]], trip[:5], True)
     results = t2 + results[12:]
     return results[0][1], results[:5], trip
@@ -1087,6 +1185,13 @@ def field_defaults(js):
 
 def load_state(js):
     js = field_defaults(js)
+    team6 = js.get('opp_team')
+    if not team6:
+        try:
+            team6 = (_learn._load(_learn.CURRENT, None) or {}).get('opp_team')
+        except Exception:
+            team6 = None
+    set_known_context(team6 or [d['name'] for d in js.get('opp', [])])
     st = State()
     me = []
     for d in js['me']:
@@ -1181,6 +1286,9 @@ def main():
     if len(sys.argv) >= 3 and sys.argv[1] == 'select':
         best, top, _ = select([x for x in sys.argv[2:] if not x.startswith('--')])
         print('選出順: ' + ' → '.join(best))
+        kt = _KNOWN_CTX['team']
+        if kt:
+            print(f"（既知構築: {kt['title']}。型は記事どおり、対策は logs/COUNTERS.md）")
         if '--no-log' not in sys.argv:
             try:  # start a battle record so turns can be appended with learn.py
                 _learn.start()
