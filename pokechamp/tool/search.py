@@ -22,6 +22,7 @@ import dex
 HORIZON = 8          # turns looked ahead (tree + roll-out)
 MIN_DEPTH = 5        # tree depth the time budget is planned for
 PESS = 0.6
+FRONT_W = 0.15       # slight preference for attacks that are good against the foe in front (see front_bias)
 
 _HAZ = ('stealthrock', 'spikes', 'toxicspikes', 'stickyweb')
 _SCREENS = ('reflect', 'lightscreen', 'auroraveil')
@@ -380,6 +381,29 @@ def _depth_plan(max_depth):
     return [d for k, d in enumerate(plan) if d <= max_depth and d not in plan[:k]]
 
 
+def front_bias(st, a):
+    """Small bonus for our attacking moves that are good against the opponent's active mon: expected damage
+    share (up to 1) plus a bit more when super effective, a little less when resisted. 0 for status moves
+    and switches. Added to the searched value of our root actions only."""
+    if a is None or a[0] != 'm':
+        return 0.0
+    md = E.MOVES.get(a[1])
+    if md is None or md.cat == 'status':
+        return 0.0
+    d = min(1.0, est(st, 0, a[1]))
+    if d <= 0:
+        return 0.0
+    try:
+        B = E.Battle(st)
+        m, f = B.act(0), B.act(1)
+        B.user, B.move = m, md
+        mtype, _ = B.move_type(m, md)
+        tm = B.typemod(f, mtype, md) or 0
+    except Exception:
+        tm = 0
+    return FRONT_W * (d + (0.5 if tm > 0 else -0.25 if tm < 0 else 0.0))
+
+
 def decide(st, seconds=10.0, procs=None, max_depth=HORIZON):
     """Best action for side 0 with iterative deepening. Returns (depth, [(value, action)] best first, nodes)."""
     t0 = time.time()
@@ -416,7 +440,7 @@ def decide(st, seconds=10.0, procs=None, max_depth=HORIZON):
             by = {}
             for (a, _), (v, _) in zip(pairs, res):
                 by.setdefault(a, []).append(v)
-            vals = [(PESS * min(v) + (1 - PESS) * sum(v) / len(v), a) for a, v in by.items()]
+            vals = [(PESS * min(v) + (1 - PESS) * sum(v) / len(v) + front_bias(st, a), a) for a, v in by.items()]
             best = (d, sorted(vals, key=lambda x: -x[0]))
             last_t, last_d = time.time() - ts, d
             if os.environ.get("SEARCH_DEBUG"):
