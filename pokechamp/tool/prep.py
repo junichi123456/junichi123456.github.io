@@ -179,9 +179,11 @@ def summarize(meta, res, seeds):
                    'best_vs': [{'order': list(o), 'wins': w} for w, o in per[:3]]})
     winrate = {' → '.join(o): round(sum(sum(1 for r, _, _ in g if r == 1) for g in detail[o].values()) /
                                      max(1, sum(len(g) for g in detail[o].values())), 3) for o in detail}
+    matrix = {' → '.join(o): {' → '.join(oo): sum(1 for r, _, _ in g if r == 1) for oo, g in detail[o].items()}
+              for o in detail}
     return {'order': list(bo), 'score': round(ranking[0][1], 3),
             'alternatives': [{'order': list(o), 'score': round(s, 3)} for o, s in ranking[1:5]],
-            'vs': vs, 'winrate': winrate}
+            'vs': vs, 'winrate': winrate, 'matrix': matrix}
 
 
 def prep_team(t, budget):
