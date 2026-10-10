@@ -1,14 +1,15 @@
 """Prepare counter-plans against the published teams in data/known_teams.json.
 
-  python prep.py [秒数/構築の目安=300]
+  python prep.py                 every one of our 60 orders (3 of 6 x lead) vs each likely selection of theirs,
+                                 BOTH sides reading 3 turns ahead, real randomness, 4 games each
+  python prep.py --quick         greedy ranking first, then the best 20 orders with a 1-turn look-ahead (10 games)
+  python prep.py --team <id>     only that team (results are cached per team in logs/prep/<id>.json; --redo ignores
+                                 the cache)
 
-For each known team:
-  1. every 3-of-6 order of ours (60) is played out against the team's likely selections (the ones written in the
-     article first, then usage/matchup guesses) with greedy play (battle.select);
-  2. the best 20 orders are replayed with a 1-turn look-ahead on BOTH sides and real randomness (damage rolls,
-     accuracy, crits, paralysis, secondary effects; several seeds per game);
-  3. the best order and, for every likely selection of theirs, how the games went (wins, who fainted first,
-     our first moves) are written to data/known_teams.json ("counter") and logs/COUNTERS.md.
+Likely selections of theirs: the ones written in the article first (fixed lead), then usage/matchup guesses with
+their two most likely leads; extra lead patterns can be forced with "extra_opp" in known_teams.json.
+The best order and, for every selection of theirs, the win rate of every order (best order per selection,
+how the games went) go to data/known_teams.json ("counter") and logs/COUNTERS.md.
 battle.py select uses the stored order when the opponent's six match a known team.
 """
 import itertools, json, os, random, sys, time, zlib
@@ -22,6 +23,9 @@ import search as S  # noqa: E402
 KNOWN_P = os.path.join(HERE, 'data', 'known_teams.json')
 REPORT_P = os.path.join(HERE, '..', 'logs', 'COUNTERS.md')
 SEEDS = 10
+DEPTH = 3          # look-ahead turns in the full mode
+FULL_SEEDS = 4
+CACHE_D = os.path.join(HERE, '..', 'logs', 'prep')
 
 
 class RandomRNG:
@@ -47,8 +51,10 @@ class RandomRNG:
 
 
 def game(args):
-    """Both sides play with a 1-turn look-ahead; returns (our result 1/0/-1, final eval, first actions, faints)."""
-    order_, oorder, kid, seed = args
+    """Both sides play with the same look-ahead (depth 0: 1-turn smart, else a depth-turn tree); returns
+    (our result 1/0/-1, final eval, first actions, faints)."""
+    order_, oorder, kid, seed = args[:4]
+    depth = args[4] if len(args) > 4 else 0
     B._game_job((order_, oorder, False, kid))   # sets the known-team context in this process
     st = B.engine_game(order_, oorder)
     rng = RandomRNG(seed)
@@ -56,8 +62,12 @@ def game(args):
     for t in range(25):
         if st.winner is not None:
             break
-        a0 = S.smart_action(st, 0)
-        a1 = S.smart_action(st, 1)
+        if depth:
+            a0 = S.lookahead_action(st, 0, depth)
+            a1 = S.lookahead_action(st, 1, depth)
+        else:
+            a0 = S.smart_action(st, 0)
+            a1 = S.smart_action(st, 1)
         if t < 3:
             first.append((S.fmt(st, a0), _fmt_opp(st, a1)))
         before = [[m.alive for m in s.mons] for s in st.sides]
@@ -85,7 +95,7 @@ def pool_map(fn, jobs):
     import multiprocessing as mp
     ctx = mp.get_context('fork') if hasattr(os, 'fork') else mp.get_context('spawn')
     with ctx.Pool(os.cpu_count() or 1) as pool:
-        return pool.map(fn, jobs, chunksize=2)
+        return pool.map(fn, jobs, chunksize=1)
 
 
 def opp_trips(t, opp6):
@@ -105,8 +115,73 @@ def opp_trips(t, opp6):
         lw = [B.lead_rate(B._base(x)) for x in c]
         leads = sorted(zip(lw, c), reverse=True)[:2]
         out.append((0.4 / len(rest), [[l] + [x for x in c if x != l] for _, l in leads]))
+    for ex in t.get('extra_opp', []):   # forced lead patterns, e.g. a lead we must prepare for
+        c = [by_base.get(B._base(x)) for x in ex['mons']]
+        if all(c) and c not in [o for _, os_ in out for o in os_]:
+            out.append((ex.get('weight', 0.1), [c]))
     tot = sum(p for p, _ in out)
     return [(p / tot, o) for p, o in out]
+
+
+def all_orders():
+    my_names = [B.BASE_OF.get(m.species, m.species) for m in B.TEAM]
+    out = []
+    for c in itertools.combinations(my_names, 3):
+        for lead in c:
+            out.append([lead] + [x for x in c if x != lead])
+    return out
+
+
+def prep_team_full(t, redo=False):
+    """All 60 orders x every likely selection of theirs x FULL_SEEDS games, both sides reading DEPTH turns ahead."""
+    os.makedirs(CACHE_D, exist_ok=True)
+    cp = os.path.join(CACHE_D, t['id'] + '.json')
+    opp6 = [B._base(m['name']) for m in t['team']]
+    B.set_known_context(opp6)
+    trips = opp_trips(t, opp6)
+    sig = repr(trips)
+    if not redo and os.path.exists(cp):
+        c = json.load(open(cp, encoding='utf-8'))
+        if c.get('sig') == sig:
+            return c['result']
+    t0 = time.time()
+    orders = all_orders()
+    jobs, meta = [], []
+    for o in orders:
+        for p, oorders in trips:
+            for oo in oorders:
+                for sd in range(FULL_SEEDS):
+                    jobs.append((o, oo, t['id'], zlib.crc32(repr((o, oo, sd)).encode()), DEPTH))
+                    meta.append((tuple(o), p / len(oorders), tuple(oo)))
+    print(f"  {t['title']}: {len(jobs)} games ...", flush=True)
+    res = pool_map(game, jobs)
+    result = summarize(meta, res, FULL_SEEDS)
+    result.update({'mode': f'全{len(orders)}通り×相手選出{sum(len(o) for _, o in trips)}通り×各{FULL_SEEDS}戦・両者{DEPTH}手読み',
+                   'games': len(jobs), 'seconds': round(time.time() - t0, 1)})
+    json.dump({'sig': sig, 'result': result}, open(cp, 'w', encoding='utf-8'), ensure_ascii=False)
+    return result
+
+
+def summarize(meta, res, seeds):
+    score, detail = {}, {}
+    for (o, p, oo), (r, v, first, faints) in zip(meta, res):
+        score[o] = score.get(o, 0.0) + p / seeds * (r + 0.01 * v)
+        detail.setdefault(o, {}).setdefault(oo, []).append((r, first, faints))
+    ranking = sorted(score.items(), key=lambda x: -x[1])
+    bo = ranking[0][0]
+    vs = []
+    for oo, games in detail[bo].items():
+        f = games[0]
+        # the best order of ours against this particular selection
+        per = sorted(((sum(1 for r, _, _ in detail[o][oo] if r == 1), o) for o in detail), key=lambda x: -x[0])
+        vs.append({'opp': list(oo), 'wins': sum(1 for r, _, _ in games if r == 1), 'games': len(games),
+                   'first_turns': f[1], 'faints': [(tn, '自分' if i == 0 else '相手', n) for tn, i, n in f[2]][:6],
+                   'best_vs': [{'order': list(o), 'wins': w} for w, o in per[:3]]})
+    winrate = {' → '.join(o): round(sum(sum(1 for r, _, _ in g if r == 1) for g in detail[o].values()) /
+                                     max(1, sum(len(g) for g in detail[o].values())), 3) for o in detail}
+    return {'order': list(bo), 'score': round(ranking[0][1], 3),
+            'alternatives': [{'order': list(o), 'score': round(s, 3)} for o, s in ranking[1:5]],
+            'vs': vs, 'winrate': winrate}
 
 
 def prep_team(t, budget):
@@ -135,6 +210,10 @@ def prep_team(t, budget):
                     jobs.append((o, oo, t['id'], zlib.crc32(repr((o, oo, sd)).encode())))
                     meta.append((tuple(o), p / len(oorders), tuple(oo)))
     res = pool_map(game, jobs)
+    out = summarize(meta, res, SEEDS)
+    out['seconds'] = round(time.time() - t0, 1)
+    out['mode'] = f'上位{len(ranked)}通り×各{SEEDS}戦・両者1手読み'
+    return out
     score, detail = {}, {}
     for (o, p, oo), (r, v, first, faints) in zip(meta, res):
         score[o] = score.get(o, 0.0) + p / SEEDS * (r + 0.01 * v)
@@ -154,22 +233,28 @@ def prep_team(t, budget):
 
 def report(data):
     L = ['# 公開構築への事前対策（prep.py が自動生成）', '',
-         '各構築について、こちらの3体×先発の全60通りを相手の想定選出と対戦させ、上位20通りを両者1手読み・乱数ありで',
-         f'各{SEEDS}戦ずつ再対戦した結果です。相手の型は記事に埋め込まれた型（持ち物・性格・能力P・技）を使っています。', '']
+         'こちらの選出（3体×先発）を相手の想定選出と対戦させた結果です。乱数（ダメージ・命中・急所・まひ・追加効果）あり。',
+         '相手の型は記事に埋め込まれた型（持ち物・性格・能力P・技）を使い、相手も同じ深さで読んで動きます。', '']
     for t in data['teams']:
         c = t.get('counter')
         if not c:
             continue
-        L += [f"## {t['title']}", '', f"- 記事: {t['url']}",
+        wr = c.get('winrate', {})
+        L += [f"## {t['title']}", '', f"- 記事: {t['url']}", f"- 方法: {c.get('mode', '')}",
               '- 相手: ' + ' / '.join(f"{m['name']}（{m['item']}・{'/'.join(m['moves'])}）" for m in t['team']),
-              f"- **おすすめ選出: {' → '.join(c['order'])}**",
-              '- 次点: ' + '、'.join(' → '.join(a['order']) for a in c['alternatives'][:3]), '',
-              '| 相手の選出（先発→） | 勝ち/試合 | 序盤（自分 / 相手） | 倒れた順 |', '|---|---|---|---|']
+              f"- **おすすめ選出: {' → '.join(c['order'])}**（勝率 {wr.get(' → '.join(c['order']), 0):.0%}）",
+              '- 次点: ' + '、'.join(f"{' → '.join(a['order'])}（{wr.get(' → '.join(a['order']), 0):.0%}）"
+                                   for a in c['alternatives'][:3]), '',
+              '| 相手の選出（先発→） | おすすめ選出の勝ち/試合 | この選出に最も勝った選出 | 序盤（自分 / 相手） | 倒れた順 |',
+              '|---|---|---|---|---|']
         for v in c['vs']:
             ft = '<br>'.join(f"{a} / {b}" for a, b in v['first_turns'])
             fa = '、'.join(f"{tn}T{side}{n}" for tn, side, n in v['faints'])
-            L.append(f"| {' → '.join(v['opp'])} | {v['wins']}/{v['games']} | {ft} | {fa} |")
+            bv = '<br>'.join(f"{' → '.join(b['order'])}（{b['wins']}/{v['games']}）" for b in v.get('best_vs', [])[:2])
+            L.append(f"| {' → '.join(v['opp'])} | {v['wins']}/{v['games']} | {bv} | {ft} | {fa} |")
         L.append('')
+        if t.get('notes'):
+            L += t['notes'] + ['']
     os.makedirs(os.path.dirname(REPORT_P), exist_ok=True)
     open(REPORT_P, 'w', encoding='utf-8').write('\n'.join(L) + '\n')
 
@@ -179,12 +264,16 @@ def main():
         sys.stdout.reconfigure(encoding='utf-8')
     except Exception:
         pass
-    budget = float(sys.argv[1]) if len(sys.argv) > 1 else 300
+    args = sys.argv[1:]
+    quick, redo = '--quick' in args, '--redo' in args
+    only = args[args.index('--team') + 1] if '--team' in args else None
     data = json.load(open(KNOWN_P, encoding='utf-8'))
     for t in data['teams']:
-        c = prep_team(t, budget)
+        if only and t['id'] != only:
+            continue
+        c = prep_team(t, 0) if quick else prep_team_full(t, redo)
         t['counter'] = c
-        print(f"{t['title']}: {' → '.join(c['order'])}  ({c['seconds']}s)")
+        print(f"{t['title']}: {' → '.join(c['order'])}  ({c['seconds']}s)", flush=True)
         json.dump(data, open(KNOWN_P, 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
     report(data)
     print('→', os.path.normpath(REPORT_P))

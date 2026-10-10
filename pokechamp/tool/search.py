@@ -612,3 +612,37 @@ def play(st, max_turns=20, smart=False):
         a1 = _top(st, 1)
         st = E.step(st, a0, a1, chooser=chooser)
     return evaluate(st)
+
+
+def lookahead_action(st, i=0, depth=3, k_self=3, k_opp=2):
+    """Action for side i from a `depth`-turn simultaneous-move tree (side i's best k_self actions x the other side's
+    best k_opp replies at every turn, most likely outcomes, PESS mix over replies), evaluated at the leaves.
+    Used for whole-game play-outs (prep.py) where both sides read ahead the same way."""
+    acts = E.actions(st, i)
+    if len(acts) <= 1:
+        return acts[0] if acts else None
+    sign = 1 if i == 0 else -1
+    j = 1 - i
+
+    def val(s, d):
+        if s.winner is not None or d == 0:
+            v = sign * evaluate(s)
+            if s.winner is not None:
+                v += 0.3 * sign * s.winner * d     # sooner wins first
+            return v
+        mine = prune(s, i, k_self) if E.actions(s, i) else [None]
+        theirs = prune(s, j, k_opp) if E.actions(s, j) else [None]
+        best = -1e9
+        for a in mine:
+            vs = [val(E.step(s, *((a, b) if i == 0 else (b, a)), chooser=chooser), d - 1) for b in theirs]
+            best = max(best, PESS * min(vs) + (1 - PESS) * sum(vs) / len(vs))
+        return best
+
+    theirs = prune(st, j, k_opp + 1) if E.actions(st, j) else [None]
+    best, bv = None, -1e9
+    for a in acts:
+        vs = [val(E.step(st, *((a, b) if i == 0 else (b, a)), chooser=chooser), depth - 1) for b in theirs]
+        v = PESS * min(vs) + (1 - PESS) * sum(vs) / len(vs) + (front_bias(st, a) if i == 0 else 0)
+        if v > bv:
+            best, bv = a, v
+    return best
