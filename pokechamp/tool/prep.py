@@ -142,7 +142,7 @@ def prep_team_full(t, redo=False):
     sig = repr(trips)
     if not redo and os.path.exists(cp):
         c = json.load(open(cp, encoding='utf-8'))
-        if c.get('sig') == sig:
+        if c.get('sig') == sig and 'matrix' in c.get('result', {}):
             return c['result']
     t0 = time.time()
     orders = all_orders()
@@ -167,7 +167,11 @@ def summarize(meta, res, seeds):
     for (o, p, oo), (r, v, first, faints) in zip(meta, res):
         score[o] = score.get(o, 0.0) + p / seeds * (r + 0.01 * v)
         detail.setdefault(o, {}).setdefault(oo, []).append((r, first, faints))
-    ranking = sorted(score.items(), key=lambda x: -x[1])
+    # worst case first: the selection of theirs that beats us most often decides (we do not know their pick
+    # before the battle); ties by the weighted average
+    def worst(o):
+        return min(sum(1 for r, _, _ in g if r == 1) / len(g) for g in detail[o].values())
+    ranking = sorted(score.items(), key=lambda x: (-worst(x[0]), -x[1]))
     bo = ranking[0][0]
     vs = []
     for oo, games in detail[bo].items():
@@ -181,8 +185,9 @@ def summarize(meta, res, seeds):
                                      max(1, sum(len(g) for g in detail[o].values())), 3) for o in detail}
     matrix = {' → '.join(o): {' → '.join(oo): sum(1 for r, _, _ in g if r == 1) for oo, g in detail[o].items()}
               for o in detail}
-    return {'order': list(bo), 'score': round(ranking[0][1], 3),
-            'alternatives': [{'order': list(o), 'score': round(s, 3)} for o, s in ranking[1:5]],
+    return {'order': list(bo), 'score': round(ranking[0][1], 3), 'worst': round(worst(bo), 3),
+            'alternatives': [{'order': list(o), 'score': round(s, 3), 'worst': round(worst(o), 3)}
+                             for o, s in ranking[1:5]],
             'vs': vs, 'winrate': winrate, 'matrix': matrix}
 
 
@@ -244,9 +249,11 @@ def report(data):
         wr = c.get('winrate', {})
         L += [f"## {t['title']}", '', f"- 記事: {t['url']}", f"- 方法: {c.get('mode', '')}",
               '- 相手: ' + ' / '.join(f"{m['name']}（{m['item']}・{'/'.join(m['moves'])}）" for m in t['team']),
-              f"- **おすすめ選出: {' → '.join(c['order'])}**（勝率 {wr.get(' → '.join(c['order']), 0):.0%}）",
-              '- 次点: ' + '、'.join(f"{' → '.join(a['order'])}（{wr.get(' → '.join(a['order']), 0):.0%}）"
-                                   for a in c['alternatives'][:3]), '',
+              f"- **おすすめ選出: {' → '.join(c['order'])}**（最悪の相手選出でも勝率 {c.get('worst', 0):.0%}、"
+              f"全体 {wr.get(' → '.join(c['order']), 0):.0%}）",
+              '- 次点: ' + '、'.join(f"{' → '.join(a['order'])}（最悪 {a.get('worst', 0):.0%}・全体 "
+                                   f"{wr.get(' → '.join(a['order']), 0):.0%}）" for a in c['alternatives'][:3]),
+              '- 選び方: 相手の選出は試合前に分からないので、想定した相手選出のうち最も負けやすいものに対する勝率で順位を付けています。', '',
               '| 相手の選出（先発→） | おすすめ選出の勝ち/試合 | この選出に最も勝った選出 | 序盤（自分 / 相手） | 倒れた順 |',
               '|---|---|---|---|---|']
         for v in c['vs']:

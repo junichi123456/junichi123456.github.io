@@ -1119,12 +1119,15 @@ def select(opp6, seconds=10.0, ignore_stored=False, return_all=False):
                     jobs.append((order_, oorder, smart, kid))
                     meta.append((tuple(order_), p, c, l / sum(lw)))
         vals = _run_games(jobs)
-        sc = {}
+        avg, worst = {}, {}
         ptot = sum(p for p, _ in trips)
         for (o, p, c, lw), v in zip(meta, vals):
-            sc[o] = sc.get(o, 0.0) + p / ptot * lw * v
-        for o in sc:
-            sc[o] += sum(p / ptot * history_bonus(list(o), c) for p, c in trips)
+            avg[o] = avg.get(o, 0.0) + p / ptot * lw * v
+            worst[o] = min(worst.get(o, 1e9), v)
+        for o in avg:
+            avg[o] += sum(p / ptot * history_bonus(list(o), c) for p, c in trips)
+        # their selection is unknown before the battle: rank by the worst case, then by the average
+        sc = {o: worst[o] + 0.01 * avg[o] for o in avg}
         return sorted(((v, list(o)) for o, v in sc.items()), key=lambda x: -x[0])
 
     orders = []
@@ -1265,6 +1268,37 @@ def extra_state(m, d):
     if d.get('toxn'): m.toxn = d['toxn']
 
 
+def worst_case_fill(js, seconds=2.0):
+    """Unseen opponent mons: assume the selection that is worst for us. Every way to complete their three from
+    their six is played out quickly (both sides greedy) and the one with the lowest result is added to js['opp']."""
+    team6 = js.get('opp_team')
+    if not team6:
+        try:
+            team6 = (_learn._load(_learn.CURRENT, None) or {}).get('opp_team')
+        except Exception:
+            team6 = None
+    opp = js.get('opp', [])
+    need = 3 - len(opp)
+    if not team6 or need <= 0:
+        return js, None
+    seen = {_base(d['name']) for d in opp}
+    rest = [x for x in team6 if _base(x) not in seen]
+    import search as _search
+    t_end = time.time() + seconds
+    best, bv = None, 1e9
+    for c in itertools.combinations(rest, need):
+        j2 = dict(js, opp=list(opp) + [{'name': x, 'hp_pct': 100} for x in c])
+        try:
+            v = _search.play(_search.from_battle(load_state(j2), j2), max_turns=15)
+        except Exception:
+            continue
+        if v < bv:
+            best, bv = j2, v
+        if time.time() > t_end:
+            break
+    return (best or js), ([d['name'] for d in best['opp'][len(opp):]] if best else None)
+
+
 def fill_boosts(m, b):
     for k, v in b.items():
         m.boosts['defn' if k in ('def', 'B') else {'A': 'atk', 'C': 'spa', 'D': 'spd', 'S': 'spe'}.get(k, k)] = v
@@ -1299,6 +1333,9 @@ def main():
     elif len(sys.argv) >= 3 and sys.argv[1] == 'turn':
         js = json.load(open(sys.argv[2], encoding='utf-8'))
         sec = float(sys.argv[3]) if len(sys.argv) > 3 and not sys.argv[3].startswith('-') else 10
+        t_fill = time.time()
+        js, assumed = worst_case_fill(js)          # unseen back mons: the worst selection for us
+        sec = max(3.0, sec - (time.time() - t_fill))
         st = load_state(js)
         import search as _search
         est = _search.from_battle(st, js)
@@ -1311,6 +1348,8 @@ def main():
         if '-v' in sys.argv:
             for m in st.sides[1]:
                 print('  相手推定:', m.name, m.cur.nature, m.cur.sp_str(), m.cur.item, m.moves)
+            if assumed:
+                print('  未判明の相手（最悪の選出を想定）:', assumed)
             print(f'木{depth}ターン+ロールアウト（計{_search.HORIZON}ターン） 局面数{nodes}',
                   [(round(v, 2), _search.fmt(est, a)) for v, a in res])
     elif len(sys.argv) >= 3 and sys.argv[1] == 'types':
