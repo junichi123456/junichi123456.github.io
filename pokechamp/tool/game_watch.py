@@ -11,10 +11,14 @@ PCBL のライブスキャンは選出画面を拾えないため、OBS が受�
 出力（../logs/live/）
   game.png         最新のゲーム画面
   game_state.json  {"phase": "preview"|"command"|"other", "seq": 連番, "time": ..., "text": OCR文字}
-  game_events.jsonl  phase が preview / command に入るたびに1行（seq つき）
+  game_events.jsonl  イベントごとに1行（seq つき）:
+                     preview  選出画面が出た（image = 最初の1枚。選出はこの1枚で判断する）
+                     start    選出画面が終わり対戦が始まった（相手の先発が出た時点、遅くとも20秒後）→ 1ターン目の判断
+                     command  2ターン目以降の行動選択画面（ひんし後の交代画面を含む）
+  game_NNNN_preview_KKK.png  選出画面の間も撮り続けた画像（文字が変わるたび／2秒ごと、最大120枚）
 
-対戦中の Claude は  python wait_event.py  をバックグラウンドで実行して待ち、終了通知（=選出画面 or
-自分の行動選択画面になった）を受けたら game.png を読んで判断する。ユーザーがチャットを送る必要はない。
+対戦中の Claude は  python wait_event.py  をバックグラウンドで実行して待ち、終了通知を受けたら
+イベントの画像を読んで判断する。ユーザーがチャットを送る必要はない。
 """
 import argparse, base64, io, json, os, sys, time
 
@@ -48,13 +52,19 @@ class Detector:
       after it has been gone for PREVIEW_END seconds; a new preview needs PREVIEW_GAP seconds.
     - command: once per move-selection screen. The screen must be seen on CONFIRM consecutive
       frames, and the previous one must have been gone for COMMAND_RESET seconds (turn animation).
+    - ended: set (for the caller) on the frame where the team preview is judged to be over.
     """
     CONFIRM, PREVIEW_END, PREVIEW_GAP, COMMAND_RESET = 2, 6.0, 100.0, 3.0
+    START_TIMEOUT = 20.0     # 'start' at the latest this long after the preview is gone
+    SKIP_WINDOW = 90.0       # the turn-1 command screen after 'start' is not reported again
+    PREVIEW_SHOT_EVERY = 2.0  # seconds between preview recordings when nothing changes
+    PREVIEW_SHOTS_MAX = 120
 
     def __init__(self):
         self.raw_prev, self.streak = None, 0
         self.in_preview, self.preview_seen, self.last_preview = False, 0.0, -1e9
         self.command_armed, self.command_off_since = True, None
+        self.ended = False
 
     def update(self, raw, now):
         self.streak = self.streak + 1 if raw == self.raw_prev else 1
@@ -63,6 +73,7 @@ class Detector:
             self.preview_seen = now
         if self.in_preview and now - self.preview_seen > self.PREVIEW_END:
             self.in_preview = False
+            self.ended = True
         if raw == 'preview' and self.streak >= self.CONFIRM and not self.in_preview:
             self.in_preview = True
             if now - self.last_preview > self.PREVIEW_GAP:
@@ -178,6 +189,9 @@ def main():
     field_p = os.path.join(OUT, 'field_state.json')
     tracker = msgparse.FieldTracker(field_p)
     turn_lines, last_lines = [], set()
+    start_wait = None          # time the preview ended, until the 'start' event is sent
+    skip_command_until = 0.0   # the turn-1 command screen was already handled by 'start'
+    preview_seq, preview_n, preview_last_t, preview_last_text = 0, 0, 0.0, None
     log_p = os.path.join(OUT, 'battle_messages.jsonl')
     print(f'ゲーム画面の監視を開始 → {os.path.normpath(OUT)}  (Ctrl+C で終了)')
     while True:
@@ -198,7 +212,29 @@ def main():
         last_lines = set(lines)
         if new and not det.in_preview:
             turn_lines.extend(new)
-        event = det.update(phase, time.time())
+        now = time.time()
+        event = det.update(phase, now)
+        # keep recording the team preview (the pick uses only the first frame: the 'preview' event image)
+        if det.in_preview and preview_seq and preview_n < det.PREVIEW_SHOTS_MAX and \
+                (text != preview_last_text or now - preview_last_t >= det.PREVIEW_SHOT_EVERY):
+            preview_n += 1
+            preview_last_t, preview_last_text = now, text
+            img.save(os.path.join(OUT, f'game_{preview_seq:04d}_preview_{preview_n:03d}.png'))
+        if det.ended:
+            det.ended = False
+            if preview_seq:
+                start_wait = now
+        if start_wait is not None and not det.in_preview:
+            # first decision of the battle: as soon as the opponent's lead is out (or the first command screen)
+            opp_out = any(sw.get('side') == 'opp' for sw in msgparse.parse_turn(turn_lines).get('switch', []))
+            if event == 'command' or opp_out or now - start_wait > det.START_TIMEOUT:
+                skip_command_until = 0.0 if event == 'command' else now + det.SKIP_WINDOW
+                event = 'start'
+                start_wait = None
+        elif event == 'command' and now < skip_command_until:
+            skip_command_until = 0.0
+            event = None
+            print(time.strftime('%Y-%m-%dT%H:%M:%S'), '1ターン目の行動選択画面（start で判断済み）')
         if event:
             phase = event
             seq += 1
@@ -206,7 +242,7 @@ def main():
             snap = os.path.join(OUT, f'game_{seq:04d}_{phase}.png')
             img.save(snap)
             ev = {'seq': seq, 'phase': phase, 'time': ts, 'image': snap, 'text': text}
-            if phase == 'command':
+            if phase in ('command', 'start'):
                 # what happened since the previous decision: moves, stat changes, weather, items, ...
                 turn = msgparse.parse_turn(turn_lines)
                 tracker.apply(turn)
@@ -217,6 +253,9 @@ def main():
                                        ensure_ascii=False) + '\n')
                 turn_lines = []
             if phase == 'preview':
+                preview_seq, preview_n, preview_last_t, preview_last_text = seq, 0, now, text
+                start_wait, skip_command_until = None, 0.0
+                ev['preview_frames'] = os.path.join(OUT, f'game_{seq:04d}_preview_*.png')
                 tracker = msgparse.FieldTracker(field_p)  # new battle
                 tracker.save()
                 turn_lines = []
