@@ -16,6 +16,8 @@ PCBL のライブスキャンは選出画面を拾えないため、OBS が受�
                      start    選出画面が終わり対戦が始まった（相手の先発が出た時点、遅くとも20秒後）→ 1ターン目の判断
                      command  2ターン目以降の行動選択画面（ひんし後の交代画面を含む）
   game_NNNN_preview_KKK.png  選出画面の間も撮り続けた画像（文字が変わるたび／2秒ごと、最大120枚）
+  frames/NNNN/KKKKK_時分秒.jpg  対戦開始（選出画面の終わり）から次の選出画面まで0.5秒ごとの画面
+                     （NNNN は選出画面のイベント番号。直近3対戦分だけ残す。--record-every で間隔を変更）
 
 対戦中の Claude は  python wait_event.py  をバックグラウンドで実行して待ち、終了通知を受けたら
 イベントの画像を読んで判断する。ユーザーがチャットを送る必要はない。
@@ -134,6 +136,70 @@ class WindowSource:
         return ImageGrab.grab(bbox=(w.left, w.top, w.right, w.bottom), all_screens=True)
 
 
+# ---------------------------------------------------------------- battle recording
+class Recorder:
+    """Saves a screenshot every `every` seconds while a battle is on (from the end of the team preview
+    until the next preview), on its own thread and its own capture connection so OCR time does not slow it.
+    Frames go to live/frames/<preview seq>/NNNNN.jpg; only the newest `keep` battles are kept."""
+
+    def __init__(self, make_source, every=0.5, keep=3):
+        import threading
+        self.make_source, self.every, self.keep = make_source, every, keep
+        self.dir, self.n = None, 0
+        self.lock = threading.Lock()
+        self.thread = threading.Thread(target=self._run, daemon=True)
+        self.thread.start()
+
+    def begin(self, battle_seq):
+        d = os.path.join(OUT, 'frames', f'{battle_seq:04d}')
+        os.makedirs(d, exist_ok=True)
+        with self.lock:
+            self.dir, self.n = d, 0
+        self._prune()
+
+    def stop(self):
+        with self.lock:
+            self.dir = None
+
+    def _prune(self):
+        import shutil
+        root = os.path.join(OUT, 'frames')
+        try:
+            ds = sorted(x for x in os.listdir(root) if x.isdigit())
+        except OSError:
+            return
+        for x in ds[:-self.keep]:
+            shutil.rmtree(os.path.join(root, x), ignore_errors=True)
+
+    def _run(self):
+        src = None
+        nxt = time.time()
+        while True:
+            nxt += self.every
+            with self.lock:
+                d = self.dir
+            if d is not None:
+                try:
+                    if src is None:
+                        src = self.make_source()
+                    img = src.grab()
+                    with self.lock:
+                        if self.dir == d:
+                            self.n += 1
+                            n = self.n
+                        else:
+                            n = None
+                    if n is not None:
+                        img.save(os.path.join(d, f'{n:05d}_{time.strftime("%H%M%S")}.jpg'), quality=80)
+                except Exception:
+                    src = None
+            dt = nxt - time.time()
+            if dt > 0:
+                time.sleep(dt)
+            else:
+                nxt = time.time()
+
+
 # ---------------------------------------------------------------- OCR (Windows built-in)
 class WinOCR:
     def __init__(self):
@@ -169,13 +235,18 @@ def main():
     ap.add_argument('--source', help='OBSのソース名またはシーン名（省略時は現在の番組シーン）')
     ap.add_argument('--window', help='OBSを使わずにこのタイトルのウィンドウを撮影する')
     ap.add_argument('--interval', type=float, default=0.7)
+    ap.add_argument('--record-every', type=float, default=0.5,
+                    help='対戦開始から次の選出画面まで、この秒数ごとに画面を保存（0で保存しない）')
     a = ap.parse_args()
     try:
         sys.stdout.reconfigure(encoding='utf-8')
     except Exception:
         pass
     os.makedirs(OUT, exist_ok=True)
-    src = WindowSource(a.window) if a.window else OBSSource(a.host, a.port, a.password, a.source)
+    def make_source():
+        return WindowSource(a.window) if a.window else OBSSource(a.host, a.port, a.password, a.source)
+    src = make_source()
+    rec = Recorder(make_source, every=a.record_every) if a.record_every > 0 else None
     ocr = WinOCR()
     state_p = os.path.join(OUT, 'game_state.json')
     ev_p = os.path.join(OUT, 'game_events.jsonl')
@@ -224,6 +295,8 @@ def main():
             det.ended = False
             if preview_seq:
                 start_wait = now
+                if rec:
+                    rec.begin(preview_seq)
         if start_wait is not None and not det.in_preview:
             # first decision of the battle: as soon as the opponent's lead is out (or the first command screen)
             opp_out = any(sw.get('side') == 'opp' for sw in msgparse.parse_turn(turn_lines).get('switch', []))
@@ -254,6 +327,8 @@ def main():
                 turn_lines = []
             if phase == 'preview':
                 preview_seq, preview_n, preview_last_t, preview_last_text = seq, 0, now, text
+                if rec:
+                    rec.stop()
                 start_wait, skip_command_until = None, 0.0
                 ev['preview_frames'] = os.path.join(OUT, f'game_{seq:04d}_preview_*.png')
                 tracker = msgparse.FieldTracker(field_p)  # new battle
