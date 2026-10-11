@@ -211,7 +211,7 @@ def more(top=10, extra=3, depth=2, seeds=3):
     return rows
 
 
-def final(depth=3, games=6):
+def final(depth=3, games=6, one=False):
     """Shortlist: candidates that, with the orders containing them, win at least once against every selection of
     every target team (worst case > 0 in the first run). They are played again from scratch with both sides
     reading `depth` turns ahead, `games` games per pairing, and ranked worst case first."""
@@ -230,11 +230,15 @@ def final(depth=3, games=6):
             short.append(c)
     print('shortlist:', [c['key'] for c in short], flush=True)
     rows = []
+    computed = False
     for c in short:
         cp = os.path.join(OUT_D, c['key'].replace(' ', '_') + f'__d{depth}x{games}.json')
         if os.path.exists(cp):
             w = json.load(open(cp, encoding='utf-8'))
+        elif one and computed:
+            continue          # --one: a single new candidate per run (runs are time-limited)
         else:
+            computed = True
             t0 = time.time()
             w = run([(o, t, oo, c) for t in teams for o in orders_with(c['species']) for _, oo in trips[t['id']]],
                     depth, games, offset=100)
@@ -315,7 +319,7 @@ def main():
         return
     if '--final' in a:
         final(depth=int(a[a.index('--depth') + 1]) if '--depth' in a else 3,
-              games=int(a[a.index('--games') + 1]) if '--games' in a else 6)
+              games=int(a[a.index('--games') + 1]) if '--games' in a else 6, one='--one' in a)
         return
     if '--more' in a:
         more(top=int(a[a.index('--top') + 1]) if '--top' in a else 10, extra=int(a[a.index('--more') + 1]))
