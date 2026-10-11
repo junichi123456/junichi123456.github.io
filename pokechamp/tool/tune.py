@@ -27,15 +27,15 @@ GY = dict(species='ギャラドス', ability='いかく')
 CANDIDATES = [
     dict(GY, key='G0 現在の型', nature='わんぱく', ap={'hp': 32, 'atk': 2, 'def': 32}, item='ゴツゴツメット',
          moves=['たきのぼり', 'ゆきなだれ', 'でんじは', 'ちょうはつ']),
-    dict(GY, key='G1 たべのこし', nature='わんぱく', ap={'hp': 32, 'atk': 2, 'def': 32}, item='たべのこし',
+    dict(GY, key='G1 ソクノのみ', nature='わんぱく', ap={'hp': 32, 'atk': 2, 'def': 32}, item='ソクノのみ',
          moves=['たきのぼり', 'ゆきなだれ', 'でんじは', 'ちょうはつ']),
     dict(GY, key='G2 アイへ・ねっとう', nature='わんぱく', ap={'hp': 32, 'atk': 2, 'def': 32}, item='ゴツゴツメット',
          moves=['ねっとう', 'アイアンヘッド', 'でんじは', 'ちょうはつ']),
-    dict(GY, key='G3 HD残飯', nature='しんちょう', ap={'hp': 32, 'atk': 2, 'spd': 32}, item='たべのこし',
+    dict(GY, key='G3 HDゴツメ', nature='しんちょう', ap={'hp': 32, 'atk': 2, 'spd': 32}, item='ゴツゴツメット',
          moves=['たきのぼり', 'アイアンヘッド', 'でんじは', 'ちょうはつ']),
     dict(GY, key='G4 竜舞ラム', nature='ようき', ap={'hp': 2, 'atk': 32, 'spe': 32}, item='ラムのみ',
          moves=['たきのぼり', 'アイアンヘッド', 'じしん', 'りゅうのまい']),
-    dict(GY, key='G5 竜舞珠', nature='ようき', ap={'hp': 2, 'atk': 32, 'spe': 32}, item='いのちのたま',
+    dict(GY, key='G5 竜舞帯', nature='ようき', ap={'hp': 2, 'atk': 32, 'spe': 32}, item='たつじんのおび',
          moves=['たきのぼり', 'アイアンヘッド', 'じしん', 'りゅうのまい']),
     dict(GY, key='G6 メガギャラドス', nature='ようき', ap={'hp': 2, 'atk': 32, 'spe': 32}, item='ギャラドスナイト',
          moves=['たきのぼり', 'かみくだく', 'アイアンヘッド', 'りゅうのまい'], mega='メガギャラドス', mega_ability='かたやぶり'),
@@ -46,12 +46,25 @@ REPLACE = ['サーフゴー', 'ドドゲザン', 'メタグロス', 'ハッサ�
            'アーマーガア', 'キラフロル', 'カバルドン']
 
 
+# items must not repeat within our six (the other five hold these)
+ITEM_FOR = {'ブリジュラス': 'たつじんのおび', 'ドヒドイデ': 'ゴツゴツメット', 'キラフロル': 'こだわりスカーフ',
+            'カバルドン': 'ゴツゴツメット'}
+FALLBACK_ITEMS = ['ゴツゴツメット', 'ラムのみ', 'シュカのみ', 'たつじんのおび', 'こだわりスカーフ']
+
+
+def taken_items():
+    return {m.item for m in B.TEAM if B.BASE_OF.get(m.species, m.species) != SLOT}
+
+
 def replacement(sp):
-    """A standard set for another Pokémon in the slot: the most likely usage/role set (no observations)."""
+    """A standard set for another Pokémon in the slot: the most likely usage/role set (no observations),
+    with an item that none of the other five holds."""
     base, mega, _ = B._infer.best_set(sp, [], B.MY_TYPES, None)
-    m = mega or base
+    item = ITEM_FOR.get(sp, base.item)
+    if item in taken_items():
+        item = next(x for x in FALLBACK_ITEMS if x not in taken_items())
     c = dict(key=f'R {sp}', species=sp, nature=base.nature, ap=dict(base.spv), ability=base.ability,
-             item=base.item, moves=list(base.moves))
+             item=item, moves=list(base.moves))
     if mega:
         c.update(mega=mega.species, mega_ability=mega.ability)
     return c
@@ -143,6 +156,8 @@ def main():
     teams = [t for t in data['teams'] if t['id'] in TARGETS]
     trips = {t['id']: team_trips(t) for t in teams}
     cands = CANDIDATES + [replacement(sp) for sp in REPLACE]
+    clash = [c['key'] for c in cands if c['item'] in taken_items()]
+    assert not clash, f'items clash with the other five: {clash}'
     # baseline: orders without the slot (the candidate does not matter for them)
     bp = os.path.join(OUT_D, '_base.json')
     if os.path.exists(bp):
