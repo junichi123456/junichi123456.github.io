@@ -211,12 +211,69 @@ def more(top=10, extra=3, depth=2, seeds=3):
     return rows
 
 
+def final(depth=3, games=6):
+    """Shortlist: candidates that, with the orders containing them, win at least once against every selection of
+    every target team (worst case > 0 in the first run). They are played again from scratch with both sides
+    reading `depth` turns ahead, `games` games per pairing, and ranked worst case first."""
+    data = json.load(open(prep.KNOWN_P, encoding='utf-8'))
+    teams = [t for t in data['teams'] if t['id'] in TARGETS]
+    trips = {t['id']: team_trips(t) for t in teams}
+    cands = CANDIDATES + [replacement(sp) for sp in REPLACE]
+    short = []
+    for c in cands:
+        cp = os.path.join(OUT_D, c['key'].replace(' ', '_') + '.json')
+        if not os.path.exists(cp):
+            continue
+        w = json.load(open(cp, encoding='utf-8'))
+        _, _, per = score(w, teams)
+        if len(per) == len(teams) and all(v[0] > 0 for v in per.values()):
+            short.append(c)
+    print('shortlist:', [c['key'] for c in short], flush=True)
+    rows = []
+    for c in short:
+        cp = os.path.join(OUT_D, c['key'].replace(' ', '_') + f'__d{depth}x{games}.json')
+        if os.path.exists(cp):
+            w = json.load(open(cp, encoding='utf-8'))
+        else:
+            t0 = time.time()
+            w = run([(o, t, oo, c) for t in teams for o in orders_with(c['species']) for _, oo in trips[t['id']]],
+                    depth, games, offset=100)
+            json.dump(w, open(cp, 'w', encoding='utf-8'), ensure_ascii=False)
+            print(c['key'], f'd{depth}x{games}', round(time.time() - t0), 's', flush=True)
+        wst, avg, per = score(w, teams)
+        rows.append({'cand': c, 'worst': wst, 'avg': avg,
+                     'per_team': {t['title']: {'order': per[t['id']][2], 'worst': per[t['id']][0], 'avg': per[t['id']][1]}
+                                  for t in teams}})
+    rows.sort(key=lambda r: (-r['worst'], -r['avg']))
+    json.dump(rows, open(os.path.join(OUT_D, f'final_d{depth}x{games}.json'), 'w', encoding='utf-8'),
+              ensure_ascii=False, indent=1)
+    L = [f'# 6枠目の調整：最終評価（両者{depth}手読み・各{games}戦、tune.py --final が自動生成）', '',
+         f'対象: {", ".join(t["title"] for t in teams)}',
+         '候補: 2手読み各3戦の試算で、3構築すべてについて「最も負けやすい相手選出にも1勝以上」できる選出があった候補。',
+         f'各候補を入れた選出30通り×相手の想定選出ごとに{games}戦。構築ごとに最悪の相手選出への勝率が最大の選出を取り、3構築で平均。', '',
+         '| 順位 | 候補 | 型 | 最悪の相手選出への勝率 | 平均勝率 | ' + ' | '.join(t['title'][:12] for t in teams) + ' |',
+         '|' + '---|' * (5 + len(teams))]
+    for i, r in enumerate(rows):
+        c = r['cand']
+        sp = Mon(c['species'], c['nature'], c['ap'], c['ability'], c['item'], c['moves']).sp_str()
+        L.append(f"| {i + 1} | {c['key']} | {c['nature']} {sp} {c['item']} {'/'.join(c['moves'])} | {r['worst']:.0%} | "
+                 f"{r['avg']:.0%} | " + ' | '.join(f"{v['order']}（{v['worst']:.0%}/{v['avg']:.0%}）"
+                                                    for v in r['per_team'].values()) + ' |')
+    open(os.path.join(HERE, '..', 'logs', 'TUNING_FINAL.md'), 'w', encoding='utf-8').write('\n'.join(L) + '\n')
+    print('→ logs/TUNING_FINAL.md')
+    return rows
+
+
 def main():
     try:
         sys.stdout.reconfigure(encoding='utf-8')
     except Exception:
         pass
     a = sys.argv[1:]
+    if '--final' in a:
+        final(depth=int(a[a.index('--depth') + 1]) if '--depth' in a else 3,
+              games=int(a[a.index('--games') + 1]) if '--games' in a else 6)
+        return
     if '--more' in a:
         more(top=int(a[a.index('--top') + 1]) if '--top' in a else 10, extra=int(a[a.index('--more') + 1]))
         return
