@@ -132,14 +132,19 @@ def all_orders():
     return out
 
 
-def prep_team_full(t, redo=False):
-    """All 60 orders x every likely selection of theirs x FULL_SEEDS games, both sides reading DEPTH turns ahead."""
+def prep_team_full(t, redo=False, depth=None, seeds=None):
+    """All 60 orders x every likely selection of theirs x `seeds` games, both sides reading `depth` turns ahead
+    (defaults DEPTH / FULL_SEEDS). Cached per team, depth, games and our current six."""
+    depth = DEPTH if depth is None else depth
+    seeds = FULL_SEEDS if seeds is None else seeds
     os.makedirs(CACHE_D, exist_ok=True)
-    cp = os.path.join(CACHE_D, t['id'] + '.json')
+    tag = '' if (depth, seeds) == (3, 4) else f'_d{depth}s{seeds}'
+    cp = os.path.join(CACHE_D, t['id'] + tag + '.json')
     opp6 = [B._base(m['name']) for m in t['team']]
     B.set_known_context(opp6)
     trips = opp_trips(t, opp6)
-    sig = repr(trips)
+    mine = [(m.species, m.item, tuple(m.moves)) for m in B.TEAM]
+    sig = repr(trips) if (depth, seeds) == (3, 4) else repr((trips, mine))
     if not redo and os.path.exists(cp):
         c = json.load(open(cp, encoding='utf-8'))
         if c.get('sig') == sig and 'matrix' in c.get('result', {}):
@@ -150,13 +155,13 @@ def prep_team_full(t, redo=False):
     for o in orders:
         for p, oorders in trips:
             for oo in oorders:
-                for sd in range(FULL_SEEDS):
-                    jobs.append((o, oo, t['id'], zlib.crc32(repr((o, oo, sd)).encode()), DEPTH))
+                for sd in range(seeds):
+                    jobs.append((o, oo, t['id'], zlib.crc32(repr((o, oo, sd)).encode()), depth))
                     meta.append((tuple(o), p / len(oorders), tuple(oo)))
     print(f"  {t['title']}: {len(jobs)} games ...", flush=True)
     res = pool_map(game, jobs)
-    result = summarize(meta, res, FULL_SEEDS)
-    result.update({'mode': f'全{len(orders)}通り×相手選出{sum(len(o) for _, o in trips)}通り×各{FULL_SEEDS}戦・両者{DEPTH}手読み',
+    result = summarize(meta, res, seeds)
+    result.update({'mode': f'全{len(orders)}通り×相手選出{sum(len(o) for _, o in trips)}通り×各{seeds}戦・両者{depth}手読み',
                    'games': len(jobs), 'seconds': round(time.time() - t0, 1)})
     json.dump({'sig': sig, 'result': result}, open(cp, 'w', encoding='utf-8'), ensure_ascii=False)
     return result
@@ -280,7 +285,9 @@ def main():
     for t in data['teams']:
         if only and t['id'] != only:
             continue
-        c = prep_team(t, 0) if quick else prep_team_full(t, redo)
+        c = prep_team(t, 0) if quick else prep_team_full(
+            t, redo, int(args[args.index('--depth') + 1]) if '--depth' in args else None,
+            int(args[args.index('--seeds') + 1]) if '--seeds' in args else None)
         t['counter'] = c
         print(f"{t['title']}: {' → '.join(c['order'])}  ({c['seconds']}s)", flush=True)
         json.dump(data, open(KNOWN_P, 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
