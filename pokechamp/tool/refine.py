@@ -5,6 +5,7 @@
                                         sides reading 3 turns ahead, one game per pairing (same random seeds in every
                                         round, their selections fixed at round 1). Cached per team in logs/refine/R{N}/
   python refine.py --analyze N          per member: how often it is brought, win rate with it, moves used, faints
+  python refine.py --screen N v.json   quick check of single changes (v.json) on round N's best orders, same seeds
   python refine.py --report             logs/REFINE.md: rounds side by side
   python refine.py --blind N            blind test with party R{N}: selection from the six only (no article sets for
                                         either side, each side guesses the other's sets from usage data and what it
@@ -70,6 +71,7 @@ def apply_party(party):
     for p in party:
         assert sum(p['ap'].values()) <= 66 and all(0 <= v <= 32 for v in p['ap'].values()), p
         assert len(p['moves']) == 4 and len(set(p['moves'])) == 4, p
+        assert all(m in B.MOVE for m in p['moves']), p['moves']
     B.TEAM[:] = [Mon(p['species'], p['nature'], p['ap'], p['ability'], p['item'], p['moves'], label=p['label'])
                  for p in party]
     B.MY.clear()
@@ -265,6 +267,67 @@ def summary(n):
     return {'teams': k, 'worst': sum(s['best'][0] for s in S_) / k, 'avg': sum(s['best'][1] for s in S_) / k,
             'all': sum(s['all'] for s in S_) / k, 'top5': sum(s['top5'] for s in S_) / k,
             'per': {kid: team_stats(g) for kid, g in R.items()}}
+
+
+# ---------------------------------------------------------------- screening of single changes
+
+def variant(party, v):
+    """party with v's changes: {'mon': base species, 'item'/'nature'/'ap'/'moves'/'ability': new value} (a
+    'swap': [old, new] entry replaces one move)."""
+    out = json.loads(json.dumps(party))
+    for p in out:
+        if B._base(p['species']) == v['mon']:
+            for k in ('item', 'nature', 'ap', 'moves', 'ability'):
+                if k in v:
+                    p[k] = v[k]
+            for old, new in v.get('swap', []):
+                p['moves'] = [new if x == old else x for x in p['moves']]
+    return out
+
+
+def _screen_job(args):
+    party, o, oo, kid, seed = args
+    apply_party(party)
+    return game((o, oo, kid, seed, DEPTH))[0]
+
+
+def screen(n, vfile, k=3):
+    """Every variant in vfile against round n's games: per team the best k orders of round n that bring the
+    changed mon, against every selection of theirs, same seeds -> wins of the variant vs wins in round n."""
+    base = load_party(n)
+    R = load_round(n)
+    vs = json.load(open(vfile, encoding='utf-8'))
+    teams()
+    out_p = os.path.join(OUT_D, f'screen_R{n}.json')
+    done = json.load(open(out_p, encoding='utf-8')) if os.path.exists(out_p) else {}
+    for v in vs:
+        key = v['name']
+        if key in done:
+            continue
+        party = variant(base, v)
+        apply_party(party)
+        jobs, meta = [], []
+        for kid, games in R.items():
+            st = team_stats(games)
+            orders = [r[3] for r in st['rows'] if v['mon'] in r[3]][:k]
+            for g in games:
+                if tuple(g['order']) in orders:
+                    jobs.append((party, g['order'], g['opp'], kid, zlib.crc32(repr((g['order'], g['opp'], 0)).encode())))
+                    meta.append((kid, g['res']))
+        t0 = time.time()
+        res = prep.pool_map(_screen_job, jobs)
+        per = {}
+        for (kid, r0), r1 in zip(meta, res):
+            d = per.setdefault(kid, [0, 0, 0])
+            d[0] += r0 == 1
+            d[1] += r1 == 1
+            d[2] += 1
+        done[key] = {'v': v, 'base': sum(d[0] for d in per.values()), 'new': sum(d[1] for d in per.values()),
+                     'n': len(jobs), 'per': per, 'seconds': round(time.time() - t0)}
+        json.dump(done, open(out_p, 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
+        print(f"{key}: {done[key]['base']} -> {done[key]['new']} / {len(jobs)}  ({done[key]['seconds']}s)", flush=True)
+    apply_party(base)
+    return done
 
 
 # ---------------------------------------------------------------- blind test
@@ -473,6 +536,8 @@ def main():
         run_round(int(a[a.index('--round') + 1]), a[a.index('--team') + 1] if '--team' in a else None)
         analyze(int(a[a.index('--round') + 1]), quiet=True)
         report()
+    elif '--screen' in a:
+        screen(int(a[a.index('--screen') + 1]), a[a.index('--screen') + 2])
     elif '--analyze' in a:
         analyze(int(a[a.index('--analyze') + 1]))
     elif '--blind' in a:
