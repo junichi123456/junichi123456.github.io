@@ -264,12 +264,55 @@ def final(depth=3, games=6):
     return rows
 
 
+def review(depth=3, games=5):
+    """logs/TUNING_REVIEW.md: one section per finished candidate of the final run (written as they finish)."""
+    data = json.load(open(prep.KNOWN_P, encoding='utf-8'))
+    teams = [t for t in data['teams'] if t['id'] in TARGETS]
+    cands = CANDIDATES + [replacement(sp) for sp in REPLACE]
+    L = [f'# 6枠目の調整：候補ごとのレビュー（両者{depth}手読み・各{games}戦）', '',
+         '各候補を入れた選出30通りを、勝率の低い3構築の想定選出すべてと対戦させた結果です。乱数あり。',
+         '「最悪」はその選出が最も負けやすい相手選出への勝率、「平均」は全相手選出での勝率です。', '']
+    done = []
+    for c in cands:
+        cp = os.path.join(OUT_D, c['key'].replace(' ', '_') + f'__d{depth}x{games}.json')
+        p1 = os.path.join(OUT_D, c['key'].replace(' ', '_') + '.json')
+        if not os.path.exists(cp):
+            continue
+        w = json.load(open(cp, encoding='utf-8'))
+        w1 = json.load(open(p1, encoding='utf-8')) if os.path.exists(p1) else None
+        wst, avg, per = score(w, teams)
+        done.append((wst, avg, c['key']))
+        sp = Mon(c['species'], c['nature'], c['ap'], c['ability'], c['item'], c['moves']).sp_str()
+        L += [f"## {c['key']}", '', f"- 型: {c['species']} {c['nature']} {sp} / {c['item']} / {'/'.join(c['moves'])}",
+              f"- 3構築平均: 最悪 {wst:.0%}・平均 {avg:.0%}" +
+              (f"（2手読み3戦の試算: 最悪 {score(w1, teams)[0]:.0%}・平均 {score(w1, teams)[1]:.0%}）" if w1 else ''), '',
+              '| 構築 | 最善の選出 | 最悪 | 平均 | 最も苦しい相手選出 | その相手への成績 |', '|---|---|---|---|---|---|']
+        for t in teams:
+            wo, av, o = per[t['id']]
+            by = w[t['id']][o]
+            hard = min(by.items(), key=lambda x: x[1][0] / x[1][1])
+            L.append(f"| {t['title'][:24]} | {o} | {wo:.0%} | {av:.0%} | {hard[0]} | {hard[1][0]}/{hard[1][1]} |")
+        # how often the candidate's orders win overall, and as lead vs back
+        lead = [v for t in teams for o, by in w[t['id']].items() if o.split(' → ')[0] == c['species'] for v in by.values()]
+        back = [v for t in teams for o, by in w[t['id']].items() if o.split(' → ')[0] != c['species'] for v in by.values()]
+        rate = lambda xs: sum(a for a, _ in xs) / max(1, sum(n for _, n in xs))
+        L += ['', f"- 先発にしたときの勝率 {rate(lead):.0%}、後発にしたときの勝率 {rate(back):.0%}（全選出の平均）", '']
+    if done:
+        done.sort(reverse=True)
+        L[5:5] = ['## 現時点の順位', ''] + [f"{i + 1}. {k}（最悪 {a:.0%}・平均 {b:.0%}）" for i, (a, b, k) in enumerate(done)] + ['']
+    open(os.path.join(HERE, '..', 'logs', 'TUNING_REVIEW.md'), 'w', encoding='utf-8').write('\n'.join(L) + '\n')
+    return done
+
+
 def main():
     try:
         sys.stdout.reconfigure(encoding='utf-8')
     except Exception:
         pass
     a = sys.argv[1:]
+    if '--review' in a:
+        print(review(games=int(a[a.index('--games') + 1]) if '--games' in a else 5))
+        return
     if '--final' in a:
         final(depth=int(a[a.index('--depth') + 1]) if '--depth' in a else 3,
               games=int(a[a.index('--games') + 1]) if '--games' in a else 6)
