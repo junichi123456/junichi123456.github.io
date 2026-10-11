@@ -113,10 +113,10 @@ def orders_without():
     return out
 
 
-def run(jobs_spec, depth, seeds):
+def run(jobs_spec, depth, seeds, offset=0):
     jobs, meta = [], []
     for o, t, oo, cand in jobs_spec:
-        for sd in range(seeds):
+        for sd in range(offset, offset + seeds):
             jobs.append((o, oo, t['id'], zlib.crc32(repr((o, oo, sd, 'tune')).encode()), depth, cand))
             meta.append((t['id'], ' → '.join(o), ' → '.join(oo)))
     res = prep.pool_map(game, jobs)
@@ -143,12 +143,83 @@ def best_of(tw):
     return max(rows)
 
 
+def merge(*ws):
+    """Add up {team: {order: {opp: [wins, games]}}} tables."""
+    out = {}
+    for w in ws:
+        for tid, by in (w or {}).items():
+            for o, opp in by.items():
+                for oo, (a, n) in opp.items():
+                    x = out.setdefault(tid, {}).setdefault(o, {}).setdefault(oo, [0, 0])
+                    x[0] += a
+                    x[1] += n
+    return out
+
+
+def score(w, teams):
+    """Candidate's score from the orders that contain it: per team the best order (worst case first), averaged."""
+    per = {t['id']: best_of(w[t['id']]) for t in teams if w.get(t['id'])}
+    return (sum(v[0] for v in per.values()) / len(per), sum(v[1] for v in per.values()) / len(per), per)
+
+
+def more(top=10, extra=3, depth=2, seeds=3):
+    """Play `extra` more games per pairing for the `top` candidates and rank them on all games."""
+    data = json.load(open(prep.KNOWN_P, encoding='utf-8'))
+    teams = [t for t in data['teams'] if t['id'] in TARGETS]
+    trips = {t['id']: team_trips(t) for t in teams}
+    cands = CANDIDATES + [replacement(sp) for sp in REPLACE]
+    first = {}
+    for c in cands:
+        cp = os.path.join(OUT_D, c['key'].replace(' ', '_') + '.json')
+        if os.path.exists(cp):
+            first[c['key']] = json.load(open(cp, encoding='utf-8'))
+    ranked = sorted((c for c in cands if c['key'] in first), key=lambda c: tuple(-x for x in score(first[c['key']], teams)[:2]))
+    chosen = ranked[:top]
+    rows = []
+    for c in chosen:
+        cp = os.path.join(OUT_D, c['key'].replace(' ', '_') + '__more.json')
+        if os.path.exists(cp):
+            w2 = json.load(open(cp, encoding='utf-8'))
+        else:
+            t0 = time.time()
+            w2 = run([(o, t, oo, c) for t in teams for o in orders_with(c['species']) for _, oo in trips[t['id']]],
+                     depth, extra, offset=seeds)
+            json.dump(w2, open(cp, 'w', encoding='utf-8'), ensure_ascii=False)
+            print(c['key'], '+', extra, round(time.time() - t0), 's', flush=True)
+        w = merge(first[c['key']], w2)
+        wst, avg, per = score(w, teams)
+        w1, a1, _ = score(first[c['key']], teams)
+        rows.append({'cand': c, 'worst': wst, 'avg': avg, 'worst3': w1, 'avg3': a1,
+                     'per_team': {t['title']: {'order': per[t['id']][2], 'worst': per[t['id']][0], 'avg': per[t['id']][1]}
+                                  for t in teams}})
+    rows.sort(key=lambda r: (-r['worst'], -r['avg']))
+    json.dump(rows, open(os.path.join(OUT_D, 'summary6.json'), 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
+    n = seeds + extra
+    L = [f'# 6枠目の調整：上位{top}候補の{n}戦評価（tune.py --more が自動生成）', '',
+         f'対象: {", ".join(t["title"] for t in teams)}', f'両者{depth}手読み・乱数あり。各候補を入れた選出30通り×相手の想定選出ごとに{n}戦。',
+         '構築ごとに、候補を入れた選出のうち「最も負けやすい相手選出への勝率」が最大の選出を取り、3構築で平均して順位を付けています。', '',
+         f'| 順位 | 候補 | 型 | 最悪の相手選出への勝率（{n}戦） | 平均勝率（{n}戦） | 3戦時点（最悪/平均） | ' +
+         ' | '.join(t['title'][:12] for t in teams) + ' |', '|' + '---|' * (6 + len(teams))]
+    for i, r in enumerate(rows):
+        c = r['cand']
+        sp = Mon(c['species'], c['nature'], c['ap'], c['ability'], c['item'], c['moves']).sp_str()
+        L.append(f"| {i + 1} | {c['key']} | {c['nature']} {sp} {c['item']} {'/'.join(c['moves'])} | {r['worst']:.0%} | "
+                 f"{r['avg']:.0%} | {r['worst3']:.0%} / {r['avg3']:.0%} | " +
+                 ' | '.join(f"{v['order']}（{v['worst']:.0%}/{v['avg']:.0%}）" for v in r['per_team'].values()) + ' |')
+    open(os.path.join(HERE, '..', 'logs', 'TUNING6.md'), 'w', encoding='utf-8').write('\n'.join(L) + '\n')
+    print('→ logs/TUNING6.md')
+    return rows
+
+
 def main():
     try:
         sys.stdout.reconfigure(encoding='utf-8')
     except Exception:
         pass
     a = sys.argv[1:]
+    if '--more' in a:
+        more(top=int(a[a.index('--top') + 1]) if '--top' in a else 10, extra=int(a[a.index('--more') + 1]))
+        return
     depth = int(a[a.index('--depth') + 1]) if '--depth' in a else 2
     seeds = int(a[a.index('--seeds') + 1]) if '--seeds' in a else 3
     os.makedirs(OUT_D, exist_ok=True)
