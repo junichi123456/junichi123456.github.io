@@ -291,41 +291,59 @@ def _screen_job(args):
     return game((o, oo, kid, seed, DEPTH))[0]
 
 
-def screen(n, vfile, k=3):
-    """Every variant in vfile against round n's games: per team the best k orders of round n that bring the
-    changed mon, against every selection of theirs, same seeds -> wins of the variant vs wins in round n."""
+SCREEN_SEED = 1     # fresh seeds: the orders were picked by their round results, so those results are biased
+
+
+def _screen_set(R, mon, k_all=3, k_mon=2):
+    """Per team: its best k_all orders of the round plus the best k_mon that bring `mon`, x every selection."""
+    out = []
+    for kid, games in R.items():
+        rows = team_stats(games)['rows']
+        orders = [r[3] for r in rows[:k_all]]
+        orders += [r[3] for r in rows if mon in r[3] and r[3] not in orders][:k_mon]
+        out += [(kid, tuple(g['order']), tuple(g['opp'])) for g in games if tuple(g['order']) in orders]
+    return out
+
+
+def screen(n, vfile):
+    """Each variant in vfile against the unchanged party (control) on the same pairings and the same fresh seeds."""
     base = load_party(n)
     R = load_round(n)
     vs = json.load(open(vfile, encoding='utf-8'))
     teams()
     out_p = os.path.join(OUT_D, f'screen_R{n}.json')
     done = json.load(open(out_p, encoding='utf-8')) if os.path.exists(out_p) else {}
+    ctrl = {tuple(json.loads(k)): v for k, v in done.pop('_control', {}).items()}
+
+    def play(party, keys):
+        apply_party(party)
+        jobs = [(party, list(o), list(oo), kid, zlib.crc32(repr((list(o), list(oo), SCREEN_SEED)).encode()))
+                for kid, o, oo in keys]
+        return prep.pool_map(_screen_job, jobs)
+
     for v in vs:
         key = v['name']
         if key in done:
             continue
-        party = variant(base, v)
-        apply_party(party)
-        jobs, meta = [], []
-        for kid, games in R.items():
-            st = team_stats(games)
-            orders = [r[3] for r in st['rows'] if v['mon'] in r[3]][:k]
-            for g in games:
-                if tuple(g['order']) in orders:
-                    jobs.append((party, g['order'], g['opp'], kid, zlib.crc32(repr((g['order'], g['opp'], 0)).encode())))
-                    meta.append((kid, g['res']))
         t0 = time.time()
-        res = prep.pool_map(_screen_job, jobs)
+        keys = _screen_set(R, v['mon'])
+        need = [x for x in keys if x not in ctrl]
+        if need:
+            for x, r in zip(need, play(base, need)):
+                ctrl[x] = r
+        res = play(variant(base, v), keys)
         per = {}
-        for (kid, r0), r1 in zip(meta, res):
+        for (kid, o, oo), r1 in zip(keys, res):
             d = per.setdefault(kid, [0, 0, 0])
-            d[0] += r0 == 1
+            d[0] += ctrl[(kid, o, oo)] == 1
             d[1] += r1 == 1
             d[2] += 1
         done[key] = {'v': v, 'base': sum(d[0] for d in per.values()), 'new': sum(d[1] for d in per.values()),
-                     'n': len(jobs), 'per': per, 'seconds': round(time.time() - t0)}
-        json.dump(done, open(out_p, 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
-        print(f"{key}: {done[key]['base']} -> {done[key]['new']} / {len(jobs)}  ({done[key]['seconds']}s)", flush=True)
+                     'n': len(keys), 'per': per, 'seconds': round(time.time() - t0)}
+        done['_control'] = {json.dumps(list(k), ensure_ascii=False): r for k, r in ctrl.items()}
+        json.dump(done, open(out_p, 'w', encoding='utf-8'), ensure_ascii=False)
+        done.pop('_control')
+        print(f"{key}: {done[key]['base']} -> {done[key]['new']} / {len(keys)}  ({done[key]['seconds']}s)", flush=True)
     apply_party(base)
     return done
 
@@ -459,7 +477,7 @@ def blind(n):
 # ---------------------------------------------------------------- report
 
 def _fmt_party(p):
-    ap = lambda a: ' '.join(f"{'HABCDS'[['hp', 'atk', 'defn', 'spa', 'spd', 'spe'].index(k)]}{v}" for k, v in a.items() if v)
+    ap = lambda a: ' '.join(f"{'HABCDS'[['hp', 'atk', 'def', 'spa', 'spd', 'spe'].index('def' if k == 'defn' else k)]}{v}" for k, v in a.items() if v)
     return [f"| {m['label'][1:] if m['label'][0].isascii() else m['label']} | {m['nature']} {ap(m['ap'])} | {m['item']} | "
             f"{'/'.join(m['moves'])} |" for m in p]
 
