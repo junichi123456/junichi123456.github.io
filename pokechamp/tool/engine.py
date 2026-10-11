@@ -4126,10 +4126,15 @@ def start(st, rng=EXPECTED, chooser=None, log=None):
 
 
 # ---------------------------------------------------------------- building mons from sets
+# names used by calc.py / the team data that the Showdown data spells differently
+SPECIES_ALIAS = {'フラエッテ': 'フラエッテ(えいえんのはな)'}
+
+
 def make_mon(species_ja, nature='まじめ', ap=None, ability='', item='', moves=(), side=0, idx=0):
     """species/ability/item/moves in Japanese (or showdown ids). ap: {'hp','atk','def','spa','spd','spe'} 0..32.
     If the item is this species' mega stone, the mega form is attached (mega evolves when choosing ('m', x, True))."""
     ap = {('def' if k == 'defn' else k): v for k, v in (ap or {}).items()}
+    species_ja = SPECIES_ALIAS.get(species_ja, species_ja)
     if species_ja not in dex.SPECIES:
         raise KeyError(species_ja)
     ab = dex.ab_id(ability)

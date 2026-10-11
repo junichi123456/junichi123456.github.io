@@ -53,13 +53,14 @@ def parse(page, url=''):
         c = c.replace('\\"', '"')
         a = {k: html.unescape(v) for k, v in re.findall(r'data-([a-z-]+)="([^"]*)"', c)}
         ab = [A.get(x) for x in json.loads(a.get('ability-ids', '[]'))]
-        name = re.sub(r'\((♂|♀)\)', '', P.get(int(a['pokemon-id']), '')).replace('ヤドキング(ガラル)', 'ガラルヤドキング')
+        name = re.sub(r'\((♂|♀)\)', '', P.get(int(a['pokemon-id']), ''))
+        name = re.sub(r'^(.+)\((ヒスイ|ガラル|アローラ|パルデア)\)$', r'\2\1', name)   # ヌメルゴン(ヒスイ) -> ヒスイヌメルゴン
         m = {'name': name, 'nature': N.get(int(a['nature-id'])) if a.get('nature-id') else None,
              'ability': ab[0] if ab else None, 'base_ability': ab[1] if len(ab) > 1 else (ab[0] if ab else None),
              'item': I.get(int(a['item-id'])) if a.get('item-id') else None,
              'moves': [M.get(x) for x in json.loads(a.get('move-ids', '[]'))],
              'ap': {_STAT[k]: v for k, v in json.loads(a.get('evs', '{}')).items() if v and k in _STAT}}
-        if m not in team:
+        if m not in team and all(x['name'] != m['name'] for x in team):   # an alternative set of the same mon: keep the first
             team.append(m)
     aid = url.rstrip('/').split('/')[-1] if url else str(art.get('id', ''))
     return {'id': aid, 'title': ' '.join(str(art.get('title', '')).split()), 'url': url, 'team': team, 'picks': []}
