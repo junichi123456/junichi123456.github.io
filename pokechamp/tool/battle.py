@@ -1134,7 +1134,8 @@ def select(opp6, seconds=10.0, ignore_stored=False, return_all=False):
     for mine3 in itertools.combinations(my_names, 3):
         for lead in mine3:
             orders.append([lead] + [x for x in mine3 if x != lead])
-    if kt and kt.get('counter') and not ignore_stored and not return_all:
+    if kt and kt.get('counter') and not ignore_stored and not return_all and \
+            all(x in my_names for x in kt['counter']['order']):   # stored before a team change? recompute
         # prepared offline by prep.py (both sides look ahead, real randomness): use it as is
         c = kt['counter']
         top = [(c['score'], c['order'])] + [(a['score'], a['order']) for a in c.get('alternatives', [])]

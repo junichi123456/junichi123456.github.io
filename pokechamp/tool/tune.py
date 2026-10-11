@@ -53,7 +53,7 @@ FALLBACK_ITEMS = ['ゴツゴツメット', 'ラムのみ', 'シュカのみ', '�
 
 
 def taken_items():
-    return {m.item for m in B.TEAM if B.BASE_OF.get(m.species, m.species) != SLOT}
+    return {m.item for m in B.TEAM if B.BASE_OF.get(m.species, m.species) in FIVE}
 
 
 def replacement(sp):
@@ -74,9 +74,8 @@ def apply(c):
     """Put candidate c into our team in place of SLOT (in this process)."""
     if B.MY.get('_cand') == c['key']:
         return
-    B.MY.pop(SLOT, None)
-    if B.MY.get('_slot_now') not in (None, *others()):
-        B.MY.pop(B.MY['_slot_now'], None)
+    for k in [k for k in B.MY if not k.startswith('_') and k not in FIVE]:
+        B.MY.pop(k)       # whatever holds the 6th slot now (the old member or a previous candidate)
     base = Mon(c['species'], c['nature'], c['ap'], c['ability'], c['item'], c['moves'], label=c['species'])
     mega = Mon(c['mega'], c['nature'], c['ap'], c['mega_ability'], c['item'], c['moves'], label=c['species']) \
         if c.get('mega') else None
@@ -92,8 +91,11 @@ def game(args):
     return prep.game((order_, oorder, kid, seed, depth))
 
 
+FIVE = ('ルカリオ', 'ガブリアス', 'アシレーヌ', 'ヒートロトム', 'ミミッキュ')   # the members that stay
+
+
 def others():
-    return [B.BASE_OF.get(m.species, m.species) for m in B.TEAM if B.BASE_OF.get(m.species, m.species) != SLOT]
+    return [B.BASE_OF.get(m.species, m.species) for m in B.TEAM if B.BASE_OF.get(m.species, m.species) in FIVE]
 
 
 def orders_with(sp):
