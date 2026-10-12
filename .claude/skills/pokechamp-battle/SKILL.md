@@ -1,6 +1,6 @@
 ---
 name: pokechamp-battle
-description: ポケモンチャンピオンズ（シングル）の対戦中に、選出順と各ターンの行動を決め、対戦ログを蓄積して次回以降の判断に反映する。相手の6体・対戦画面の状況・Battle Loggerの表示が届いたら使う。
+description: ポケモンチャンピオンズ（シングル）の対戦中に、選出順と各ターンの行動を決め、対戦ログを蓄積して次回以降の判断に反映する。相手の6体・対戦画面の状況（game_watch.py のイベント）が届いたら使う。
 ---
 
 # 対戦中の判断と学習
@@ -43,14 +43,9 @@ description: ポケモンチャンピオンズ（シングル）の対戦中に�
 
 ## 手順
 
-0. **PCBL（Battle Logger）の画面読み取りを起動**（PC上のセッションで、PCBLの Live Scan が動いているとき）:
-   PCBL の Live Scan は専用ウィンドウで動く。`cd pokechamp/tool && python pcbl_watch.py --window "<タイトルの一部>"` をバックグラウンドで実行し続ける（タイトルは `--list` で確認。ブラウザ表示の場合は `--window` なしで URL 読み取り）。
-   ウィンドウ版は `pokechamp/logs/live/latest.png` に最新画面、`shots/` に変化ごとの画像が保存されるので、毎ターン latest.png を画像として読んで状況（両者のポケモン・HP%・技・ターン）を把握する。
-   画面の文字が `pokechamp/logs/live/latest.txt`、スクリーンショットが `latest.png`、拾ったポケモン名・HP%・ターン・技が `parsed.json` に数秒おきに更新される。
-   見せ合い・各ターンの情報はまずここから読む（足りなければ `latest.png` を画像として見る。それでも不明な点だけユーザーに聞く）。
-   初回は `latest.txt` と `latest.png` を見比べ、名前・HP%の読み取りが正しいか確認する。
-   起動できない場合は `pip install playwright` を実行（Edge/Chrome があればそれを使う）。
-   **最新画面の自動読み込み**: `.claude/settings.json` の UserPromptSubmit フック（`pokechamp/tool/hook_latest.py`）が、latest.png が30分以内に更新されていれば毎回その場所を知らせる。知らされたら返答前に必ず Read で latest.png を読む（ユーザーにスクショを求めない）。
+0. **観測は game_watch.py だけを使う**（PCBL・pcbl_watch.py は使わない）:
+   ユーザーが `python game_watch.py --password <OBSのWebSocketパスワード>` を起動し、OBS の映像から選出画面・行動選択画面・戦闘メッセージ・0.5秒ごとのフレームを取得する。
+   判断は上の「自動進行モード」で `wait_event.py` のイベントを受けて行う。ユーザーにスクリーンショットや画面の説明を求めない。
    **時間制限**: 選出は `battle.py select`（約10秒）、各ターンは `battle.py turn state.json`（既定10秒）。画像読み取りを含め13秒以内に答える。
 1. **開始前**: `pokechamp/logs/TRENDS.md` と `pokechamp/logs/COUNTERS.md`（公開構築ごとの事前対策）を読み、要対策の相手と想定外の型を頭に入れる（チャットには書かない）。
    相手の6体が `pokechamp/tool/data/known_teams.json` の構築と**6体すべて一致したときだけ**、`battle.py select` は事前に計算した選出を返し（「既知構築: …（6体一致）」と表示）、対戦中も記事の型を参考に読む。5体以下の一致は別の構築として扱い、記事は使わない。6体一致でも、記事と違う技・持ち物・メガが1つでも見えたら別人の構築とみなし、全員について記事の情報を捨てて通常の推定に戻る（記事の参照でプレイングを歪めない）。
