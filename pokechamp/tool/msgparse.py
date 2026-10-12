@@ -287,6 +287,13 @@ def type_change(s):
     return None
 
 
+# abilities that set the weather / terrain when the mon comes in (the popup names the ability)
+ABILITY_FIELD = {'あめふらし': ('weather', 'rain'), 'ひでり': ('weather', 'sun'), 'すなおこし': ('weather', 'sand'),
+                 'ゆきふらし': ('weather', 'snow'), 'エレキメイカー': ('terrain', 'electric'),
+                 'グラスメイカー': ('terrain', 'grassy'), 'サイコメイカー': ('terrain', 'psychic'),
+                 'ミストメイカー': ('terrain', 'misty')}
+
+
 def parse_turn(lines, dedupe=True):
     """dedupe=False when the lines come from the message-box watcher (each message once, in order): the same
     message twice (「効果は いまひとつだ」 for two moves) then means it happened twice."""
@@ -312,13 +319,13 @@ def parse_turn(lines, dedupe=True):
             ev['types'].append({'side': side if (name or side_marked(s)) else (prev['side'] or side),
                                 'mon': name or prev.get('name'), 'mode': tc[0], 'type': tc[1]})
             continue
-        if any(k in s for k in TR_END):
+        if has(s, TR_END):
             ev['trick_room_end'] = True; continue
-        if any(k in s for k in TR_START):
+        if has(s, TR_START):
             ev['trick_room'] = True; continue
-        if name and any(k in s for k in SUB_UP):
+        if name and has(s, SUB_UP):
             ev['sub'].append({'side': side, 'mon': name}); continue
-        if name and any(k in s for k in SUB_DOWN):
+        if name and has(s, SUB_DOWN):
             ev['sub_end'].append({'side': side, 'mon': name}); continue
         # move use: 「(相手の)Xの Y！」
         mu = move_use(s)
@@ -333,23 +340,23 @@ def parse_turn(lines, dedupe=True):
             ev['boosts'].append({'side': side, 'mon': name, 'stat': STAT[m.group(1)], 'delta': mag if up else -mag})
             continue
         for w, keys in WEATHER_START:
-            if any(k in s for k in keys):
+            if has(s, keys):
                 ev['weather'] = w
-        if any(k in s for k in WEATHER_END):
+        if has(s, WEATHER_END):
             ev['weather_end'] = True
         for t, keys in TERRAIN_START:
-            if any(k in s for k in keys) and not any(k in s for k in TERRAIN_END):
+            if has(s, keys) and not has(s, TERRAIN_END):
                 ev['terrain'] = t
-        if any(k in s for k in TERRAIN_END):
+        if has(s, TERRAIN_END):
             ev['terrain_end'] = True
         for st, keys in STATUS:
-            if any(k in s for k in keys) and name:
+            if has(s, keys) and name:
                 ev['status'].append({'side': side, 'mon': name, 'status': st})
                 break
-        if name and any(k in s for k in CURE) and not any(k in s for _, ks in STATUS for k in ks):
+        if name and has(s, CURE) and not any(has(s, ks) for _, ks in STATUS):
             ev['cured'].append({'side': side, 'mon': name})
         for item, consumed, keys in ITEM_MSG:
-            if any(k in s for k in keys):
+            if has(s, keys):
                 ev['items'].append({'side': side, 'mon': name, 'item': item, 'consumed': consumed})
         if has(s, ('とがった岩', 'とがったいわ', 'った岩')):
             # set (「…周りに とがった岩が ただよい始めた」) or hit on switch-in (「…に とがった岩が 食いこんだ」)
@@ -374,6 +381,11 @@ def parse_turn(lines, dedupe=True):
             ab = next((a for a in ABILITIES if a in s[s.find(name) + len(name):]), None)
             if ab:
                 ev['abilities'].append({'side': side, 'mon': name, 'ability': ab})
+                w = ABILITY_FIELD.get(ab)
+                if w and w[0] == 'weather' and not ev['weather']:
+                    ev['weather'] = w[1]
+                elif w and w[0] == 'terrain' and not ev['terrain']:
+                    ev['terrain'] = w[1]
         if '急所に当たった' in s or 'きゅうしょにあたった' in s:
             ev['crit'] += 1
         h = HIT_RE.search(s)
@@ -462,14 +474,14 @@ def damage_events(timeline, hp0=None, active0=None):
         s = norm(e['msg'])
         if not s:
             continue
-        if pend and (any(k in s for k in FOLLOW) or HIT_RE.search(s)):
+        if pend and (has(s, FOLLOW) or HIT_RE.search(s)):
             if '急所' in s or 'きゅうしょ' in s:
                 pend['crit'] = True
             h = HIT_RE.search(s)
             if h:
                 pend['hits'] = int(h.group(1))
             continue
-        if pend and any(k in s for k in MISS):
+        if pend and has(s, MISS):
             pend['miss'] = True
             continue
         if pend and has(s, ('倒れた', 'たおれた')) and side_of(s) == pend['target']:
@@ -640,7 +652,9 @@ class FieldTracker:
             s['mega_used'][side] = True
             self.mon(side, name)['mega'] = True
         for ab in ev['abilities']:
-            self.mon(ab['side'], ab['mon'])['ability'] = ab['ability']
+            side, name = self.whose(ab['side'], ab['mon'])    # the ability popup has no 「相手の」: the team decides
+            if side and name:
+                self.mon(side, name)['ability'] = ab['ability']
         for fc in ev.get('forms', []):      # a form change seen on the HP panel (not a mega evolution)
             side, name = self.whose(fc.get('side'), fc.get('mon'))
             if side and name:
