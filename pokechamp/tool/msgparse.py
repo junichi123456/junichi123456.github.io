@@ -57,6 +57,7 @@ MOVES_DV = [(devoice(m), m) for m in MOVES]
 def locate_name(s):
     """(name, start, end) of the first mon name in s: exact, then without 濁点, then a close match among the
     mons of this battle."""
+    s = apply_fixes(s)
     for n in NAMES:
         i = s.find(n)
         if i >= 0:
@@ -108,6 +109,7 @@ MEGA_RE = re.compile(r'メ[カガ]シ.[カ力][しシ]')
 
 def move_use(s):
     """「(相手の) Xの Y！」 -> (side, X, Y) or None. Y is read right after 「Xの」, also when the OCR garbled it."""
+    s = apply_fixes(s)
     loc = locate_name(s)
     if not loc:
         return None
@@ -193,6 +195,46 @@ def set_context(opp_team):
     _fuzzy.cache_clear()
 
 
+# ---------------------------------------------------------------- what the OCR misread, remembered
+# Each time a close match fixes a misread word (三ミツキュ → ミミッキュ, ゆけつ → ゆけっ ...), the pair is counted in
+# data/ocr_fixes.json. A misread seen twice is then replaced directly before any matching, so the same quirk of the
+# game's font no longer depends on a close match.
+FIX_P = os.path.join(HERE, 'data', 'ocr_fixes.json')
+try:
+    FIXES = json.load(open(FIX_P, encoding='utf-8'))
+except Exception:
+    FIXES = {}
+_FIX_SORTED = []
+
+
+def _fixes_sorted():
+    if len(_FIX_SORTED) != sum(1 for v in FIXES.values() if v.get('n', 0) >= 2):
+        _FIX_SORTED[:] = sorted(((k, v['to']) for k, v in FIXES.items() if v.get('n', 0) >= 2), key=lambda x: -len(x[0]))
+    return _FIX_SORTED
+
+
+def learn_fix(seen, right):
+    """Count one misread: the text the OCR gave for a word, and the word it was."""
+    if not seen or seen == right or len(seen) < 3 or len(seen) > 14:
+        return
+    e = FIXES.get(seen)
+    if e and e['to'] != right:
+        e['bad'] = e.get('bad', 0) + 1      # read as two different words: not a safe fix
+        return
+    FIXES[seen] = {'to': right, 'n': (e['n'] if e else 0) + 1}
+    try:
+        safeio.write_json(FIX_P, FIXES, indent=0)
+    except Exception:
+        pass
+
+
+def apply_fixes(s):
+    for seen, right in _fixes_sorted():
+        if seen in s and not FIXES[seen].get('bad'):
+            s = s.replace(seen, right)
+    return s
+
+
 from functools import lru_cache  # noqa: E402
 import difflib  # noqa: E402
 
@@ -223,6 +265,8 @@ def _fuzzy(s, kind):
             r = difflib.SequenceMatcher(None, t[:len(dm) + 1], dm).ratio()
             if r >= (0.7 if len(dm) >= 4 else 0.85) and (best is None or r > best[0]):
                 best = (r, m, 0, len(dm))
+    if best and best[0] < 1.0:
+        learn_fix(s[best[2]:best[3]] if kind == 'name' else re.sub(r'[!/！?]+$', '', s)[:best[3]], best[1])
     return best[1:] if best else None
 
 
@@ -440,6 +484,50 @@ def is_message(raw):
     if len(re.findall(r'[ぁ-んァ-ヶ一-龥]', s)) < 4 or has(s, UI_WORDS):
         return False
     return bool(locate_name(s)) or has(s, MSG_WORDS)
+
+
+def _items():
+    try:
+        import engine as _E
+        return sorted({v['ja'] for v in _E.ITEMS.values() if len(v.get('ja') or '') >= 3}, key=len, reverse=True)
+    except Exception:
+        return [k for k, _, _ in ITEM_MSG]
+
+
+ITEM_NAMES = None
+
+
+def popup_read(raw):
+    """The ability / item popup shown beside a mon (「レントラーの いかく」「ニョロトノの だっしゅつボタン」):
+    (name, 'ability' | 'item', what) or None. Abilities and items are matched closely (OCR errors), within the
+    abilities of this battle's mons first."""
+    global ITEM_NAMES
+    s = apply_fixes(norm(raw))
+    loc = locate_name(s)
+    if not loc:
+        return None
+    name, _, end = loc
+    tail = s[end:]
+    if tail.startswith('の'):
+        tail = tail[1:]
+    tail = re.sub(r'[!/！?。、・]+$', '', tail)
+    if len(tail) < 2:
+        return None
+    if ITEM_NAMES is None:
+        ITEM_NAMES = _items()
+    dt = devoice(tail)
+    best = None
+    for kind, words in (('ability', ABILITIES), ('item', ITEM_NAMES)):
+        for w in words:
+            dw = devoice(w)
+            if abs(len(dw) - len(dt)) > 2:
+                continue
+            r = 1.0 if dw == dt else difflib.SequenceMatcher(None, dt, dw).ratio()
+            if r >= 0.75 and (best is None or r > best[0]):
+                best = (r, kind, w)
+    if best and best[0] < 1.0:
+        learn_fix(tail, best[2])
+    return (name, best[1], best[2]) if best else None
 
 
 def damage_events(timeline, hp0=None, active0=None):

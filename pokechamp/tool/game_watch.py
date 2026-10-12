@@ -416,6 +416,7 @@ class FastWatch:
 
 # where things are on the 16:9 battle screen (fractions of width / height; from 1920x1080 captures)
 MSG_BOX = (0.13, 0.72, 0.87, 0.87)        # the battle message box (bottom centre)
+POPUP = (0.76, 0.33, 1.0, 0.48)           # ability / item popup 「レントラーの いかく」 (right, for both sides)
 OPP_PANEL = (0.70, 0.0, 1.0, 0.19)        # opponent's name + HP %  (top right)
 MY_PANEL = (0.0, 0.82, 0.30, 1.0)         # our name + HP cur/max   (bottom left)
 
@@ -675,6 +676,29 @@ class MsgWatch:
             self._emit({'t': now, 'side': side, 'icon_change': True})     # name not read: not decided
         self._iname[side] = name
 
+    def watch_popup(self, img, ocr, now):
+        """Abilities / items shown in the popup when they act (いかく, あめふらし, たべのこし ...): many act as a mon
+        comes in, before turn 1, and the message box may say nothing about them."""
+        import numpy as np
+        import msgparse as _mp
+        c = _frac_crop(img, POPUP)
+        f = np.asarray(c.convert('RGB'), dtype=np.int16)
+        w = (f.min(2) > 190) & (f.max(2) - f.min(2) < 50)
+        if not 0.01 < w.mean() < 0.25:
+            self._popup_sig = None
+            return
+        H, W = (w.shape[0] // 6) * 6, (w.shape[1] // 6) * 6
+        m = w[:H, :W].reshape(H // 6, 6, W // 6, 6).any(axis=(1, 3))
+        prev = getattr(self, '_popup_sig', None)
+        self._popup_sig = m
+        if prev is not None and prev.shape == m.shape and (m ^ prev).mean() <= 0.02:
+            return
+        r = _mp.popup_read(ocr.read(text_mask(c, 2)))
+        if not r or r == getattr(self, '_popup_last', None) and now - getattr(self, '_popup_t', -9) < 5:
+            return
+        self._popup_last, self._popup_t = r, now
+        self._emit({'t': now, 'msg': f'{r[0]}の {r[2]}', 'popup': r[1], 'mon': r[0], 'what': r[2]})
+
     def step(self, img, ocr, now):
         msg = _crop(img, MSG_BOX)
         if self.skip():
@@ -692,6 +716,7 @@ class MsgWatch:
             elif prev is None or prev.shape != m.shape or (m ^ prev).mean() > 0.01:
                 self.add_msg(ocr.read(text_mask(msg, 2 if msg.width < 1400 else 1)), now)
             self._sig['msg'] = m
+            self.watch_popup(img, ocr, now)
         for side, box in (('opp', OPP_PANEL), ('me', MY_PANEL)):
             pc = _crop(img, box)
             if not panel_present(pc, side):
@@ -814,6 +839,31 @@ class Speculator:
             nxt = next((x for x in self.LEVELS if not have or x > have[2]), None)
             if nxt:
                 self.start(key, nxt)
+
+
+def popup_events(timeline, turn, tracker):
+    """Abilities / items read from the popup (MsgWatch.watch_popup) added to the turn. Whose it is follows from the
+    teams (the popup shows no 「相手の」)."""
+    import msgparse as _mp
+    for e in timeline:
+        if 'popup' not in e:
+            continue
+        side, name = tracker.whose(None, e['mon'])
+        if not side:      # both teams have it: the one in play
+            b = _mp.BASE.get(e['mon'], e['mon'])
+            act = [sd for sd in ('me', 'opp') if _mp.BASE.get(tracker.s['active'].get(sd) or '', '') == b]
+            if len(act) != 1:
+                continue
+            side, name = act[0], e['mon']
+        if e['popup'] == 'ability':
+            if not any(x['mon'] == name and x['ability'] == e['what'] for x in turn['abilities']):
+                turn['abilities'].append({'side': side, 'mon': name, 'ability': e['what'], 'from': 'popup'})
+            w = _mp.ABILITY_FIELD.get(e['what'])
+            if w and not turn.get(w[0]):
+                turn[w[0]] = w[1]
+        else:
+            if not any(x.get('mon') == name and x['item'] == e['what'] for x in turn['items']):
+                turn['items'].append({'side': side, 'mon': name, 'item': e['what'], 'consumed': False, 'from': 'popup'})
 
 
 def panel_events(timeline, turn, tracker):
@@ -1157,7 +1207,7 @@ def main():
 
         def turn_msgs():
             # every message once, in order, from the message-box watcher; the whole-screen text if it is not running
-            return [e['msg'] for e in timeline if 'msg' in e] if msg_ok else turn_lines
+            return [e['msg'] for e in timeline if 'msg' in e and 'popup' not in e] if msg_ok else turn_lines
 
         if (new or mnew) and not det.in_preview:
             if preview_seq:
@@ -1243,6 +1293,7 @@ def main():
                 turn = msgparse.parse_turn(turn_msgs(), dedupe=not msg_ok)
                 if msg_ok:
                     panel_events(timeline, turn, tracker)
+                    popup_events(timeline, turn, tracker)
                 if msg_ok:
                     ev['damage'] = damage_context(msgparse.damage_events(timeline, None, tracker.s.get('active')),
                                                   tracker, turn)
