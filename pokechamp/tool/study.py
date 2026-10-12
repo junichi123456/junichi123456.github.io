@@ -224,9 +224,12 @@ def save(t, info, c):
         t['notes'] = old.get('notes', t.get('notes'))
     t['rating'] = {'rank': info[0], 'final': info[1], 'peak': info[2]}
     t['study'] = {k: v for k, v in c.items() if k != 'sig'}
-    t['counter'] = {'order': c['best_vs_hardest'], 'score': c['best_avg'], 'worst': c['hardest_rate_top10'],
-                    'alternatives': [{'order': a['order'], 'score': a['avg']} for a in c['alternatives']],
-                    'mode': f"study.py: 全60通り×相手の想定選出・各1戦・両者{c['depth']}手読み（最も厳しい相手選出に最も善戦した選出）"}
+    if old and (old.get('counter') or {}).get('pinned'):     # chosen by hand (logs/CHEATSHEET.md): keep it
+        t['counter'] = old['counter']
+    else:
+        t['counter'] = {'order': c['best_vs_hardest'], 'score': c['best_avg'], 'worst': c['hardest_rate_top10'],
+                        'alternatives': [{'order': a['order'], 'score': a['avg']} for a in c['alternatives']],
+                        'mode': f"study.py: 全60通り×相手の想定選出・各1戦・両者{c['depth']}手読み（最も厳しい相手選出に最も善戦した選出）"}
     if old:
         data['teams'][data['teams'].index(old)] = t
     else:
