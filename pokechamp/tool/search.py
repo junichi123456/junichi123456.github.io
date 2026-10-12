@@ -523,6 +523,15 @@ def from_battle(bst, js=None):
                                        'safeguard', 'mist') and v is not True else \
                     (5 if k in ('reflect', 'lightscreen', 'auroraveil', 'safeguard', 'mist') else
                      4 if k == 'tailwind' else 1 if k in ('spikes', 'toxicspikes') else True)
+        for j, b in enumerate(bst.sides[i]):          # types changed in battle (read from the messages)
+            if getattr(b, 'xtypes', None):
+                s.mons[j].types = tuple(b.xtypes)
+            if getattr(b, 'xadd', None):
+                s.mons[j].added_type = b.xadd
+            if getattr(b, 'xhero', False) and 'イルカマン(マイティ)' in dex.SPECIES and not s.mons[j].hero:
+                mm = s.mons[j]
+                mm.hero = True
+                mm.base_form = mm.form = E.Form('イルカマン(マイティ)', mm.nature, mm.ap, 'zerotohero')
         # the active mon's battle state
         bm = bst.sides[i][bst.act[i]]
         m = s.mons[s.act]

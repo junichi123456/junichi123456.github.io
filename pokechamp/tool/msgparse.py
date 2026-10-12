@@ -41,10 +41,13 @@ _VOICED = str.maketrans('ガギグゲゴザジズゼゾダヂヅデドバビブ�
 _LOOKALIKE = str.maketrans('力口工二一夕卜ヰ', 'カロエニータトキ')
 
 
+_SMALL = str.maketrans('ァィゥェォッャュョヮぁぃぅぇぉっゃゅょゎ', 'アイウエオツヤユヨワあいうえおつやゆよわ')
+
+
 def devoice(s):
-    """OCR often drops 濁点/半濁点 (ゴリランダー → コリランター, メガシンカ → メカシンカ) and reads katakana as look-alike
-    kanji (メガシノ力 → カ): compare without them."""
-    return s.translate(_VOICED).translate(_LOOKALIKE)
+    """OCR often drops 濁点/半濁点 (ゴリランダー → コリランター, メガシンカ → メカシンカ), reads katakana as look-alike
+    kanji (メガシノ力 → カ) and small kana as large ones (ウツボット → ウツボツト): compare without them."""
+    return s.translate(_VOICED).translate(_LOOKALIKE).translate(_SMALL)
 
 
 NAMES_DV = [(devoice(n), n) for n in NAMES]
@@ -180,7 +183,10 @@ def set_context(opp_team):
         b = BASE.get(n, n)
         if b not in names:
             names.append(b)
-            moves.extend(m for m in learnset(b) if m not in moves)
+            try:
+                moves.extend(m for m in learnset(b) if m not in moves)
+            except Exception:
+                pass
     _CTX['names'] = sorted(set(names), key=len, reverse=True)
     _CTX['moves'] = sorted(set(moves), key=len, reverse=True)
     _CTX['key'] = 'manual'
@@ -257,12 +263,37 @@ ITEM_MSG = [('きあいのタスキ', True, ('きあいのタスキで',)), ('�
             ('グラスシード', True, ('グラスシードで',)), ('ミストシード', True, ('ミストシードで',))]
 
 
+try:
+    from calc import JT as _JT
+    TYPE_JA = sorted(((ja, en) for en, ja in _JT.items()), key=lambda x: -len(x[0]))
+except Exception:
+    TYPE_JA = []
+
+
+def type_change(s):
+    """「Xは ほのおタイプに なった！」 (へんげんじざい / リベロ / みずびたし / マジカルシャイン...) -> ('set', [type]);
+    「Xに くさタイプが 追加された！」 (もりののろい / ハロウィン) -> ('add', type). None otherwise."""
+    d = devoice(s)
+    for ja, en in TYPE_JA:
+        dj = devoice(ja)
+        i = d.find(dj + 'タイフ')
+        if i < 0:
+            continue
+        rest = d[i + len(dj) + 3:]
+        if rest.startswith('に') and ('なった' in rest or 'へんかした' in rest or '変化' in rest):
+            return 'set', [en]
+        if rest.startswith('か') and ('追加' in rest or 'ついか' in rest):
+            return 'add', en
+    return None
+
+
 def parse_turn(lines, dedupe=True):
     """dedupe=False when the lines come from the message-box watcher (each message once, in order): the same
     message twice (「効果は いまひとつだ」 for two moves) then means it happened twice."""
     ev = {'moves': [], 'boosts': [], 'weather': None, 'weather_end': False, 'terrain': None, 'terrain_end': False,
           'items': [], 'status': [], 'cured': [], 'hazards': [], 'faint': [], 'switch': [], 'mega': [], 'crit': 0,
-          'super_effective': 0, 'abilities': [], 'trick_room': False, 'trick_room_end': False, 'sub': [], 'sub_end': []}
+          'super_effective': 0, 'abilities': [], 'trick_room': False, 'trick_room_end': False, 'sub': [], 'sub_end': [],
+          'types': []}
     seen = set()
     ctx = {'side': None, 'name': None}  # whose message the previous line was (a message often spans two lines)
     for raw in lines:
@@ -275,6 +306,12 @@ def parse_turn(lines, dedupe=True):
         prev = dict(ctx)
         if name or side_marked(s):
             ctx = {'side': side if side_marked(s) or name else ctx['side'], 'name': name}
+        tc = type_change(s)
+        if tc:
+            # the type changed (an ability or a move): only the message says so
+            ev['types'].append({'side': side if (name or side_marked(s)) else (prev['side'] or side),
+                                'mon': name or prev.get('name'), 'mode': tc[0], 'type': tc[1]})
+            continue
         if any(k in s for k in TR_END):
             ev['trick_room_end'] = True; continue
         if any(k in s for k in TR_START):
@@ -415,6 +452,8 @@ def damage_events(timeline, hp0=None, active0=None):
                 if pend and e['side'] == pend['target'] and e.get('t', 0) - last_t.get(e['side'], -9) < 0.6:
                     pend['seen'] = False
                 continue
+            if 'hp' not in e:
+                continue             # panel events (switch / form change seen on the HP panel)
             cur[e['side']], fresh[e['side']] = e['hp'], True
             last_t[e['side']] = e.get('t', 0)
             if pend and e['side'] == pend['target']:
@@ -553,7 +592,7 @@ class FieldTracker:
             if old:
                 om = self.mon(sw['side'], old)
                 om['boosts'] = {}
-                om.update(sub=0, last_move=None, rampage=False, toxn=0)
+                om.update(sub=0, last_move=None, rampage=False, toxn=0, types=None, added_type=None)
             s['active'][sw['side']] = canon(sw['side'], sw['mon'], self.opp_team() if sw['side'] == 'opp' else ())
             self.mon(sw['side'], sw['mon'])
         for m in ev['moves']:
@@ -602,6 +641,27 @@ class FieldTracker:
             self.mon(side, name)['mega'] = True
         for ab in ev['abilities']:
             self.mon(ab['side'], ab['mon'])['ability'] = ab['ability']
+        for fc in ev.get('forms', []):      # a form change seen on the HP panel (not a mega evolution)
+            side, name = self.whose(fc.get('side'), fc.get('mon'))
+            if side and name:
+                mm = self.mon(side, name)
+                mm['form_changes'] = mm.get('form_changes', 0) + 1
+                if BASE.get(name, name) == 'イルカマン':
+                    mm['hero'] = True
+        for tc in ev.get('types', []):
+            side, name = self.whose(tc.get('side'), tc.get('mon'))
+            if not side or not name:
+                continue
+            mm = self.mon(side, name)
+            if tc['mode'] == 'set':
+                mm['types'], mm['added_type'] = tc['type'], None
+            else:
+                mm['added_type'] = tc['type']
+        for side in ('me', 'opp'):        # a changed type lasts only while the mon stays in
+            act = s['active'].get(side)
+            for n, mm in s['mons'][side].items():
+                if n != act and (mm.get('types') or mm.get('added_type')):
+                    mm['types'] = mm['added_type'] = None
         s['history'].append({k: v for k, v in ev.items() if v})
         s['history'] = s['history'][-20:]
         self.save()

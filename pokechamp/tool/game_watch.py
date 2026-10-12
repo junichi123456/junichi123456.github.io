@@ -30,7 +30,9 @@ PCBL のライブスキャンは選出画面を拾えないため、OBS が受�
 
 メッセージの記録（MsgWatch）: 画面下のメッセージ欄と、左下（自分: 実数HP）・右上（相手: %）のHP欄だけを
 0.25秒ごとに読み（メッセージは白い文字だけを白黒にしてOCR、名前と技はこの対戦の12体とその技に絞って照合。
-HPの数字は斜体の0〜9の形を登録したテンプレートで読む: hpdigits.py）、すべてのメッセージを出た順に1回ずつ記録する（messages.jsonl。1つのメッセージは1.3〜2.6秒しか出ない）。
+HPの数字は斜体の0〜9の形を登録したテンプレートで読む: hpdigits.py）、
+HP欄のアイコンと名前も見て、名前が同じでアイコンが変わったらメガシンカ／フォルムチェンジ、名前が変わったら交代と
+判断する（メッセージを取りこぼしても分かる）。すべてのメッセージを出た順に1回ずつ記録する（messages.jsonl。1つのメッセージは1.3〜2.6秒しか出ない）。
 メッセージとその時のHPを並べて、技ごとのダメージ（連続技の回数・急所込み）を持ち物・天気・状態異常・特性による
 増減と分けて切り出し（battle_messages.jsonl の damage）、相手の型（持ち物・性格・能力）の推定に使う。--no-msg で無効。
 
@@ -461,6 +463,11 @@ BAR = {'opp': (0.466, 0.866, 0.50, 0.68), 'me': (0.322, 0.708, 0.50, 0.68)}
 
 
 def bar_pct(panel, side='opp'):
+    g = bar_geom(panel, side)
+    return g[0] if g else None
+
+
+def bar_geom(panel, side='opp'):
     """HP % from the length of the HP bar in a panel crop (no OCR: the italic digits read badly). The bar is a
     coloured fill (green / yellow / red) followed by the grey empty part, at a fixed place in the panel.
     None if the bar is not where it should be (panel sliding in, covered ...)."""
@@ -494,12 +501,53 @@ def bar_pct(panel, side='opp'):
                 x += 1
             n = nf + ne
             if abs(n - L) <= L * 0.08:
-                vals.append(nf / n)
+                vals.append((nf / n, start))
                 break
     if len(vals) < 2:
         return None
     vals.sort()
-    return round(100 * vals[len(vals) // 2], 1)
+    starts = sorted(v[1] for v in vals)
+    # (HP %, how far the panel sits from its usual place, as a fraction of the crop width)
+    return round(100 * vals[len(vals) // 2][0], 1), (starts[len(starts) // 2] - X0) / W
+
+
+# the mon's picture and name inside each panel crop (fractions of the crop): x from, y from, x to, y to
+ICON = {'opp': (0.30, 0.22, 0.44, 0.72), 'me': (0.12, 0.32, 0.27, 0.76)}
+PNAME = {'opp': (0.42, 0.21, 0.80, 0.48), 'me': (0.20, 0.24, 0.62, 0.44)}
+
+
+def _frac_crop(img, box, dx=0.0):
+    W, H = img.size
+    return img.crop((int((box[0] + dx) * W), int(box[1] * H), int((box[2] + dx) * W), int(box[3] * H)))
+
+
+def icon_feature(panel, side, dx=0.0):
+    """The panel's picture of the mon as a unit vector (panel colour masked out). It follows the current form:
+    a mega evolution or a form change (イルカマン, ギルガルド, ...) changes it while the name stays."""
+    import numpy as np
+    a = np.asarray(_frac_crop(panel, ICON[side], dx).convert('RGB').resize((20, 24)), dtype=np.float32)
+    r, g, b = a[..., 0], a[..., 1], a[..., 2]
+    if side == 'opp':
+        bg = (r > 110) & (r - g > 60) & (b - g > 20)                 # pink (bright or dim)
+    else:
+        bg = (b > 90) & (b - r > 30) & (b - g > 40)                   # violet (bright when selected, dim otherwise)
+    bg |= (a.max(2) < 40)                                              # dark outline / outside
+    bg |= (g > 180) & (b < 90) & (r < 215)                             # the yellow-green glow of the selected panel
+    a[bg] = 0.0
+    v = a.reshape(-1, 3)
+    fg = ~bg.reshape(-1)
+    if fg.sum() < 30:
+        return None
+    v = v - v[fg].mean(axis=0)
+    v[~fg] = 0.0
+    v = v.reshape(-1)
+    n = float(np.linalg.norm(v))
+    return v / n if n else None
+
+
+def icon_sim(a, b):
+    import numpy as np
+    return float(np.dot(a, b)) if a is not None and b is not None else None
 
 
 class MsgWatch:
@@ -522,6 +570,7 @@ class MsgWatch:
         self._sig = {'msg': None, 'opp': None, 'me': None}
         self._hp = {'opp': None, 'me': None}
         self._shown = {}
+        self._icon, self._iname, self._ipend, self._itry = {}, {}, {}, {}
         threading.Thread(target=self._run, daemon=True).start()
 
     def take(self):
@@ -549,9 +598,10 @@ class MsgWatch:
             self.gap = True        # box empty (or noise / menus): the next text is a new message even if the same
             return
         shown = ' '.join(text.split())
-        cut = max(shown.rfind('/'), shown.rfind('!'), shown.rfind('！'))
-        if cut >= len(shown) * 0.5:
-            shown = shown[:cut + 1]          # drop noise read after the end of the message
+        import re as _re
+        m_end = _re.search(r'.{5,}?[/!！]', shown)      # a message is one sentence ending in 「！」 (read as / or !)
+        if m_end:
+            shown = shown[:m_end.end()]      # drop noise read after the end of the message
         t = _mp.norm(shown)
         last = self.last_msg
         near = not self.gap or now - self.last_t < 3.0
@@ -576,6 +626,55 @@ class MsgWatch:
             self._hp[side] = e['hp']
             self._emit(e)
 
+    CHANGED, SAME = 0.45, 0.6     # picture similarity: same mon 0.6-1.0, another mon / another form <= 0.35
+
+    def panel_name(self, side, pc, ocr, dx=0.0):
+        import msgparse as _mp
+        try:
+            from PIL import Image as _I
+            m = text_mask(_frac_crop(pc, PNAME[side], dx), 3)
+            W, H = m.size
+            k = 0.2              # the name is in italics: lean it back upright, the OCR reads it much better
+            m = m.transform((W + int(H * k), H), _I.AFFINE, (1, -k, 0, 0, 1, 0), fillcolor='white')
+            t = ocr.read(m)
+            return _mp.find_name(_mp.norm(t))
+        except Exception:
+            return None
+
+    def watch_icon(self, side, pc, ocr, now, dx=0.0):
+        """Compare the panel's picture with the one seen before. A different picture with the same name = the mon
+        changed its form (mega evolution, イルカマン, ...): {'side', 'form_change': name}. A different name = another
+        mon came in: {'side', 'switch_seen': name}. Both are known even if the message was missed."""
+        f = icon_feature(pc, side, dx)
+        if f is None:
+            return
+        ref = self._icon.get(side)
+        if ref is None:
+            self._icon[side], self._iname[side], self._ipend[side] = f, self.panel_name(side, pc, ocr, dx), 0
+            return
+        sim = icon_sim(f, ref)
+        if sim >= self.SAME:
+            self._ipend[side] = 0
+            if self._iname.get(side) is None and now - self._itry.get(side, -9) >= 1.0:
+                self._itry[side] = now                      # the name was not read yet: try again
+                self._iname[side] = self.panel_name(side, pc, ocr)
+            return
+        if sim >= self.CHANGED:
+            return
+        self._ipend[side] = self._ipend.get(side, 0) + 1
+        if self._ipend[side] < 3:
+            return                                  # 3 times in a row: not a flash of an animation
+        name = self.panel_name(side, pc, ocr)
+        old = self._iname.get(side)
+        self._icon[side], self._ipend[side] = f, 0
+        if name and old and name == old:
+            self._emit({'t': now, 'side': side, 'form_change': name})     # same mon, other picture
+        elif name and name != old:
+            self._emit({'t': now, 'side': side, 'switch_seen': name})
+        else:
+            self._emit({'t': now, 'side': side, 'icon_change': True})     # name not read: not decided
+        self._iname[side] = name
+
     def step(self, img, ocr, now):
         msg = _crop(img, MSG_BOX)
         if self.skip():
@@ -591,7 +690,7 @@ class MsgWatch:
             if not m.any():
                 self.gap = True
             elif prev is None or prev.shape != m.shape or (m ^ prev).mean() > 0.01:
-                self.add_msg(ocr.read(text_mask(msg, 2 if msg.width < 900 else 1)), now)
+                self.add_msg(ocr.read(text_mask(msg, 2 if msg.width < 1400 else 1)), now)
             self._sig['msg'] = m
         for side, box in (('opp', OPP_PANEL), ('me', MY_PANEL)):
             pc = _crop(img, box)
@@ -606,6 +705,9 @@ class MsgWatch:
                 self._sig[side] = sg
                 import hpdigits
                 self.add_panel(side, hpdigits.read_hp(pc, side), now)
+            g = bar_geom(pc, side)
+            if g is not None:       # the panel is in place (not sliding in); g[1]: its shift (highlighted or not)
+                self.watch_icon(side, pc, ocr, now)
 
     def _run(self):
         src = ocr = None
@@ -712,6 +814,33 @@ class Speculator:
             nxt = next((x for x in self.LEVELS if not have or x > have[2]), None)
             if nxt:
                 self.start(key, nxt)
+
+
+def panel_events(timeline, turn, tracker):
+    """What the HP panels showed (MsgWatch.watch_icon) added to the turn read from the messages: a mon that came in
+    (switch_seen) or changed its form (form_change) without the message being read. A form change of a mon that
+    can still mega evolve is its mega evolution; of イルカマン, its マイティフォルム."""
+    import msgparse as _mp
+    try:
+        from sets import MEGAS
+    except Exception:
+        MEGAS = {}
+    for e in timeline:
+        side = e.get('side')
+        if 'switch_seen' in e:
+            n = e['switch_seen']
+            if not any(sw['side'] == side and _mp.BASE.get(sw['mon'], sw['mon']) == _mp.BASE.get(n, n)
+                       for sw in turn['switch']):
+                turn['switch'].append({'side': side, 'mon': n, 'from': 'panel'})
+        elif 'form_change' in e:
+            n = e['form_change']
+            b = _mp.BASE.get(n, n)
+            info = tracker.s['mons'][side].get(_mp.canon(side, b, tracker.opp_team() if side == 'opp' else ())) or {}
+            if MEGAS.get(b) and not info.get('mega') and not tracker.s['mega_used'][side]:
+                if not any(mg.get('side') == side for mg in turn['mega']):
+                    turn['mega'].append({'side': side, 'mon': n, 'from': 'panel'})
+            else:
+                turn.setdefault('forms', []).append({'side': side, 'mon': n})
 
 
 def damage_context(dmg, tracker, turn):
@@ -968,6 +1097,8 @@ def main():
                     pivot_done, pending_pivot, pending_replace = set(), None, None    # a new turn: our pivot move may be used again
                 # what happened since the previous decision: moves, stat changes, weather, items, ...
                 turn = msgparse.parse_turn(turn_msgs(), dedupe=not msg_ok)
+                if msg_ok:
+                    panel_events(timeline, turn, tracker)
                 if msg_ok:
                     ev['damage'] = damage_context(msgparse.damage_events(timeline, None, tracker.s.get('active')),
                                                   tracker, turn)

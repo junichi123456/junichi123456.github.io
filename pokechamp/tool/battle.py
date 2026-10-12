@@ -183,7 +183,7 @@ class BM:
     """Battle mon (mutable)."""
     __slots__ = ('base', 'mega', 'cur', 'hp', 'maxhp', 'status', 'boosts', 'item', 'disguise', 'can_mega', 'moves',
                  'sleep', 'encore', 'taunt', 'yawn', 'side', 'name', 'revealed', 'first_turn', 'prot', 'lock', 'rampage',
-                 'glaive', 'toxn', 'sub', 'dbond')
+                 'glaive', 'toxn', 'sub', 'dbond', 'xtypes', 'xadd', 'xhero')
 
     def __init__(self, base, mega=None, hp_frac=1.0):
         self.base, self.mega, self.cur = base, mega, base
@@ -208,6 +208,9 @@ class BM:
         self.toxn = 0         # toxic counter
         self.sub = 0          # substitute HP
         self.dbond = False    # みちづれ active
+        self.xtypes = None    # type changed in battle (へんげんじざい / リベロ / みずびたし ...), from the messages
+        self.xadd = None      # type added (もりののろい / ハロウィン)
+        self.xhero = False    # イルカマン already in マイティフォルム (seen on its HP panel)
 
     def clone(self):
         n = BM.__new__(BM)
@@ -216,6 +219,7 @@ class BM:
         n.moves = self.moves; n.sleep, n.encore, n.taunt, n.yawn = self.sleep, self.encore, self.taunt, self.yawn
         n.name, n.first_turn, n.prot = self.name, self.first_turn, self.prot
         n.lock, n.rampage, n.glaive, n.toxn, n.sub, n.dbond = self.lock, self.rampage, self.glaive, self.toxn, self.sub, self.dbond
+        n.xtypes, n.xadd, n.xhero = self.xtypes, self.xadd, self.xhero
         return n
 
     @property
@@ -1205,7 +1209,7 @@ def field_defaults(js):
                 if 'status' not in d and info.get('status'): d['status'] = info['status']
                 if 'item' not in d and info.get('item_consumed'): d['item'] = False
                 if info.get('mega') and 'mega' not in d: d['mega'] = True
-                for k in ('sub', 'last_move', 'glaive', 'toxn', 'rampage'):
+                for k in ('sub', 'last_move', 'glaive', 'toxn', 'rampage', 'types', 'added_type', 'hero'):
                     if k not in d and info.get(k): d[k] = info[k]
                 if side == 'opp':
                     seen = d.get('moves_seen', [])
@@ -1294,7 +1298,15 @@ def load_state(js):
 
 def extra_state(m, d):
     """Optional per-mon battle state: last_move (choice lock / rampage), sub (substitute HP %),
-    glaive (used きょけんとつげき last turn), toxn (toxic counter)."""
+    glaive (used きょけんとつげき last turn), toxn (toxic counter), types / added_type (changed in battle)."""
+    if d.get('hero'):
+        m.xhero = True
+    if d.get('types') or d.get('added_type'):
+        import copy as _copy
+        m.xtypes = tuple(d['types']) if d.get('types') else None
+        m.xadd = d.get('added_type')
+        m.cur = _copy.copy(m.cur)
+        m.cur.types = list(m.xtypes or m.cur.types) + ([m.xadd] if m.xadd and m.xadd not in (m.xtypes or m.cur.types) else [])
     lm = d.get('last_move')
     if lm in MOVE:
         if m.item in CHOICE: m.lock = lm
