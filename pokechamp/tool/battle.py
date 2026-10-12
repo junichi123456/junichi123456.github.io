@@ -1426,7 +1426,8 @@ def screen_read(text, opp_team=()):
     return me, hp_me, opp, hp_opp
 
 
-def auto_state(hp_me=None, hp_opp=None, me_name=None, opp_name=None, from_screen=False, fainted=(), party=None):
+def auto_state(hp_me=None, hp_opp=None, me_name=None, opp_name=None, from_screen=False, fainted=(), party=None,
+               bar=None):
     """state.json built from what game_watch.py already tracks (logs/live/field_state.json: who is out, fainted,
     boosts, status, items, moves seen, weather, hazards, mega) and the battle record (our order), plus the two HP
     values read from the screen. HP of the mons on the bench is remembered from earlier turns
@@ -1456,6 +1457,24 @@ def auto_state(hp_me=None, hp_opp=None, me_name=None, opp_name=None, from_screen
                 me_name, opp_name = me_name or sm, opp_name or so
                 hp_me = hp_me if hp_me is not None else shm
                 hp_opp = hp_opp if hp_opp is not None else sho
+        except Exception:
+            pass
+    if bar:          # HP digits read from the panels (game_watch → hpdigits): exact, beat the whole-screen OCR
+        pm, po = bar
+        if pm is not None and '/' in str(pm):
+            hp_me = pm
+            try:       # the maximum tells which of ours is out when the name was not read
+                mx = int(str(pm).split('/')[1])
+                cand = [n for n in MY if mine(n)[0].stat['hp'] == mx]
+                if not me_name and len(cand) == 1:
+                    me_name = cand[0]
+            except Exception:
+                pass
+        if po is not None:
+            hp_opp = po
+    if from_screen:
+        try:
+            if ev:
                 if ev.get('phase') == 'start':
                     for sw in (ev.get('turn_events') or {}).get('switch', []):
                         if sw['side'] == 'me' and not me_name: me_name = sw['mon']
@@ -1636,7 +1655,8 @@ def main():
         hp = opt('--hp', 2) or [None, None]
         dead = [BASE_OF.get(norm(x), norm(x)) for x in ((opt('--fainted') or [''])[0]).split(',') if x]
         js = auto_state(hp[0], hp[1], (opt('--me') or [None])[0], (opt('--opp') or [None])[0], '--screen' in a, dead,
-                        ((opt('--party') or [''])[0] or '').split(',') if '--party' in a else None)
+                        ((opt('--party') or [''])[0] or '').split(',') if '--party' in a else None,
+                        [None if x in ('-', '') else x for x in opt('--panel', 2)] if '--panel' in a else None)
         sec = float((opt('--sec') or [DEFAULT_SEC])[0])
         if not js['me'] or not js['opp']:  # no battle going on (result screen, field_state of a finished battle)
             print('次: （場のポケモンが分からないので判断できません）')

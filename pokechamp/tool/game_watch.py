@@ -29,7 +29,8 @@ PCBL のライブスキャンは選出画面を拾えないため、OBS が受�
   交代画面の上に出る「あめ状態」「トリックルーム状態」などは、メッセージで拾い損ねた天気・フィールドの補正に使う。
 
 メッセージの記録（MsgWatch）: 画面下のメッセージ欄と、左下（自分: 実数HP）・右上（相手: %）のHP欄だけを
-0.25秒ごとに読み、すべてのメッセージを出た順に1回ずつ記録する（messages.jsonl。1つのメッセージは1.3〜2.6秒しか出ない）。
+0.25秒ごとに読み（メッセージは白い文字だけを白黒にしてOCR、名前と技はこの対戦の12体とその技に絞って照合。
+HPの数字は斜体の0〜9の形を登録したテンプレートで読む: hpdigits.py）、すべてのメッセージを出た順に1回ずつ記録する（messages.jsonl。1つのメッセージは1.3〜2.6秒しか出ない）。
 メッセージとその時のHPを並べて、技ごとのダメージ（連続技の回数・急所込み）を持ち物・天気・状態異常・特性による
 増減と分けて切り出し（battle_messages.jsonl の damage）、相手の型（持ち物・性格・能力）の推定に使う。--no-msg で無効。
 
@@ -431,6 +432,18 @@ def _changed(a, b, th=10.0):
     return a is None or b is None or float(abs(a - b).mean()) > th
 
 
+def text_mask(img, scale=2):
+    """White game text (with its dark outline) as black on white, enlarged: what OCR reads well. Without this the
+    animated background behind the message box makes the OCR drop and swap characters."""
+    import numpy as np
+    from PIL import Image as _I
+    f = np.asarray(img.convert('RGB'), dtype=np.int16)
+    mn, mx = f.min(2), f.max(2)
+    m = (mn > 185) & (mx - mn < 60)
+    out = _I.fromarray(np.where(m, 0, 255).astype(np.uint8)).convert('RGB')
+    return out.resize((out.width * scale, out.height * scale))
+
+
 def panel_present(img, side):
     """The HP panel is up: the opponent's has a pink name bar, ours a violet one."""
     import numpy as np
@@ -443,21 +456,69 @@ def panel_present(img, side):
     return m.mean() > 0.04
 
 
+# where the HP bar is inside each panel crop (fractions of the crop): x from, x to, rows searched
+BAR = {'opp': (0.466, 0.866, 0.50, 0.68), 'me': (0.322, 0.708, 0.50, 0.68)}
+
+
+def bar_pct(panel, side='opp'):
+    """HP % from the length of the HP bar in a panel crop (no OCR: the italic digits read badly). The bar is a
+    coloured fill (green / yellow / red) followed by the grey empty part, at a fixed place in the panel.
+    None if the bar is not where it should be (panel sliding in, covered ...)."""
+    import numpy as np
+    f = np.asarray(panel.convert('RGB'), dtype=np.int16)
+    H, W = f.shape[:2]
+    x0, x1, y0, y1 = BAR[side]
+    X0, X1 = int(W * x0), int(W * x1)
+    L = X1 - X0
+    r, g, b = f[..., 0], f[..., 1], f[..., 2]
+    mx, mn = f.max(2), f.min(2)
+    fill = ((g > 180) & (b < 130) & (r < 250) & (g > r - 10)) | ((r > 215) & (g > 130) & (g < 205) & (b < 70)) | \
+           ((r > 200) & (g < 70) & (b < 100))
+    empty = (mx - mn < 28) & (mn > 35) & (mx < 100)
+    vals = []
+    for y in range(int(H * y0), int(H * y1)):
+        fr, er = fill[y], empty[y]
+        # the run must start at the bar's left end and reach its right end
+        lo = max(1, X0 - L // 12)
+        for start in range(lo, X0 + L // 12):
+            if not (fr[start] or er[start]) or (fr[start - 1] or er[start - 1]) and start > lo:
+                continue
+            x, nf, ne, gap, last_e = start, 0, 0, 0, False
+            while x < W and gap <= 2:
+                if fr[x] and not last_e:
+                    nf, gap = nf + 1, 0
+                elif er[x]:
+                    ne, gap, last_e = ne + 1, 0, True
+                else:
+                    gap += 1
+                x += 1
+            n = nf + ne
+            if abs(n - L) <= L * 0.08:
+                vals.append(nf / n)
+                break
+    if len(vals) < 2:
+        return None
+    vals.sort()
+    return round(100 * vals[len(vals) // 2], 1)
+
+
 class MsgWatch:
     """Reads only the message box and the two HP panels, 4 times a second, so that every battle message is
     recorded once and in order (each stays up only ~1.3-2.6 s) together with the HP shown at that moment.
+    HP is read from the panels' digits by templates of the italic digits (hpdigits.py), not by OCR.
     A move's damage is then known exactly (msgparse.damage_events): multi-hit counts, criticals, and what
     items / weather / status / abilities took or gave back are kept apart from it.
 
     take() returns the new entries since the last call: {'t', 'msg'} or {'t', 'side', 'hp', 'max'?}."""
     EVERY = 0.25
 
-    def __init__(self, make_source, ocr_factory, log_path=None):
+    def __init__(self, make_source, ocr_factory, log_path=None, skip=None):
         import threading
         self.make_source, self.ocr_factory, self.log_path = make_source, ocr_factory, log_path
+        self.skip = skip or (lambda: False)     # True while the move list / party screen covers the message box
         self.lock = threading.Lock()
         self.new, self.alive, self.errors = [], False, 0
-        self.last_msg, self.gap, self.last_entry = None, True, None
+        self.last_msg, self.gap, self.last_entry, self.last_t = None, True, None, -1e9
         self._sig = {'msg': None, 'opp': None, 'me': None}
         self._hp = {'opp': None, 'me': None}
         self._shown = {}
@@ -480,47 +541,58 @@ class MsgWatch:
 
     def add_msg(self, text, now):
         """One OCR read of the message box. Messages appear over several reads (and the text may still be typing
-        out): a read that continues / nearly equals the previous one updates it instead of adding a message."""
+        out): a read that continues / nearly equals the previous one updates it instead of adding a message.
+        The same text again within 3 s (a noisy read in between) is still the same message."""
         import difflib, re
         import msgparse as _mp
-        t = _mp.norm(' '.join(text.split()))
-        if len(re.findall(r'[ぁ-んァ-ヶ一-龥]', t)) < 3:
-            self.gap = True        # box empty (or only noise): the next text is a new message even if the same
+        if not _mp.is_message(text):
+            self.gap = True        # box empty (or noise / menus): the next text is a new message even if the same
             return
+        shown = ' '.join(text.split())
+        cut = max(shown.rfind('/'), shown.rfind('!'), shown.rfind('！'))
+        if cut >= len(shown) * 0.5:
+            shown = shown[:cut + 1]          # drop noise read after the end of the message
+        t = _mp.norm(shown)
         last = self.last_msg
-        if last and not self.gap and (t == last or t.startswith(last) or last.startswith(t) or
-                                      difflib.SequenceMatcher(None, t, last).ratio() >= 0.75):
+        near = not self.gap or now - self.last_t < 3.0
+        if last and near and (t == last or t.startswith(last) or last.startswith(t) or
+                              difflib.SequenceMatcher(None, t, last).ratio() >= 0.75):
             if len(t) > len(last) and self.last_entry is not None:
-                self.last_entry['msg'] = ' '.join(text.split())
+                self.last_entry['msg'] = shown
                 self.last_msg = t
-                self._emit({'t': now, 'msg_update': self.last_entry['msg']})
+                self._emit({'t': now, 'msg_update': shown})
+            self.gap, self.last_t = False, now
             return
-        e = {'t': now, 'msg': ' '.join(text.split())}
-        self.last_msg, self.gap, self.last_entry = t, False, e
+        e = {'t': now, 'msg': shown}
+        self.last_msg, self.gap, self.last_entry, self.last_t = t, False, e, now
         self._emit(e)
 
-    def add_panel(self, side, text, now):
-        import re
-        t = text.replace(' ', '').replace('／', '/').replace('％', '%')
-        if side == 'opp':
-            m = re.search(r'(\d{1,3})%', t)
-            v = int(m.group(1)) if m and int(m.group(1)) <= 100 else None
-            e = {'t': now, 'side': 'opp', 'hp': v} if v is not None else None
-        else:
-            m = re.search(r'(\d{1,3})/(\d{2,3})', t)
-            v = (int(m.group(1)), int(m.group(2))) if m and int(m.group(1)) <= int(m.group(2)) else None
-            e = {'t': now, 'side': 'me', 'hp': v[0], 'max': v[1]} if v else None
-        if e and self._hp[side] != e['hp']:
+    def add_panel(self, side, v, now):
+        """HP shown on a panel (hpdigits): theirs in %, ours as (cur, max)."""
+        if v is None:
+            return
+        e = {'t': now, 'side': side, 'hp': v} if side == 'opp' else {'t': now, 'side': side, 'hp': v[0], 'max': v[1]}
+        if self._hp[side] != e['hp']:
             self._hp[side] = e['hp']
             self._emit(e)
 
     def step(self, img, ocr, now):
         msg = _crop(img, MSG_BOX)
-        sg = _sig(msg)
-        if _changed(sg, self._sig['msg'], 4.0):
-            self._sig['msg'] = sg
-            big = msg.resize((msg.width * 2, msg.height * 2)) if msg.width < 900 else msg
-            self.add_msg(ocr.read(big), now)
+        if self.skip():
+            self.gap = True
+        else:
+            # read again whenever the white text in the box changed (the background moves all the time)
+            import numpy as np
+            f = np.asarray(msg.convert('RGB'), dtype=np.int16)
+            w = (f.min(2) > 185) & (f.max(2) - f.min(2) < 60)
+            H, W = (w.shape[0] // 6) * 6, (w.shape[1] // 6) * 6
+            m = w[:H, :W].reshape(H // 6, 6, W // 6, 6).any(axis=(1, 3))     # 6x6 blocks with any text pixel
+            prev = self._sig['msg']
+            if not m.any():
+                self.gap = True
+            elif prev is None or prev.shape != m.shape or (m ^ prev).mean() > 0.01:
+                self.add_msg(ocr.read(text_mask(msg, 2 if msg.width < 900 else 1)), now)
+            self._sig['msg'] = m
         for side, box in (('opp', OPP_PANEL), ('me', MY_PANEL)):
             pc = _crop(img, box)
             if not panel_present(pc, side):
@@ -532,7 +604,8 @@ class MsgWatch:
             sg = _sig(pc)
             if _changed(sg, self._sig[side], 3.0):
                 self._sig[side] = sg
-                self.add_panel(side, ocr.read(pc.resize((pc.width * 2, pc.height * 2))), now)
+                import hpdigits
+                self.add_panel(side, hpdigits.read_hp(pc, side), now)
 
     def _run(self):
         src = ocr = None
@@ -570,21 +643,24 @@ class Speculator:
         self.key, self.stable, self.running, self.done, self.opp_team = None, 0, False, {}, None
         self.watch = None      # (key, seq, line shown) of the command screen now waiting for input
 
-    def read(self, text):
+    def read(self, text, hp=None):
         try:
             import battle as _B
             if self.opp_team is None:
                 rec = json.load(open(os.path.join(OUT, '..', 'current.json'), encoding='utf-8'))
                 self.opp_team = rec.get('opp_team') or None
             me, hp_me, opp, hp_opp = _B.screen_read(text, self.opp_team or [])
+            if hp:            # the HP digits read from the panels (hpdigits) beat the whole-screen OCR
+                hp_me = hp[0] if hp[0] is not None else hp_me
+                hp_opp = hp[1] if hp[1] is not None else hp_opp
             return (me, hp_me, opp, hp_opp) if me and opp and hp_me is not None and hp_opp is not None else None
         except Exception:
             return None
 
     LEVELS = (5.0, 10.0, 20.0)     # keep reading the same position deeper while the animation lasts
 
-    def feed(self, text):
-        key = self.read(text)
+    def feed(self, text, hp=None):
+        key = self.read(text, hp)
         if key is None:
             return
         self.stable = self.stable + 1 if key == self.key else 1
@@ -621,15 +697,15 @@ class Speculator:
                     self.start(key, nxt)
         threading.Thread(target=run, daemon=True).start()
 
-    def answer(self, text, turn):
+    def answer(self, text, turn, hp=None):
         """The precomputed move for the command screen in `text`, or None (position differs or the field changed)."""
         if any(turn.get(k) for k in FIELD_KEYS):
             return None
-        key = self.read(text)
+        key = self.read(text, hp)
         return self.done.get(key) if key else None
 
-    def shown(self, text, seq, line):
-        key = self.read(text)
+    def shown(self, text, seq, line, hp=None):
+        key = self.read(text, hp)
         self.watch = (key, seq, line) if key else None
         if key and not self.running:          # keep deepening this position until the next screen
             have = self.done.get(key)
@@ -683,7 +759,22 @@ def publish(seq, line, out, seconds, update=False):
     print(f'\n{bar}\n  #{seq} {"（更新）" if update else ""}{line}   （{seconds:.1f}秒）\n{bar}\n', flush=True)
 
 
-def decide_async(seq, sec, phase='command', party=None):
+def screen_hp(img):
+    """(our HP 'cur/max', their HP %) read from the panels' digits (hpdigits: templates of the italic digits),
+    None where a panel is not up or not readable."""
+    import hpdigits
+    out = []
+    for side, box in (('me', MY_PANEL), ('opp', OPP_PANEL)):
+        try:
+            pc = _crop(img, box)
+            v = hpdigits.read_hp(pc, side) if panel_present(pc, side) else None
+            out.append(f'{v[0]}/{v[1]}' if side == 'me' and v else v)
+        except Exception:
+            out.append(None)
+    return tuple(out)
+
+
+def decide_async(seq, sec, phase='command', party=None, bar=None):
     """The move for this command screen, computed right away from the screen text (who is out, both HPs) and the
     tracked field: battle.py auto --screen. Printed here in big letters and written to decision.json, so the answer is
     there about 5 seconds after the screen appears, before anyone reads the image."""
@@ -694,7 +785,8 @@ def decide_async(seq, sec, phase='command', party=None):
         try:
             args = ['auto', '--sec', str(sec)] + (['--screen'] if phase not in ('replace', 'pivot') else []) + \
                 (['--switch'] if phase == 'pivot' else []) + \
-                (['--party', ','.join(f'{n}={hp or ""}' for n, hp in party)] if party else [])
+                (['--party', ','.join(f'{n}={hp or ""}' for n, hp in party)] if party else []) + \
+                (['--panel'] + ['-' if v is None else str(v) for v in bar] if bar and any(v is not None for v in bar) else [])
             r = subprocess.run([sys.executable, os.path.join(HERE, 'battle.py')] + args,
                                capture_output=True, text=True, encoding='utf-8', timeout=sec + 25)
             out = (r.stdout or '').strip() or (r.stderr or '').strip()[-300:]
@@ -740,7 +832,8 @@ def main():
     det = Detector()
     spec = Speculator(a.decide_sec)
     fast = FastWatch(make_source) if not a.no_fast else None
-    msgw = MsgWatch(make_source, WinOCR, os.path.join(OUT, 'messages.jsonl')) if not a.no_msg else None
+    msgw = MsgWatch(make_source, WinOCR, os.path.join(OUT, 'messages.jsonl'),
+                    skip=(lambda: fast.scene in ('command', 'party', 'preview')) if fast else None) if not a.no_msg else None
     timeline = []              # this turn's messages and HP panel readings from msgw, in order
     import msgparse
     field_p = os.path.join(OUT, 'field_state.json')
@@ -811,8 +904,9 @@ def main():
                         pending_pivot = time.time()
                         pivot_done.add(mv['mon'])
         now = time.time()
+        hp_now = screen_hp(img) if preview_seq and not det.in_preview else (None, None)
         if not det.in_preview and preview_seq and not a.no_decide and phase != 'command':
-            spec.feed(text)            # HP panels during the animation: compute the next move ahead of time
+            spec.feed(text, hp_now)            # HP panels during the animation: compute the next move ahead of time
         event = det.update(phase, now)
         if event is None and fast and fast.onset and det.command_armed and not det.in_preview and preview_seq:
             event, det.command_armed = 'command', False      # the button watcher is sure enough on its own
@@ -927,13 +1021,14 @@ def main():
                 f.write(json.dumps(ev, ensure_ascii=False) + '\n')
             print(ts, '検出:', phase, f'#{seq}')
             if phase in ('command', 'start', 'replace') and not a.no_decide:
-                pre = spec.answer(text, ev.get('turn_events') or {}) if phase == 'command' else None
+                pre = spec.answer(text, ev.get('turn_events') or {}, hp_now) if phase == 'command' else None
                 if pre:
                     publish(seq, pre[0], pre[1] + f'\n（演出中に先読み済み・{pre[2]:.0f}秒読み）', 0.0)
-                    spec.shown(text, seq, pre[0])
+                    spec.shown(text, seq, pre[0], hp_now)
                 else:
                     decide_async(seq, a.decide_sec, 'pivot' if phase == 'replace' and replace_mode == 'pivot' else phase,
-                                 party_read(text) if phase == 'replace' else None)
+                                 party_read(text) if phase == 'replace' else None,
+                                 hp_now if phase != 'replace' else None)
                 ev['replace_mode'] = replace_mode if phase == 'replace' else None
         safeio.write_json(state_p, {'phase': phase, 'seq': seq, 'time': time.time(), 'text': text})
         if fast:

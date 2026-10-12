@@ -38,24 +38,38 @@ _VOICED = str.maketrans('ガギグゲゴザジズゼゾダヂヅデドバビブ�
                         'カキクケコサシスセソタチツテトハヒフヘホハヒフヘホウかきくけこさしすせそたちつてとはひふへほはひふへほ')
 
 
+_LOOKALIKE = str.maketrans('力口工二一夕卜ヰ', 'カロエニータトキ')
+
+
 def devoice(s):
-    """OCR often drops 濁点/半濁点 (ゴリランダー → コリランター, メガシンカ → メカシンカ): compare without them."""
-    return s.translate(_VOICED)
+    """OCR often drops 濁点/半濁点 (ゴリランダー → コリランター, メガシンカ → メカシンカ) and reads katakana as look-alike
+    kanji (メガシノ力 → カ): compare without them."""
+    return s.translate(_VOICED).translate(_LOOKALIKE)
 
 
 NAMES_DV = [(devoice(n), n) for n in NAMES]
 MOVES_DV = [(devoice(m), m) for m in MOVES]
 
 
-def find_name(s):
+def locate_name(s):
+    """(name, start, end) of the first mon name in s: exact, then without 濁点, then a close match among the
+    mons of this battle."""
     for n in NAMES:
-        if n in s:
-            return n
+        i = s.find(n)
+        if i >= 0:
+            return n, i, i + len(n)
     d = devoice(s)
     for dn, n in NAMES_DV:
-        if len(dn) >= 3 and dn in d:
-            return n
-    return None
+        i = d.find(dn) if len(dn) >= 3 else -1
+        if i >= 0:
+            return n, i, i + len(dn)
+    context()
+    return _fuzzy(s, 'name')
+
+
+def find_name(s):
+    r = locate_name(s)
+    return r[0] if r else None
 
 
 def has(s, keys):
@@ -87,6 +101,123 @@ def side_of(s):
 
 # 「メガシンカした」 as the OCR reads it: メカシンカ / メガシノ力 / メガシフカ / メカシラカ ... (not the bare button label)
 MEGA_RE = re.compile(r'メ[カガ]シ.[カ力][しシ]')
+
+
+def move_use(s):
+    """「(相手の) Xの Y！」 -> (side, X, Y) or None. Y is read right after 「Xの」, also when the OCR garbled it."""
+    loc = locate_name(s)
+    if not loc:
+        return None
+    name, _, end = loc
+    tail = s[end:]
+    if not tail.startswith('の'):
+        return None
+    tail = tail[1:]
+    if any(k in tail for k in STAT) or len(tail) < 2:
+        return None
+    mv = next((m for m in MOVES if tail.startswith(m)), None)
+    if not mv:
+        context()
+        f = _fuzzy(tail, 'move')
+        mv = f[0] if f else None
+    if not mv or 'で' in tail[len(mv):][:1]:
+        return None
+    return side_of(s[:loc[1] + 1] + s), name, mv
+
+
+# ---------------------------------------------------------------- names / moves of this battle (fuzzy)
+# The OCR drops or swaps characters (ギャラドス → ャラドス / ヰャラドス, ガブリアス → カプリアス, じしん → ししん).
+# Only the 12 mons in this battle and their moves can appear, so a close match among them is safe.
+LOGS = os.environ.get('POKECHAMP_LOGS', os.path.join(HERE, '..', 'logs'))
+_CTX = {'key': None, 'names': [], 'moves': []}
+
+
+def context():
+    """(names, moves) that can appear in this battle: our team and the opponent's six (logs/current.json)."""
+    if _CTX['key'] == 'manual':
+        return _CTX['names'], _CTX['moves']
+    p = os.path.join(LOGS, 'current.json')
+    try:
+        key = os.path.getmtime(p)
+    except OSError:
+        key = None
+    if _CTX['key'] != key or not _CTX['names']:
+        names, moves = set(), set()
+        try:
+            from team import TEAM
+            for m in TEAM:
+                names.add(BASE.get(m.species, m.species)); names.add(m.species)
+                if m.species.endswith('ロトム'):
+                    names.add('ロトム')
+                moves.update(m.moves)
+        except Exception:
+            pass
+        opp = []
+        try:
+            opp = json.load(open(p, encoding='utf-8')).get('opp_team') or []
+        except Exception:
+            pass
+        from calc import learnset
+        for n in opp:
+            b = BASE.get(n, n)
+            names.add(b)
+            try:
+                moves.update(learnset(b))
+            except Exception:
+                pass
+        _CTX.update(key=key, names=sorted(names, key=len, reverse=True), moves=sorted(moves, key=len, reverse=True))
+        _fuzzy.cache_clear()
+    return _CTX['names'], _CTX['moves']
+
+
+def set_context(opp_team):
+    """For tests / tools without current.json."""
+    _CTX['key'] = None
+    names, moves = context()
+    names, moves = list(names), list(moves)
+    from calc import learnset
+    for n in opp_team:
+        b = BASE.get(n, n)
+        if b not in names:
+            names.append(b)
+            moves.extend(m for m in learnset(b) if m not in moves)
+    _CTX['names'] = sorted(set(names), key=len, reverse=True)
+    _CTX['moves'] = sorted(set(moves), key=len, reverse=True)
+    _CTX['key'] = 'manual'
+    _fuzzy.cache_clear()
+
+
+from functools import lru_cache  # noqa: E402
+import difflib  # noqa: E402
+
+
+@lru_cache(maxsize=4096)
+def _fuzzy(s, kind):
+    """Best fuzzy occurrence of a context name ('name') in s, or the move a tail starts with ('move').
+    Returns (word, start, end) or None."""
+    names, moves = _CTX['names'], _CTX['moves']
+    d = devoice(s)
+    best = None
+    if kind == 'name':
+        for n in names:
+            dn = devoice(n)
+            if len(dn) < 3:
+                continue
+            for L in (len(dn) - 1, len(dn), len(dn) + 1):
+                for i in range(0, max(0, len(d) - L) + 1):
+                    r = difflib.SequenceMatcher(None, d[i:i + L], dn).ratio()
+                    if r >= 0.75 and (best is None or r > best[0] or (r == best[0] and len(n) > len(best[1]))):
+                        best = (r, n, i, i + L)
+    else:
+        t = re.sub(r'[!/！?]+$', '', d)
+        for m in moves:
+            dm = devoice(m)
+            if len(dm) < 2:
+                continue
+            r = difflib.SequenceMatcher(None, t[:len(dm) + 1], dm).ratio()
+            if r >= (0.7 if len(dm) >= 4 else 0.85) and (best is None or r > best[0]):
+                best = (r, m, 0, len(dm))
+    return best[1:] if best else None
 
 
 WEATHER_START = [('sun', ('日差しが強くなった', 'ひざしがつよくなった', '日差しがとても強くなった')),
@@ -153,9 +284,9 @@ def parse_turn(lines, dedupe=True):
         if name and any(k in s for k in SUB_DOWN):
             ev['sub_end'].append({'side': side, 'mon': name}); continue
         # move use: 「(相手の)Xの Y！」
-        mv = find_move(s)
-        if name and mv and s.find(name) < s.find(mv) and not any(k in s for k in STAT) and 'で' not in s[s.find(mv) + len(mv):][:1]:
-            ev['moves'].append({'side': side, 'mon': name, 'move': mv})
+        mu = move_use(s)
+        if mu:
+            ev['moves'].append({'side': side, 'mon': mu[1], 'move': mu[2]})
             continue
         # stat change
         m = re.search(r'の(こうげき|攻撃|ぼうぎょ|防御|とくこう|特攻|とくぼう|特防|すばやさ|素早さ|命中率|回避率)が(ぐぐーんと|ぐーんと|ぐんと|がくーんと|がくっと)?(上がった|あがった|下がった|さがった)', s)
@@ -211,7 +342,7 @@ def parse_turn(lines, dedupe=True):
         h = HIT_RE.search(s)
         if h and ev['moves']:
             ev['moves'][-1]['hits'] = int(h.group(1))
-        if has(s, ('効果はバツグン', 'こうかはばつぐん')):
+        if has(s, ('効果はバツグン', 'こうかはばつぐん', 'バツグンだ', 'ばつぐんだ')):
             ev['super_effective'] += 1
     first = ev['moves'][0]['side'] if ev['moves'] else None
     ev['first'] = first
@@ -223,6 +354,32 @@ HIT_RE = re.compile(r'(\d+)回(当たった|あたった)')
 FOLLOW = ('効果はバツグン', 'こうかはばつぐん', '効果はいまひとつ', 'こうかはいまひとつ', '急所に当たった', 'きゅうしょにあたった')
 MISS = ('外れた', 'はずれた', '当たらなかった', 'あたらなかった', '効果がないよう', 'こうかがないよう', '防いだ', 'ふせいだ',
         '守った', 'まもった', 'うまく決まらなかった', 'うまくきまらなかった', '身代わりが', 'みがわりが')
+
+
+UI_WORDS = ('用語', '説明', '閉じる', '閉しる', '持ち物', '特性', 'COMMAND', '様子を見る', '威力', '命中', '技分類',
+            'こうかあり', 'こうかあ', 'ログを見る', 'つよさの表示', 'ステータス', 'たたかう')
+MSG_WORDS = ('効果', 'こうか', '急所', '当たった', 'あたった', 'たおれた', '倒れた', '繰り出した', 'くりだした', 'ゆけっ', 'いけっ',
+             '戻れ', 'もどれ', '上がった', '下がった', 'あがった', 'さがった', '回復', 'かいふく', 'ダメージ', '受けた', 'うけた',
+             '反応', 'メガシンカ', '状態', '雨', '日差し', 'ひざし', '砂あらし', 'すなあらし', '雪', 'フィールド', '岩', 'まきびし',
+             '身代わり', 'みがわり', '外れた', 'はずれた', '防い', '守', '眠', 'ねむ', 'まひ', 'やけど', 'どく', 'こおり', '混乱',
+             'こんらん', 'ひるんで', '動けない', 'うごけない', '体力', '削られた', 'けずられた', '吸い取', '戻っていく',
+             'もどっていく', '時空', '勝負', 'しょうぶ', 'しようぶ', 'おいかぜ', 'かべ', 'リフレクター', 'オーロラベール', 'ちょうはつ',
+             'アンコール', 'たべのこし', 'オボン', 'タスキ', 'いのちのたま', 'ゴツゴツメット', '逃げ')
+
+
+def is_message(raw):
+    """A read of the message box that is a battle message (not the move list / timer / descriptions that cover the
+    same place, nor noise from the background): it names a mon of this battle or says something battles say."""
+    if re.search(r'\d{1,2}\s*[:：;i]\s*\d{2}', raw):
+        return False            # the timer of the move-selection screen
+    body = re.sub(r'\s', '', raw)
+    junk = len(re.findall(r'[^ぁ-んァ-ヶ一-龥ー/!！?、。・…ぁ-ゖ]', body))
+    if body and junk / len(body) > 0.25:
+        return False            # mostly noise: the moving background or a menu read as text
+    s = norm(raw)
+    if len(re.findall(r'[ぁ-んァ-ヶ一-龥]', s)) < 4 or has(s, UI_WORDS):
+        return False
+    return bool(locate_name(s)) or has(s, MSG_WORDS)
 
 
 def damage_events(timeline, hp0=None, active0=None):
@@ -279,8 +436,9 @@ def damage_events(timeline, hp0=None, active0=None):
         if pend and has(s, ('倒れた', 'たおれた')) and side_of(s) == pend['target']:
             cur[pend['target']], pend['seen'] = 0, True     # the panel turns grey at 0: the faint message says it
         close()
-        name, mv = find_name(s), find_move(s)
-        if name and mv and s.find(name) < s.find(mv) and MOVE.get(mv, {}).get('cat') != 'status':
+        mu = move_use(s)
+        name, mv = (mu[1], mu[2]) if mu else (None, None)
+        if mu and MOVE.get(mv, {}).get('cat') != 'status':
             side = side_of(s)
             tg = 'me' if side == 'opp' else 'opp'
             active[side] = name

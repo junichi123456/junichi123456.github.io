@@ -75,6 +75,7 @@ def _likelihood(c, o):
             att = my_mon(o['by'], o.get('my_mega', False))
             dfn = _form(c, o.get('opp_mega', False))
             before, after = o.get('before', 100), o.get('after')
+            tol = 1.5
             rolls = calc(att, dfn, o['move'], atk_boost=o.get('atk_boost', 0), def_boost=o.get('def_boost', 0),
                          crit=o.get('crit', False), weather=o.get('weather'), terrain=o.get('terrain'),
                          def_full_hp=before >= 100, hits=o.get('hits'))
@@ -89,7 +90,7 @@ def _likelihood(c, o):
                 n = sum(1 for p in pct if p >= 97)
                 n = n or sum(1 for p in pct if abs(p - d) <= 1.5)
             else:
-                n = sum(1 for p in pct if abs(p - d) <= 1.5)
+                n = sum(1 for p in pct if abs(p - d) <= tol)
             return max(n / 16, EPS)
         if k == 'taken':
             att = _form(c, o.get('opp_mega', False))
