@@ -566,13 +566,19 @@ def blind(tag, games=3, worst_from=3, my_depth=4, opp_depth=3):
     jobs, meta = [], []
     for t in ts:
         d = done['teams'].get(t['id'])
-        if d and len([g for g in d['games'] if g.get('res') is not None]) >= games:
+        if d:
+            d['games'] = [g for g in d['games'] if g.get('res') is not None]
+        have = len(d['games']) if d else 0
+        if have >= games:
             continue
-        mo, top = blind_select(t)
-        done['teams'][t['id']] = {'title': t['title'], 'my_order': mo, 'my_top': top, 'opp_order': ws[t['id']]['opp'],
-                                  'worst_info': ws[t['id']], 'games': []}
-        for k in range(games):
-            jobs.append((party, t['id'], mo, ws[t['id']]['opp'], zlib.crc32(f'blind{t["id"]}{k}'.encode()),
+        if d:
+            mo = d['my_order']
+        else:
+            mo, top = blind_select(t)
+            done['teams'][t['id']] = {'title': t['title'], 'my_order': mo, 'my_top': top,
+                                      'opp_order': ws[t['id']]['opp'], 'worst_info': ws[t['id']], 'games': []}
+        for k in range(have, games):
+            jobs.append((party, t['id'], mo, done['teams'][t['id']]['opp_order'], zlib.crc32(f'blind{t["id"]}{k}'.encode()),
                          my_depth, opp_depth))
             meta.append(t['id'])
     print(f'blind {tag}: {len(jobs)} games (selection {round(time.time() - t0)}s)', flush=True)
