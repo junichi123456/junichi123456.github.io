@@ -903,27 +903,85 @@ def screen_hp(img):
     return tuple(out)
 
 
-def decide_async(seq, sec, phase='command', party=None, bar=None, names=None, update=False):
+# 「対戦準備中」 (after we confirmed our pick, while the opponent is still picking): our six cards in the left
+# column, the three picked ones bright with their order 1-3 written on them (1080p: x 295-593, rows every 126 px)
+PICK_X = (0.154, 0.309)
+PICK_Y0, PICK_DY, PICK_H = 235 / 1080, 126 / 1080, 0.05
+PICK_TPL_P = os.path.join(HERE, 'data', 'pick_digits.json')
+
+
+def _pick_cards(img):
+    import numpy as np
+    W, H = img.size
+    out = []
+    for i in range(6):
+        yc = PICK_Y0 + PICK_DY * i
+        c = img.crop((int(PICK_X[0] * W), int((yc - PICK_H) * H), int(PICK_X[1] * W), int((yc + PICK_H) * H)))
+        f = np.asarray(c.convert('RGB'), dtype=np.int16)
+        light = (f.min(2) > 140).mean()                     # picked cards are white / light green, others violet
+        z = f[int(f.shape[0] * 0.12):int(f.shape[0] * 0.88), :int(f.shape[1] * 0.22)]
+        dark = (z.max(2) < 120) & (z[..., 2] >= z[..., 0])  # the navy digit
+        from PIL import Image as _I
+        g = (np.asarray(_I.fromarray((dark * 255).astype(np.uint8)).resize((10, 14))) > 100).astype(np.uint8).flatten()
+        out.append((light, g, int(dark.sum())))
+    return out
+
+
+def pick_order(img):
+    """Our picked three in order (indices into team.TEAM, whose order is the one shown in game) read from the
+    「対戦準備中」 screen, or None when this is not that screen."""
+    import numpy as np
+    try:
+        tpl = {k: np.array(v, dtype=np.uint8) for k, v in json.load(open(PICK_TPL_P, encoding='utf-8')).items()}
+    except Exception:
+        return None
+    cards = _pick_cards(img)
+    picked = [i for i, (light, g, n) in enumerate(cards) if light > 0.18 and n > 20]
+    if len(picked) != 3 or sum(1 for c in cards if c[0] > 0.18) != 3:
+        return None
+    order = {}
+    for i in picked:
+        g = cards[i][1]
+        d, dist = min(((k, int((g != t).sum())) for k, t in tpl.items()), key=lambda x: x[1])
+        if dist > 40 or d in order:
+            return None
+        order[d] = i
+    if sorted(order) != ['1', '2', '3']:
+        return None
+    return [order['1'], order['2'], order['3']]
+
+
+def decide_async(seq, sec, phase='command', party=None, bar=None, names=None, update=False, get_names=None):
     """The move for this command screen, computed right away from the screen text (who is out, both HPs) and the
     tracked field: battle.py auto --screen. Printed here in big letters and written to decision.json, so the answer is
     there about 5 seconds after the screen appears, before anyone reads the image."""
     import subprocess, threading
 
+    def args_for(nm):
+        return ['auto', '--sec', str(sec)] + (['--screen'] if phase not in ('replace', 'pivot') else []) + \
+            (['--switch'] if phase == 'pivot' else []) + \
+            (['--party', ','.join(f'{n}={hp or ""}' for n, hp in party)] if party else []) + \
+            (['--panel'] + ['-' if v is None else str(v) for v in bar] if bar and any(v is not None for v in bar) else []) + \
+            (['--me', nm[0]] if nm and nm[0] else []) + (['--opp', nm[1]] if nm and nm[1] else [])
+
     def run():
         t0 = time.time()
-        try:
-            args = ['auto', '--sec', str(sec)] + (['--screen'] if phase not in ('replace', 'pivot') else []) + \
-                (['--switch'] if phase == 'pivot' else []) + \
-                (['--party', ','.join(f'{n}={hp or ""}' for n, hp in party)] if party else []) + \
-                (['--panel'] + ['-' if v is None else str(v) for v in bar] if bar and any(v is not None for v in bar) else []) + \
-                (['--me', names[0]] if names and names[0] else []) + (['--opp', names[1]] if names and names[1] else [])
-            r = subprocess.run([sys.executable, os.path.join(HERE, 'battle.py')] + args,
-                               capture_output=True, text=True, encoding='utf-8', timeout=sec + 25)
-            out = (r.stdout or '').strip() or (r.stderr or '').strip()[-300:]
-        except Exception as e:
-            out = f'判断に失敗: {e}'
-        line = next((l for l in out.splitlines() if l.startswith('次:')), out.splitlines()[0] if out else '')
-        publish(seq, line, out, time.time() - t0, update=update)
+        nm = names
+        for attempt in range(4):
+            if attempt:
+                time.sleep(1.5)    # who is out was not known yet: the messages / panel names may have come in since
+                nm = get_names() if get_names else nm
+            try:
+                r = subprocess.run([sys.executable, os.path.join(HERE, 'battle.py')] + args_for(nm),
+                                   capture_output=True, text=True, encoding='utf-8', timeout=sec + 25)
+                out = (r.stdout or '').strip() or (r.stderr or '').strip()[-300:]
+            except Exception as e:
+                out = f'判断に失敗: {e}'
+            line = next((l for l in out.splitlines() if l.startswith('次:')), out.splitlines()[0] if out else '')
+            if '判断できません' in line and attempt < 3 and phase != 'replace':
+                continue
+            publish(seq, line, out, time.time() - t0, update=update)
+            break
     threading.Thread(target=run, daemon=True).start()
 
 
@@ -952,6 +1010,43 @@ def start_lead_plans(state):
         print(time.strftime('%Y-%m-%dT%H:%M:%S'), '選出を確認: 相手の先発ごとに1ターン目を先読み中', flush=True)
     except Exception:
         pass
+
+
+def apply_pick_order(img, state):
+    """Read our real pick (「対戦準備中」 shows the three with their order) and write it to the battle record when it
+    differs from the suggested one, so the turn-1 plans are made for the lead we really sent."""
+    try:
+        order = pick_order(img)
+    except Exception:
+        order = None
+    if not order or state.get('picked') == order:
+        return
+    state['picked'] = order
+    try:
+        from team import TEAM
+        import msgparse as _mp
+        names = [_mp.BASE.get(TEAM[i].species, TEAM[i].species) for i in order]
+        names = [n if n in MY_ORDER_NAMES else next((m for m in MY_ORDER_NAMES if m.endswith(n) or n.endswith(m)), n)
+                 for n in names]
+        p = os.path.join(OUT, '..', 'current.json')
+        rec = json.load(open(p, encoding='utf-8'))
+        if rec.get('my_order') != names:
+            rec['my_order'] = names
+            safeio.write_json(p, rec)
+        print(time.strftime('%Y-%m-%dT%H:%M:%S'), '選出（画面で確認）: ' + ' → '.join(names), flush=True)
+    except Exception:
+        pass
+
+
+def _my_order_names():
+    try:
+        import battle as _B
+        return list(_B.MY)
+    except Exception:
+        return []
+
+
+MY_ORDER_NAMES = []
 
 
 def lead_plan_for(opp):
@@ -1015,6 +1110,7 @@ def main():
     pending_replace, replace_done = None, set()
     start_wait = None          # time the preview ended, until the 'start' event is sent
     plan_state = {}            # turn-1 moves computed per opposing lead during the preview (battle.py leadplan)
+    MY_ORDER_NAMES[:] = _my_order_names()
     skip_command_until = 0.0   # the turn-1 command screen was already handled by 'start'
     preview_seq, preview_n, preview_last_t, preview_last_text = 0, 0, 0.0, None
     log_p = os.path.join(OUT, 'battle_messages.jsonl')
@@ -1077,8 +1173,10 @@ def main():
                         pivot_done.add(mv['mon'])
         now = time.time()
         hp_now = screen_hp(img) if preview_seq and not det.in_preview else (None, None)
-        if preview_seq and not a.no_decide and (start_wait is not None or det.in_preview):
-            start_lead_plans(plan_state)
+        if preview_seq and (start_wait is not None or det.in_preview):
+            apply_pick_order(img, plan_state)        # the order really picked (「対戦準備中」), if not the suggested one
+            if not a.no_decide:
+                start_lead_plans(plan_state)
         if not det.in_preview and preview_seq and not a.no_decide and phase != 'command':
             spec.feed(text, hp_now)            # HP panels during the animation: compute the next move ahead of time
         event = det.update(phase, now)
@@ -1161,6 +1259,7 @@ def main():
                 if rec:
                     rec.stop()
                 start_wait, skip_command_until = None, 0.0
+                plan_state.pop('picked', None)
                 ev['preview_frames'] = os.path.join(OUT, f'game_{seq:04d}_preview_*.png')
                 tracker = msgparse.FieldTracker(field_p)  # new battle
                 if msgw and hasattr(msgw, '_icon'):
@@ -1216,7 +1315,9 @@ def main():
                 else:
                     decide_async(seq, a.decide_sec, 'pivot' if phase == 'replace' and replace_mode == 'pivot' else phase,
                                  party_read(text) if phase == 'replace' else None,
-                                 hp_now if phase != 'replace' else None, names, update=bool(plan))
+                                 hp_now if phase != 'replace' else None, names, update=bool(plan),
+                                 get_names=lambda: ((getattr(msgw, '_iname', None) or {}).get('me'),
+                                                    (getattr(msgw, '_iname', None) or {}).get('opp')))
                 ev['replace_mode'] = replace_mode if phase == 'replace' else None
         safeio.write_json(state_p, {'phase': phase, 'seq': seq, 'time': time.time(), 'text': text})
         if fast:
