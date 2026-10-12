@@ -1,7 +1,10 @@
 """Real-time battle assistant for Pokémon Champions singles (6→3).
 
   python3 battle.py select <相手6体...>      選出順を出す
-  python3 battle.py turn state.json [秒数]   次の行動を出す（5ターン木＋ロールアウトで8ターン先まで）
+  python3 battle.py turn state.json [秒数]   次の行動を出す（既定5秒。木＋ロールアウトで8ターン先まで）
+  python3 battle.py auto --hp <自分> <相手>   game_watch.py の記録から state を自動で組み立てて次の行動を出す
+                                            （HPは画面の表示どおり「142/185」か「%」。--me/--opp で場のポケモンを指定、
+                                              --sec で探索秒数。ターンの出来事の記録 learn.py turn も同時に行う）
   python3 battle.py infer <相手> [obs.json]  相手の型の事後確率（上位5）
 
 対戦のシミュレーションは engine.py（Pokémon Showdown の Champions ルールを移植。全ての技・特性・持ち物・
@@ -1342,6 +1345,118 @@ def fmt_action(st, a):
     return f"{pre}{a[1]}"
 
 
+DEFAULT_SEC = 5.0     # search time per turn (3-ply results were as good as 4-ply in the depth study)
+
+
+def decide_js(js, sec=DEFAULT_SEC, verbose=False):
+    t_fill = time.time()
+    js, assumed = worst_case_fill(js, seconds=1.0)          # unseen back mons: the worst selection for us
+    sec = max(2.0, sec - (time.time() - t_fill))
+    st = load_state(js)
+    import search as _search
+    est = _search.from_battle(st, js)
+    if not est.sides[0].mons[est.sides[0].act].alive:
+        opts = [j for j, m in enumerate(est.sides[0].mons) if m.alive]
+        j = _search.chooser(est, 0, opts)
+        print(f"次: {est.sides[0].mons[j].name}を出す"); return
+    depth, res, nodes = _search.decide(est, sec)
+    print(f"次: {_search.fmt(est, res[0][1])}")
+    if verbose:
+        for m in st.sides[1]:
+            print('  相手推定:', m.name, m.cur.nature, m.cur.sp_str(), m.cur.item, m.moves)
+        if assumed:
+            print('  未判明の相手（最悪の選出を想定）:', assumed)
+        print(f'木{depth}ターン+ロールアウト（計{_search.HORIZON}ターン） 局面数{nodes}',
+              [(round(v, 2), _search.fmt(est, a)) for v, a in res])
+
+
+def _hp_arg(v, maxhp):
+    """'142/185' (as shown) or '77' (percent) -> (actual hp, percent)."""
+    if v is None:
+        return None
+    v = str(v).replace('%', '')
+    if '/' in v:
+        a, b = v.split('/')
+        return int(a), round(100 * int(a) / max(1, int(b)))
+    pct = max(0.0, min(100.0, float(v)))
+    return round(maxhp * pct / 100), pct
+
+
+def auto_state(hp_me=None, hp_opp=None, me_name=None, opp_name=None):
+    """state.json built from what game_watch.py already tracks (logs/live/field_state.json: who is out, fainted,
+    boosts, status, items, moves seen, weather, hazards, mega) and the battle record (our order), plus the two HP
+    values read from the screen. HP of the mons on the bench is remembered from earlier turns
+    (logs/live/auto_state.json). The turn's events are recorded to the battle log (learn.py) on the way."""
+    live = os.path.join(_learn.LOGS, 'live')
+    try:
+        fs = json.load(open(os.path.join(live, 'field_state.json'), encoding='utf-8'))
+    except Exception:
+        fs = {'active': {'me': None, 'opp': None}, 'mons': {'me': {}, 'opp': {}}}
+    rec = _learn._load(_learn.CURRENT, None) or {}
+    prev_p = os.path.join(live, 'auto_state.json')
+    try:
+        prev = json.load(open(prev_p, encoding='utf-8'))
+    except Exception:
+        prev = {}
+    if prev.get('battle') != rec.get('id'):
+        prev = {}
+    hpm, hpo = prev.get('hp_me', {}), prev.get('hp_opp', {})
+    b = lambda n: BASE_OF.get(norm(n), norm(n)) if n else None
+    order = [b(x) for x in (rec.get('my_order') or [])]
+    act_me = b(me_name) or b(fs['active'].get('me')) or (order[0] if order else None)
+    act_opp = b(opp_name) or b(fs['active'].get('opp'))
+    for n in [act_me] + list(fs['mons']['me']):
+        if n and n not in order:
+            order.append(n)
+    opp_names = list(fs['mons']['opp'])
+    if act_opp and act_opp not in opp_names:
+        opp_names.append(act_opp)
+    me = []
+    for n in order:
+        maxhp = mine(n)[0].stat['hp']
+        hp = hpm.get(n, maxhp)
+        if n == act_me and hp_me is not None:
+            hp = _hp_arg(hp_me, maxhp)[0]
+        if (fs['mons']['me'].get(n) or {}).get('fainted'):
+            hp = 0
+        hpm[n] = hp
+        me.append({'name': n, 'hp': hp})
+    opp = []
+    for n in opp_names:
+        pct = hpo.get(n, 100)
+        if n == act_opp and hp_opp is not None:
+            pct = _hp_arg(hp_opp, 100)[1]
+        if (fs['mons']['opp'].get(n) or {}).get('fainted'):
+            pct = 0
+        hpo[n] = pct
+        opp.append({'name': n, 'hp_pct': pct})
+    js = {'me': me, 'opp': opp, 'active_me': order.index(act_me) if act_me in order else 0,
+          'active_opp': opp_names.index(act_opp) if act_opp in opp_names else 0}
+    # record this turn's events once (moves, items, mega of theirs) for learning after the battle
+    try:
+        evs = [json.loads(l) for l in open(os.path.join(live, 'game_events.jsonl'), encoding='utf-8') if l.strip()]
+        ev = next((e for e in reversed(evs) if e.get('phase') in ('command', 'start')), None)
+        if ev and ev.get('seq') != prev.get('recorded_seq') and rec:
+            te = ev.get('turn_events') or {}
+            mv = {m['side']: m['move'] for m in te.get('moves', [])}
+            it = next((x['item'] for x in te.get('items', []) if x.get('side') == 'opp'), None)
+            t = {'turn': fs.get('turn'), 'me': act_me, 'opp': act_opp, 'my_action': mv.get('me'),
+                 'opp_action': mv.get('opp'), 'first': te.get('first'), 'opp_item': it,
+                 'opp_mega': any(x.get('side') == 'opp' for x in te.get('mega', [])),
+                 'my_hp_pct_after': round(100 * hpm.get(act_me, 0) / max(1, mine(act_me)[0].stat['hp'])) if act_me else None,
+                 'opp_hp_pct_after': hpo.get(act_opp)}
+            if t['opp']:
+                _learn.record_turn({k: v for k, v in t.items() if v is not None})
+            prev['recorded_seq'] = ev.get('seq')
+    except Exception:
+        pass
+    os.makedirs(live, exist_ok=True)
+    import safeio as _sio
+    _sio.write_json(prev_p, {'battle': rec.get('id'), 'hp_me': hpm, 'hp_opp': hpo,
+                             'recorded_seq': prev.get('recorded_seq'), 'state': js}, indent=1)
+    return js
+
+
 def main():
     try:
         sys.stdout.reconfigure(encoding='utf-8')
@@ -1362,26 +1477,15 @@ def main():
                 pass
     elif len(sys.argv) >= 3 and sys.argv[1] == 'turn':
         js = json.load(open(sys.argv[2], encoding='utf-8'))
-        sec = float(sys.argv[3]) if len(sys.argv) > 3 and not sys.argv[3].startswith('-') else 10
-        t_fill = time.time()
-        js, assumed = worst_case_fill(js)          # unseen back mons: the worst selection for us
-        sec = max(3.0, sec - (time.time() - t_fill))
-        st = load_state(js)
-        import search as _search
-        est = _search.from_battle(st, js)
-        if not est.sides[0].mons[est.sides[0].act].alive:
-            opts = [j for j, m in enumerate(est.sides[0].mons) if m.alive]
-            j = _search.chooser(est, 0, opts)
-            print(f"次: {est.sides[0].mons[j].name}を出す"); return
-        depth, res, nodes = _search.decide(est, sec)
-        print(f"次: {_search.fmt(est, res[0][1])}")
-        if '-v' in sys.argv:
-            for m in st.sides[1]:
-                print('  相手推定:', m.name, m.cur.nature, m.cur.sp_str(), m.cur.item, m.moves)
-            if assumed:
-                print('  未判明の相手（最悪の選出を想定）:', assumed)
-            print(f'木{depth}ターン+ロールアウト（計{_search.HORIZON}ターン） 局面数{nodes}',
-                  [(round(v, 2), _search.fmt(est, a)) for v, a in res])
+        sec = float(sys.argv[3]) if len(sys.argv) > 3 and not sys.argv[3].startswith('-') else DEFAULT_SEC
+        decide_js(js, sec, '-v' in sys.argv)
+    elif len(sys.argv) >= 2 and sys.argv[1] == 'auto':
+        a = sys.argv[2:]
+        opt = lambda k, n=1: a[a.index(k) + 1:a.index(k) + 1 + n] if k in a else None
+        hp = opt('--hp', 2) or [None, None]
+        js = auto_state(hp[0], hp[1], (opt('--me') or [None])[0], (opt('--opp') or [None])[0])
+        sec = float((opt('--sec') or [DEFAULT_SEC])[0])
+        decide_js(js, sec, '-v' in a)
     elif len(sys.argv) >= 3 and sys.argv[1] == 'types':
         # 選出画面のタイプアイコンから相手候補を絞る: python battle.py types ほのお かくとう
         from calc import JT
