@@ -348,6 +348,86 @@ def screen(n, vfile):
     return done
 
 
+# ---------------------------------------------------------------- why we lose
+
+def losses(n):
+    """What the lost games have in common: which of their mons and moves show up in losses far more than in wins,
+    which of ours go down first, and per team the selection of theirs that beats our best orders and how."""
+    R = load_round(n)
+    ts = {t['id']: t for t in teams()}
+    W, Lz = [], []
+    for kid, games in R.items():
+        st = team_stats(games)
+        top = {r[3] for r in st['rows'][:10]}     # the orders we would actually bring
+        for g in games:
+            if tuple(g['order']) in top:
+                (W if g['res'] == 1 else Lz).append((kid, g))
+
+    def cnt(gs, f):
+        c = {}
+        for kid, g in gs:
+            for k in set(f(kid, g)):
+                c[k] = c.get(k, 0) + 1
+        return c
+
+    def lift(f, minn=8):
+        a, b = cnt(Lz, f), cnt(W, f)
+        rows = []
+        for k in set(a) | set(b):
+            la, wb = a.get(k, 0), b.get(k, 0)
+            if la + wb >= minn:
+                rows.append(((la / max(1, len(Lz))) / ((wb + 1) / max(1, len(W))), k, la, wb))
+        return sorted(rows, reverse=True)
+
+    opp_mon = lift(lambda kid, g: [B._base(x) for x in g['opp']])
+    opp_move = lift(lambda kid, g: [f"{B._base(op)}:{b}" for me, a, op, b in g['log'] if not b.startswith('→') and b not in ('-', '反動')])
+    my_move = lift(lambda kid, g: [f"{B._base(me)}:{a}" for me, a, op, b in g['log'] if not a.startswith('→') and a not in ('-', '反動')])
+    killers = cnt(Lz, lambda kid, g: [f"{B._base(by)}→{B._base(nm)}" for tn, i, nm, by in g['faints'] if i == 0])
+    first_down = cnt(Lz, lambda kid, g: [B._base(next((nm for tn, i, nm, by in g['faints'] if i == 0), '-'))])
+    sweep = cnt(Lz, lambda kid, g: (lambda ks: [B._base(max(ks, key=ks.count))] if ks and ks.count(max(ks, key=ks.count)) >= 2 else [])(
+        [B._base(by) for tn, i, nm, by in g['faints'] if i == 0]))
+    turns_l = sum(len(g['log']) for _, g in Lz) / max(1, len(Lz))
+    turns_w = sum(len(g['log']) for _, g in W) / max(1, len(W))
+    left = sum(g['left'][1] for _, g in Lz) / max(1, len(Lz))
+    close = sum(1 for _, g in Lz if g['left'][1] <= 0.6) / max(1, len(Lz))
+    L = [f'# 勝てない要因の分析（R{n}・各構築の上位10選出の対戦 {len(W) + len(Lz)} 戦: {len(W)}勝 {len(Lz)}敗）', '',
+         '「負け率比」は、その要素が負け試合に現れる割合 ÷ 勝ち試合に現れる割合（1より大きいほど負けにつながる）。', '',
+         f'- 試合の長さ: 負け {turns_l:.1f} ターン / 勝ち {turns_w:.1f} ターン',
+         f'- 負けたとき相手に残っていた体力（3体合計、1体=1.0）: 平均 {left:.2f}。僅差（0.6以下）の負け {close:.0%}', '',
+         '## 負けにつながる相手のポケモン', '', '| 相手 | 負け率比 | 負け試合に出た数 | 勝ち試合に出た数 |', '|---|---|---|---|']
+    L += [f'| {k} | {r:.2f} | {a} | {b} |' for r, k, a, b in opp_mon[:12]]
+    L += ['', '## 負けにつながる相手の技', '', '| 相手:技 | 負け率比 | 負け | 勝ち |', '|---|---|---|---|']
+    L += [f'| {k} | {r:.2f} | {a} | {b} |' for r, k, a, b in opp_move[:20]]
+    L += ['', '## 負け試合でこちらを倒した組み合わせ（相手→こちら）', '', '| 組み合わせ | 回数 |', '|---|---|']
+    L += [f'| {k} | {v} |' for k, v in sorted(killers.items(), key=lambda x: -x[1])[:15]]
+    L += ['', '## 負け試合で1体で2体以上を倒した相手（全抜き・半壊の起点）', '', '| 相手 | 回数 |', '|---|---|']
+    L += [f'| {k} | {v} |' for k, v in sorted(sweep.items(), key=lambda x: -x[1])[:10]]
+    L += ['', '## 負け試合で最初に倒れたこちらのポケモン', '', '| こちら | 回数 |', '|---|---|']
+    L += [f'| {k} | {v} |' for k, v in sorted(first_down.items(), key=lambda x: -x[1])]
+    L += ['', '## 負けにつながるこちらの技（使った試合で負けが多い）', '', '| こちら:技 | 負け率比 | 負け | 勝ち |', '|---|---|---|---|']
+    L += [f'| {k} | {r:.2f} | {a} | {b} |' for r, k, a, b in my_move[:12]]
+    L += ['', '## 構築ごと: 最善選出を負かした相手選出と負け方', '']
+    for kid, games in R.items():
+        st = team_stats(games)
+        w, a, f, o, wo = st['best']
+        lost = [g for g in games if tuple(g['order']) in {r[3] for r in st['rows'][:5]} and g['res'] != 1]
+        bysel = {}
+        for g in lost:
+            bysel.setdefault(tuple(g['opp']), []).append(g)
+        if not bysel:
+            continue
+        L.append(f"### {ts[kid]['title'][:40]}（最善: {' → '.join(o)}・上位5選出の負け {len(lost)}）")
+        for sel, gs in sorted(bysel.items(), key=lambda x: -len(x[1]))[:2]:
+            g = gs[0]
+            fa = '、'.join(f"{tn}T {'自' if i == 0 else '相'}{nm}（{by}）" for tn, i, nm, by in g['faints'])
+            seq = ' / '.join(f"{a}↔{b}" for me, a, op, b in g['log'][:4])
+            L.append(f"- 相手 {' → '.join(sel)}: {len(gs)}敗。例（{' → '.join(g['order'])}）: 倒れた順 {fa}。序盤 {seq}")
+        L.append('')
+    txt = '\n'.join(L) + '\n'
+    open(os.path.join(OUT_D, f'LOSSES_R{n}.md'), 'w', encoding='utf-8').write(txt)
+    print(txt)
+
+
 # ---------------------------------------------------------------- blind test
 
 def _templates(names, sets_fn, side):
@@ -556,6 +636,8 @@ def main():
         report()
     elif '--screen' in a:
         screen(int(a[a.index('--screen') + 1]), a[a.index('--screen') + 2])
+    elif '--losses' in a:
+        losses(int(a[a.index('--losses') + 1]))
     elif '--analyze' in a:
         analyze(int(a[a.index('--analyze') + 1]))
     elif '--blind' in a:
