@@ -1529,6 +1529,7 @@ def auto_state(hp_me=None, hp_opp=None, me_name=None, opp_name=None, from_screen
                  'opp_hp_pct_after': hpo.get(act_opp)}
             if t['opp']:
                 _learn.record_turn({k: v for k, v in t.items() if v is not None})
+            add_damage_obs(ev.get('damage') or [], rec.get('opp_team') or [])
             prev['recorded_seq'] = ev.get('seq')
     except Exception:
         pass
@@ -1537,6 +1538,51 @@ def auto_state(hp_me=None, hp_opp=None, me_name=None, opp_name=None, from_screen
     _sio.write_json(prev_p, {'battle': rec.get('id'), 'hp_me': hpm, 'hp_opp': hpo,
                              'recorded_seq': prev.get('recorded_seq'), 'state': js}, indent=1)
     return js
+
+
+def damage_obs(dmg, opp_team=()):
+    """[(opponent species, obs)] from the damage read off the screen this turn (game_watch: ev['damage']):
+    what our moves took off them (dealt, in %) and what theirs took off us (taken, real HP). They narrow the
+    opponent's item / nature / spread in infer.py."""
+    import msgparse as _mp
+    out = []
+    for d in dmg:
+        try:
+            if d.get('before') is None or d.get('after') is None or not d.get('target_mon'):
+                continue
+            common = {'move': d['move'], 'atk_boost': d.get('atk_boost', 0), 'def_boost': d.get('def_boost', 0),
+                      'crit': bool(d.get('crit')), 'weather': d.get('weather'), 'terrain': d.get('terrain'),
+                      'src': 'screen'}
+            if d.get('hits'):
+                common['hits'] = d['hits']
+            if d['side'] == 'me':
+                me = _mp.canon('me', BASE_OF.get(norm(d['mon']), norm(d['mon'])))
+                opp = _mp.canon('opp', BASE_OF.get(norm(d['target_mon']), norm(d['target_mon'])), opp_team)
+                out.append((opp, dict(common, kind='dealt', by=me, my_mega=bool(d.get('att_mega')),
+                                      opp_mega=bool(d.get('def_mega')), before=d['before'], after=d['after'])))
+            else:
+                if d['after'] <= 0:
+                    continue        # a KO only says "at least this much"
+                me = _mp.canon('me', BASE_OF.get(norm(d['target_mon']), norm(d['target_mon'])))
+                opp = _mp.canon('opp', BASE_OF.get(norm(d['mon']), norm(d['mon'])), opp_team)
+                out.append((opp, dict(common, kind='taken', to=me, my_mega=bool(d.get('def_mega')),
+                                      opp_mega=bool(d.get('att_mega')), burned=bool(d.get('burned')),
+                                      damage=d['before'] - d['after'])))
+        except Exception:
+            continue
+    return out
+
+
+def add_damage_obs(dmg, opp_team=()):
+    obs = damage_obs(dmg, opp_team)
+    if not obs:
+        return
+    rec = _learn.cur()
+    for sp, o in obs:
+        rv = rec['opp_revealed'].setdefault(sp, {'moves': [], 'item': None, 'ability': None, 'mega': False,
+                                                 'faster_than': [], 'slower_than': []})
+        rv.setdefault('obs', []).append(o)
+    _learn._save(_learn.CURRENT, rec)
 
 
 def remember_sprites(six):

@@ -28,6 +28,11 @@ PCBL のライブスキャンは選出画面を拾えないため、OBS が受�
   - 行動選択画面: 右下の「たたかう」「ポケモン」ボタン
   交代画面の上に出る「あめ状態」「トリックルーム状態」などは、メッセージで拾い損ねた天気・フィールドの補正に使う。
 
+メッセージの記録（MsgWatch）: 画面下のメッセージ欄と、左下（自分: 実数HP）・右上（相手: %）のHP欄だけを
+0.25秒ごとに読み、すべてのメッセージを出た順に1回ずつ記録する（messages.jsonl。1つのメッセージは1.3〜2.6秒しか出ない）。
+メッセージとその時のHPを並べて、技ごとのダメージ（連続技の回数・急所込み）を持ち物・天気・状態異常・特性による
+増減と分けて切り出し（battle_messages.jsonl の damage）、相手の型（持ち物・性格・能力）の推定に使う。--no-msg で無効。
+
 行動選択画面（start / command）では、画面の文字（場のポケモン・HP）と記録から battle.py auto --screen で
 すぐに次の行動を計算し、このウィンドウに大きく表示して decision.json に書く（約5秒。--no-decide で無効）。
 対戦中の Claude は  python wait_event.py  をバックグラウンドで実行して待ち、イベント（判断つき）を受け取る。
@@ -406,6 +411,148 @@ class FastWatch:
                 self.wake.set()
 
 
+# where things are on the 16:9 battle screen (fractions of width / height; from 1920x1080 captures)
+MSG_BOX = (0.13, 0.72, 0.87, 0.87)        # the battle message box (bottom centre)
+OPP_PANEL = (0.70, 0.0, 1.0, 0.19)        # opponent's name + HP %  (top right)
+MY_PANEL = (0.0, 0.82, 0.30, 1.0)         # our name + HP cur/max   (bottom left)
+
+
+def _crop(img, box):
+    W, H = img.size
+    return img.crop((int(box[0] * W), int(box[1] * H), int(box[2] * W), int(box[3] * H)))
+
+
+def _sig(img, w=48, h=12):
+    import numpy as np
+    return np.asarray(img.convert('L').resize((w, h)), dtype=np.int16)
+
+
+def _changed(a, b, th=10.0):
+    return a is None or b is None or float(abs(a - b).mean()) > th
+
+
+def panel_present(img, side):
+    """The HP panel is up: the opponent's has a pink name bar, ours a violet one."""
+    import numpy as np
+    f = np.asarray(img.convert('RGB').resize((60, 20)), dtype=np.int16)
+    r, g, b = f[..., 0], f[..., 1], f[..., 2]
+    if side == 'opp':
+        m = (r > 160) & (r - g > 90) & (b > 70) & (b < 150)
+    else:
+        m = (b > 140) & (b - r > 50) & (b - g > 70) & (r > 50)
+    return m.mean() > 0.04
+
+
+class MsgWatch:
+    """Reads only the message box and the two HP panels, 4 times a second, so that every battle message is
+    recorded once and in order (each stays up only ~1.3-2.6 s) together with the HP shown at that moment.
+    A move's damage is then known exactly (msgparse.damage_events): multi-hit counts, criticals, and what
+    items / weather / status / abilities took or gave back are kept apart from it.
+
+    take() returns the new entries since the last call: {'t', 'msg'} or {'t', 'side', 'hp', 'max'?}."""
+    EVERY = 0.25
+
+    def __init__(self, make_source, ocr_factory, log_path=None):
+        import threading
+        self.make_source, self.ocr_factory, self.log_path = make_source, ocr_factory, log_path
+        self.lock = threading.Lock()
+        self.new, self.alive, self.errors = [], False, 0
+        self.last_msg, self.gap, self.last_entry = None, True, None
+        self._sig = {'msg': None, 'opp': None, 'me': None}
+        self._hp = {'opp': None, 'me': None}
+        self._shown = {}
+        threading.Thread(target=self._run, daemon=True).start()
+
+    def take(self):
+        with self.lock:
+            out, self.new = self.new, []
+        return out
+
+    def _emit(self, e):
+        with self.lock:
+            self.new.append(e)
+        if self.log_path:
+            try:
+                with open(self.log_path, 'a', encoding='utf-8') as f:
+                    f.write(json.dumps(e, ensure_ascii=False) + '\n')
+            except Exception:
+                pass
+
+    def add_msg(self, text, now):
+        """One OCR read of the message box. Messages appear over several reads (and the text may still be typing
+        out): a read that continues / nearly equals the previous one updates it instead of adding a message."""
+        import difflib, re
+        import msgparse as _mp
+        t = _mp.norm(' '.join(text.split()))
+        if len(re.findall(r'[ぁ-んァ-ヶ一-龥]', t)) < 3:
+            self.gap = True        # box empty (or only noise): the next text is a new message even if the same
+            return
+        last = self.last_msg
+        if last and not self.gap and (t == last or t.startswith(last) or last.startswith(t) or
+                                      difflib.SequenceMatcher(None, t, last).ratio() >= 0.75):
+            if len(t) > len(last) and self.last_entry is not None:
+                self.last_entry['msg'] = ' '.join(text.split())
+                self.last_msg = t
+                self._emit({'t': now, 'msg_update': self.last_entry['msg']})
+            return
+        e = {'t': now, 'msg': ' '.join(text.split())}
+        self.last_msg, self.gap, self.last_entry = t, False, e
+        self._emit(e)
+
+    def add_panel(self, side, text, now):
+        import re
+        t = text.replace(' ', '').replace('／', '/').replace('％', '%')
+        if side == 'opp':
+            m = re.search(r'(\d{1,3})%', t)
+            v = int(m.group(1)) if m and int(m.group(1)) <= 100 else None
+            e = {'t': now, 'side': 'opp', 'hp': v} if v is not None else None
+        else:
+            m = re.search(r'(\d{1,3})/(\d{2,3})', t)
+            v = (int(m.group(1)), int(m.group(2))) if m and int(m.group(1)) <= int(m.group(2)) else None
+            e = {'t': now, 'side': 'me', 'hp': v[0], 'max': v[1]} if v else None
+        if e and self._hp[side] != e['hp']:
+            self._hp[side] = e['hp']
+            self._emit(e)
+
+    def step(self, img, ocr, now):
+        msg = _crop(img, MSG_BOX)
+        sg = _sig(msg)
+        if _changed(sg, self._sig['msg'], 4.0):
+            self._sig['msg'] = sg
+            big = msg.resize((msg.width * 2, msg.height * 2)) if msg.width < 900 else msg
+            self.add_msg(ocr.read(big), now)
+        for side, box in (('opp', OPP_PANEL), ('me', MY_PANEL)):
+            pc = _crop(img, box)
+            if not panel_present(pc, side):
+                if self._shown.get(side):
+                    self._shown[side] = False
+                    self._emit({'t': now, 'side': side, 'gone': True})   # (a reading just before may be mid-drain)
+                continue
+            self._shown[side] = True
+            sg = _sig(pc)
+            if _changed(sg, self._sig[side], 3.0):
+                self._sig[side] = sg
+                self.add_panel(side, ocr.read(pc.resize((pc.width * 2, pc.height * 2))), now)
+
+    def _run(self):
+        src = ocr = None
+        while True:
+            t0 = time.time()
+            try:
+                src = src or self.make_source()
+                ocr = ocr or self.ocr_factory()
+                img = src.grab(1280, 720) if isinstance(src, OBSSource) else src.grab()
+                self.step(img, ocr, time.time())
+                self.alive, self.errors = True, 0
+            except Exception:
+                src = None
+                self.errors += 1
+                if self.errors >= 5:
+                    self.alive = False
+                time.sleep(1.0)
+            time.sleep(max(0.0, self.EVERY - (time.time() - t0)))
+
+
 FIELD_KEYS = ('boosts', 'status', 'cured', 'weather', 'weather_end', 'terrain', 'terrain_end', 'hazards', 'items', 'mega',
               'sub', 'sub_end', 'trick_room', 'trick_room_end', 'abilities')
 
@@ -491,6 +638,38 @@ class Speculator:
                 self.start(key, nxt)
 
 
+def damage_context(dmg, tracker, turn):
+    """Add what the damage depended on (from the field state before the turn): stat stages of attacker and
+    target, weather / terrain, burn, mega. Used to infer the opponent's set (infer.py: dealt / taken)."""
+    try:
+        from calc import MOVE
+        import msgparse as _mp
+    except Exception:
+        return dmg
+    s = tracker.s
+    megas = {(m['side'], _mp.BASE.get(m['mon'], m['mon'])) for m in turn.get('mega', [])}
+    out = []
+    for d in dmg:
+        try:
+            cat = MOVE.get(d['move'], {}).get('cat')
+            a_st, d_st = ('atk', 'def') if cat == 'physical' else ('spa', 'spd')
+            def mon(side, name):
+                if not name:
+                    return {}
+                n = _mp.canon(side, _mp.BASE.get(name, name), tracker.opp_team() if side == 'opp' else ())
+                return s['mons'][side].get(n) or {}
+            am, dm = mon(d['side'], d['mon']), mon(d['target'], d.get('target_mon'))
+            base = lambda n: _mp.BASE.get(n, n)
+            d = dict(d, atk_boost=(am.get('boosts') or {}).get(a_st, 0), def_boost=(dm.get('boosts') or {}).get(d_st, 0),
+                     weather=s.get('weather'), terrain=s.get('terrain'), burned=am.get('status') == 'brn',
+                     att_mega=bool(am.get('mega')) or (d['side'], base(d['mon'])) in megas,
+                     def_mega=bool(dm.get('mega')) or (d['target'], base(d.get('target_mon') or '')) in megas)
+        except Exception:
+            pass
+        out.append(d)
+    return out
+
+
 def publish(seq, line, out, seconds, update=False):
     rec = {'seq': seq, 'decision': line, 'full': out, 'seconds': round(seconds, 1), 'time': time.time(),
            'update': update, 'precomputed': '先読み済み' in (out or '')}
@@ -539,6 +718,7 @@ def main():
     ap.add_argument('--decide-sec', type=float, default=5.0, help='行動選択画面で自動判断する探索秒数')
     ap.add_argument('--no-decide', action='store_true', help='行動選択画面での自動判断をしない')
     ap.add_argument('--no-fast', action='store_true', help='ボタンの色による行動選択画面の高速検出をしない')
+    ap.add_argument('--no-msg', action='store_true', help='メッセージ欄とHP欄だけを0.25秒ごとに読む監視をしない')
     a = ap.parse_args()
     try:
         sys.stdout.reconfigure(encoding='utf-8')
@@ -560,6 +740,8 @@ def main():
     det = Detector()
     spec = Speculator(a.decide_sec)
     fast = FastWatch(make_source) if not a.no_fast else None
+    msgw = MsgWatch(make_source, WinOCR, os.path.join(OUT, 'messages.jsonl')) if not a.no_msg else None
+    timeline = []              # this turn's messages and HP panel readings from msgw, in order
     import msgparse
     field_p = os.path.join(OUT, 'field_state.json')
     tracker = msgparse.FieldTracker(field_p)
@@ -605,10 +787,20 @@ def main():
         lines = [l.strip() for l in text.splitlines() if l.strip() and not l.strip().endswith('状態')]
         new = [l for l in lines if l not in last_lines]
         last_lines = set(lines)
-        if new and not det.in_preview:
+        if not det.in_preview:
             turn_lines.extend(new)
+        mnew = [e for e in (msgw.take() if msgw else []) if 'msg_update' not in e]
+        if not det.in_preview:
+            timeline.extend(mnew)
+        msg_ok = bool(msgw and msgw.alive)
+
+        def turn_msgs():
+            # every message once, in order, from the message-box watcher; the whole-screen text if it is not running
+            return [e['msg'] for e in timeline if 'msg' in e] if msg_ok else turn_lines
+
+        if (new or mnew) and not det.in_preview:
             if preview_seq:
-                cur_turn = msgparse.parse_turn(turn_lines)
+                cur_turn = msgparse.parse_turn(turn_msgs(), dedupe=not msg_ok)
                 for f in cur_turn['faint']:
                     if f['side'] == 'me' and f['mon'] not in replace_done and not pending_replace:
                         pending_replace = (time.time(), f['mon'])
@@ -624,7 +816,7 @@ def main():
         event = det.update(phase, now)
         if event is None and fast and fast.onset and det.command_armed and not det.in_preview and preview_seq:
             event, det.command_armed = 'command', False      # the button watcher is sure enough on its own
-        if event == 'command' and not turn_lines and now - last_command_t < 60:
+        if event == 'command' and not turn_msgs() and not turn_lines and now - last_command_t < 60:
             event = None       # back on the same input screen after looking at the log / party: not a new turn
         if fast and fast.forced:
             # the party screen came up by itself (not from the 「ポケモン」 button): a mon must be sent in
@@ -659,7 +851,7 @@ def main():
                     rec.begin(preview_seq)
         if start_wait is not None and not det.in_preview:
             # first decision of the battle: as soon as the opponent's lead is out (or the first command screen)
-            opp_out = any(sw.get('side') == 'opp' for sw in msgparse.parse_turn(turn_lines).get('switch', []))
+            opp_out = any(sw.get('side') == 'opp' for sw in msgparse.parse_turn(turn_msgs(), dedupe=not msg_ok).get('switch', []))
             if event == 'command' or opp_out or now - start_wait > det.START_TIMEOUT:
                 skip_command_until = 0.0 if event == 'command' else now + det.SKIP_WINDOW
                 event = 'start'
@@ -681,14 +873,18 @@ def main():
                 if phase != 'replace':
                     pivot_done, pending_pivot, pending_replace = set(), None, None    # a new turn: our pivot move may be used again
                 # what happened since the previous decision: moves, stat changes, weather, items, ...
-                turn = msgparse.parse_turn(turn_lines)
+                turn = msgparse.parse_turn(turn_msgs(), dedupe=not msg_ok)
+                if msg_ok:
+                    ev['damage'] = damage_context(msgparse.damage_events(timeline, None, tracker.s.get('active')),
+                                                  tracker, turn)
                 tracker.apply(turn)
                 ev['turn_events'] = {k: v for k, v in turn.items() if v}
                 ev['field_state'] = field_p
                 with open(log_p, 'a', encoding='utf-8') as f:
-                    f.write(json.dumps({'seq': seq, 'time': ts, 'lines': turn_lines, 'parsed': ev['turn_events']},
+                    f.write(json.dumps({'seq': seq, 'time': ts, 'lines': turn_msgs(), 'parsed': ev['turn_events'],
+                                        'damage': ev.get('damage'), 'timeline': timeline if msg_ok else None},
                                        ensure_ascii=False) + '\n')
-                turn_lines = []
+                turn_lines, timeline = [], []
             if phase == 'preview':
                 preview_seq, preview_n, preview_last_t, preview_last_text = seq, 0, now, text
                 if rec:
@@ -699,7 +895,7 @@ def main():
                 spec.reset()
                 pending_replace, replace_done = None, set()
                 tracker.save()
-                turn_lines = []
+                turn_lines, timeline = [], []
                 # pictures seen in earlier battles: slots matching the memory are named at once
                 try:
                     import sprites as _sp

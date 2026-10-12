@@ -9,6 +9,7 @@
   {"kind": "taken", "to": "ガブリアス", "move": "じしん", "damage": 96, "atk_boost": 0, "def_boost": 0,
    "crit": false, "burned": false, "opp_mega": false, "my_mega": false}
       相手の攻撃で自分が damage（実数）受けた（実数が分からなければ "pct" で%）
+  dealt / taken とも "hits": 連続技の当たった回数（「N回 当たった！」）を付けられる
   {"kind": "order", "first": "opp", "me": "ガブリアス", "my_move": "じしん", "opp_move": "りゅうのまい",
    "my_spe_boost": 0, "opp_spe_boost": 0, "my_para": false, "opp_para": false, "opp_mega": false, "my_mega": false}
       同じ優先度の技でどちらが先に動いたか
@@ -59,7 +60,15 @@ def _spd(mon, boost=0, para=False):
     return s
 
 
+SCREEN_FLOOR = 0.02   # damage read off the screen: an OCR misread lowers the true set, never rules it out
+
+
 def likelihood(c, o):
+    v = _likelihood(c, o)
+    return max(v, SCREEN_FLOOR) if o.get('src') == 'screen' and o.get('kind') in ('dealt', 'taken') else v
+
+
+def _likelihood(c, o):
     k = o.get('kind')
     try:
         if k == 'dealt':
@@ -68,7 +77,7 @@ def likelihood(c, o):
             before, after = o.get('before', 100), o.get('after')
             rolls = calc(att, dfn, o['move'], atk_boost=o.get('atk_boost', 0), def_boost=o.get('def_boost', 0),
                          crit=o.get('crit', False), weather=o.get('weather'), terrain=o.get('terrain'),
-                         def_full_hp=before >= 100)
+                         def_full_hp=before >= 100, hits=o.get('hits'))
             hp = dfn.stat['hp']
             pct = [r / hp * 100 for r in rolls]
             if after is None:
@@ -91,7 +100,7 @@ def likelihood(c, o):
                 att = Mon(att.species, att.nature, att.spv, att.ability, att.item, att.moves + [o['move']], label=att.label)
             rolls = calc(att, dfn, o['move'], atk_boost=o.get('atk_boost', 0), def_boost=o.get('def_boost', 0),
                          crit=o.get('crit', False), burned=o.get('burned', False), intimidated=o.get('intimidated', False),
-                         weather=o.get('weather'), terrain=o.get('terrain'))
+                         weather=o.get('weather'), terrain=o.get('terrain'), hits=o.get('hits'))
             if 'damage' in o:
                 n = sum(1 for r in rolls if abs(r - o['damage']) <= 1)
             else:

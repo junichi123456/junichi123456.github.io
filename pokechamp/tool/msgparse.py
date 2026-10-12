@@ -116,14 +116,16 @@ ITEM_MSG = [('きあいのタスキ', True, ('きあいのタスキで',)), ('�
             ('グラスシード', True, ('グラスシードで',)), ('ミストシード', True, ('ミストシードで',))]
 
 
-def parse_turn(lines):
+def parse_turn(lines, dedupe=True):
+    """dedupe=False when the lines come from the message-box watcher (each message once, in order): the same
+    message twice (「効果は いまひとつだ」 for two moves) then means it happened twice."""
     ev = {'moves': [], 'boosts': [], 'weather': None, 'weather_end': False, 'terrain': None, 'terrain_end': False,
           'items': [], 'status': [], 'cured': [], 'hazards': [], 'faint': [], 'switch': [], 'mega': [], 'crit': 0,
           'super_effective': 0, 'abilities': [], 'trick_room': False, 'trick_room_end': False, 'sub': [], 'sub_end': []}
     seen = set()
     for raw in lines:
         s = norm(raw)
-        if not s or s in seen:
+        if not s or (dedupe and s in seen):
             continue
         seen.add(s)
         side = side_of(s)
@@ -185,11 +187,97 @@ def parse_turn(lines):
                 ev['abilities'].append({'side': side, 'mon': name, 'ability': ab})
         if '急所に当たった' in s or 'きゅうしょにあたった' in s:
             ev['crit'] += 1
+        h = HIT_RE.search(s)
+        if h and ev['moves']:
+            ev['moves'][-1]['hits'] = int(h.group(1))
         if has(s, ('効果はバツグン', 'こうかはばつぐん')):
             ev['super_effective'] += 1
     first = ev['moves'][0]['side'] if ev['moves'] else None
     ev['first'] = first
     return ev
+
+
+HIT_RE = re.compile(r'(\d+)回(当たった|あたった)')
+# messages that belong to the move just used (the HP shown after them is still that move's result)
+FOLLOW = ('効果はバツグン', 'こうかはばつぐん', '効果はいまひとつ', 'こうかはいまひとつ', '急所に当たった', 'きゅうしょにあたった')
+MISS = ('外れた', 'はずれた', '当たらなかった', 'あたらなかった', '効果がないよう', 'こうかがないよう', '防いだ', 'ふせいだ',
+        '守った', 'まもった', 'うまく決まらなかった', 'うまくきまらなかった', '身代わりが', 'みがわりが')
+
+
+def damage_events(timeline, hp0=None, active0=None):
+    """How much each move took off its target, from the message box and the HP panels read together.
+
+    timeline: in order, {'msg': text} for each message shown, and {'side': 'me'|'opp', 'hp': value} for each HP
+    panel reading (ours = real HP, theirs = %). hp0: {'me': hp, 'opp': pct} on the command screen before the turn.
+    A move's damage = the target's HP before the move message → the last reading before the next message that is
+    not about that same hit (「効果は バツグンだ」「急所に当たった」「N回 当たった」 are). Readings are trusted only
+    when the panel was seen after anything else could have changed that HP (items, weather, recoil ...).
+    active0: {'me': name, 'opp': name} out at the start of the turn (followed through switches / moves).
+    Returns [{'side': attacker, 'mon', 'move', 'target': side, 'target_mon', 'before', 'after', 'hits', 'crit'}]."""
+    active = dict(active0 or {})
+    cur = dict(hp0 or {})
+    fresh = {k: True for k in cur}           # the value is the panel's latest, nothing changed it unseen
+    last_t = {}
+    out, pend = [], None
+
+    def close():
+        nonlocal pend
+        if pend and pend.get('seen') and not pend.get('miss') and pend['before'] is not None:
+            tg = pend['target']
+            pend['after'] = cur.get(tg)
+            if pend['after'] is not None and pend['after'] <= pend['before']:
+                out.append({k: pend[k] for k in ('side', 'mon', 'move', 'target', 'target_mon', 'before', 'after',
+                                                 'hits', 'crit')})
+        pend = None
+
+    for e in timeline:
+        if 'msg' not in e:
+            if e.get('gone'):
+                # the panel went away: the HP shown last is final only if it had stopped moving
+                if pend and e['side'] == pend['target'] and e.get('t', 0) - last_t.get(e['side'], -9) < 0.6:
+                    pend['seen'] = False
+                continue
+            cur[e['side']], fresh[e['side']] = e['hp'], True
+            last_t[e['side']] = e.get('t', 0)
+            if pend and e['side'] == pend['target']:
+                pend['seen'] = True
+            continue
+        s = norm(e['msg'])
+        if not s:
+            continue
+        if pend and (any(k in s for k in FOLLOW) or HIT_RE.search(s)):
+            if '急所' in s or 'きゅうしょ' in s:
+                pend['crit'] = True
+            h = HIT_RE.search(s)
+            if h:
+                pend['hits'] = int(h.group(1))
+            continue
+        if pend and any(k in s for k in MISS):
+            pend['miss'] = True
+            continue
+        if pend and has(s, ('倒れた', 'たおれた')) and side_of(s) == pend['target']:
+            cur[pend['target']], pend['seen'] = 0, True     # the panel turns grey at 0: the faint message says it
+        close()
+        name, mv = find_name(s), find_move(s)
+        if name and mv and s.find(name) < s.find(mv) and MOVE.get(mv, {}).get('cat') != 'status':
+            side = side_of(s)
+            tg = 'me' if side == 'opp' else 'opp'
+            active[side] = name
+            pend = {'side': side, 'mon': name, 'move': mv, 'target': tg, 'target_mon': active.get(tg),
+                    'hits': None, 'crit': False,
+                    'before': cur.get(tg) if fresh.get(tg) else None, 'seen': False}
+        else:
+            pt = parse_turn([e['msg']])
+            for sw in pt['switch']:
+                active[sw['side']] = sw['mon']
+                fresh[sw['side']] = False        # a new mon: its HP is not known until its panel is read
+            if pt['switch'] or pt['mega'] or pt['boosts'] or pt['weather'] or pt['terrain'] or pt['trick_room'] or \
+                    has(s, ('反応した', 'はんのうした', '戻れ', 'もどれ', '戻っていく', 'もどっていく')):
+                continue             # these do not change anyone's HP
+            for k in fresh:          # anything else (items, weather, recoil, switching ...) may have changed HP
+                fresh[k] = False
+    close()
+    return out
 
 
 def _my_bases():
