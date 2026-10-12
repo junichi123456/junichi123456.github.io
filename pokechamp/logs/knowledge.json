@@ -1,8 +1,8 @@
 {
- "n_battles": 1,
+ "n_battles": 2,
  "wins": 0,
  "species": {
-  "ラグラージ": {
+  "ルカリオ": {
    "seen": 1,
    "picked": 0,
    "led": 0,
@@ -15,7 +15,7 @@
    "abilities": {},
    "inferred": {}
   },
-  "ルカリオ": {
+  "ボスゴドラ": {
    "seen": 1,
    "picked": 0,
    "led": 0,
@@ -71,7 +71,85 @@
    "abilities": {},
    "inferred": {}
   },
-  "ボスゴドラ": {
+  "ラグラージ": {
+   "seen": 1,
+   "picked": 0,
+   "led": 0,
+   "w_seen": 0,
+   "w_picked": 0,
+   "mega": 0,
+   "scarf_evidence": 0,
+   "moves": {},
+   "items": {},
+   "abilities": {},
+   "inferred": {}
+  },
+  "ランクルス": {
+   "seen": 1,
+   "picked": 1,
+   "led": 0,
+   "w_seen": 0,
+   "w_picked": 0,
+   "mega": 0,
+   "scarf_evidence": 0,
+   "moves": {},
+   "items": {},
+   "abilities": {},
+   "inferred": {}
+  },
+  "クチート": {
+   "seen": 1,
+   "picked": 1,
+   "led": 1,
+   "w_seen": 0,
+   "w_picked": 0,
+   "mega": 0,
+   "scarf_evidence": 0,
+   "moves": {},
+   "items": {},
+   "abilities": {},
+   "inferred": {}
+  },
+  "バクーダ": {
+   "seen": 1,
+   "picked": 0,
+   "led": 0,
+   "w_seen": 0,
+   "w_picked": 0,
+   "mega": 0,
+   "scarf_evidence": 0,
+   "moves": {},
+   "items": {},
+   "abilities": {},
+   "inferred": {}
+  },
+  "ウォッシュロトム": {
+   "seen": 1,
+   "picked": 0,
+   "led": 0,
+   "w_seen": 0,
+   "w_picked": 0,
+   "mega": 0,
+   "scarf_evidence": 0,
+   "moves": {},
+   "items": {},
+   "abilities": {},
+   "inferred": {}
+  },
+  "ゴリランダー": {
+   "seen": 1,
+   "picked": 0,
+   "led": 0,
+   "w_seen": 0,
+   "w_picked": 0,
+   "mega": 0,
+   "scarf_evidence": 0,
+   "moves": {},
+   "items": {},
+   "abilities": {},
+   "inferred": {}
+  },
+  "サザンドラ": {
    "seen": 1,
    "picked": 0,
    "led": 0,
@@ -89,6 +167,10 @@
   "メタグロス → アシレーヌ → ヒートロトム": [
    1,
    0
+  ],
+  "ルカリオ → ガブリアス → ヒートロトム": [
+   1,
+   0
   ]
  },
  "my_mon": {
@@ -101,6 +183,14 @@
    0
   ],
   "ヒートロトム": [
+   2,
+   0
+  ],
+  "ルカリオ": [
+   1,
+   0
+  ],
+  "ガブリアス": [
    1,
    0
   ]
@@ -115,6 +205,30 @@
    0
   ],
   "ヒートロトム|ニョロトノ": [
+   1,
+   0
+  ],
+  "ルカリオ|クチート": [
+   1,
+   0
+  ],
+  "ルカリオ|ランクルス": [
+   1,
+   0
+  ],
+  "ガブリアス|クチート": [
+   1,
+   0
+  ],
+  "ガブリアス|ランクルス": [
+   1,
+   0
+  ],
+  "ヒートロトム|クチート": [
+   1,
+   0
+  ],
+  "ヒートロトム|ランクルス": [
    1,
    0
   ]
