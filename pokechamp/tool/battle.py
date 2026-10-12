@@ -4,6 +4,7 @@
   python3 battle.py turn state.json [秒数]   次の行動を出す（既定5秒。木＋ロールアウトで8ターン先まで）
   python3 battle.py auto --hp <自分> <相手>   game_watch.py の記録から state を自動で組み立てて次の行動を出す
                                             （HPは画面の表示どおり「142/185」か「%」。--me/--opp で場のポケモンを指定、
+                                              --screen で直近の行動選択画面の文字から場のポケモンとHPを読む、
                                               --sec で探索秒数。ターンの出来事の記録 learn.py turn も同時に行う）
   python3 battle.py infer <相手> [obs.json]  相手の型の事後確率（上位5）
 
@@ -1382,7 +1383,45 @@ def _hp_arg(v, maxhp):
     return round(maxhp * pct / 100), pct
 
 
-def auto_state(hp_me=None, hp_opp=None, me_name=None, opp_name=None):
+def screen_read(text, opp_team=()):
+    """What the command screen shows as text (OCR): our active and its HP 「157/157」 at the bottom left, their
+    active and HP 「100%」 at the top right. Returns (me, hp_me, opp, hp_opp), None where not readable."""
+    import re as _re, msgparse as _mp
+    my_bases = [BASE_OF.get(m.species, m.species) for m in TEAM]
+    maxhp = {b: mine(b)[0].stat['hp'] for b in my_bases}
+    opp_bases = {BASE_OF.get(norm(x), norm(x)) for x in opp_team}
+
+    def as_mine(n):
+        b = BASE_OF.get(n, n)
+        return b if b in my_bases else next((x for x in my_bases if x.endswith(b)), None)   # 「ロトム」 = ヒートロトム
+    found = []
+    for line in text.splitlines():
+        n = _mp.find_name(_mp.norm(line))
+        if n:
+            found.append(n)
+    me = opp = None
+    for n in found:            # the opponent's panel is at the top, ours at the bottom: reading order
+        b = BASE_OF.get(n, n)
+        if opp is None and (b in opp_bases or not as_mine(n)) and (not opp_bases or b in opp_bases or not as_mine(n)):
+            opp = b
+        elif me is None and as_mine(n):
+            me = as_mine(n)
+    t = _mp.norm(text)
+    hp_me = hp_opp = None
+    for a, d in _re.findall(r'(\d{1,3})[/／](\d{2,3})', t):
+        if int(d) in maxhp.values() and int(a) <= int(d):
+            hp_me = f'{a}/{d}'
+            if me is None or maxhp.get(me) != int(d):
+                cand = [b for b, h in maxhp.items() if h == int(d)]
+                if len(cand) == 1:
+                    me = cand[0]
+    m = _re.search(r'(\d{1,3})[%％]', t)
+    if m and int(m.group(1)) <= 100:
+        hp_opp = int(m.group(1))
+    return me, hp_me, opp, hp_opp
+
+
+def auto_state(hp_me=None, hp_opp=None, me_name=None, opp_name=None, from_screen=False):
     """state.json built from what game_watch.py already tracks (logs/live/field_state.json: who is out, fainted,
     boosts, status, items, moves seen, weather, hazards, mega) and the battle record (our order), plus the two HP
     values read from the screen. HP of the mons on the bench is remembered from earlier turns
@@ -1402,6 +1441,21 @@ def auto_state(hp_me=None, hp_opp=None, me_name=None, opp_name=None):
         prev = {}
     hpm, hpo = prev.get('hp_me', {}), prev.get('hp_opp', {})
     b = lambda n: BASE_OF.get(norm(n), norm(n)) if n else None
+    if from_screen:      # the latest command screen's text: who is out and both HPs, without anyone reading the image
+        try:
+            evs = [json.loads(l) for l in open(os.path.join(live, 'game_events.jsonl'), encoding='utf-8') if l.strip()]
+            ev = next((e for e in reversed(evs) if e.get('phase') in ('command', 'start')), None)
+            if ev:
+                sm, shm, so, sho = screen_read(ev.get('text', ''), rec.get('opp_team') or [])
+                me_name, opp_name = me_name or sm, opp_name or so
+                hp_me = hp_me if hp_me is not None else shm
+                hp_opp = hp_opp if hp_opp is not None else sho
+                if ev.get('phase') == 'start':
+                    for sw in (ev.get('turn_events') or {}).get('switch', []):
+                        if sw['side'] == 'me' and not me_name: me_name = sw['mon']
+                        if sw['side'] == 'opp' and not opp_name: opp_name = sw['mon']
+        except Exception:
+            pass
     order = [b(x) for x in (rec.get('my_order') or [])]
     act_me = b(me_name) or b(fs['active'].get('me')) or (order[0] if order else None)
     act_opp = b(opp_name) or b(fs['active'].get('opp'))
@@ -1483,7 +1537,7 @@ def main():
         a = sys.argv[2:]
         opt = lambda k, n=1: a[a.index(k) + 1:a.index(k) + 1 + n] if k in a else None
         hp = opt('--hp', 2) or [None, None]
-        js = auto_state(hp[0], hp[1], (opt('--me') or [None])[0], (opt('--opp') or [None])[0])
+        js = auto_state(hp[0], hp[1], (opt('--me') or [None])[0], (opt('--opp') or [None])[0], '--screen' in a)
         sec = float((opt('--sec') or [DEFAULT_SEC])[0])
         decide_js(js, sec, '-v' in a)
     elif len(sys.argv) >= 3 and sys.argv[1] == 'types':

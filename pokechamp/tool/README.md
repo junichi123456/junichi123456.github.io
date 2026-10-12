@@ -73,7 +73,7 @@ python pcbl_watch.py            # Edge / Chrome を自動で使う。--headed �
 
 ## 自動進行（game_watch.py / wait_event.py）
 
-対戦の観測はこれだけで行います（PCBLは使いません）。OBS が受け取っているゲーム映像を直接見て「選出画面」「自分の行動選択画面」を検出します。
+対戦の観測はこれだけで行います（PCBLは使いません）。行動選択画面が出ると、画面の文字（場の2体・自分のHP「157/157」・相手のHP「100%」）と記録から `battle.py auto --screen` で次の行動を約5秒で計算し、game_watch.py のウィンドウに大きく表示します（`decision.json` にも保存。`--no-decide` で無効）。OBS が受け取っているゲーム映像を直接見て「選出画面」「自分の行動選択画面」を検出します。
 
 ```
 pip install obsws-python winsdk pillow pygetwindow

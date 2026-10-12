@@ -2,7 +2,8 @@
 
 対戦中の Claude はこれをバックグラウンド実行し、終了通知で起こされる（ユーザーのチャット不要）。
   python wait_event.py [--after <seq>] [--timeout 900]
-出力: 検出イベントの JSON 1行（phase, seq, image, text, missed）。タイムアウト時は {"phase": "timeout"}。
+出力: 検出イベントの JSON 1行（phase, seq, image, text, missed。行動選択画面では decision = game_watch.py が
+計算した次の行動）。タイムアウト時は {"phase": "timeout"}。
 前回渡したイベントの seq を logs/live/wait_last.json に覚えておき、Claude が判断している間に次の画面が
 来ていた場合もすぐに（最新の1件を）返す。missed はその間に飛ばしたイベント数。
 """
@@ -33,6 +34,21 @@ def delivered():
         return json.load(open(LAST, encoding='utf-8')).get('seq')
     except Exception:
         return None
+
+
+def wait_decision(seq, timeout=15.0):
+    """game_watch.py computes the move for each command screen (decision.json); wait for it a little."""
+    t_end = time.time() + timeout
+    p = os.path.join(OUT, 'decision.json')
+    while time.time() < t_end:
+        try:
+            d = json.load(open(p, encoding='utf-8'))
+            if d.get('seq') == seq:
+                return d
+        except Exception:
+            pass
+        time.sleep(0.2)
+    return None
 
 
 def main():
@@ -71,6 +87,8 @@ def main():
                 safeio.write_json(LAST, {'seq': ev['seq']})
             except Exception:
                 pass
+            if ev.get('phase') in ('command', 'start'):
+                ev['decision'] = wait_decision(ev['seq'])
             print(json.dumps(ev, ensure_ascii=False))
             return 0
         time.sleep(0.3)

@@ -19,8 +19,9 @@ PCBL のライブスキャンは選出画面を拾えないため、OBS が受�
   frames/NNNN/KKKKK_時分秒.jpg  対戦開始（選出画面の終わり）から次の選出画面まで0.5秒ごとの画面
                      （NNNN は選出画面のイベント番号。直近3対戦分だけ残す。--record-every で間隔を変更）
 
-対戦中の Claude は  python wait_event.py  をバックグラウンドで実行して待ち、終了通知を受けたら
-イベントの画像を読んで判断する。ユーザーがチャットを送る必要はない。
+行動選択画面（start / command）では、画面の文字（場のポケモン・HP）と記録から battle.py auto --screen で
+すぐに次の行動を計算し、このウィンドウに大きく表示して decision.json に書く（約5秒。--no-decide で無効）。
+対戦中の Claude は  python wait_event.py  をバックグラウンドで実行して待ち、イベント（判断つき）を受け取る。
 """
 import argparse, base64, io, json, os, sys, time
 
@@ -227,6 +228,32 @@ class WinOCR:
         return self.asyncio.run(run())
 
 
+def decide_async(seq, sec):
+    """The move for this command screen, computed right away from the screen text (who is out, both HPs) and the
+    tracked field: battle.py auto --screen. Printed here in big letters and written to decision.json, so the answer is
+    there about 5 seconds after the screen appears, before anyone reads the image."""
+    import subprocess, threading
+
+    def run():
+        t0 = time.time()
+        try:
+            r = subprocess.run([sys.executable, os.path.join(HERE, 'battle.py'), 'auto', '--screen', '--sec', str(sec)],
+                               capture_output=True, text=True, encoding='utf-8', timeout=sec + 25)
+            out = (r.stdout or '').strip() or (r.stderr or '').strip()[-300:]
+        except Exception as e:
+            out = f'判断に失敗: {e}'
+        line = next((l for l in out.splitlines() if l.startswith('次:')), out.splitlines()[0] if out else '')
+        try:
+            safeio.write_json(os.path.join(OUT, 'decision.json'),
+                              {'seq': seq, 'decision': line, 'full': out, 'seconds': round(time.time() - t0, 1),
+                               'time': time.time()})
+        except Exception:
+            pass
+        bar = '=' * 44
+        print(f'\n{bar}\n  #{seq} {line}   （{time.time() - t0:.1f}秒）\n{bar}\n', flush=True)
+    threading.Thread(target=run, daemon=True).start()
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--host', default='localhost')
@@ -237,6 +264,8 @@ def main():
     ap.add_argument('--interval', type=float, default=0.7)
     ap.add_argument('--record-every', type=float, default=0.5,
                     help='対戦開始から次の選出画面まで、この秒数ごとに画面を保存（0で保存しない）')
+    ap.add_argument('--decide-sec', type=float, default=5.0, help='行動選択画面で自動判断する探索秒数')
+    ap.add_argument('--no-decide', action='store_true', help='行動選択画面での自動判断をしない')
     a = ap.parse_args()
     try:
         sys.stdout.reconfigure(encoding='utf-8')
@@ -347,6 +376,8 @@ def main():
             with open(ev_p, 'a', encoding='utf-8') as f:
                 f.write(json.dumps(ev, ensure_ascii=False) + '\n')
             print(ts, '検出:', phase, f'#{seq}')
+            if phase in ('command', 'start') and not a.no_decide:
+                decide_async(seq, a.decide_sec)
         safeio.write_json(state_p, {'phase': phase, 'seq': seq, 'time': time.time(), 'text': text})
         time.sleep(max(0.0, a.interval - (time.time() - t0)))
 
