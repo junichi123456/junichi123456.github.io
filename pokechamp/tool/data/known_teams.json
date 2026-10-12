@@ -5542,6 +5542,70 @@
      "weight": 1
     }
    ],
+   "notes": null,
+   "rating": {
+    "rank": 83,
+    "final": 2431,
+    "peak": null
+   },
+   "study": {
+    "depth": 4,
+    "games": 600,
+    "seconds": 2836,
+    "hardest": [
+     "リザードン",
+     "ミミッキュ",
+     "イダイトウ"
+    ],
+    "hardest_rate_top10": 0.5,
+    "hardest_rate_all": 0.5,
+    "best_vs_hardest": [
+     "ガブリアス",
+     "ヒートロトム",
+     "メタグロス"
+    ],
+    "best_won_vs_hardest": true,
+    "best_avg": 1.0,
+    "alternatives": [
+     {
+      "order": [
+       "ヒートロトム",
+       "ガブリアス",
+       "ミミッキュ"
+      ],
+      "won_vs_hardest": true,
+      "avg": 0.9
+     },
+     {
+      "order": [
+       "ガブリアス",
+       "ミミッキュ",
+       "メタグロス"
+      ],
+      "won_vs_hardest": true,
+      "avg": 0.9
+     },
+     {
+      "order": [
+       "ミミッキュ",
+       "ガブリアス",
+       "アシレーヌ"
+      ],
+      "won_vs_hardest": true,
+      "avg": 0.8
+     },
+     {
+      "order": [
+       "メタグロス",
+       "ガブリアス",
+       "ヒートロトム"
+      ],
+      "won_vs_hardest": true,
+      "avg": 0.8
+     }
+    ],
+    "date": "2026-10-13 06:58"
+   },
    "counter": {
     "order": [
      "ガブリアス",
