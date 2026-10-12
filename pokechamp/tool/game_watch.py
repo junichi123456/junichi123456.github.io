@@ -903,7 +903,7 @@ def screen_hp(img):
     return tuple(out)
 
 
-def decide_async(seq, sec, phase='command', party=None, bar=None):
+def decide_async(seq, sec, phase='command', party=None, bar=None, names=None, update=False):
     """The move for this command screen, computed right away from the screen text (who is out, both HPs) and the
     tracked field: battle.py auto --screen. Printed here in big letters and written to decision.json, so the answer is
     there about 5 seconds after the screen appears, before anyone reads the image."""
@@ -915,15 +915,57 @@ def decide_async(seq, sec, phase='command', party=None, bar=None):
             args = ['auto', '--sec', str(sec)] + (['--screen'] if phase not in ('replace', 'pivot') else []) + \
                 (['--switch'] if phase == 'pivot' else []) + \
                 (['--party', ','.join(f'{n}={hp or ""}' for n, hp in party)] if party else []) + \
-                (['--panel'] + ['-' if v is None else str(v) for v in bar] if bar and any(v is not None for v in bar) else [])
+                (['--panel'] + ['-' if v is None else str(v) for v in bar] if bar and any(v is not None for v in bar) else []) + \
+                (['--me', names[0]] if names and names[0] else []) + (['--opp', names[1]] if names and names[1] else [])
             r = subprocess.run([sys.executable, os.path.join(HERE, 'battle.py')] + args,
                                capture_output=True, text=True, encoding='utf-8', timeout=sec + 25)
             out = (r.stdout or '').strip() or (r.stderr or '').strip()[-300:]
         except Exception as e:
             out = f'判断に失敗: {e}'
         line = next((l for l in out.splitlines() if l.startswith('次:')), out.splitlines()[0] if out else '')
-        publish(seq, line, out, time.time() - t0)
+        publish(seq, line, out, time.time() - t0, update=update)
     threading.Thread(target=run, daemon=True).start()
+
+
+def start_lead_plans(state):
+    """Once our pick is recorded (battle.py select wrote my_order), compute turn 1 for each possible opposing lead
+    in the background (battle.py leadplan) while the preview / intro runs."""
+    import subprocess
+    p = os.path.join(OUT, '..', 'current.json')
+    try:
+        mt = os.path.getmtime(p)
+        if mt == state.get('mtime'):
+            return
+        state['mtime'] = mt
+        rec = json.load(open(p, encoding='utf-8'))
+    except Exception:
+        return
+    key = (rec.get('id'), tuple(rec.get('my_order') or ()), tuple(rec.get('opp_team') or ()))
+    if not key[1] or not key[2] or key == state.get('key'):
+        return
+    state['key'] = key
+    try:
+        if state.get('proc') and state['proc'].poll() is None:
+            state['proc'].kill()
+        state['proc'] = subprocess.Popen([sys.executable, os.path.join(HERE, 'battle.py'), 'leadplan', '--sec', '5'],
+                                         stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        print(time.strftime('%Y-%m-%dT%H:%M:%S'), '選出を確認: 相手の先発ごとに1ターン目を先読み中', flush=True)
+    except Exception:
+        pass
+
+
+def lead_plan_for(opp):
+    """The turn-1 move computed during the preview for this opposing lead, or None."""
+    try:
+        import msgparse as _mp
+        d = json.load(open(os.path.join(OUT, 'lead_plans.json'), encoding='utf-8'))
+        rec = json.load(open(os.path.join(OUT, '..', 'current.json'), encoding='utf-8'))
+        if d.get('battle') != rec.get('id'):
+            return None
+        b = _mp.BASE.get(opp, opp)
+        return d['plans'].get(b) or next((v for k, v in d['plans'].items() if k.endswith(b) or b.endswith(k)), None)
+    except Exception:
+        return None
 
 
 def main():
@@ -972,6 +1014,7 @@ def main():
     pending_pivot, pivot_done, replace_mode = None, set(), 'faint'
     pending_replace, replace_done = None, set()
     start_wait = None          # time the preview ended, until the 'start' event is sent
+    plan_state = {}            # turn-1 moves computed per opposing lead during the preview (battle.py leadplan)
     skip_command_until = 0.0   # the turn-1 command screen was already handled by 'start'
     preview_seq, preview_n, preview_last_t, preview_last_text = 0, 0, 0.0, None
     log_p = os.path.join(OUT, 'battle_messages.jsonl')
@@ -1034,6 +1077,8 @@ def main():
                         pivot_done.add(mv['mon'])
         now = time.time()
         hp_now = screen_hp(img) if preview_seq and not det.in_preview else (None, None)
+        if preview_seq and not a.no_decide and (start_wait is not None or det.in_preview):
+            start_lead_plans(plan_state)
         if not det.in_preview and preview_seq and not a.no_decide and phase != 'command':
             spec.feed(text, hp_now)            # HP panels during the animation: compute the next move ahead of time
         event = det.update(phase, now)
@@ -1074,9 +1119,10 @@ def main():
                     rec.begin(preview_seq)
         if start_wait is not None and not det.in_preview:
             # first decision of the battle: as soon as the opponent's lead is out (or the first command screen)
-            opp_out = any(sw.get('side') == 'opp' for sw in msgparse.parse_turn(turn_msgs(), dedupe=not msg_ok).get('switch', []))
-            if event == 'command' or opp_out or now - start_wait > det.START_TIMEOUT:
-                skip_command_until = 0.0 if event == 'command' else now + det.SKIP_WINDOW
+            # (only on the first command screen: before it the opponent's lead may not be known yet — the intro
+            #  can take a minute while the opponent is still picking; the move itself was computed during the preview)
+            if event == 'command':
+                skip_command_until = 0.0
                 event = 'start'
                 start_wait = None
         elif event == 'command' and now < skip_command_until:
@@ -1117,6 +1163,8 @@ def main():
                 start_wait, skip_command_until = None, 0.0
                 ev['preview_frames'] = os.path.join(OUT, f'game_{seq:04d}_preview_*.png')
                 tracker = msgparse.FieldTracker(field_p)  # new battle
+                if msgw and hasattr(msgw, '_icon'):
+                    msgw._icon, msgw._iname, msgw._ipend, msgw._itry = {}, {}, {}, {}     # panels of the last battle
                 spec.reset()
                 pending_replace, replace_done = None, set()
                 tracker.save()
@@ -1153,13 +1201,22 @@ def main():
             print(ts, '検出:', phase, f'#{seq}')
             if phase in ('command', 'start', 'replace') and not a.no_decide:
                 pre = spec.answer(text, ev.get('turn_events') or {}, hp_now) if phase == 'command' else None
+                pn = getattr(msgw, '_iname', None) or {}
+                names = (pn.get('me'), pn.get('opp')) if pn and phase != 'replace' else None
+                plan = None
+                if phase == 'start':
+                    opp_lead = next((sw['mon'] for sw in (ev.get('turn_events') or {}).get('switch', [])
+                                     if sw.get('side') == 'opp'), None) or (names[1] if names else None)
+                    plan = lead_plan_for(opp_lead) if opp_lead else None
+                    if plan and plan.get('line'):
+                        publish(seq, plan['line'], plan['full'] + '\n（選出画面で先読み済み）', 0.0)
                 if pre:
                     publish(seq, pre[0], pre[1] + f'\n（演出中に先読み済み・{pre[2]:.0f}秒読み）', 0.0)
                     spec.shown(text, seq, pre[0], hp_now)
                 else:
                     decide_async(seq, a.decide_sec, 'pivot' if phase == 'replace' and replace_mode == 'pivot' else phase,
                                  party_read(text) if phase == 'replace' else None,
-                                 hp_now if phase != 'replace' else None)
+                                 hp_now if phase != 'replace' else None, names, update=bool(plan))
                 ev['replace_mode'] = replace_mode if phase == 'replace' else None
         safeio.write_json(state_p, {'phase': phase, 'seq': seq, 'time': time.time(), 'text': text})
         if fast:

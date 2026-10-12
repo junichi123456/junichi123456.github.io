@@ -1616,6 +1616,40 @@ def add_damage_obs(dmg, opp_team=()):
     _learn._save(_learn.CURRENT, rec)
 
 
+def lead_plans(sec=6.0):
+    """Turn 1 is decided while the team preview / intro is still running: our lead is fixed once we pick, so the
+    move is computed for each of the opponent's six as their lead (most likely leads first) and written to
+    logs/live/lead_plans.json as soon as each is ready. game_watch shows the matching one the moment the first
+    command screen appears, then the full search refines it."""
+    import io, contextlib
+    rec = _learn._load(_learn.CURRENT, None) or {}
+    order = [BASE_OF.get(norm(x), norm(x)) for x in (rec.get('my_order') or [])]
+    opp6 = [BASE_OF.get(norm(x), norm(x)) for x in (rec.get('opp_team') or [])]
+    if not order or not opp6:
+        print('選出がまだ記録されていません')
+        return
+    out_p = os.path.join(_learn.LOGS, 'live', 'lead_plans.json')
+    res = {'battle': rec.get('id'), 'lead': order[0], 'order': order, 'plans': {}}
+    import safeio as _sio
+    _sio.write_json(out_p, res, indent=1)
+    for o in sorted(opp6, key=lambda b: -lead_rate(b)):
+        js = {'me': [{'name': n} for n in order], 'opp': [{'name': o, 'hp_pct': 100}], 'active_me': 0,
+              'active_opp': 0, 'opp_team': opp6}
+        f = io.StringIO()
+        t0 = time.time()
+        try:
+            with contextlib.redirect_stdout(f):
+                decide_js(js, sec)
+        except Exception as e:
+            print(f'{o}: 失敗 {e}')
+            continue
+        txt = f.getvalue().strip()
+        line = next((l for l in txt.splitlines() if l.startswith('次:')), '')
+        res['plans'][o] = {'line': line, 'full': txt, 'sec': round(time.time() - t0, 1)}
+        _sio.write_json(out_p, res, indent=1)
+        print(f'相手の先発 {o}: {line}', flush=True)
+
+
 def remember_sprites(six):
     """The opponent's six are confirmed (given in slot order, top to bottom): store their pictures from the latest
     team preview so the next time they can be named at once (sprites.py). Slots whose picture already matches a
@@ -1674,6 +1708,11 @@ def main():
             print('次: （場のポケモンが分からないので判断できません）')
             sys.exit(0)
         decide_js(js, sec, '-v' in a, switch='--switch' in a)
+    elif len(sys.argv) >= 2 and sys.argv[1] == 'leadplan':
+        # 選出確定後の待ち時間に、相手の先発候補ごとの1ターン目の行動を計算しておく（game_watch が自動で起動）
+        a = sys.argv[2:]
+        sec = float(a[a.index('--sec') + 1]) if '--sec' in a else 6.0
+        lead_plans(sec)
     elif len(sys.argv) >= 3 and sys.argv[1] == 'types':
         # 選出画面のタイプアイコンから相手候補を絞る: python battle.py types ほのお かくとう
         from calc import JT
