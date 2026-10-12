@@ -91,6 +91,11 @@ TERRAIN_START = [('grassy', ('草がいっぱいに生えた', 'くさがいっ�
                  ('misty', ('霧が立ち込めた', 'きりがたちこめた', 'ミストフィールド'))]
 TERRAIN_END = ('草が消え去った', '電気が消え去った', '不思議な感じが消え去った', '霧が消え去った', 'もとにもどった足元',
                'フィールドが消え去った')
+# the status line at the top of the party / info screens: 「あめ状態」「エレキフィールド状態」 ...
+BAR_WEATHER = [('sun', ('はれ', 'にほんばれ', 'ひざしがつよい')), ('rain', ('あめ',)), ('sand', ('すなあらし',)),
+               ('snow', ('ゆき',))]
+BAR_TERRAIN = [('grassy', ('グラスフィールド',)), ('electric', ('エレキフィールド',)), ('psychic', ('サイコフィールド',)),
+               ('misty', ('ミストフィールド',))]
 STATUS = [('brn', ('やけどを負った', 'やけどをおった')), ('par', ('まひして', 'まひした')),
           ('tox', ('もうどくをあびた', '猛毒を浴びた')), ('psn', ('どくをあびた', '毒を浴びた')),
           ('slp', ('眠ってしまった', 'ねむってしまった')), ('frz', ('凍りついた', 'こおりついた'))]
@@ -316,6 +321,24 @@ class FieldTracker:
         s['history'].append({k: v for k, v in ev.items() if v})
         s['history'] = s['history'][-20:]
         self.save()
+
+    def observe_bar(self, text):
+        """The field-status line shown on the party / info screens (「あめ状態」「トリックルーム状態」 ...).
+        Only adds what the messages missed; returns what was added."""
+        t = text.replace(' ', '')
+        s, added = self.s, []
+        for key, names in BAR_WEATHER:
+            if any(n + '状態' in t for n in names) and s['weather'] != key:
+                s['weather'], s['weather_turns'] = key, 5
+                added.append(key)
+        for key, names in BAR_TERRAIN:
+            if any(n + '状態' in t for n in names) and s['terrain'] != key:
+                s['terrain'], s['terrain_turns'] = key, 5
+                added.append(key)
+        if 'トリックルーム状態' in t and not s.get('trick_room'):
+            s['trick_room'] = 4
+            added.append('trick_room')
+        return added
 
     def save(self):
         safeio.write_json(self.path, self.s, indent=1)

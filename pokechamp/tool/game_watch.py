@@ -21,6 +21,13 @@ PCBL のライブスキャンは選出画面を拾えないため、OBS が受�
   frames/NNNN/KKKKK_時分秒.jpg  対戦開始（選出画面の終わり）から次の選出画面まで0.5秒ごとの画面
                      （NNNN は選出画面のイベント番号。直近3対戦分だけ残す。--record-every で間隔を変更）
 
+画面の判定（scene）: 文字を読まずに、色だけで0.15秒ごとに判定する。
+  - 選出画面: 左上の自分の名前欄（紫）と右上の相手の名前欄（ピンク）が高い位置にある
+  - 交代画面: 2つの名前欄が少し低い位置にある。「ポケモン」ボタンから開いたとき（直前に行動選択画面）は見ているだけ。
+    それ以外（ひんし・ボルトチェンジ等の後に自然に出た）ときだけ replace を出す
+  - 行動選択画面: 右下の「たたかう」「ポケモン」ボタン
+  交代画面の上に出る「あめ状態」「トリックルーム状態」などは、メッセージで拾い損ねた天気・フィールドの補正に使う。
+
 行動選択画面（start / command）では、画面の文字（場のポケモン・HP）と記録から battle.py auto --screen で
 すぐに次の行動を計算し、このウィンドウに大きく表示して decision.json に書く（約5秒。--no-decide で無効）。
 対戦中の Claude は  python wait_event.py  をバックグラウンドで実行して待ち、イベント（判断つき）を受け取る。
@@ -311,16 +318,52 @@ def button_score(img):
     return (btn[A].mean() + btn[B].mean()) / 2
 
 
-class FastWatch:
-    """Looks at a small screenshot several times a second for the move-selection screen (button colours only), so
-    the input screen is known within ~0.3 s instead of waiting for the next full OCR pass."""
-    EVERY, ON, OFF = 0.15, 0.6, 0.5
+def scene(img):
+    """Which screen is up, from the player-name boxes only (no OCR). Our name is a violet pill at the top left,
+    the opponent's a pink pill at the top right:
+      - 'preview': both pills high (1080p: y~95-140; 「ランクバトル シングルバトル」 above them) = team preview
+      - 'party'  : both pills lower (1080p: y~165-210) = the list to choose who comes in (after a faint, U-turn type
+                   moves, or when browsing via 「ポケモン」)
+      - 'command': the 「たたかう」/「ポケモン」 buttons (button_score)
+      - None     : anything else (animation, messages, result screen)
+    Checked on three recorded battles: every preview / party / command frame and no other frame."""
+    import numpy as np
+    f = np.asarray(img.convert('RGB').resize((240, 135)), dtype=np.int16)
+    r, g, b = f[..., 0], f[..., 1], f[..., 2]
+    vio = ((b > 140) & (b - r > 50) & (b - g > 70) & (r > 50))[:, 24:58].mean(1)
+    pink = ((r > 160) & (r - g > 90) & (b > 70) & (b < 150))[:, 197:228].mean(1)
+    def band(row, lo, hi):        # a full band starting between rows lo..hi, with no band just above it
+        ys = [y for y in range(lo, hi + 1) if row[y] > 0.8]
+        return bool(ys) and row[max(0, ys[0] - 3)] <= 0.8
+    if band(pink, 11, 13) and band(vio, 11, 13):
+        return 'preview'
+    if band(pink, 20, 23) and band(vio, 20, 23):
+        return 'party'
+    if button_score(img) > FastWatch.ON:
+        return 'command'
+    return None
 
-    def __init__(self, make_source):
+
+class FastWatch:
+    """Looks at a small screenshot several times a second (colours only, no OCR), so the screens that need an answer
+    are known within ~0.3 s instead of waiting for the next full OCR pass:
+      - onset: the move-selection screen (buttons) is up
+      - forced: the party screen came up on its own (not opened from the move-selection screen), i.e. we must send a
+        mon in: after a faint or our U-turn type move. Browsing via 「ポケモン」 comes straight from the buttons."""
+    EVERY, ON, OFF = 0.15, 0.7, 0.5   # input screens score 0.77-0.87; the result screen reaches 0.61
+    BROWSE = 1.5      # party screen within this many seconds after the buttons = opened from the command screen
+    GAP = 4.0         # party screen gone this long = the episode is over
+
+    def __init__(self, make_source, thread=True):
         import threading
         self.make_source, self.onset, self.wake = make_source, None, threading.Event()
+        self.forced = None          # time a forced party screen appeared (cleared by the caller once handled)
+        self.scene = None
         self._hits = self._miss = 0
-        threading.Thread(target=self._run, daemon=True).start()
+        self._btn_t = self._party_t = -1e9
+        self._party_hits, self._episode_forced = 0, False
+        if thread:
+            threading.Thread(target=self._run, daemon=True).start()
 
     def _run(self):
         src = None
@@ -329,20 +372,38 @@ class FastWatch:
             try:
                 src = src or self.make_source()
                 img = src.grab(320, 180) if isinstance(src, OBSSource) else src.grab()
-                v = button_score(img)
             except Exception:
-                src, v = None, 0.0
+                src, img = None, None
                 time.sleep(1.0)
-            if v > self.ON:
-                self._hits, self._miss = self._hits + 1, 0
-                if self._hits >= 2 and self.onset is None:
-                    self.onset = time.time()
-                    self.wake.set()
-            elif v < self.OFF:
-                self._miss += 1
-                if self._miss >= 3:
-                    self._hits, self.onset = 0, None
+            self.step(img, time.time())
             time.sleep(max(0.0, self.EVERY - (time.time() - t0)))
+
+    def step(self, img, now):
+        try:
+            v = button_score(img) if img is not None else 0.0
+            sc = 'command' if v > self.ON else scene(img) if img is not None else None
+        except Exception:
+            v, sc = 0.0, None
+        self.scene = sc
+        if v > self.ON:
+            self._btn_t = now
+            self._hits, self._miss = self._hits + 1, 0
+            if self._hits >= 2 and self.onset is None:
+                self.onset = now
+                self.wake.set()
+        elif v < self.OFF:
+            self._miss += 1
+            if self._miss >= 3:
+                self._hits, self.onset = 0, None
+        if sc == 'party':
+            if now - self._party_t > self.GAP:          # a new party-screen episode
+                self._party_hits = 0
+                self._episode_forced = now - self._btn_t > self.BROWSE
+            self._party_t = now
+            self._party_hits += 1
+            if self._party_hits == 2 and self._episode_forced:
+                self.forced = now
+                self.wake.set()
 
 
 FIELD_KEYS = ('boosts', 'status', 'cured', 'weather', 'weather_end', 'terrain', 'terrain_end', 'hazards', 'items', 'mega',
@@ -525,7 +586,15 @@ def main():
             bscore = button_score(img)
         except Exception:
             bscore = 1.0
-        party = is_party(text, bscore)
+        try:
+            sc = scene(img)
+        except Exception:
+            sc = None
+        if sc == 'preview' and phase != 'preview':
+            phase = 'preview'          # the name boxes are at the team-preview position even if the OCR missed the text
+        party = sc == 'party' or is_party(text, bscore)
+        if party and preview_seq and not det.in_preview and tracker.observe_bar(text):
+            tracker.save()             # 「あめ状態」 etc. on the party screen: weather / terrain the messages missed
         if phase == 'command' and party:
             phase = 'party'            # the switch-in list also shows move names: it is not the move-selection screen
         if fast and fast.onset and phase == 'other' and not det.in_preview and preview_seq:
@@ -533,7 +602,7 @@ def main():
         img.save(os.path.join(OUT, 'game.tmp.png'))
         safeio.replace(os.path.join(OUT, 'game.tmp.png'), os.path.join(OUT, 'game.png'))
         # collect battle messages shown between screens (new lines only, in order of appearance)
-        lines = [l.strip() for l in text.splitlines() if l.strip()]
+        lines = [l.strip() for l in text.splitlines() if l.strip() and not l.strip().endswith('状態')]
         new = [l for l in lines if l not in last_lines]
         last_lines = set(lines)
         if new and not det.in_preview:
@@ -557,11 +626,19 @@ def main():
             event, det.command_armed = 'command', False      # the button watcher is sure enough on its own
         if event == 'command' and not turn_lines and now - last_command_t < 60:
             event = None       # back on the same input screen after looking at the log / party: not a new turn
-        if pending_pivot and event is None and party and not det.in_preview:
+        if fast and fast.forced:
+            # the party screen came up by itself (not from the 「ポケモン」 button): a mon must be sent in
+            if event is None and not det.in_preview and preview_seq:
+                event, replace_mode = 'replace', 'pivot' if pending_pivot else 'faint'
+                if pending_replace:
+                    replace_done.add(pending_replace[1])
+                pending_pivot, pending_replace = None, None
+            fast.forced = None
+        if pending_pivot and event is None and party and not det.in_preview and not fast:
             event, pending_pivot, replace_mode = 'replace', None, 'pivot'    # choose who comes in after our U-turn
         if pending_pivot and now - pending_pivot > 30:
             pending_pivot = None       # the move failed / missed: no party screen came
-        if pending_replace and event is None and phase != 'command' and not det.in_preview and \
+        if pending_replace and event is None and phase != 'command' and not det.in_preview and not fast and \
                 (party or any(k in text.replace(' ', '') for k in REPLACE_KEYS) or now - pending_replace[0] > 2.5):
             replace_mode = 'faint'
             # our mon fainted: the screen to send the next one (no command screen comes before it)
@@ -602,7 +679,7 @@ def main():
             if phase in ('command', 'start', 'replace'):
                 last_command_t = now
                 if phase != 'replace':
-                    pivot_done, pending_pivot = set(), None    # a new turn: our pivot move may be used again
+                    pivot_done, pending_pivot, pending_replace = set(), None, None    # a new turn: our pivot move may be used again
                 # what happened since the previous decision: moves, stat changes, weather, items, ...
                 turn = msgparse.parse_turn(turn_lines)
                 tracker.apply(turn)
