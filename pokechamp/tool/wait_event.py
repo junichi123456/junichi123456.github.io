@@ -87,7 +87,7 @@ def main():
                 safeio.write_json(LAST, {'seq': ev['seq']})
             except Exception:
                 pass
-            if ev.get('phase') in ('command', 'start'):
+            if ev.get('phase') in ('command', 'start', 'replace'):
                 ev['decision'] = wait_decision(ev['seq'])
             print(json.dumps(ev, ensure_ascii=False))
             return 0

@@ -160,6 +160,30 @@ def parse_turn(lines):
     return ev
 
 
+def _my_bases():
+    try:
+        from team import TEAM
+        return [BASE.get(m.species, m.species) for m in TEAM]
+    except Exception:
+        return []
+
+
+MY_BASES = _my_bases()
+
+
+def canon(side, name, opp_team=()):
+    """The game shows some forms by the species name only (our ヒートロトム appears as 「ロトム」): map a name to the
+    member of that side's team it means."""
+    if not name:
+        return name
+    name = BASE.get(name, name)
+    team = MY_BASES if side == 'me' else [BASE.get(x, x) for x in opp_team]
+    if not team or name in team:
+        return name
+    hit = [b for b in team if b.endswith(name) or name.endswith(b)]
+    return hit[0] if len(hit) == 1 else name
+
+
 class FieldTracker:
     """Keeps the running field state across turns."""
 
@@ -169,9 +193,16 @@ class FieldTracker:
                   'rocks_me': False, 'rocks_opp': False, 'active': {'me': None, 'opp': None},
                   'mons': {'me': {}, 'opp': {}}, 'mega_used': {'me': False, 'opp': False}, 'history': []}
 
+    def opp_team(self):
+        try:
+            rec = json.load(open(os.path.join(os.path.dirname(self.path), '..', 'current.json'), encoding='utf-8'))
+            return rec.get('opp_team') or []
+        except Exception:
+            return []
+
     def mon(self, side, name):
         mega = name in BASE
-        name = BASE.get(name, name)
+        name = canon(side, name, self.opp_team() if side == 'opp' else ())
         m = self.s['mons'][side].setdefault(name, {'boosts': {}, 'item_consumed': None, 'items_seen': [],
                                                    'status': None, 'fainted': False, 'moves_seen': [],
                                                    'mega': False, 'ability': None})
@@ -210,11 +241,11 @@ class FieldTracker:
                 om = self.mon(sw['side'], old)
                 om['boosts'] = {}
                 om.update(sub=0, last_move=None, rampage=False, toxn=0)
-            s['active'][sw['side']] = BASE.get(sw['mon'], sw['mon'])
+            s['active'][sw['side']] = canon(sw['side'], sw['mon'], self.opp_team() if sw['side'] == 'opp' else ())
             self.mon(sw['side'], sw['mon'])
         for m in ev['moves']:
             if not s['active'][m['side']]:
-                s['active'][m['side']] = BASE.get(m['mon'], m['mon'])
+                s['active'][m['side']] = canon(m['side'], m['mon'], self.opp_team() if m['side'] == 'opp' else ())
             mm = self.mon(m['side'], m['mon'])
             if m['move'] not in mm['moves_seen']:
                 mm['moves_seen'].append(m['move'])

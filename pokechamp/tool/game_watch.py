@@ -14,7 +14,8 @@ PCBL のライブスキャンは選出画面を拾えないため、OBS が受�
   game_events.jsonl  イベントごとに1行（seq つき）:
                      preview  選出画面が出た（image = 最初の1枚。選出はこの1枚で判断する）
                      start    選出画面が終わり対戦が始まった（相手の先発が出た時点、遅くとも20秒後）→ 1ターン目の判断
-                     command  2ターン目以降の行動選択画面（ひんし後の交代画面を含む）
+                     command  2ターン目以降の行動選択画面
+                     replace  自分のポケモンがひんしになった後の、次に出すポケモンを選ぶ画面
   game_NNNN_preview_KKK.png  選出画面の間も撮り続けた画像（文字が変わるたび／2秒ごと、最大120枚）
   frames/NNNN/KKKKK_時分秒.jpg  対戦開始（選出画面の終わり）から次の選出画面まで0.5秒ごとの画面
                      （NNNN は選出画面のイベント番号。直近3対戦分だけ残す。--record-every で間隔を変更）
@@ -32,6 +33,7 @@ OUT = os.path.join(os.environ.get('POKECHAMP_LOGS', os.path.join(HERE, '..', 'lo
 
 # 選出画面にいる間ずっと見えている文字（カーソルを動かして中央が詳細表示に変わっても残るもの）
 PREVIEW_KEYS = ('選出してください', '匹選出', '戦うポケモンを', '選出完了', 'つよさの表示', '有利な相手', '不利な相手')
+REPLACE_KEYS = ('交代する', '繰り出す', '戦闘に出す', '次のポケモン', 'ポケモンを選', 'つよさの表示', 'ステータス')
 COMMAND_KEYS = ('たたかう', 'わざを選', '技を選', 'メガシンカ', 'ポケモン交代', 'にげる', 'こうさん')
 
 
@@ -298,7 +300,7 @@ def publish(seq, line, out, seconds):
     print(f'\n{bar}\n  #{seq} {line}   （{seconds:.1f}秒）\n{bar}\n', flush=True)
 
 
-def decide_async(seq, sec):
+def decide_async(seq, sec, phase='command'):
     """The move for this command screen, computed right away from the screen text (who is out, both HPs) and the
     tracked field: battle.py auto --screen. Printed here in big letters and written to decision.json, so the answer is
     there about 5 seconds after the screen appears, before anyone reads the image."""
@@ -307,7 +309,8 @@ def decide_async(seq, sec):
     def run():
         t0 = time.time()
         try:
-            r = subprocess.run([sys.executable, os.path.join(HERE, 'battle.py'), 'auto', '--screen', '--sec', str(sec)],
+            args = ['auto', '--sec', str(sec)] + (['--screen'] if phase != 'replace' else [])
+            r = subprocess.run([sys.executable, os.path.join(HERE, 'battle.py')] + args,
                                capture_output=True, text=True, encoding='utf-8', timeout=sec + 25)
             out = (r.stdout or '').strip() or (r.stderr or '').strip()[-300:]
         except Exception as e:
@@ -353,6 +356,7 @@ def main():
     field_p = os.path.join(OUT, 'field_state.json')
     tracker = msgparse.FieldTracker(field_p)
     turn_lines, last_lines = [], set()
+    pending_replace, replace_done = None, set()
     start_wait = None          # time the preview ended, until the 'start' event is sent
     skip_command_until = 0.0   # the turn-1 command screen was already handled by 'start'
     preview_seq, preview_n, preview_last_t, preview_last_text = 0, 0, 0.0, None
@@ -376,10 +380,20 @@ def main():
         last_lines = set(lines)
         if new and not det.in_preview:
             turn_lines.extend(new)
+            if preview_seq:
+                for f in msgparse.parse_turn(turn_lines)['faint']:
+                    if f['side'] == 'me' and f['mon'] not in replace_done and not pending_replace:
+                        pending_replace = (time.time(), f['mon'])
         now = time.time()
         if not det.in_preview and preview_seq and not a.no_decide and phase != 'command':
             spec.feed(text)            # HP panels during the animation: compute the next move ahead of time
         event = det.update(phase, now)
+        if pending_replace and event is None and phase != 'command' and not det.in_preview and \
+                (any(k in text.replace(' ', '') for k in REPLACE_KEYS) or now - pending_replace[0] > 2.5):
+            # our mon fainted: the screen to send the next one (no command screen comes before it)
+            event = 'replace'
+            replace_done.add(pending_replace[1])
+            pending_replace = None
         # keep recording the team preview (the pick uses only the first frame: the 'preview' event image)
         if det.in_preview and preview_seq and preview_n < det.PREVIEW_SHOTS_MAX and \
                 (text != preview_last_text or now - preview_last_t >= det.PREVIEW_SHOT_EVERY):
@@ -410,7 +424,7 @@ def main():
             snap = os.path.join(OUT, f'game_{seq:04d}_{phase}.png')
             img.save(snap)
             ev = {'seq': seq, 'phase': phase, 'time': ts, 'image': snap, 'text': text}
-            if phase in ('command', 'start'):
+            if phase in ('command', 'start', 'replace'):
                 # what happened since the previous decision: moves, stat changes, weather, items, ...
                 turn = msgparse.parse_turn(turn_lines)
                 tracker.apply(turn)
@@ -428,6 +442,7 @@ def main():
                 ev['preview_frames'] = os.path.join(OUT, f'game_{seq:04d}_preview_*.png')
                 tracker = msgparse.FieldTracker(field_p)  # new battle
                 spec.reset()
+                pending_replace, replace_done = None, set()
                 tracker.save()
                 turn_lines = []
                 # identify the opponent's six right away: type icons + reference sheet
@@ -443,12 +458,12 @@ def main():
             with open(ev_p, 'a', encoding='utf-8') as f:
                 f.write(json.dumps(ev, ensure_ascii=False) + '\n')
             print(ts, '検出:', phase, f'#{seq}')
-            if phase in ('command', 'start') and not a.no_decide:
+            if phase in ('command', 'start', 'replace') and not a.no_decide:
                 pre = spec.answer(text, ev.get('turn_events') or {}) if phase == 'command' else None
                 if pre:
                     publish(seq, pre[0], pre[1] + '\n（演出中に先読み済み）', 0.0)
                 else:
-                    decide_async(seq, a.decide_sec)
+                    decide_async(seq, a.decide_sec, phase)
         safeio.write_json(state_p, {'phase': phase, 'seq': seq, 'time': time.time(), 'text': text})
         time.sleep(max(0.0, a.interval - (time.time() - t0)))
 

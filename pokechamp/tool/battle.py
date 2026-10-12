@@ -1358,6 +1358,8 @@ def decide_js(js, sec=DEFAULT_SEC, verbose=False):
     est = _search.from_battle(st, js)
     if not est.sides[0].mons[est.sides[0].act].alive:
         opts = [j for j, m in enumerate(est.sides[0].mons) if m.alive]
+        if not opts:
+            print('次: （出せるポケモンがいない）'); return
         j = _search.chooser(est, 0, opts)
         print(f"次: {est.sides[0].mons[j].name}を出す"); return
     depth, res, nodes = _search.decide(est, sec)
@@ -1440,7 +1442,8 @@ def auto_state(hp_me=None, hp_opp=None, me_name=None, opp_name=None, from_screen
     if prev.get('battle') != rec.get('id'):
         prev = {}
     hpm, hpo = prev.get('hp_me', {}), prev.get('hp_opp', {})
-    b = lambda n: BASE_OF.get(norm(n), norm(n)) if n else None
+    import msgparse as _mp
+    b = lambda n, side='me': _mp.canon(side, BASE_OF.get(norm(n), norm(n)), rec.get('opp_team') or []) if n else None
     if from_screen:      # the latest command screen's text: who is out and both HPs, without anyone reading the image
         try:
             evs = [json.loads(l) for l in open(os.path.join(live, 'game_events.jsonl'), encoding='utf-8') if l.strip()]
@@ -1458,11 +1461,16 @@ def auto_state(hp_me=None, hp_opp=None, me_name=None, opp_name=None, from_screen
             pass
     order = [b(x) for x in (rec.get('my_order') or [])]
     act_me = b(me_name) or b(fs['active'].get('me')) or (order[0] if order else None)
-    act_opp = b(opp_name) or b(fs['active'].get('opp'))
-    for n in [act_me] + list(fs['mons']['me']):
-        if n and n not in order:
+    act_opp = b(opp_name, 'opp') or b(fs['active'].get('opp'), 'opp')
+    for n in [act_me] + [b(x) for x in fs['mons']['me']]:
+        if n and n not in order and n in MY:
             order.append(n)
-    opp_names = list(fs['mons']['opp'])
+    if act_me not in order:
+        act_me = order[0] if order else act_me
+    opp_names = []
+    for x in list(fs['mons']['opp']):
+        if b(x, 'opp') not in opp_names:
+            opp_names.append(b(x, 'opp'))
     if act_opp and act_opp not in opp_names:
         opp_names.append(act_opp)
     me = []
@@ -1471,7 +1479,7 @@ def auto_state(hp_me=None, hp_opp=None, me_name=None, opp_name=None, from_screen
         hp = hpm.get(n, maxhp)
         if n == act_me and hp_me is not None:
             hp = _hp_arg(hp_me, maxhp)[0]
-        if (fs['mons']['me'].get(n) or {}).get('fainted'):
+        if any((v or {}).get('fainted') for k, v in fs['mons']['me'].items() if b(k) == n):
             hp = 0
         hpm[n] = hp
         me.append({'name': n, 'hp': hp})
@@ -1480,7 +1488,7 @@ def auto_state(hp_me=None, hp_opp=None, me_name=None, opp_name=None, from_screen
         pct = hpo.get(n, 100)
         if n == act_opp and hp_opp is not None:
             pct = _hp_arg(hp_opp, 100)[1]
-        if (fs['mons']['opp'].get(n) or {}).get('fainted'):
+        if any((v or {}).get('fainted') for k, v in fs['mons']['opp'].items() if b(k, 'opp') == n):
             pct = 0
         hpo[n] = pct
         opp.append({'name': n, 'hp_pct': pct})
