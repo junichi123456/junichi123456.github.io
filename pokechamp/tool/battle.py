@@ -5,6 +5,7 @@
   python3 battle.py auto --hp <自分> <相手>   game_watch.py の記録から state を自動で組み立てて次の行動を出す
                                             （HPは画面の表示どおり「142/185」か「%」。--me/--opp で場のポケモンを指定、
                                               --screen で直近の行動選択画面の文字から場のポケモンとHPを読む、
+                                              --fainted ルカリオ,クチート で倒れたポケモンを指定（メッセージを読み損ねたとき）、
                                               --sec で探索秒数。ターンの出来事の記録 learn.py turn も同時に行う）
   python3 battle.py infer <相手> [obs.json]  相手の型の事後確率（上位5）
 
@@ -1423,7 +1424,7 @@ def screen_read(text, opp_team=()):
     return me, hp_me, opp, hp_opp
 
 
-def auto_state(hp_me=None, hp_opp=None, me_name=None, opp_name=None, from_screen=False):
+def auto_state(hp_me=None, hp_opp=None, me_name=None, opp_name=None, from_screen=False, fainted=()):
     """state.json built from what game_watch.py already tracks (logs/live/field_state.json: who is out, fainted,
     boosts, status, items, moves seen, weather, hazards, mega) and the battle record (our order), plus the two HP
     values read from the screen. HP of the mons on the bench is remembered from earlier turns
@@ -1479,7 +1480,7 @@ def auto_state(hp_me=None, hp_opp=None, me_name=None, opp_name=None, from_screen
         hp = hpm.get(n, maxhp)
         if n == act_me and hp_me is not None:
             hp = _hp_arg(hp_me, maxhp)[0]
-        if any((v or {}).get('fainted') for k, v in fs['mons']['me'].items() if b(k) == n):
+        if any((v or {}).get('fainted') for k, v in fs['mons']['me'].items() if b(k) == n) or n in fainted:
             hp = 0
         hpm[n] = hp
         me.append({'name': n, 'hp': hp})
@@ -1488,7 +1489,7 @@ def auto_state(hp_me=None, hp_opp=None, me_name=None, opp_name=None, from_screen
         pct = hpo.get(n, 100)
         if n == act_opp and hp_opp is not None:
             pct = _hp_arg(hp_opp, 100)[1]
-        if any((v or {}).get('fainted') for k, v in fs['mons']['opp'].items() if b(k, 'opp') == n):
+        if any((v or {}).get('fainted') for k, v in fs['mons']['opp'].items() if b(k, 'opp') == n) or n in fainted:
             pct = 0
         hpo[n] = pct
         opp.append({'name': n, 'hp_pct': pct})
@@ -1545,7 +1546,8 @@ def main():
         a = sys.argv[2:]
         opt = lambda k, n=1: a[a.index(k) + 1:a.index(k) + 1 + n] if k in a else None
         hp = opt('--hp', 2) or [None, None]
-        js = auto_state(hp[0], hp[1], (opt('--me') or [None])[0], (opt('--opp') or [None])[0], '--screen' in a)
+        dead = [BASE_OF.get(norm(x), norm(x)) for x in ((opt('--fainted') or [''])[0]).split(',') if x]
+        js = auto_state(hp[0], hp[1], (opt('--me') or [None])[0], (opt('--opp') or [None])[0], '--screen' in a, dead)
         sec = float((opt('--sec') or [DEFAULT_SEC])[0])
         decide_js(js, sec, '-v' in a)
     elif len(sys.argv) >= 3 and sys.argv[1] == 'types':

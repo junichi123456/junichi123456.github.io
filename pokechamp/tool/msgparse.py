@@ -34,16 +34,43 @@ def norm(s):
     return re.sub(r'[\s　、。・…]', '', s)
 
 
+_VOICED = str.maketrans('ガギグゲゴザジズゼゾダヂヅデドバビブベボパピプペポヴがぎぐげござじずぜぞだぢづでどばびぶべぼぱぴぷぺぽ',
+                        'カキクケコサシスセソタチツテトハヒフヘホハヒフヘホウかきくけこさしすせそたちつてとはひふへほはひふへほ')
+
+
+def devoice(s):
+    """OCR often drops 濁点/半濁点 (ゴリランダー → コリランター, メガシンカ → メカシンカ): compare without them."""
+    return s.translate(_VOICED)
+
+
+NAMES_DV = [(devoice(n), n) for n in NAMES]
+MOVES_DV = [(devoice(m), m) for m in MOVES]
+
+
 def find_name(s):
     for n in NAMES:
         if n in s:
             return n
+    d = devoice(s)
+    for dn, n in NAMES_DV:
+        if len(dn) >= 3 and dn in d:
+            return n
     return None
+
+
+def has(s, keys):
+    """Any of the phrases in s, also when the OCR dropped 濁点."""
+    d = devoice(s)
+    return any(k in s or devoice(k) in d for k in keys)
 
 
 def find_move(s):
     for m in MOVES:
         if m in s:
+            return m
+    d = devoice(s)
+    for dm, m in MOVES_DV:
+        if len(dm) >= 4 and dm in d:
             return m
     return None
 
@@ -138,13 +165,13 @@ def parse_turn(lines):
         if 'とがった岩' in s or 'とがったいわ' in s:
             if 'ただよい' in s:
                 ev['hazards'].append({'side': 'opp' if ('相手の周り' in s or 'あいてのまわり' in s) else 'me', 'hazard': 'rocks'})
-        if name and ('倒れた' in s or 'たおれた' in s):
+        if name and has(s, ('倒れた', 'たおれた')):
             ev['faint'].append({'side': side, 'mon': name})
-        if name and ('繰り出した' in s or 'くりだした' in s):
+        if name and has(s, ('繰り出した', 'くりだした')):
             ev['switch'].append({'side': 'opp', 'mon': name})
         elif name and (s.startswith('ゆけっ') or s.startswith('いけっ') or s.startswith('行け') or 'がんばれ' in s or 'たのんだ' in s):
             ev['switch'].append({'side': 'me', 'mon': name})
-        if 'メガシンカ' in s and name:
+        if has(s, ('メガシンカ',)) and name:
             ev['mega'].append({'side': side, 'mon': name})
             continue
         if name and len(s) <= len(name) + 14:
@@ -153,7 +180,7 @@ def parse_turn(lines):
                 ev['abilities'].append({'side': side, 'mon': name, 'ability': ab})
         if '急所に当たった' in s or 'きゅうしょにあたった' in s:
             ev['crit'] += 1
-        if '効果はバツグン' in s or 'こうかはばつぐん' in s:
+        if has(s, ('効果はバツグン', 'こうかはばつぐん')):
             ev['super_effective'] += 1
     first = ev['moves'][0]['side'] if ev['moves'] else None
     ev['first'] = first

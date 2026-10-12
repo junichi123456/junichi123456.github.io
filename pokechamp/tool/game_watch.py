@@ -32,7 +32,9 @@ import safeio  # noqa: E402
 OUT = os.path.join(os.environ.get('POKECHAMP_LOGS', os.path.join(HERE, '..', 'logs')), 'live')
 
 # 選出画面にいる間ずっと見えている文字（カーソルを動かして中央が詳細表示に変わっても残るもの）
-PREVIEW_KEYS = ('選出してください', '匹選出', '戦うポケモンを', '選出完了', 'つよさの表示', '有利な相手', '不利な相手')
+PREVIEW_KEYS = ('選出してください', '匹選出', '戦うポケモンを', '選出完了', '有利な相手', '不利な相手')
+# 対戦中のステータス確認画面（「つよさの表示」「特性」「持ち物」も出る）を選出画面と取り違えない
+IN_BATTLE_KEYS = ('COMMAND', '様子を見る', 'ログを見る', '能力補正', 'トリックルーム状態', 'フィールド状態')
 REPLACE_KEYS = ('交代する', '繰り出す', '戦闘に出す', '次のポケモン', 'ポケモンを選', 'つよさの表示', 'ステータス')
 COMMAND_KEYS = ('たたかう', 'わざを選', '技を選', 'メガシンカ', 'ポケモン交代', 'にげる', 'こうさん')
 
@@ -103,7 +105,7 @@ class Detector:
 
 def classify(text):
     t = text.replace(' ', '').replace('\n', '')
-    if any(k in t for k in PREVIEW_KEYS):
+    if any(k in t for k in PREVIEW_KEYS) and not any(k in t for k in IN_BATTLE_KEYS):
         return 'preview'
     hits = sum(1 for m in MY_MOVES if m in t)
     if hits >= 2 or any(k in t for k in COMMAND_KEYS):

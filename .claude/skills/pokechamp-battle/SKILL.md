@@ -36,6 +36,8 @@ description: ポケモンチャンピオンズ（シングル）の対戦中に�
      game_watch.py が画面の文字（場の2体の名前・自分のHP「157/157」・相手のHP「100%」）と記録（場の状態・控えのHP）から
      `battle.py auto --screen` で計算済み（画面が出てから約5秒）。ユーザーも game_watch.py のウィンドウで同じ答えを先に見られる。
      `decision` が null・失敗のときだけ、画像（`image`）から場の2体とHPを読んで `python battle.py auto --hp <自分> <相手%> --me <名前> --opp <名前>` を実行する。
+     `decision` が場と合わない（倒れたポケモンへの交代・場にいないポケモンの技・メガシンカ済みなのに再びメガシンカ）ときも画像を読み、
+     倒れたポケモンを `--fainted ルカリオ,クチート` で渡して同じコマンドを実行する。
      state.json は書かない・learn.py turn も呼ばない（auto がターンの記録も行う）。
    - 対戦中の画面は `pokechamp/logs/live/frames/<選出のイベント番号>/` に0.5秒ごとに保存されている。HPが読めないときだけ数枚見て補う。
      メッセージの読み取り結果は `pokechamp/logs/live/battle_messages.jsonl` に残る。抜き出しに失敗している言い回しは対戦の合間に `msgparse.py` を直す。
