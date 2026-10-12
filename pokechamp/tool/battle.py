@@ -1638,6 +1638,9 @@ def main():
         js = auto_state(hp[0], hp[1], (opt('--me') or [None])[0], (opt('--opp') or [None])[0], '--screen' in a, dead,
                         ((opt('--party') or [''])[0] or '').split(',') if '--party' in a else None)
         sec = float((opt('--sec') or [DEFAULT_SEC])[0])
+        if not js['me'] or not js['opp']:  # no battle going on (result screen, field_state of a finished battle)
+            print('次: （場のポケモンが分からないので判断できません）')
+            sys.exit(0)
         decide_js(js, sec, '-v' in a, switch='--switch' in a)
     elif len(sys.argv) >= 3 and sys.argv[1] == 'types':
         # 選出画面のタイプアイコンから相手候補を絞る: python battle.py types ほのお かくとう

@@ -75,8 +75,18 @@ def find_move(s):
     return None
 
 
+def side_marked(s):
+    """True when the line says whose it is: 「相手の」, its furigana 「あいて」, or 「手の」 near the start
+    (OCR often loses 相)."""
+    return '相手' in s or 'あいて' in s or '手の' in s[:6]
+
+
 def side_of(s):
-    return 'opp' if ('相手の' in s or 'あいての' in s) else 'me'
+    return 'opp' if side_marked(s) else 'me'
+
+
+# 「メガシンカした」 as the OCR reads it: メカシンカ / メガシノ力 / メガシフカ / メカシラカ ... (not the bare button label)
+MEGA_RE = re.compile(r'メ[カガ]シ.[カ力][しシ]')
 
 
 WEATHER_START = [('sun', ('日差しが強くなった', 'ひざしがつよくなった', '日差しがとても強くなった')),
@@ -123,6 +133,7 @@ def parse_turn(lines, dedupe=True):
           'items': [], 'status': [], 'cured': [], 'hazards': [], 'faint': [], 'switch': [], 'mega': [], 'crit': 0,
           'super_effective': 0, 'abilities': [], 'trick_room': False, 'trick_room_end': False, 'sub': [], 'sub_end': []}
     seen = set()
+    ctx = {'side': None, 'name': None}  # whose message the previous line was (a message often spans two lines)
     for raw in lines:
         s = norm(raw)
         if not s or (dedupe and s in seen):
@@ -130,6 +141,9 @@ def parse_turn(lines, dedupe=True):
         seen.add(s)
         side = side_of(s)
         name = find_name(s)
+        prev = dict(ctx)
+        if name or side_marked(s):
+            ctx = {'side': side if side_marked(s) or name else ctx['side'], 'name': name}
         if any(k in s for k in TR_END):
             ev['trick_room_end'] = True; continue
         if any(k in s for k in TR_START):
@@ -169,17 +183,24 @@ def parse_turn(lines, dedupe=True):
         for item, consumed, keys in ITEM_MSG:
             if any(k in s for k in keys):
                 ev['items'].append({'side': side, 'mon': name, 'item': item, 'consumed': consumed})
-        if 'とがった岩' in s or 'とがったいわ' in s:
-            if 'ただよい' in s:
-                ev['hazards'].append({'side': 'opp' if ('相手の周り' in s or 'あいてのまわり' in s) else 'me', 'hazard': 'rocks'})
+        if has(s, ('とがった岩', 'とがったいわ', 'った岩')):
+            # set (「…周りに とがった岩が ただよい始めた」) or hit on switch-in (「…に とがった岩が 食いこんだ」)
+            if has(s, ('ただよ', 'よい始め', '食い', 'くいこ', 'いこんだ', 'いんだ')):
+                hs = side if side_marked(s) else (prev['side'] or 'me')
+                if not any(x['side'] == hs for x in ev['hazards']):
+                    ev['hazards'].append({'side': hs, 'hazard': 'rocks'})
         if name and has(s, ('倒れた', 'たおれた')):
             ev['faint'].append({'side': side, 'mon': name})
         if name and has(s, ('繰り出した', 'くりだした')):
             ev['switch'].append({'side': 'opp', 'mon': name})
         elif name and (s.startswith('ゆけっ') or s.startswith('いけっ') or s.startswith('行け') or 'がんばれ' in s or 'たのんだ' in s):
             ev['switch'].append({'side': 'me', 'mon': name})
-        if has(s, ('メガシンカ',)) and name:
-            ev['mega'].append({'side': side, 'mon': name})
+        if MEGA_RE.search(devoice(s).replace('力', 'カ')) or MEGA_RE.search(s):
+            # 「(相手の) Xは メガXに メガシンカした！」; the first half may be on the line before
+            # (or the 「…ナイトと …リングが 反応した」 line); with no name the tracker uses the mon in play
+            mside = 'opp' if side_marked(s) or prev['side'] == 'opp' else ('me' if name or prev['name'] else None)
+            if not any(x['side'] == mside for x in ev['mega']):
+                ev['mega'].append({'side': mside, 'mon': name or prev['name']})
             continue
         if name and len(s) <= len(name) + 14:
             ab = next((a for a in ABILITIES if a in s[s.find(name) + len(name):]), None)
@@ -320,6 +341,20 @@ class FieldTracker:
         except Exception:
             return []
 
+    def whose(self, side, name):
+        """(side, name) of a message whose side / name the OCR may have lost: a mon only one team has decides the
+        side; with no name, the mon in play on that side."""
+        if name:
+            b = BASE.get(name, name)
+            opp = [BASE.get(x, x) for x in self.opp_team()]
+            in_me = any(m == b or m.endswith(b) or b.endswith(m) for m in MY_BASES)
+            in_opp = any(m == b or m.endswith(b) or b.endswith(m) for m in opp)
+            if in_me != in_opp:
+                side = 'me' if in_me else 'opp'
+        if side and not name:
+            name = self.s['active'][side]
+        return side, name
+
     def mon(self, side, name):
         mega = name in BASE
         name = canon(side, name, self.opp_team() if side == 'opp' else ())
@@ -402,8 +437,11 @@ class FieldTracker:
         for f in ev['faint']:
             self.mon(f['side'], f['mon'])['fainted'] = True
         for mg in ev['mega']:
-            s['mega_used'][mg['side']] = True
-            self.mon(mg['side'], mg['mon'])['mega'] = True
+            side, name = self.whose(mg.get('side'), mg.get('mon'))
+            if not side or not name:
+                continue
+            s['mega_used'][side] = True
+            self.mon(side, name)['mega'] = True
         for ab in ev['abilities']:
             self.mon(ab['side'], ab['mon'])['ability'] = ab['ability']
         s['history'].append({k: v for k, v in ev.items() if v})
