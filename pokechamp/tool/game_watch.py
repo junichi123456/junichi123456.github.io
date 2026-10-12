@@ -623,6 +623,23 @@ def main():
                 pending_replace, replace_done = None, set()
                 tracker.save()
                 turn_lines = []
+                # pictures seen in earlier battles: slots matching the memory are named at once
+                try:
+                    import sprites as _sp
+                    sm = _sp.match(img)
+                    sure = _sp.confident(sm)
+                    ev['sprite_match'] = [{'slot': i + 1, 'name': n, 'top': [(nm, round(sc, 2)) for sc, nm in m]}
+                                          for i, (n, m) in enumerate(zip(sure, sm))]
+                    if all(sure):
+                        import subprocess
+                        r = subprocess.run([sys.executable, os.path.join(HERE, 'battle.py'), 'select'] + sure + ['--no-remember'],
+                                           capture_output=True, text=True, encoding='utf-8', timeout=60)
+                        ev['auto_select'] = {'six': sure, 'out': (r.stdout or '').strip()}
+                        line = next((l for l in (r.stdout or '').splitlines() if l.startswith('選出順')), '')
+                        bar = '=' * 44
+                        print(f'\n{bar}\n  相手: {" ".join(sure)}（記憶から特定）\n  {line}\n{bar}\n', flush=True)
+                except Exception as e:
+                    ev['sprite_match'] = f'sprite match failed: {e}'
                 # identify the opponent's six right away: type icons + reference sheet
                 try:
                     import subprocess

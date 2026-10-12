@@ -1539,13 +1539,36 @@ def auto_state(hp_me=None, hp_opp=None, me_name=None, opp_name=None, from_screen
     return js
 
 
+def remember_sprites(six):
+    """The opponent's six are confirmed (given in slot order, top to bottom): store their pictures from the latest
+    team preview so the next time they can be named at once (sprites.py). Slots whose picture already matches a
+    different species surely are skipped, so a wrong name never spoils the memory."""
+    try:
+        import sprites as _sp
+        from PIL import Image
+        live = os.path.join(_learn.LOGS, 'live')
+        evs = [json.loads(l) for l in open(os.path.join(live, 'game_events.jsonl'), encoding='utf-8') if l.strip()]
+        ev = next((e for e in reversed(evs) if e.get('phase') == 'preview'), None)
+        if not ev or not os.path.exists(ev.get('image', '')):
+            return
+        img = Image.open(ev['image']).convert('RGB')
+        sure = _sp.confident(_sp.match(img))
+        names = [n if not (k and k != n) else None for n, k in zip([norm(x) for x in six], sure)]
+        _sp.remember(img, names)
+    except Exception:
+        pass
+
+
 def main():
     try:
         sys.stdout.reconfigure(encoding='utf-8')
     except Exception:
         pass
     if len(sys.argv) >= 3 and sys.argv[1] == 'select':
-        best, top, _ = select([x for x in sys.argv[2:] if not x.startswith('--')])
+        six = [x for x in sys.argv[2:] if not x.startswith('--')]
+        best, top, _ = select(six)
+        if len(six) == 6 and '--no-remember' not in sys.argv:
+            remember_sprites(six)
         print('選出順: ' + ' → '.join(best))
         kt = _KNOWN_CTX['team']
         if kt:
