@@ -3,7 +3,7 @@
   python study.py [--until HH:MM | --slot] [--depth 4] [--dry] [--max N]
 
 1. Reads the newest team articles (https://pokesol.app/?tab=new&category=team, newest first).
-2. Keeps singles articles of the current season or the one before it whose article states a final or reached
+2. Keeps singles articles under our rules (regulation M-C, any season) whose article states a final or reached
    rating of 2000+ (or, when no rating is written, a final rank of 1000 or better). Articles without any rating or
    rank are skipped. Higher final rank / rating first.
 3. For each (until --until, JST): adds the team to data/known_teams.json and plays every one of our 60 orders
@@ -34,7 +34,7 @@ def now():
     return datetime.datetime.now(JST)
 
 
-def list_articles(max_pages=8, max_days=21):
+def list_articles(max_pages=15, max_days=60):
     out = []
     for p in range(1, max_pages + 1):
         try:
@@ -72,6 +72,11 @@ def _other_season(t, i, season):
     return bool(m) and season is not None and int(m[-1]) != season
 
 
+def _contest(t, i):
+    """A placing in a tournament (AsOne, MCS, ...) rather than on the ladder: a Latin word just before it."""
+    return bool(re.search(r'[A-Za-z]{3,}[\w\s]{0,10}$', t[max(0, i - 14):i]))
+
+
 def rating(title, body='', season=None):
     """(final rank, final rating, reached rating): from the title first, the body only for what the title lacks.
     Mentions of other seasons and mid-season ranks (最終日N位) are ignored."""
@@ -80,15 +85,16 @@ def rating(title, body='', season=None):
         t = re.sub(r'(\d),(\d{3})', r'\1\2', t)
         rank = final = peak = None
         for m in re.finditer(r'(?:最終順位|最終(?!日))\s*[:：]?\s*(\d{1,5})\s*位', t):
-            if not _other_season(t, m.start(), season):
+            if not _other_season(t, m.start(), season) and not _contest(t, m.start()):
                 rank = int(m.group(1)); break
         if rank is None and is_title:          # in the title any 「N位」 is the article's own result
             for m in re.finditer(r'(?<![\d日])(\d{1,5})\s*位', t):
                 pre = t[max(0, m.start() - 14):m.start()]
-                if '日' not in pre[-3:] and '前期' not in pre and not _other_season(t, m.start(), season):
+                if '日' not in pre[-3:] and '前期' not in pre and not _other_season(t, m.start(), season) \
+                        and not _contest(t, m.start()):
                     rank = int(m.group(1)); break
         if rank is None and is_title:      # 「最終815」: up to three digits after 最終 is a rank
-            m = re.search(r'最終(?!日)\s*(\d{1,3})(?![\d位])', t)
+            m = re.search(r'最終(?!日)\s*(\d{1,3})(?![\d位桁])', t)
             if m and not _other_season(t, m.start(), season):
                 rank = int(m.group(1))
         for m in re.finditer(r'(?:最終レート|最終\s*R|最終(?!日))\s*[:：]?\s*' + _NUM + r'(?!\s*位)', t):
@@ -126,16 +132,13 @@ def priority(c):
     return (rank if rank is not None else 10 ** 6, -(max(final or 0, peak or 0)))
 
 
+RULES = ('mc',)          # same rules as ours (regulation M-C): any season is fine
+
+
 def candidates():
     arts = [a for a in list_articles() if a.get('battleFormat') == 'single' and a.get('category') == 'team']
-    seasons = sorted({_season_no(a.get('season')) for a in arts if _season_no(a.get('season'))})
-    targets = set(seasons[-2:])      # the season being played and the one that just ended
-    out = []
-    for a in arts:
-        if _season_no(a.get('season')) not in targets or (a.get('regulation') not in (None, 'mc')):
-            continue
-        out.append(a)
-    return out, targets
+    out = [a for a in arts if a.get('regulation') in RULES]
+    return out, sorted({a.get('season') for a in out if a.get('season')})
 
 
 def load_article(a):
@@ -237,7 +240,7 @@ def report():
     rows.sort(key=lambda t: ((t.get('rating') or {}).get('rank') or 10 ** 6,
                              -max((t.get('rating') or {}).get('final') or 0, (t.get('rating') or {}).get('peak') or 0)))
     L = ['# 新着構築の学習（study.py が毎晩自動生成）', '',
-         'pokesol の新着構築記事（シングル・該当シーズン・最終/到達レート2000以上。レートの記載がない場合は最終1000位以内）を、',
+         'pokesol の新着構築記事（シングル・レギュレーションM-C・シーズン不問・最終/到達レート2000以上。レートの記載がない場合は最終1000位以内）を、',
          'こちらの60通りの選出×相手の想定選出・各1戦・両者4手読みで対戦させた結果です。乱数あり。',
          '「最も厳しい相手選出」は、こちらが実際に出す上位10選出に最も勝つ相手選出。「最善の選出」はそれに最も善戦した選出、',
          '「平均勝率」はその選出の相手全選出への平均です。実戦では相手の6体が完全一致したときだけ参照します。', '',
@@ -269,7 +272,7 @@ def main():
         end += datetime.timedelta(days=1)
     R.teams()
     cands, targets = candidates()
-    print(f'{len(cands)} articles of seasons {sorted(targets)}; until {end:%m-%d %H:%M}', flush=True)
+    print(f'{len(cands)} articles (regulation {RULES}, seasons {targets}); until {end:%m-%d %H:%M}', flush=True)
     data = json.load(open(prep.KNOWN_P, encoding='utf-8'))
     have = {t['id']: t for t in data['teams'] if t.get('study')}
     todo = []
