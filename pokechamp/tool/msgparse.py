@@ -38,7 +38,7 @@ _VOICED = str.maketrans('ガギグゲゴザジズゼゾダヂヅデドバビブ�
                         'カキクケコサシスセソタチツテトハヒフヘホハヒフヘホウかきくけこさしすせそたちつてとはひふへほはひふへほ')
 
 
-_LOOKALIKE = str.maketrans('力口工二一夕卜ヰ', 'カロエニータトキ')
+_LOOKALIKE = str.maketrans('力口工二一夕卜ヰ三', 'カロエニータトキミ')
 
 
 _SMALL = str.maketrans('ァィゥェォッャュョヮぁぃぅぇぉっゃゅょゎ', 'アイウエオツヤユヨワあいうえおつやゆよわ')
@@ -303,6 +303,7 @@ def parse_turn(lines, dedupe=True):
           'types': []}
     seen = set()
     ctx = {'side': None, 'name': None}  # whose message the previous line was (a message often spans two lines)
+    came_in = {'moved': False}          # the mon each side sent in last, and whether a move was used since
     for raw in lines:
         s = norm(raw)
         if not s or (dedupe and s in seen):
@@ -331,13 +332,21 @@ def parse_turn(lines, dedupe=True):
         mu = move_use(s)
         if mu:
             ev['moves'].append({'side': side, 'mon': mu[1], 'move': mu[2]})
+            came_in['moved'] = True
             continue
         # stat change
-        m = re.search(r'の(こうげき|攻撃|ぼうぎょ|防御|とくこう|特攻|とくぼう|特防|すばやさ|素早さ|命中率|回避率)が(ぐぐーんと|ぐーんと|ぐんと|がくーんと|がくっと)?(上がった|あがった|下がった|さがった)', s)
+        # (OCR reads 「っ」 as 「つ」 and 「が」 as 「か」: 下がつた / 下かった)
+        m = re.search(r'の(こうげき|攻撃|ぼうぎょ|防御|とくこう|特攻|とくぼう|特防|すばやさ|素早さ|命中率|回避率)[がか]'
+                      r'(ぐぐーんと|ぐーんと|ぐんと|がくーんと|がく[っつ]と)?(上[がか][っつ]た|あ[がか][っつ]た|下[がか][っつ]た|さ[がか][っつ]た)', s)
         if m and name:
-            up = m.group(3) in ('上がった', 'あがった')
-            mag = (UP if up else DOWN).get(m.group(2) or '', 1)
+            up = m.group(3)[0] in '上あ'
+            mag = (UP if up else DOWN).get((m.group(2) or '').replace('つ', 'っ'), 1)
             ev['boosts'].append({'side': side, 'mon': name, 'stat': STAT[m.group(1)], 'delta': mag if up else -mag})
+            other = 'opp' if side == 'me' else 'me'
+            if STAT[m.group(1)] == 'atk' and not up and mag == 1 and not came_in['moved'] and came_in.get(other):
+                # attack -1 right after the other side sent a mon in, before any move: its いかく
+                if not any(x['ability'] == 'いかく' and x['mon'] == came_in[other] for x in ev['abilities']):
+                    ev['abilities'].append({'side': other, 'mon': came_in[other], 'ability': 'いかく', 'inferred': True})
             continue
         for w, keys in WEATHER_START:
             if has(s, keys):
@@ -368,8 +377,10 @@ def parse_turn(lines, dedupe=True):
             ev['faint'].append({'side': side, 'mon': name})
         if name and has(s, ('繰り出した', 'くりだした')):
             ev['switch'].append({'side': 'opp', 'mon': name})
-        elif name and (s.startswith('ゆけっ') or s.startswith('いけっ') or s.startswith('行け') or 'がんばれ' in s or 'たのんだ' in s):
+            came_in.update(opp=name, moved=False)
+        elif name and (devoice(s)[:5].startswith(('ゆけつ', 'いけつ', '行け')) or 'がんばれ' in s or 'たのんだ' in s):
             ev['switch'].append({'side': 'me', 'mon': name})
+            came_in.update(me=name, moved=False)
         if MEGA_RE.search(devoice(s).replace('力', 'カ')) or MEGA_RE.search(s):
             # 「(相手の) Xは メガXに メガシンカした！」; the first half may be on the line before
             # (or the 「…ナイトと …リングが 反応した」 line); with no name the tracker uses the mon in play

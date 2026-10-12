@@ -1216,6 +1216,8 @@ def field_defaults(js):
                     d['moves_seen'] = seen + [m for m in info.get('moves_seen', []) if m not in seen]
                     if not d.get('item_seen') and info.get('items_seen'):
                         d['item_seen'] = info['items_seen'][0]
+                    if not d.get('ability_seen') and info.get('ability'):
+                        d['ability_seen'] = info['ability']
             out.append(d)
         js[side] = out
     return js
@@ -1258,6 +1260,7 @@ def load_state(js):
         bname = BASE_OF.get(nm, nm)
         obs = list(d.get('obs', [])) + battle_obs(bname) + [{'kind': 'move', 'move': mv} for mv in d.get('moves_seen', [])]
         if d.get('item_seen'): obs.append({'kind': 'item', 'item': d['item_seen']})
+        if d.get('ability_seen'): obs.append({'kind': 'ability', 'ability': d['ability_seen']})
         if d.get('mega') or nm.startswith('メガ'): obs.append({'kind': 'mega'})
         base, mega = opp_sets(bname, obs)
         m = BM(base, mega)
