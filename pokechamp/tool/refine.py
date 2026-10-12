@@ -313,7 +313,7 @@ def screen(n, vfile):
     teams()
     out_p = os.path.join(OUT_D, f'screen_R{n}.json')
     done = json.load(open(out_p, encoding='utf-8')) if os.path.exists(out_p) else {}
-    ctrl = {tuple(json.loads(k)): v for k, v in done.pop('_control', {}).items()}
+    ctrl = {(lambda x: (x[0], tuple(x[1]), tuple(x[2])))(json.loads(k)): v for k, v in done.pop('_control', {}).items()}
 
     def play(party, keys):
         apply_party(party)
