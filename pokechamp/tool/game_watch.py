@@ -228,6 +228,76 @@ class WinOCR:
         return self.asyncio.run(run())
 
 
+FIELD_KEYS = ('boosts', 'status', 'cured', 'weather', 'weather_end', 'terrain', 'terrain_end', 'hazards', 'items', 'mega',
+              'sub', 'sub_end', 'trick_room', 'trick_room_end', 'abilities')
+
+
+class Speculator:
+    """During the turn's animation (20-40 s) the HP panels keep showing both mons and their HP. When what they show
+    is stable for two frames, the move for that position is computed ahead of time, so the answer is ready the
+    moment the command screen appears (if nothing else changed: boosts, weather, status, items ...)."""
+
+    def __init__(self, sec):
+        self.sec = sec
+        self.reset()
+
+    def reset(self):
+        self.key, self.stable, self.running, self.done, self.opp_team = None, 0, False, {}, None
+
+    def read(self, text):
+        try:
+            import battle as _B
+            if self.opp_team is None:
+                rec = json.load(open(os.path.join(OUT, '..', 'current.json'), encoding='utf-8'))
+                self.opp_team = rec.get('opp_team') or None
+            me, hp_me, opp, hp_opp = _B.screen_read(text, self.opp_team or [])
+            return (me, hp_me, opp, hp_opp) if me and opp and hp_me is not None and hp_opp is not None else None
+        except Exception:
+            return None
+
+    def feed(self, text):
+        key = self.read(text)
+        if key is None:
+            return
+        self.stable = self.stable + 1 if key == self.key else 1
+        self.key = key
+        if self.stable == 2 and key not in self.done and not self.running:
+            self.running = True
+            import subprocess, threading
+
+            def run():
+                me, hp_me, opp, hp_opp = key
+                try:
+                    r = subprocess.run([sys.executable, os.path.join(HERE, 'battle.py'), 'auto', '--me', me, '--opp', opp,
+                                        '--hp', str(hp_me), str(hp_opp), '--sec', str(self.sec)],
+                                       capture_output=True, text=True, encoding='utf-8', timeout=self.sec + 25)
+                    out = (r.stdout or '').strip()
+                    line = next((l for l in out.splitlines() if l.startswith('次:')), None)
+                    if line:
+                        self.done[key] = (line, out)
+                except Exception:
+                    pass
+                self.running = False
+            threading.Thread(target=run, daemon=True).start()
+
+    def answer(self, text, turn):
+        """The precomputed move for the command screen in `text`, or None (position differs or the field changed)."""
+        if any(turn.get(k) for k in FIELD_KEYS):
+            return None
+        key = self.read(text)
+        return self.done.get(key) if key else None
+
+
+def publish(seq, line, out, seconds):
+    try:
+        safeio.write_json(os.path.join(OUT, 'decision.json'),
+                          {'seq': seq, 'decision': line, 'full': out, 'seconds': round(seconds, 1), 'time': time.time()})
+    except Exception:
+        pass
+    bar = '=' * 44
+    print(f'\n{bar}\n  #{seq} {line}   （{seconds:.1f}秒）\n{bar}\n', flush=True)
+
+
 def decide_async(seq, sec):
     """The move for this command screen, computed right away from the screen text (who is out, both HPs) and the
     tracked field: battle.py auto --screen. Printed here in big letters and written to decision.json, so the answer is
@@ -243,14 +313,7 @@ def decide_async(seq, sec):
         except Exception as e:
             out = f'判断に失敗: {e}'
         line = next((l for l in out.splitlines() if l.startswith('次:')), out.splitlines()[0] if out else '')
-        try:
-            safeio.write_json(os.path.join(OUT, 'decision.json'),
-                              {'seq': seq, 'decision': line, 'full': out, 'seconds': round(time.time() - t0, 1),
-                               'time': time.time()})
-        except Exception:
-            pass
-        bar = '=' * 44
-        print(f'\n{bar}\n  #{seq} {line}   （{time.time() - t0:.1f}秒）\n{bar}\n', flush=True)
+        publish(seq, line, out, time.time() - t0)
     threading.Thread(target=run, daemon=True).start()
 
 
@@ -285,6 +348,7 @@ def main():
     except Exception:
         pass
     det = Detector()
+    spec = Speculator(a.decide_sec)
     import msgparse
     field_p = os.path.join(OUT, 'field_state.json')
     tracker = msgparse.FieldTracker(field_p)
@@ -313,6 +377,8 @@ def main():
         if new and not det.in_preview:
             turn_lines.extend(new)
         now = time.time()
+        if not det.in_preview and preview_seq and not a.no_decide and phase != 'command':
+            spec.feed(text)            # HP panels during the animation: compute the next move ahead of time
         event = det.update(phase, now)
         # keep recording the team preview (the pick uses only the first frame: the 'preview' event image)
         if det.in_preview and preview_seq and preview_n < det.PREVIEW_SHOTS_MAX and \
@@ -361,6 +427,7 @@ def main():
                 start_wait, skip_command_until = None, 0.0
                 ev['preview_frames'] = os.path.join(OUT, f'game_{seq:04d}_preview_*.png')
                 tracker = msgparse.FieldTracker(field_p)  # new battle
+                spec.reset()
                 tracker.save()
                 turn_lines = []
                 # identify the opponent's six right away: type icons + reference sheet
@@ -377,7 +444,11 @@ def main():
                 f.write(json.dumps(ev, ensure_ascii=False) + '\n')
             print(ts, '検出:', phase, f'#{seq}')
             if phase in ('command', 'start') and not a.no_decide:
-                decide_async(seq, a.decide_sec)
+                pre = spec.answer(text, ev.get('turn_events') or {}) if phase == 'command' else None
+                if pre:
+                    publish(seq, pre[0], pre[1] + '\n（演出中に先読み済み）', 0.0)
+                else:
+                    decide_async(seq, a.decide_sec)
         safeio.write_json(state_p, {'phase': phase, 'seq': seq, 'time': time.time(), 'text': text})
         time.sleep(max(0.0, a.interval - (time.time() - t0)))
 
