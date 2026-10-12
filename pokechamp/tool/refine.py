@@ -507,7 +507,8 @@ def blind_select(t):
 def blind_play(args):
     """One game: true sets on both sides; each side reads ahead on its own guess of the other's sets (usage data
     and the moves seen so far). We read my_depth turns ahead, they read opp_depth."""
-    party, kid, my_order, opp_order, seed, my_depth, opp_depth = args
+    party, kid, my_order, opp_order, seed, my_depth, opp_depth = args[:7]
+    know = len(args) > 7 and args[7]          # True: we read on their true sets (perfect information for us)
     apply_party(party)
     real_match = B.match_known
     try:
@@ -528,7 +529,7 @@ def blind_play(args):
         for tn in range(30):
             if st.winner is not None:
                 break
-            a0 = S.lookahead_action(belief(st, 1, t_opp, seen[1]), 0, my_depth)
+            a0 = S.lookahead_action(st if know else belief(st, 1, t_opp, seen[1]), 0, my_depth)
             a1 = S.lookahead_action(belief(st, 0, t_me, seen[0]), 1, opp_depth)
             log.append((st.active(0).name, _name(st, 0, a0), st.active(1).name, _name(st, 1, a1)))
             for i, a in ((0, a0), (1, a1)):
@@ -593,6 +594,38 @@ def blind(tag, games=3, worst_from=3, my_depth=4, opp_depth=3):
         print(f"  {d['title'][:26]}: {' → '.join(d['my_order'])} vs {' → '.join(d['opp_order'])}: "
               f"{''.join('○' if g.get('res') == 1 else '×' if g.get('res') is not None else '!' for g in d['games'])}",
               flush=True)
+    return done
+
+
+def depth_study(tag='R3', kids=None, depths=(2, 3, 5, 6), games=6):
+    """How deep must we read to win the hardest pairings? Same blind setting (their worst selection, our order
+    from the blind test, they read 3 turns ahead), our depth varied; plus depth 4 on their true sets."""
+    party = load_tag(tag)
+    apply_party(party)
+    teams()
+    bl = json.load(open(os.path.join(OUT_D, f'blind_{tag}.json'), encoding='utf-8'))['teams']
+    kids = kids or sorted(bl, key=lambda k: sum(g['res'] == 1 for g in bl[k]['games']))[:4]
+    out_p = os.path.join(OUT_D, f'depth_{tag}.json')
+    done = json.load(open(out_p, encoding='utf-8')) if os.path.exists(out_p) else {}
+    done['4'] = {k: [g['res'] for g in bl[k]['games'][:games]] for k in kids}
+    for cfg in [str(d) for d in depths] + ['4k']:
+        if cfg in done and all(len(done[cfg].get(k, [])) >= games for k in kids):
+            continue
+        d, know = int(cfg[0]), cfg.endswith('k')
+        jobs, meta = [], []
+        for k in kids:
+            for i in range(games):
+                jobs.append((party, k, bl[k]['my_order'], bl[k]['opp_order'], zlib.crc32(f'blind{k}{i}'.encode()), d, 3, know))
+                meta.append(k)
+        t0 = time.time()
+        res = prep.pool_map(blind_play, jobs)
+        done[cfg] = {}
+        for k, r in zip(meta, res):
+            done[cfg].setdefault(k, []).append(r.get('res'))
+        json.dump(done, open(out_p, 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
+        w = sum(x == 1 for v in done[cfg].values() for x in v)
+        print(f'depth {cfg}: {w}/{len(jobs)}  ({round(time.time() - t0)}s)  ' +
+              '  '.join(f"{bl[k]['title'][:10]} {sum(x == 1 for x in done[cfg][k])}" for k in kids), flush=True)
     return done
 
 
@@ -678,6 +711,8 @@ def main():
         report()
     elif '--screen' in a:
         screen(int(a[a.index('--screen') + 1]), a[a.index('--screen') + 2])
+    elif '--depth-study' in a:
+        depth_study(a[a.index('--depth-study') + 1])
     elif '--losses' in a:
         losses(int(a[a.index('--losses') + 1]))
     elif '--analyze' in a:
