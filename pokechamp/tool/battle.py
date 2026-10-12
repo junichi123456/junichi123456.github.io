@@ -5,6 +5,7 @@
   python3 battle.py auto --hp <自分> <相手>   game_watch.py の記録から state を自動で組み立てて次の行動を出す
                                             （HPは画面の表示どおり「142/185」か「%」。--me/--opp で場のポケモンを指定、
                                               --screen で直近の行動選択画面の文字から場のポケモンとHPを読む、
+                                              --switch でボルトチェンジ等の後に出すポケモンを選ぶ、
                                               --fainted ルカリオ,クチート で倒れたポケモンを指定（メッセージを読み損ねたとき）、
                                               --sec で探索秒数。ターンの出来事の記録 learn.py turn も同時に行う）
   python3 battle.py infer <相手> [obs.json]  相手の型の事後確率（上位5）
@@ -1350,15 +1351,16 @@ def fmt_action(st, a):
 DEFAULT_SEC = 5.0     # search time per turn (3-ply results were as good as 4-ply in the depth study)
 
 
-def decide_js(js, sec=DEFAULT_SEC, verbose=False):
+def decide_js(js, sec=DEFAULT_SEC, verbose=False, switch=False):
     t_fill = time.time()
     js, assumed = worst_case_fill(js, seconds=1.0)          # unseen back mons: the worst selection for us
     sec = max(2.0, sec - (time.time() - t_fill))
     st = load_state(js)
     import search as _search
     est = _search.from_battle(st, js)
-    if not est.sides[0].mons[est.sides[0].act].alive:
-        opts = [j for j, m in enumerate(est.sides[0].mons) if m.alive]
+    if switch or not est.sides[0].mons[est.sides[0].act].alive:
+        # after a faint, or after our U-turn type move (switch=True): who comes in
+        opts = [j for j, m in enumerate(est.sides[0].mons) if m.alive and not (switch and j == est.sides[0].act)]
         if not opts:
             print('次: （出せるポケモンがいない）'); return
         j = _search.chooser(est, 0, opts)
@@ -1424,7 +1426,7 @@ def screen_read(text, opp_team=()):
     return me, hp_me, opp, hp_opp
 
 
-def auto_state(hp_me=None, hp_opp=None, me_name=None, opp_name=None, from_screen=False, fainted=()):
+def auto_state(hp_me=None, hp_opp=None, me_name=None, opp_name=None, from_screen=False, fainted=(), party=None):
     """state.json built from what game_watch.py already tracks (logs/live/field_state.json: who is out, fainted,
     boosts, status, items, moves seen, weather, hazards, mega) and the battle record (our order), plus the two HP
     values read from the screen. HP of the mons on the bench is remembered from earlier turns
@@ -1461,6 +1463,23 @@ def auto_state(hp_me=None, hp_opp=None, me_name=None, opp_name=None, from_screen
         except Exception:
             pass
     order = [b(x) for x in (rec.get('my_order') or [])]
+    if party:            # our three as listed on the switch-in screen (name=cur/max): what we really brought
+        got = []
+        for item in party:
+            n, _, hp = item.partition('=')
+            n = b(n)
+            if n in MY and n not in got:
+                got.append(n)
+                if hp and '/' in hp:
+                    hpm[n] = int(hp.split('/')[0])
+        if len(got) >= 2:
+            order = got + [x for x in order if x not in got][:max(0, 3 - len(got))]
+            if rec and rec.get('my_order') != order:
+                rec['my_order'] = order
+                try:
+                    _learn._save(_learn.CURRENT, rec)
+                except Exception:
+                    pass
     act_me = b(me_name) or b(fs['active'].get('me')) or (order[0] if order else None)
     act_opp = b(opp_name, 'opp') or b(fs['active'].get('opp'), 'opp')
     for n in [act_me] + [b(x) for x in fs['mons']['me']]:
@@ -1547,9 +1566,10 @@ def main():
         opt = lambda k, n=1: a[a.index(k) + 1:a.index(k) + 1 + n] if k in a else None
         hp = opt('--hp', 2) or [None, None]
         dead = [BASE_OF.get(norm(x), norm(x)) for x in ((opt('--fainted') or [''])[0]).split(',') if x]
-        js = auto_state(hp[0], hp[1], (opt('--me') or [None])[0], (opt('--opp') or [None])[0], '--screen' in a, dead)
+        js = auto_state(hp[0], hp[1], (opt('--me') or [None])[0], (opt('--opp') or [None])[0], '--screen' in a, dead,
+                        ((opt('--party') or [''])[0] or '').split(',') if '--party' in a else None)
         sec = float((opt('--sec') or [DEFAULT_SEC])[0])
-        decide_js(js, sec, '-v' in a)
+        decide_js(js, sec, '-v' in a, switch='--switch' in a)
     elif len(sys.argv) >= 3 and sys.argv[1] == 'types':
         # 選出画面のタイプアイコンから相手候補を絞る: python battle.py types ほのお かくとう
         from calc import JT

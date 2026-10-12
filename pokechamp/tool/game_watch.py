@@ -15,7 +15,8 @@ PCBL のライブスキャンは選出画面を拾えないため、OBS が受�
                      preview  選出画面が出た（image = 最初の1枚。選出はこの1枚で判断する）
                      start    選出画面が終わり対戦が始まった（相手の先発が出た時点、遅くとも20秒後）→ 1ターン目の判断
                      command  2ターン目以降の行動選択画面
-                     replace  自分のポケモンがひんしになった後の、次に出すポケモンを選ぶ画面
+                     replace  次に出すポケモンを選ぶ画面（自分のポケモンがひんしになった後、または
+                              ボルトチェンジ・とんぼがえり等で交代するとき。replace_mode = faint / pivot）
   game_NNNN_preview_KKK.png  選出画面の間も撮り続けた画像（文字が変わるたび／2秒ごと、最大120枚）
   frames/NNNN/KKKKK_時分秒.jpg  対戦開始（選出画面の終わり）から次の選出画面まで0.5秒ごとの画面
                      （NNNN は選出画面のイベント番号。直近3対戦分だけ残す。--record-every で間隔を変更）
@@ -101,6 +102,52 @@ class Detector:
             if now - self.command_off_since >= self.COMMAND_RESET:
                 self.command_armed = True
         return None
+
+
+PIVOT_MOVES = ('ボルトチェンジ', 'とんぼがえり', 'クイックターン', 'すてゼリフ', 'バトンタッチ', 'テレポート', 'しっぽきり',
+               'さよならのあいさつ')
+
+
+def _my_names():
+    try:
+        from team import TEAM
+        import msgparse as _mp
+        out = set()
+        for m in TEAM:
+            b = _mp.BASE.get(m.species, m.species)
+            out.add(b)
+            if b.endswith('ロトム'):
+                out.add('ロトム')        # the game shows our ヒートロトム as 「ロトム」
+        return out
+    except Exception:
+        return set()
+
+
+MY_NAMES = _my_names()
+
+
+def party_read(text):
+    """Our party as listed on the switch-in screen, in order, with HP: [(name, 'cur/max'), ...]."""
+    import re as _re
+    out = []
+    lines = [l.replace(' ', '') for l in text.splitlines() if l.strip()]
+    for i, l in enumerate(lines):
+        n = next((x for x in sorted(MY_NAMES, key=len, reverse=True) if x in l), None)
+        if not n or any(n == o[0] for o in out):
+            continue
+        m = _re.search(r'(\d{1,3})[/／](\d{2,3})', ' '.join(lines[i:i + 2]))
+        out.append((n, f'{m.group(1)}/{m.group(2)}' if m else None))
+    return out
+
+
+def is_party(text, bscore):
+    """The screen listing our party to choose who comes in (after a faint or a U-turn type move, or when browsing):
+    several of our names with 「cur/max」 HP, and no 「たたかう」/「ポケモン」 buttons."""
+    import re as _re
+    t = text.replace(' ', '')
+    names = sum(1 for n in MY_NAMES if n in t)
+    fracs = len(_re.findall(r'\d{1,3}[/／]\d{2,3}', t))
+    return bscore < 0.5 and names >= 2 and fracs >= 2
 
 
 def classify(text):
@@ -396,7 +443,7 @@ def publish(seq, line, out, seconds, update=False):
     print(f'\n{bar}\n  #{seq} {"（更新）" if update else ""}{line}   （{seconds:.1f}秒）\n{bar}\n', flush=True)
 
 
-def decide_async(seq, sec, phase='command'):
+def decide_async(seq, sec, phase='command', party=None):
     """The move for this command screen, computed right away from the screen text (who is out, both HPs) and the
     tracked field: battle.py auto --screen. Printed here in big letters and written to decision.json, so the answer is
     there about 5 seconds after the screen appears, before anyone reads the image."""
@@ -405,7 +452,9 @@ def decide_async(seq, sec, phase='command'):
     def run():
         t0 = time.time()
         try:
-            args = ['auto', '--sec', str(sec)] + (['--screen'] if phase != 'replace' else [])
+            args = ['auto', '--sec', str(sec)] + (['--screen'] if phase not in ('replace', 'pivot') else []) + \
+                (['--switch'] if phase == 'pivot' else []) + \
+                (['--party', ','.join(f'{n}={hp or ""}' for n, hp in party)] if party else [])
             r = subprocess.run([sys.executable, os.path.join(HERE, 'battle.py')] + args,
                                capture_output=True, text=True, encoding='utf-8', timeout=sec + 25)
             out = (r.stdout or '').strip() or (r.stderr or '').strip()[-300:]
@@ -455,6 +504,7 @@ def main():
     tracker = msgparse.FieldTracker(field_p)
     turn_lines, last_lines = [], set()
     last_command_t = 0.0
+    pending_pivot, pivot_done, replace_mode = None, set(), 'faint'
     pending_replace, replace_done = None, set()
     start_wait = None          # time the preview ended, until the 'start' event is sent
     skip_command_until = 0.0   # the turn-1 command screen was already handled by 'start'
@@ -471,6 +521,13 @@ def main():
             time.sleep(2)
             continue
         phase = classify(text)
+        try:
+            bscore = button_score(img)
+        except Exception:
+            bscore = 1.0
+        party = is_party(text, bscore)
+        if phase == 'command' and party:
+            phase = 'party'            # the switch-in list also shows move names: it is not the move-selection screen
         if fast and fast.onset and phase == 'other' and not det.in_preview and preview_seq:
             phase = 'command'          # the buttons are up: the OCR text may still lag behind
         img.save(os.path.join(OUT, 'game.tmp.png'))
@@ -482,9 +539,16 @@ def main():
         if new and not det.in_preview:
             turn_lines.extend(new)
             if preview_seq:
-                for f in msgparse.parse_turn(turn_lines)['faint']:
+                cur_turn = msgparse.parse_turn(turn_lines)
+                for f in cur_turn['faint']:
                     if f['side'] == 'me' and f['mon'] not in replace_done and not pending_replace:
                         pending_replace = (time.time(), f['mon'])
+                for mv in cur_turn['moves']:
+                    key = ('pivot', len(turn_lines), mv['mon'])
+                    if mv['side'] == 'me' and mv['move'] in PIVOT_MOVES and not pending_pivot and \
+                            mv['mon'] not in pivot_done:
+                        pending_pivot = time.time()
+                        pivot_done.add(mv['mon'])
         now = time.time()
         if not det.in_preview and preview_seq and not a.no_decide and phase != 'command':
             spec.feed(text)            # HP panels during the animation: compute the next move ahead of time
@@ -493,8 +557,13 @@ def main():
             event, det.command_armed = 'command', False      # the button watcher is sure enough on its own
         if event == 'command' and not turn_lines and now - last_command_t < 60:
             event = None       # back on the same input screen after looking at the log / party: not a new turn
+        if pending_pivot and event is None and party and not det.in_preview:
+            event, pending_pivot, replace_mode = 'replace', None, 'pivot'    # choose who comes in after our U-turn
+        if pending_pivot and now - pending_pivot > 30:
+            pending_pivot = None       # the move failed / missed: no party screen came
         if pending_replace and event is None and phase != 'command' and not det.in_preview and \
-                (any(k in text.replace(' ', '') for k in REPLACE_KEYS) or now - pending_replace[0] > 2.5):
+                (party or any(k in text.replace(' ', '') for k in REPLACE_KEYS) or now - pending_replace[0] > 2.5):
+            replace_mode = 'faint'
             # our mon fainted: the screen to send the next one (no command screen comes before it)
             event = 'replace'
             replace_done.add(pending_replace[1])
@@ -532,6 +601,8 @@ def main():
                   'screen_onset': fast.onset if fast else None}
             if phase in ('command', 'start', 'replace'):
                 last_command_t = now
+                if phase != 'replace':
+                    pivot_done, pending_pivot = set(), None    # a new turn: our pivot move may be used again
                 # what happened since the previous decision: moves, stat changes, weather, items, ...
                 turn = msgparse.parse_turn(turn_lines)
                 tracker.apply(turn)
@@ -571,7 +642,9 @@ def main():
                     publish(seq, pre[0], pre[1] + f'\n（演出中に先読み済み・{pre[2]:.0f}秒読み）', 0.0)
                     spec.shown(text, seq, pre[0])
                 else:
-                    decide_async(seq, a.decide_sec, phase)
+                    decide_async(seq, a.decide_sec, 'pivot' if phase == 'replace' and replace_mode == 'pivot' else phase,
+                                 party_read(text) if phase == 'replace' else None)
+                ev['replace_mode'] = replace_mode if phase == 'replace' else None
         safeio.write_json(state_p, {'phase': phase, 'seq': seq, 'time': time.time(), 'text': text})
         if fast:
             fast.wake.clear()
