@@ -492,7 +492,10 @@ def worst_selection(n):
 
 
 def blind_select(t):
-    """Our order from their six species only: no article sets (usage data and our logs only)."""
+    """Our order from their six species only: not their own article (usage data, other articles and our logs)."""
+    import sets as _sets
+    _sets.EXCLUDE = {t['id']}
+    B._OPP_CACHE.clear()
     opp6 = [B._base(m['name']) for m in t['team']]
     real_match = B.match_known
     B.match_known = lambda *a, **k: None
@@ -509,6 +512,8 @@ def blind_play(args):
     and the moves seen so far). We read my_depth turns ahead, they read opp_depth."""
     party, kid, my_order, opp_order, seed, my_depth, opp_depth = args[:7]
     know = len(args) > 7 and args[7]          # True: we read on their true sets (perfect information for us)
+    import sets as _sets
+    _sets.EXCLUDE = {kid}                      # the opponent's own article never feeds the guesses about it
     apply_party(party)
     real_match = B.match_known
     try:
@@ -594,6 +599,35 @@ def blind(tag, games=3, worst_from=3, my_depth=4, opp_depth=3):
         print(f"  {d['title'][:26]}: {' → '.join(d['my_order'])} vs {' → '.join(d['opp_order'])}: "
               f"{''.join('○' if g.get('res') == 1 else '×' if g.get('res') is not None else '!' for g in d['games'])}",
               flush=True)
+    return done
+
+
+def sheet(pairs, games=6, depth=3, tag='R3'):
+    """For each (team id, their selection): all 60 orders of ours x `games` games (their true sets, both sides
+    `depth` turns ahead) -> wins per order and how the best order wins (first turns, faint order)."""
+    party = load_tag(tag)
+    apply_party(party)
+    teams()
+    out_p = os.path.join(OUT_D, 'sheet.json')
+    done = json.load(open(out_p, encoding='utf-8')) if os.path.exists(out_p) else {}
+    for kid, oo in pairs:
+        key = kid + '|' + '→'.join(oo)
+        if key in done:
+            continue
+        jobs, meta = [], []
+        for o in prep.all_orders():
+            for i in range(games):
+                jobs.append((o, oo, kid, zlib.crc32(f'sheet{o}{oo}{i}'.encode()), depth))
+                meta.append(tuple(o))
+        t0 = time.time()
+        res = prep.pool_map(game, jobs)
+        per = {}
+        for o, r in zip(meta, res):
+            per.setdefault(' → '.join(o), []).append({'res': r[0], 'log': r[1][:4], 'faints': r[2]})
+        done[key] = per
+        json.dump(done, open(out_p, 'w', encoding='utf-8'), ensure_ascii=False)
+        best = sorted(per.items(), key=lambda x: -sum(g['res'] == 1 for g in x[1]))[:3]
+        print(key, round(time.time() - t0), [(o, sum(g['res'] == 1 for g in gs)) for o, gs in best], flush=True)
     return done
 
 

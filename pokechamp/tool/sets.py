@@ -235,8 +235,47 @@ def role_candidates(species, my_types=()):
     return out
 
 
+# ---------------------------------------------------------------- sets from high-rated articles
+_ART_P = os.path.join(HERE, 'data/article_sets.json')
+ARTSETS = json.load(open(_ART_P, encoding='utf-8')) if os.path.exists(_ART_P) else {}
+EXCLUDE = set()      # article (team) ids left out, e.g. the opponent's own article in a blind test
+ART_K = 3.0          # article sets get n/(n+ART_K) of the prior (n = how many articles ran this species)
+
+
+def article_candidates(species):
+    """(Cand list, n): the sets strong players published for this species, weighted by how many ran each."""
+    out, n = [], 0
+    for e in ARTSETS.get(species, []):
+        k = len([t for t in e['teams'] if t not in EXCLUDE])
+        if not k or e['nature'] not in NATURE:
+            continue
+        moves = [m for m in e['moves'] if m in MOVE]
+        if not moves:
+            continue
+        try:
+            base = Mon(species, e['nature'], e['ap'], e['ability'], e['item'], moves, label=species)
+            mega = Mon(e['mega'], e['nature'], e['ap'], e['mega_ability'], e['item'], moves, label=e['mega']) \
+                if e.get('mega') and e['mega'] in POKE else None
+        except Exception:
+            continue
+        u = USAGE.get(species) or {}
+        pool = {m['name']: m['usage'] for m in u.get('moves', [])}
+        for m in moves:
+            pool[m] = max(pool.get(m, 0), 50)
+        out.append(Cand(float(k), f"記事/{e['nature']}/{base.sp_str()}/{e['item']}", base, mega, pool, 'article'))
+        n += k
+    return out, n
+
+
 def candidates(species, my_types=()):
-    return usage_candidates(species) or role_candidates(species, tuple(map(tuple, my_types)))
+    base = usage_candidates(species) or role_candidates(species, tuple(map(tuple, my_types)))
+    art, n = article_candidates(species)
+    if not art:
+        return base
+    wa = n / (n + ART_K)
+    out = [Cand(c.prior / n * wa, c.key, c.base, c.mega, c.pool, c.source) for c in art]
+    out += [Cand(c.prior * (1 - wa), c.key, c.base, c.mega, c.pool, c.source) for c in (base or [])]
+    return out
 
 
 def usage_rank(species):

@@ -234,6 +234,43 @@ def save(t, info, c):
     json.dump(data, open(prep.KNOWN_P, 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
 
 
+ARTSETS_P = os.path.join(HERE, 'data', 'article_sets.json')
+
+
+def build_article_sets(teams_extra=()):
+    """Every set from high-rated articles (known_teams.json + the qualifying new articles) by species, for the set
+    guesser (sets.py): what strong players actually run, next to the usage data."""
+    import sets as _sets
+    data = json.load(open(prep.KNOWN_P, encoding='utf-8'))['teams']
+    by_id = {t['id']: t for t in data}
+    for t in teams_extra:
+        by_id.setdefault(t['id'], t)
+    out = {}
+    for tid, t in by_id.items():
+        for m in t['team']:
+            b = B._base(m['name'])
+            if b not in POKE:
+                continue
+            moves = [x for x in m.get('moves', []) if x in B.MOVE]
+            if not moves or not m.get('nature'):
+                continue
+            mega = _sets.mega_for(b, m.get('item'))
+            ap = {k: v for k, v in (m.get('ap') or {}).items() if v}
+            e = {'nature': m['nature'], 'ap': ap, 'item': m.get('item'), 'moves': moves[:4],
+                 'ability': m.get('base_ability') or m.get('ability') or POKE[b]['ab'][0],
+                 'mega': mega, 'mega_ability': (POKE[mega]['ab'][0] if mega else None), 'teams': [tid]}
+            lst = out.setdefault(b, [])
+            same = next((x for x in lst if {k: x[k] for k in ('nature', 'ap', 'item')} ==
+                         {k: e[k] for k in ('nature', 'ap', 'item')} and sorted(x['moves']) == sorted(e['moves'])), None)
+            if same:
+                if tid not in same['teams']:
+                    same['teams'].append(tid)
+            else:
+                lst.append(e)
+    json.dump(out, open(ARTSETS_P, 'w', encoding='utf-8'), ensure_ascii=False, indent=0)
+    return out
+
+
 def report():
     data = json.load(open(prep.KNOWN_P, encoding='utf-8'))
     rows = [t for t in data['teams'] if t.get('study')]
@@ -292,8 +329,10 @@ def main():
             continue
         todo.append({'t': t, 'rating': info})
     todo.sort(key=priority)
+    arts = build_article_sets([c['t'] for c in todo])
+    print(f"article sets: {sum(len(v) for v in arts.values())} sets of {len(arts)} species", flush=True)
     print('to study:', [(c['t']['title'][:24], c['rating']) for c in todo], flush=True)
-    if '--dry' in a:
+    if '--dry' in a or '--sets-only' in a:
         return
     per = None
     if '--max' in a:
