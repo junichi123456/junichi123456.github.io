@@ -467,91 +467,127 @@ def belief(st, k, tmpl, seen):
     return b
 
 
-def blind_game(t, seed, my_depth=4, opp_depth=3):
+def load_tag(tag):
+    return load_party(int(tag[1:])) if tag[0] == 'R' and tag[1:].isdigit() else \
+        json.load(open(os.path.join(PARTY_D, f'{tag}.json'), encoding='utf-8'))
+
+
+def worst_selection(n):
+    """Per team: the selection of theirs (with its lead) that does best against the orders we would bring
+    (our best 10 orders of round n): they see our six and bring what is hardest for us."""
+    out = {}
+    for kid, games in load_round(n).items():
+        top = {r[3] for r in team_stats(games)['rows'][:10]}
+        sc = {}
+        for g in games:
+            d = sc.setdefault(tuple(g['opp']), [0, 0, 0, 0])
+            if tuple(g['order']) in top:
+                d[0] += g['res'] == 1
+                d[1] += 1
+            d[2] += g['res'] == 1
+            d[3] += 1
+        oo = min(sc, key=lambda k: (sc[k][0] / max(1, sc[k][1]), sc[k][2] / sc[k][3]))
+        out[kid] = {'opp': list(oo), 'top10': round(sc[oo][0] / max(1, sc[oo][1]), 3), 'all': round(sc[oo][2] / sc[oo][3], 3)}
+    return out
+
+
+def blind_select(t):
+    """Our order from their six species only: no article sets (usage data and our logs only)."""
     opp6 = [B._base(m['name']) for m in t['team']]
     real_match = B.match_known
-    # 1) our selection from their six only: no article sets
     B.match_known = lambda *a, **k: None
-    B.set_known_context(None)
-    best, top, _ = B.select(opp6, ignore_stored=True)
-    my_order = best
-    # 2) their selection: what they would bring against our six (their article's patterns first), sampled
-    B.match_known = real_match
-    trips = prep.opp_trips(t, opp6)
-    r = random.Random(seed)
-    x = r.random() * sum(p for p, _ in trips)
-    for p, oos in trips:
-        x -= p
-        if x <= 0:
-            break
-    opp_order = oos[r.randrange(len(oos))]
-    # 3) the real game: true sets on both sides (their article sets, our party)
-    _ctx(t['id'])
-    st = B.engine_game(my_order, opp_order)
-    # guesses: ours about them = usage data only, theirs about us = usage data only
-    B.match_known = lambda *a, **k: None
-    B.set_known_context(None)
-    B._OPP_CACHE.clear()
-    t_opp = _templates(opp_order, B.opp_sets, 1)
-    B._OPP_CACHE.clear()
-    t_me = _templates(my_order, B.opp_sets, 0)
-    B.match_known = real_match
-    _ctx(t['id'])
-    seen = [{}, {}]
-    rng = prep.RandomRNG(seed)
-    log, faints = [], []
-    for tn in range(30):
-        if st.winner is not None:
-            break
-        a0 = S.lookahead_action(belief(st, 1, t_opp, seen[1]), 0, my_depth)
-        a1 = S.lookahead_action(belief(st, 0, t_me, seen[0]), 1, opp_depth)
-        log.append((st.active(0).name, _name(st, 0, a0), st.active(1).name, _name(st, 1, a1)))
-        for i, a in ((0, a0), (1, a1)):
-            if a and a[0] == 'm' and a[1] != 'recharge':
-                seen[i].setdefault(st.sides[i].act, [])
-                if a[1] not in seen[i][st.sides[i].act]:
-                    seen[i][st.sides[i].act].append(a[1])
-        before = [[m.alive for m in s.mons] for s in st.sides]
-        st = E.step(st, a0, a1, rng=rng, chooser=S.chooser)
-        for i in (0, 1):
-            for j, m in enumerate(st.sides[i].mons):
-                if before[i][j] and not m.alive:
-                    faints.append((tn + 1, i, m.name))
-    res = st.winner if st.winner is not None else (1 if S.evaluate(st) > 0 else -1)
-    left = [[(m.name, round(100 * m.hp / m.maxhp)) for m in s.mons] for s in st.sides]
-    return {'id': t['id'], 'title': t['title'], 'my_order': my_order, 'opp_order': opp_order, 'res': res,
-            'log': log, 'faints': faints, 'left': left, 'my_top': [o for _, o in top[:3]]}
-
-
-def _blind_job(args):
-    n, kid, seed = args
-    apply_party(load_party(n))
-    t = next(t for t in teams() if t['id'] == kid)
     try:
-        return blind_game(t, seed)
-    except Exception as e:  # keep the other games
+        B.set_known_context(None)
+        best, top, _ = B.select(opp6, ignore_stored=True)
+    finally:
+        B.match_known = real_match
+    return best, [o for _, o in top[:3]]
+
+
+def blind_play(args):
+    """One game: true sets on both sides; each side reads ahead on its own guess of the other's sets (usage data
+    and the moves seen so far). We read my_depth turns ahead, they read opp_depth."""
+    party, kid, my_order, opp_order, seed, my_depth, opp_depth = args
+    apply_party(party)
+    real_match = B.match_known
+    try:
+        _ctx(kid)
+        st = B.engine_game(my_order, opp_order)
+        B.match_known = lambda *a, **k: None
+        B.set_known_context(None)
+        B._OPP_CACHE.clear()
+        t_opp = _templates(opp_order, B.opp_sets, 1)
+        B._OPP_CACHE.clear()
+        t_me = _templates(my_order, B.opp_sets, 0)
+        B.match_known = real_match
+        B._KNOWN_CTX['team'] = None
+        _ctx(kid)
+        seen = [{}, {}]
+        rng = prep.RandomRNG(seed)
+        log, faints = [], []
+        for tn in range(30):
+            if st.winner is not None:
+                break
+            a0 = S.lookahead_action(belief(st, 1, t_opp, seen[1]), 0, my_depth)
+            a1 = S.lookahead_action(belief(st, 0, t_me, seen[0]), 1, opp_depth)
+            log.append((st.active(0).name, _name(st, 0, a0), st.active(1).name, _name(st, 1, a1)))
+            for i, a in ((0, a0), (1, a1)):
+                if a and a[0] == 'm' and a[1] != 'recharge':
+                    lst = seen[i].setdefault(st.sides[i].act, [])
+                    if a[1] not in lst:
+                        lst.append(a[1])
+            before = [[m.alive for m in s.mons] for s in st.sides]
+            st = E.step(st, a0, a1, rng=rng, chooser=S.chooser)
+            for i in (0, 1):
+                for j, m in enumerate(st.sides[i].mons):
+                    if before[i][j] and not m.alive:
+                        faints.append((tn + 1, i, m.name, log[-1][2 if i == 0 else 0]))
+        res = st.winner if st.winner is not None else (1 if S.evaluate(st) > 0 else -1)
+        left = [[(m.name, round(100 * m.hp / m.maxhp)) for m in s.mons] for s in st.sides]
+        return {'res': res, 'log': log, 'faints': faints, 'left': left}
+    except Exception:
         import traceback
-        return {'id': kid, 'title': t['title'], 'error': traceback.format_exc()[-800:]}
+        return {'res': None, 'error': traceback.format_exc()[-800:]}
+    finally:
+        B.match_known = real_match
 
 
-def blind(n):
-    apply_party(load_party(n))
+def blind(tag, games=3, worst_from=3, my_depth=4, opp_depth=3):
+    """Blind test of party `tag` against every team's worst selection (from round worst_from), `games` games each."""
+    party = load_tag(tag)
+    apply_party(party)
     ts = teams()
-    jobs = [(n, t['id'], zlib.crc32(('blind' + t['id']).encode())) for t in ts]
-    out_p = os.path.join(OUT_D, f'blind_R{n}.json')
-    done = json.load(open(out_p, encoding='utf-8')) if os.path.exists(out_p) else []
-    have = {d['id'] for d in done if 'error' not in d}
-    done = [d for d in done if d['id'] in have]
-    for j in jobs:
-        if j[1] in have:
+    ws = worst_selection(worst_from)
+    out_p = os.path.join(OUT_D, f'blind_{tag}.json')
+    done = json.load(open(out_p, encoding='utf-8')) if os.path.exists(out_p) else {}
+    if done.get('sig') != sig(party):
+        done = {'sig': sig(party), 'teams': {}}
+    t0 = time.time()
+    jobs, meta = [], []
+    for t in ts:
+        d = done['teams'].get(t['id'])
+        if d and len([g for g in d['games'] if g.get('res') is not None]) >= games:
             continue
-        t0 = time.time()
-        d = _blind_job(j)      # B.select uses all cores itself
-        d['seconds'] = round(time.time() - t0, 1)
-        done.append(d)
-        json.dump(done, open(out_p, 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
-        print(d['title'][:30], d.get('res', d.get('error')), d.get('my_order'), d.get('opp_order'),
-              d['seconds'], flush=True)
+        mo, top = blind_select(t)
+        done['teams'][t['id']] = {'title': t['title'], 'my_order': mo, 'my_top': top, 'opp_order': ws[t['id']]['opp'],
+                                  'worst_info': ws[t['id']], 'games': []}
+        for k in range(games):
+            jobs.append((party, t['id'], mo, ws[t['id']]['opp'], zlib.crc32(f'blind{t["id"]}{k}'.encode()),
+                         my_depth, opp_depth))
+            meta.append(t['id'])
+    print(f'blind {tag}: {len(jobs)} games (selection {round(time.time() - t0)}s)', flush=True)
+    res = prep.pool_map(blind_play, jobs) if jobs else []
+    for kid, r in zip(meta, res):
+        done['teams'][kid]['games'].append(r)
+    json.dump(done, open(out_p, 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
+    gs = [g for d in done['teams'].values() for g in d['games'] if g.get('res') is not None]
+    w = sum(g['res'] == 1 for g in gs)
+    print(f'blind {tag}: {w}/{len(gs)} = {w / max(1, len(gs)):.1%}  ({round(time.time() - t0)}s)', flush=True)
+    for kid, d in done['teams'].items():
+        print(f"  {d['title'][:26]}: {' → '.join(d['my_order'])} vs {' → '.join(d['opp_order'])}: "
+              f"{''.join('○' if g.get('res') == 1 else '×' if g.get('res') is not None else '!' for g in d['games'])}",
+              flush=True)
+    return done
 
 
 # ---------------------------------------------------------------- report
@@ -601,25 +637,25 @@ def report():
     fn = os.path.join(OUT_D, 'final_notes.md')
     if os.path.exists(fn):
         L += [open(fn, encoding='utf-8').read().strip(), '']
-    for n in (4, 3, 2, 1):
-        bp = os.path.join(OUT_D, f'blind_R{n}.json')
-        if not os.path.exists(bp):
+    import glob
+    for bp in sorted(glob.glob(os.path.join(OUT_D, 'blind_*.json')), key=os.path.getmtime):
+        d = json.load(open(bp, encoding='utf-8'))
+        if 'teams' not in d:
             continue
-        bl = json.load(open(bp, encoding='utf-8'))
-        ok = [d for d in bl if 'res' in d]
-        L += [f'## ブラインドテスト（パーティ R{n}・こちら4手読み・相手3手読み・各1戦）', '',
-              '選出画面で互いに6体の種族だけを見て選出し、対戦中も相手の型は使用率データと見えた技からの推測で読みます。',
-              f"結果: {sum(d['res'] == 1 for d in ok)}勝{sum(d['res'] != 1 for d in ok)}敗", '',
-              '| 構築 | こちらの選出 | 相手の選出 | 結果 | 倒れた順 |', '|---|---|---|---|---|']
-        for d in bl:
-            if 'res' not in d:
-                L.append(f"| {d['title'][:28]} | エラー | | | |")
-                continue
-            fa = '、'.join(f"{tn}T{'自' if i == 0 else '相'}{nm}" for tn, i, nm in d['faints'])
-            L.append(f"| {d['title'][:28]} | {' → '.join(d['my_order'])} | {' → '.join(d['opp_order'])} | "
-                     f"{'勝ち' if d['res'] == 1 else '負け'} | {fa} |")
+        tag = os.path.basename(bp)[6:-5]
+        gs = [g for x in d['teams'].values() for g in x['games'] if g.get('res') is not None]
+        first = [x['games'][0] for x in d['teams'].values() if x['games'] and x['games'][0].get('res') is not None]
+        w = sum(g['res'] == 1 for g in gs)
+        L += [f'## ブラインドテスト: パーティ {tag}（相手は最悪選出・こちら4手読み・相手3手読み）', '',
+              '互いに6体の種族だけを見て選出（こちらは記事の型を使わない）。相手はこちらに最も厳しい選出を必ず持ってくる前提。'
+              '対戦中も相手の型は使用率データと見えた技からの推測で読む。',
+              f"- 最悪選出への勝率: **{w}/{len(gs)} = {w / max(1, len(gs)):.0%}**（各構築1戦目のみ: "
+              f"{sum(g['res'] == 1 for g in first)}/{len(first)}）", '',
+              '| 構築 | こちらの選出 | 相手の最悪選出 | 結果 |', '|---|---|---|---|']
+        for x in d['teams'].values():
+            r = ''.join('○' if g.get('res') == 1 else '×' if g.get('res') is not None else '!' for g in x['games'])
+            L.append(f"| {x['title'][:28]} | {' → '.join(x['my_order'])} | {' → '.join(x['opp_order'])} | {r} |")
         L.append('')
-        break
     open(REPORT_P, 'w', encoding='utf-8').write('\n'.join(L) + '\n')
     print('→', os.path.normpath(REPORT_P))
 
@@ -641,8 +677,8 @@ def main():
     elif '--analyze' in a:
         analyze(int(a[a.index('--analyze') + 1]))
     elif '--blind' in a:
-        blind(int(a[a.index('--blind') + 1]))
-        report()
+        blind(a[a.index('--blind') + 1], games=int(a[a.index('--games') + 1]) if '--games' in a else 3,
+              worst_from=int(a[a.index('--worst-from') + 1]) if '--worst-from' in a else 3)
     else:
         report()
 
