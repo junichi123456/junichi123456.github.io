@@ -876,21 +876,45 @@ def _base(n):
     return BASE_OF.get(norm(n), norm(n))
 
 
-def match_known(opp_names, min_overlap=4):
-    """The known team (from published team articles) that the opponent's six match, or None."""
+def match_known(opp_names, min_overlap=6):
+    """The known team (from published team articles) whose six are exactly the opponent's six, or None.
+    Five of six is a different team: then nothing from the article is used."""
     bases = {_base(x) for x in opp_names}
-    best, bo = None, 0
+    if len(bases) < min_overlap:
+        return None
     for t in KNOWN_TEAMS:
-        o = len(bases & {_base(m['name']) for m in t['team']})
-        if o > bo:
-            best, bo = t, o
-    return best if bo >= min_overlap else None
+        if bases == {_base(m['name']) for m in t['team']}:
+            return t
+    return None
 
 
 def set_known_context(opp_names):
     _KNOWN_CTX['team'] = match_known(opp_names) if opp_names else None
     _OPP_CACHE.clear()
     return _KNOWN_CTX['team']
+
+
+def known_consistent(revealed):
+    """Same six can still be another player's team. If anything seen in this battle (moves, items, mega) does
+    not fit the article, the article is dropped for every mon, so it never bends our play."""
+    t = _KNOWN_CTX['team']
+    if not t:
+        return True
+    by = {_base(m['name']): m for m in t['team']}
+    for sp, rec in (revealed or {}).items():
+        m = by.get(_base(sp))
+        if m is None:
+            continue
+        name = norm(m['name'])
+        is_mega = name != _base(sp) and name in POKE
+        for o in rec.get('obs', []):
+            k = o.get('kind')
+            if (k == 'move' and o.get('move') not in m['moves']) or \
+                    (k == 'item' and o.get('item') not in (m['item'], None)) or (k == 'mega' and not is_mega):
+                _KNOWN_CTX['team'] = None
+                _OPP_CACHE.clear()
+                return False
+    return True
 
 
 def known_set(b, obs=()):
@@ -1196,6 +1220,11 @@ def load_state(js):
         except Exception:
             team6 = None
     set_known_context(team6 or [d['name'] for d in js.get('opp', [])])
+    if _KNOWN_CTX['team']:
+        try:
+            known_consistent((_learn._load(_learn.CURRENT, None) or {}).get('opp_revealed', {}))
+        except Exception:
+            pass
     st = State()
     me = []
     for d in js['me']:
@@ -1323,7 +1352,7 @@ def main():
         print('選出順: ' + ' → '.join(best))
         kt = _KNOWN_CTX['team']
         if kt:
-            print(f"（既知構築: {kt['title']}。型は記事どおり、対策は logs/COUNTERS.md）")
+            print(f"（既知構築: {kt['title']}（6体一致）。型は記事を参考にし、対戦中に記事と違う技・持ち物・メガが見えたら記事の情報は使わない）")
         if '--no-log' not in sys.argv:
             try:  # start a battle record so turns can be appended with learn.py
                 _learn.start()
