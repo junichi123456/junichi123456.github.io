@@ -120,9 +120,9 @@ class OBSSource:
         self.cl = obs.ReqClient(host=host, port=port, password=password, timeout=3)
         self.source = source or self.cl.get_current_program_scene().current_program_scene_name
 
-    def grab(self):
+    def grab(self, w=1280, h=720):
         from PIL import Image
-        r = self.cl.get_source_screenshot(self.source, 'png', 1280, 720, -1)
+        r = self.cl.get_source_screenshot(self.source, 'png', w, h, -1)
         data = r.image_data.split(',', 1)[1]
         return Image.open(io.BytesIO(base64.b64decode(data))).convert('RGB')
 
@@ -232,6 +232,72 @@ class WinOCR:
         return self.asyncio.run(run())
 
 
+# ---------------------------------------------------------------- fast scene detection (no OCR)
+def _disk(w, h, cx, cy, r):
+    import numpy as np
+    yy, xx = np.mgrid[0:h, 0:w]
+    return (xx - cx) ** 2 + (yy - cy) ** 2 <= r * r
+
+
+_BTN = {}
+
+
+def button_score(img):
+    """How much the image looks like the move-selection screen: the 「たたかう」 and 「ポケモン」 buttons at the bottom
+    right are one yellow-green and one purple disk (which one is yellow depends on the cursor). 0..1, >0.5 = the
+    input screen (two recorded battles: input screens 0.7-0.8, everything else below 0.5)."""
+    import numpy as np
+    w, h = 240, 135
+    if not _BTN:
+        _BTN['a'] = _disk(w, h, 222.5, 88.75, 8)     # たたかう
+        _BTN['b'] = _disk(w, h, 211.25, 116.25, 8)   # ポケモン
+    f = np.asarray(img.convert('RGB').resize((w, h)), dtype=np.int16)
+    r, g, b = f[..., 0], f[..., 1], f[..., 2]
+    yg = (r > 150) & (g > 180) & (b < 120)                      # the highlighted button
+    pu = (b > 190) & (r < 200) & (b - g > 25)                    # the other button
+    vi = (b > 110) & (b - r > 40) & (g < 90)                     # the emblem on the highlighted button
+    wh = (r > 180) & (g > 180) & (b > 180)                       # icon / label on either button
+    btn = yg | pu | vi | wh
+    A, B = _BTN['a'], _BTN['b']
+    if max(yg[A].mean(), yg[B].mean()) < 0.2:
+        return 0.0
+    return (btn[A].mean() + btn[B].mean()) / 2
+
+
+class FastWatch:
+    """Looks at a small screenshot several times a second for the move-selection screen (button colours only), so
+    the input screen is known within ~0.3 s instead of waiting for the next full OCR pass."""
+    EVERY, ON, OFF = 0.15, 0.6, 0.5
+
+    def __init__(self, make_source):
+        import threading
+        self.make_source, self.onset, self.wake = make_source, None, threading.Event()
+        self._hits = self._miss = 0
+        threading.Thread(target=self._run, daemon=True).start()
+
+    def _run(self):
+        src = None
+        while True:
+            t0 = time.time()
+            try:
+                src = src or self.make_source()
+                img = src.grab(320, 180) if isinstance(src, OBSSource) else src.grab()
+                v = button_score(img)
+            except Exception:
+                src, v = None, 0.0
+                time.sleep(1.0)
+            if v > self.ON:
+                self._hits, self._miss = self._hits + 1, 0
+                if self._hits >= 2 and self.onset is None:
+                    self.onset = time.time()
+                    self.wake.set()
+            elif v < self.OFF:
+                self._miss += 1
+                if self._miss >= 3:
+                    self._hits, self.onset = 0, None
+            time.sleep(max(0.0, self.EVERY - (time.time() - t0)))
+
+
 FIELD_KEYS = ('boosts', 'status', 'cured', 'weather', 'weather_end', 'terrain', 'terrain_end', 'hazards', 'items', 'mega',
               'sub', 'sub_end', 'trick_room', 'trick_room_end', 'abilities')
 
@@ -247,6 +313,7 @@ class Speculator:
 
     def reset(self):
         self.key, self.stable, self.running, self.done, self.opp_team = None, 0, False, {}, None
+        self.watch = None      # (key, seq, line shown) of the command screen now waiting for input
 
     def read(self, text):
         try:
@@ -259,30 +326,45 @@ class Speculator:
         except Exception:
             return None
 
+    LEVELS = (5.0, 10.0, 20.0)     # keep reading the same position deeper while the animation lasts
+
     def feed(self, text):
         key = self.read(text)
         if key is None:
             return
         self.stable = self.stable + 1 if key == self.key else 1
         self.key = key
-        if self.stable == 2 and key not in self.done and not self.running:
-            self.running = True
-            import subprocess, threading
+        have = self.done.get(key)
+        nxt = next((x for x in self.LEVELS if not have or x > have[2]), None)
+        if self.stable >= 2 and nxt and not self.running:
+            self.start(key, nxt)
 
-            def run():
-                me, hp_me, opp, hp_opp = key
-                try:
-                    r = subprocess.run([sys.executable, os.path.join(HERE, 'battle.py'), 'auto', '--me', me, '--opp', opp,
-                                        '--hp', str(hp_me), str(hp_opp), '--sec', str(self.sec)],
-                                       capture_output=True, text=True, encoding='utf-8', timeout=self.sec + 25)
-                    out = (r.stdout or '').strip()
-                    line = next((l for l in out.splitlines() if l.startswith('次:')), None)
-                    if line:
-                        self.done[key] = (line, out)
-                except Exception:
-                    pass
-                self.running = False
-            threading.Thread(target=run, daemon=True).start()
+    def start(self, key, sec):
+        import subprocess, threading
+        self.running = True
+
+        def run():
+            me, hp_me, opp, hp_opp = key
+            try:
+                r = subprocess.run([sys.executable, os.path.join(HERE, 'battle.py'), 'auto', '--me', me, '--opp', opp,
+                                    '--hp', str(hp_me), str(hp_opp), '--sec', str(sec)],
+                                   capture_output=True, text=True, encoding='utf-8', timeout=sec + 25)
+                out = (r.stdout or '').strip()
+                line = next((l for l in out.splitlines() if l.startswith('次:')), None)
+                if line:
+                    self.done[key] = (line, out, sec)
+                    w = self.watch
+                    if w and w[0] == key and line != w[2]:      # the answer already shown changed with deeper reading
+                        publish(w[1], line, out + f'\n（深読み{sec:.0f}秒で更新）', 0.0, update=True)
+                        self.watch = (key, w[1], line)
+            except Exception:
+                pass
+            self.running = False
+            if key == self.key and (self.watch is None or self.watch[0] == key):
+                nxt = next((x for x in self.LEVELS if x > sec), None)
+                if nxt:
+                    self.start(key, nxt)
+        threading.Thread(target=run, daemon=True).start()
 
     def answer(self, text, turn):
         """The precomputed move for the command screen in `text`, or None (position differs or the field changed)."""
@@ -291,15 +373,24 @@ class Speculator:
         key = self.read(text)
         return self.done.get(key) if key else None
 
+    def shown(self, text, seq, line):
+        key = self.read(text)
+        self.watch = (key, seq, line) if key else None
+        if key and not self.running:          # keep deepening this position until the next screen
+            have = self.done.get(key)
+            nxt = next((x for x in self.LEVELS if not have or x > have[2]), None)
+            if nxt:
+                self.start(key, nxt)
 
-def publish(seq, line, out, seconds):
+
+def publish(seq, line, out, seconds, update=False):
     try:
         safeio.write_json(os.path.join(OUT, 'decision.json'),
                           {'seq': seq, 'decision': line, 'full': out, 'seconds': round(seconds, 1), 'time': time.time()})
     except Exception:
         pass
     bar = '=' * 44
-    print(f'\n{bar}\n  #{seq} {line}   （{seconds:.1f}秒）\n{bar}\n', flush=True)
+    print(f'\n{bar}\n  #{seq} {"（更新）" if update else ""}{line}   （{seconds:.1f}秒）\n{bar}\n', flush=True)
 
 
 def decide_async(seq, sec, phase='command'):
@@ -334,6 +425,7 @@ def main():
                     help='対戦開始から次の選出画面まで、この秒数ごとに画面を保存（0で保存しない）')
     ap.add_argument('--decide-sec', type=float, default=5.0, help='行動選択画面で自動判断する探索秒数')
     ap.add_argument('--no-decide', action='store_true', help='行動選択画面での自動判断をしない')
+    ap.add_argument('--no-fast', action='store_true', help='ボタンの色による行動選択画面の高速検出をしない')
     a = ap.parse_args()
     try:
         sys.stdout.reconfigure(encoding='utf-8')
@@ -354,10 +446,12 @@ def main():
         pass
     det = Detector()
     spec = Speculator(a.decide_sec)
+    fast = FastWatch(make_source) if not a.no_fast else None
     import msgparse
     field_p = os.path.join(OUT, 'field_state.json')
     tracker = msgparse.FieldTracker(field_p)
     turn_lines, last_lines = [], set()
+    last_command_t = 0.0
     pending_replace, replace_done = None, set()
     start_wait = None          # time the preview ended, until the 'start' event is sent
     skip_command_until = 0.0   # the turn-1 command screen was already handled by 'start'
@@ -374,6 +468,8 @@ def main():
             time.sleep(2)
             continue
         phase = classify(text)
+        if fast and fast.onset and phase == 'other' and not det.in_preview and preview_seq:
+            phase = 'command'          # the buttons are up: the OCR text may still lag behind
         img.save(os.path.join(OUT, 'game.tmp.png'))
         safeio.replace(os.path.join(OUT, 'game.tmp.png'), os.path.join(OUT, 'game.png'))
         # collect battle messages shown between screens (new lines only, in order of appearance)
@@ -390,6 +486,10 @@ def main():
         if not det.in_preview and preview_seq and not a.no_decide and phase != 'command':
             spec.feed(text)            # HP panels during the animation: compute the next move ahead of time
         event = det.update(phase, now)
+        if event is None and fast and fast.onset and det.command_armed and not det.in_preview and preview_seq:
+            event, det.command_armed = 'command', False      # the button watcher is sure enough on its own
+        if event == 'command' and not turn_lines and now - last_command_t < 60:
+            event = None       # back on the same input screen after looking at the log / party: not a new turn
         if pending_replace and event is None and phase != 'command' and not det.in_preview and \
                 (any(k in text.replace(' ', '') for k in REPLACE_KEYS) or now - pending_replace[0] > 2.5):
             # our mon fainted: the screen to send the next one (no command screen comes before it)
@@ -427,6 +527,7 @@ def main():
             img.save(snap)
             ev = {'seq': seq, 'phase': phase, 'time': ts, 'image': snap, 'text': text}
             if phase in ('command', 'start', 'replace'):
+                last_command_t = now
                 # what happened since the previous decision: moves, stat changes, weather, items, ...
                 turn = msgparse.parse_turn(turn_lines)
                 tracker.apply(turn)
@@ -463,11 +564,16 @@ def main():
             if phase in ('command', 'start', 'replace') and not a.no_decide:
                 pre = spec.answer(text, ev.get('turn_events') or {}) if phase == 'command' else None
                 if pre:
-                    publish(seq, pre[0], pre[1] + '\n（演出中に先読み済み）', 0.0)
+                    publish(seq, pre[0], pre[1] + f'\n（演出中に先読み済み・{pre[2]:.0f}秒読み）', 0.0)
+                    spec.shown(text, seq, pre[0])
                 else:
                     decide_async(seq, a.decide_sec, phase)
         safeio.write_json(state_p, {'phase': phase, 'seq': seq, 'time': time.time(), 'text': text})
-        time.sleep(max(0.0, a.interval - (time.time() - t0)))
+        if fast:
+            fast.wake.clear()
+            fast.wake.wait(max(0.0, a.interval - (time.time() - t0)))   # the button watcher can wake us early
+        else:
+            time.sleep(max(0.0, a.interval - (time.time() - t0)))
 
 
 if __name__ == '__main__':
