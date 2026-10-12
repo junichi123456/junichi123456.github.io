@@ -384,9 +384,12 @@ class Speculator:
 
 
 def publish(seq, line, out, seconds, update=False):
+    rec = {'seq': seq, 'decision': line, 'full': out, 'seconds': round(seconds, 1), 'time': time.time(),
+           'update': update, 'precomputed': '先読み済み' in (out or '')}
     try:
-        safeio.write_json(os.path.join(OUT, 'decision.json'),
-                          {'seq': seq, 'decision': line, 'full': out, 'seconds': round(seconds, 1), 'time': time.time()})
+        safeio.write_json(os.path.join(OUT, 'decision.json'), rec)
+        with open(os.path.join(OUT, 'decisions.jsonl'), 'a', encoding='utf-8') as f:   # every answer, for review
+            f.write(json.dumps(rec, ensure_ascii=False) + '\n')
     except Exception:
         pass
     bar = '=' * 44
@@ -525,7 +528,8 @@ def main():
             ts = time.strftime('%Y-%m-%dT%H:%M:%S')
             snap = os.path.join(OUT, f'game_{seq:04d}_{phase}.png')
             img.save(snap)
-            ev = {'seq': seq, 'phase': phase, 'time': ts, 'image': snap, 'text': text}
+            ev = {'seq': seq, 'phase': phase, 'time': ts, 'image': snap, 'text': text, 't': now,
+                  'screen_onset': fast.onset if fast else None}
             if phase in ('command', 'start', 'replace'):
                 last_command_t = now
                 # what happened since the previous decision: moves, stat changes, weather, items, ...
