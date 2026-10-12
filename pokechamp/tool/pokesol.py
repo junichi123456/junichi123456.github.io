@@ -10,6 +10,14 @@ KNOWN_P = os.path.join(HERE, 'data', 'known_teams.json')
 _STAT = {'hp': 'hp', 'attack': 'atk', 'defense': 'def', 'specialAttack': 'spa', 'specialDefense': 'spd', 'speed': 'spe'}
 
 
+_ROTOM = {'ロトム(炎)': 'ヒートロトム', 'ロトム(水)': 'ウォッシュロトム', 'ロトム(氷)': 'フロストロトム',
+          'ロトム(飛)': 'スピンロトム', 'ロトム(飛行)': 'スピンロトム', 'ロトム(草)': 'カットロトム'}
+
+
+def _z2h(s):
+    return s.translate(str.maketrans('０１２３４５６７８９', '0123456789')) if s else s
+
+
 def _stream(page):
     """Decode the React Router turbo-stream payload in the page into Python objects."""
     chunks = re.findall(r'streamController\.enqueue\((".*?")\);?</script>', page, re.S)
@@ -55,10 +63,11 @@ def parse(page, url=''):
         ab = [A.get(x) for x in json.loads(a.get('ability-ids', '[]'))]
         name = re.sub(r'\((♂|♀)\)', '', P.get(int(a['pokemon-id']), ''))
         name = re.sub(r'^(.+)\((ヒスイ|ガラル|アローラ|パルデア)\)$', r'\2\1', name)   # ヌメルゴン(ヒスイ) -> ヒスイヌメルゴン
+        name = _ROTOM.get(name, name)
         m = {'name': name, 'nature': N.get(int(a['nature-id'])) if a.get('nature-id') else None,
              'ability': ab[0] if ab else None, 'base_ability': ab[1] if len(ab) > 1 else (ab[0] if ab else None),
              'item': I.get(int(a['item-id'])) if a.get('item-id') else None,
-             'moves': [M.get(x) for x in json.loads(a.get('move-ids', '[]'))],
+             'moves': [_z2h(M.get(x)) for x in json.loads(a.get('move-ids', '[]')) if M.get(x)],
              'ap': {_STAT[k]: v for k, v in json.loads(a.get('evs', '{}')).items() if v and k in _STAT}}
         if m not in team and all(x['name'] != m['name'] for x in team):   # an alternative set of the same mon: keep the first
             team.append(m)
