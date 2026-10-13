@@ -1442,12 +1442,16 @@ def screen_read(text, opp_team=()):
 
 
 def auto_state(hp_me=None, hp_opp=None, me_name=None, opp_name=None, from_screen=False, fainted=(), party=None,
-               bar=None):
+               bar=None, trust_names=False):
     """state.json built from what game_watch.py already tracks (logs/live/field_state.json: who is out, fainted,
     boosts, status, items, moves seen, weather, hazards, mega) and the battle record (our order), plus the two HP
     values read from the screen. HP of the mons on the bench is remembered from earlier turns
     (logs/live/auto_state.json). The turn's events are recorded to the battle log (learn.py) on the way."""
     live = os.path.join(_learn.LOGS, 'live')
+    # who is out: names given as tracked (trust_names: game_watch followed the switches) come first, then the field
+    # state tracked from the messages / panels; names read off the screen only fill a gap (they can be misreads or
+    # other text on the screen: the move list, the party list ...)
+    trusted = (me_name, opp_name) if trust_names else (None, None)
     try:
         fs = json.load(open(os.path.join(live, 'field_state.json'), encoding='utf-8'))
     except Exception:
@@ -1514,8 +1518,12 @@ def auto_state(hp_me=None, hp_opp=None, me_name=None, opp_name=None, from_screen
                     _learn._save(_learn.CURRENT, rec)
                 except Exception:
                     pass
-    act_me = b(me_name) or b(fs['active'].get('me')) or (order[0] if order else None)
-    act_opp = b(opp_name, 'opp') or b(fs['active'].get('opp'), 'opp')
+    opp6 = [b(x, 'opp') for x in (rec.get('opp_team') or [])]
+    fs_me, fs_opp = b(fs['active'].get('me')), b(fs['active'].get('opp'), 'opp')
+    seen_me = b(me_name) if b(me_name) in MY and (not order or b(me_name) in order) else None
+    seen_opp = b(opp_name, 'opp') if opp_name and (not opp6 or b(opp_name, 'opp') in opp6) else None
+    act_me = b(trusted[0]) or (fs_me if fs_me in MY else None) or seen_me or (order[0] if order else None)
+    act_opp = b(trusted[1], 'opp') or fs_opp or seen_opp
     for n in [act_me] + [b(x) for x in fs['mons']['me']]:
         if n and n not in order and n in MY:
             order.append(n)
@@ -1705,7 +1713,8 @@ def main():
         dead = [BASE_OF.get(norm(x), norm(x)) for x in ((opt('--fainted') or [''])[0]).split(',') if x]
         js = auto_state(hp[0], hp[1], (opt('--me') or [None])[0], (opt('--opp') or [None])[0], '--screen' in a, dead,
                         ((opt('--party') or [''])[0] or '').split(',') if '--party' in a else None,
-                        [None if x in ('-', '') else x for x in opt('--panel', 2)] if '--panel' in a else None)
+                        [None if x in ('-', '') else x for x in opt('--panel', 2)] if '--panel' in a else None,
+                        '--tracked' in a)
         sec = float((opt('--sec') or [DEFAULT_SEC])[0])
         if not js['me'] or not js['opp']:  # no battle going on (result screen, field_state of a finished battle)
             print('次: （場のポケモンが分からないので判断できません）')

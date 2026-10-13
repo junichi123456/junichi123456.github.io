@@ -766,6 +766,8 @@ class Speculator:
         self.sec = sec
         self.reset()
 
+    live = None      # () -> (our mon out, theirs) as followed through the switches (set by main)
+
     def reset(self):
         self.key, self.stable, self.running, self.done, self.opp_team = None, 0, False, {}, None
         self.watch = None      # (key, seq, line shown) of the command screen now waiting for input
@@ -777,6 +779,8 @@ class Speculator:
                 rec = json.load(open(os.path.join(OUT, '..', 'current.json'), encoding='utf-8'))
                 self.opp_team = rec.get('opp_team') or None
             me, hp_me, opp, hp_opp = _B.screen_read(text, self.opp_team or [])
+            live = self.live() if self.live else (None, None)
+            me, opp = live[0] or me, live[1] or opp      # who is out as followed through the switches comes first
             if hp:            # the HP digits read from the panels (hpdigits) beat the whole-screen OCR
                 hp_me = hp[0] if hp[0] is not None else hp_me
                 hp_opp = hp[1] if hp[1] is not None else hp_opp
@@ -804,7 +808,7 @@ class Speculator:
         def run():
             me, hp_me, opp, hp_opp = key
             try:
-                r = subprocess.run([sys.executable, os.path.join(HERE, 'battle.py'), 'auto', '--me', me, '--opp', opp,
+                r = subprocess.run([sys.executable, os.path.join(HERE, 'battle.py'), 'auto', '--me', me, '--opp', opp, '--tracked',
                                     '--hp', str(hp_me), str(hp_opp), '--sec', str(sec)],
                                    capture_output=True, text=True, encoding='utf-8', timeout=sec + 25)
                 out = (r.stdout or '').strip()
@@ -1148,6 +1152,21 @@ def main():
     det = Detector()
     spec = Speculator(a.decide_sec)
     fast = FastWatch(make_source) if not a.no_fast else None
+    def live_active():
+        """Who is out right now: the tracked field state plus the switches of the turn in progress (messages and
+        the HP panels)."""
+        act = dict(tracker.s.get('active') or {})
+        try:
+            for sw in msgparse.parse_turn(turn_msgs(), dedupe=not msg_ok).get('switch', []):
+                act[sw['side']] = msgparse.canon(sw['side'], sw['mon'], tracker.opp_team() if sw['side'] == 'opp' else ())
+            for e in timeline:
+                if 'switch_seen' in e:
+                    act[e['side']] = msgparse.canon(e['side'], e['switch_seen'], tracker.opp_team() if e['side'] == 'opp' else ())
+        except Exception:
+            pass
+        return act.get('me'), act.get('opp')
+
+    spec.live = live_active
     msgw = MsgWatch(make_source, WinOCR, os.path.join(OUT, 'messages.jsonl'),
                     skip=(lambda: fast.scene in ('command', 'party', 'preview')) if fast else None) if not a.no_msg else None
     timeline = []              # this turn's messages and HP panel readings from msgw, in order
@@ -1299,6 +1318,9 @@ def main():
                                                   tracker, turn)
                 tracker.apply(turn)
                 ev['turn_events'] = {k: v for k, v in turn.items() if v}
+                ev['active'] = dict(tracker.s.get('active') or {})
+                act = ev['active']
+                print(time.strftime('%Y-%m-%dT%H:%M:%S'), f"場: 自分 {act.get('me') or '?'} / 相手 {act.get('opp') or '?'}", flush=True)
                 ev['field_state'] = field_p
                 with open(log_p, 'a', encoding='utf-8') as f:
                     f.write(json.dumps({'seq': seq, 'time': ts, 'lines': turn_msgs(), 'parsed': ev['turn_events'],
