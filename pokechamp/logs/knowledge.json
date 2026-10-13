@@ -1,12 +1,12 @@
 {
- "n_battles": 5,
+ "n_battles": 6,
  "wins": 2,
  "species": {
-  "グソクムシャ": {
-   "seen": 1,
+  "ルカリオ": {
+   "seen": 2,
    "picked": 0,
    "led": 0,
-   "w_seen": 0,
+   "w_seen": 1,
    "w_picked": 0,
    "mega": 0,
    "scarf_evidence": 0,
@@ -15,11 +15,11 @@
    "abilities": {},
    "inferred": {}
   },
-  "ルカリオ": {
-   "seen": 2,
+  "ラグラージ": {
+   "seen": 1,
    "picked": 0,
    "led": 0,
-   "w_seen": 1,
+   "w_seen": 0,
    "w_picked": 0,
    "mega": 0,
    "scarf_evidence": 0,
@@ -54,19 +54,6 @@
    "abilities": {},
    "inferred": {}
   },
-  "ラグラージ": {
-   "seen": 1,
-   "picked": 0,
-   "led": 0,
-   "w_seen": 0,
-   "w_picked": 0,
-   "mega": 0,
-   "scarf_evidence": 0,
-   "moves": {},
-   "items": {},
-   "abilities": {},
-   "inferred": {}
-  },
   "ニョロトノ": {
    "seen": 1,
    "picked": 1,
@@ -84,6 +71,19 @@
    "abilities": {},
    "inferred": {}
   },
+  "グソクムシャ": {
+   "seen": 1,
+   "picked": 0,
+   "led": 0,
+   "w_seen": 0,
+   "w_picked": 0,
+   "mega": 0,
+   "scarf_evidence": 0,
+   "moves": {},
+   "items": {},
+   "abilities": {},
+   "inferred": {}
+  },
   "サザンドラ": {
    "seen": 1,
    "picked": 0,
@@ -97,10 +97,10 @@
    "abilities": {},
    "inferred": {}
   },
-  "クチート": {
+  "ウォッシュロトム": {
    "seen": 1,
-   "picked": 1,
-   "led": 1,
+   "picked": 0,
+   "led": 0,
    "w_seen": 0,
    "w_picked": 0,
    "mega": 0,
@@ -136,10 +136,10 @@
    "abilities": {},
    "inferred": {}
   },
-  "ウォッシュロトム": {
+  "クチート": {
    "seen": 1,
-   "picked": 0,
-   "led": 0,
+   "picked": 1,
+   "led": 1,
    "w_seen": 0,
    "w_picked": 0,
    "mega": 0,
@@ -162,12 +162,12 @@
    "abilities": {},
    "inferred": {}
   },
-  "ライボルト": {
-   "seen": 1,
-   "picked": 0,
+  "ギャラドス": {
+   "seen": 2,
+   "picked": 1,
    "led": 0,
-   "w_seen": 1,
-   "w_picked": 0,
+   "w_seen": 2,
+   "w_picked": 1,
    "mega": 0,
    "scarf_evidence": 0,
    "moves": {},
@@ -188,12 +188,12 @@
    "abilities": {},
    "inferred": {}
   },
-  "ギャラドス": {
-   "seen": 2,
-   "picked": 1,
+  "ニンフィア": {
+   "seen": 1,
+   "picked": 0,
    "led": 0,
-   "w_seen": 2,
-   "w_picked": 1,
+   "w_seen": 1,
+   "w_picked": 0,
    "mega": 0,
    "scarf_evidence": 0,
    "moves": {},
@@ -201,7 +201,7 @@
    "abilities": {},
    "inferred": {}
   },
-  "ニンフィア": {
+  "ライボルト": {
    "seen": 1,
    "picked": 0,
    "led": 0,
@@ -227,8 +227,8 @@
    "abilities": {},
    "inferred": {}
   },
-  "プテラ": {
-   "seen": 1,
+  "ゲンガー": {
+   "seen": 2,
    "picked": 0,
    "led": 0,
    "w_seen": 1,
@@ -254,7 +254,7 @@
    "inferred": {}
   },
   "リザードン": {
-   "seen": 1,
+   "seen": 2,
    "picked": 0,
    "led": 0,
    "w_seen": 1,
@@ -266,8 +266,8 @@
    "abilities": {},
    "inferred": {}
   },
-  "ゲンガー": {
-   "seen": 2,
+  "プテラ": {
+   "seen": 1,
    "picked": 0,
    "led": 0,
    "w_seen": 1,
@@ -284,6 +284,32 @@
    "picked": 0,
    "led": 0,
    "w_seen": 1,
+   "w_picked": 0,
+   "mega": 0,
+   "scarf_evidence": 0,
+   "moves": {},
+   "items": {},
+   "abilities": {},
+   "inferred": {}
+  },
+  "エーフィ": {
+   "seen": 1,
+   "picked": 1,
+   "led": 1,
+   "w_seen": 0,
+   "w_picked": 0,
+   "mega": 0,
+   "scarf_evidence": 0,
+   "moves": {},
+   "items": {},
+   "abilities": {},
+   "inferred": {}
+  },
+  "ブラッキー": {
+   "seen": 1,
+   "picked": 0,
+   "led": 0,
+   "w_seen": 0,
    "w_picked": 0,
    "mega": 0,
    "scarf_evidence": 0,
@@ -320,19 +346,6 @@
    "abilities": {},
    "inferred": {}
   },
-  "エーフィ": {
-   "seen": 1,
-   "picked": 1,
-   "led": 1,
-   "w_seen": 0,
-   "w_picked": 0,
-   "mega": 0,
-   "scarf_evidence": 0,
-   "moves": {},
-   "items": {},
-   "abilities": {},
-   "inferred": {}
-  },
   "マスカーニャ": {
    "seen": 1,
    "picked": 1,
@@ -346,7 +359,65 @@
    "abilities": {},
    "inferred": {}
   },
-  "ブラッキー": {
+  "メタグロス": {
+   "seen": 1,
+   "picked": 0,
+   "led": 0,
+   "w_seen": 0,
+   "w_picked": 0,
+   "mega": 0,
+   "scarf_evidence": 0,
+   "moves": {},
+   "items": {},
+   "abilities": {},
+   "inferred": {}
+  },
+  "サメハダー": {
+   "seen": 1,
+   "picked": 0,
+   "led": 0,
+   "w_seen": 0,
+   "w_picked": 0,
+   "mega": 0,
+   "scarf_evidence": 0,
+   "moves": {},
+   "items": {},
+   "abilities": {},
+   "inferred": {}
+  },
+  "イダイトウ": {
+   "seen": 1,
+   "picked": 1,
+   "led": 0,
+   "w_seen": 0,
+   "w_picked": 0,
+   "mega": 0,
+   "scarf_evidence": 0,
+   "moves": {},
+   "items": {},
+   "abilities": {},
+   "inferred": {}
+  },
+  "エルレイド": {
+   "seen": 1,
+   "picked": 1,
+   "led": 1,
+   "w_seen": 0,
+   "w_picked": 0,
+   "mega": 0,
+   "scarf_evidence": 0,
+   "moves": {
+    "せいなるつるぎ": 1
+   },
+   "items": {
+    "きあいのタスキ": 1
+   },
+   "abilities": {},
+   "inferred": {
+    "いじっぱり/H2 A32 S32/きあいのタスキ": 1
+   }
+  },
+  "セグレイブ": {
    "seen": 1,
    "picked": 0,
    "led": 0,
@@ -380,6 +451,10 @@
   "ガブリアス → ルカリオ → ミミッキュ": [
    1,
    0
+  ],
+  "ミミッキュ → ルカリオ → ガブリアス": [
+   1,
+   0
   ]
  },
  "my_mon": {
@@ -396,15 +471,15 @@
    1
   ],
   "ルカリオ": [
-   2,
+   3,
    0
   ],
   "ガブリアス": [
-   4,
+   5,
    2
   ],
   "ミミッキュ": [
-   1,
+   2,
    0
   ]
  },
@@ -502,6 +577,30 @@
    0
   ],
   "ミミッキュ|ボーマンダ": [
+   1,
+   0
+  ],
+  "ミミッキュ|エルレイド": [
+   1,
+   0
+  ],
+  "ミミッキュ|イダイトウ": [
+   1,
+   0
+  ],
+  "ルカリオ|エルレイド": [
+   1,
+   0
+  ],
+  "ルカリオ|イダイトウ": [
+   1,
+   0
+  ],
+  "ガブリアス|エルレイド": [
+   1,
+   0
+  ],
+  "ガブリアス|イダイトウ": [
    1,
    0
   ]
