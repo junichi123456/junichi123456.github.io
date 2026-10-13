@@ -1034,7 +1034,8 @@ def decide_async(seq, sec, phase='command', party=None, bar=None, names=None, up
             (['--switch'] if phase == 'pivot' else []) + \
             (['--party', ','.join(f'{n}={hp or ""}' for n, hp in party)] if party else []) + \
             (['--panel'] + ['-' if v is None else str(v) for v in bar] if bar and any(v is not None for v in bar) else []) + \
-            (['--me', nm[0]] if nm and nm[0] else []) + (['--opp', nm[1]] if nm and nm[1] else [])
+            (['--me', nm[0]] if nm and nm[0] else []) + (['--opp', nm[1]] if nm and nm[1] else []) + \
+            (['--seen'] if nm and any(nm) else [])
 
     def run():
         t0 = time.time()

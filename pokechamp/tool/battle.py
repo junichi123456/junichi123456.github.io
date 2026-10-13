@@ -1528,7 +1528,7 @@ def auto_state(hp_me=None, hp_opp=None, me_name=None, opp_name=None, from_screen
     # take the one the screen shows, or the only alive one whose max HP is the one on the panel, or the only one left
     def _down(n):
         return n in fainted or any((v or {}).get('fainted') for k, v in fs['mons']['me'].items() if b(k) == n)
-    if act_me and _down(act_me) and from_screen:
+    if act_me and _down(act_me):
         alive = [n for n in order if not _down(n)]
         mx = None
         try:
@@ -1582,8 +1582,12 @@ def auto_state(hp_me=None, hp_opp=None, me_name=None, opp_name=None, from_screen
         if ev and ev.get('seq') != prev.get('recorded_seq') and rec:
             te = ev.get('turn_events') or {}
             mv = {m['side']: m['move'] for m in te.get('moves', [])}
+            who = {m['side']: m['mon'] for m in te.get('moves', [])}
             it = next((x['item'] for x in te.get('items', []) if x.get('side') == 'opp'), None)
-            t = {'turn': fs.get('turn'), 'me': act_me, 'opp': act_opp, 'my_action': mv.get('me'),
+            # these are the events of the turn that just ended (the tracker already counted it), done by the mons
+            # that moved in it — not by the ones out now
+            t = {'turn': max(0, (fs.get('turn') or 1) - 1), 'me': b(who.get('me')) or act_me,
+                 'opp': b(who.get('opp'), 'opp') or act_opp, 'my_action': mv.get('me'),
                  'opp_action': mv.get('opp'), 'first': te.get('first'), 'opp_item': it,
                  'opp_mega': any(x.get('side') == 'opp' for x in te.get('mega', [])),
                  'my_hp_pct_after': round(100 * hpm.get(act_me, 0) / max(1, mine(act_me)[0].stat['hp'])) if act_me else None,
@@ -1733,7 +1737,9 @@ def main():
         js = auto_state(hp[0], hp[1], (opt('--me') or [None])[0], (opt('--opp') or [None])[0], '--screen' in a, dead,
                         ((opt('--party') or [''])[0] or '').split(',') if '--party' in a else None,
                         [None if x in ('-', '') else x for x in opt('--panel', 2)] if '--panel' in a else None,
-                        '--tracked' in a)
+                        # names given by hand (Claude reading the screen) or as tracked are trusted; names game_watch
+                        # read off the panels come with --seen and only fill a gap
+                        '--seen' not in a)
         sec = float((opt('--sec') or [DEFAULT_SEC])[0])
         if not js['me'] or not js['opp']:  # no battle going on (result screen, field_state of a finished battle)
             print('次: （場のポケモンが分からないので判断できません）')
