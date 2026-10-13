@@ -1524,6 +1524,25 @@ def auto_state(hp_me=None, hp_opp=None, me_name=None, opp_name=None, from_screen
     seen_opp = b(opp_name, 'opp') if opp_name and (not opp6 or b(opp_name, 'opp') in opp6) else None
     act_me = b(trusted[0]) or (fs_me if fs_me in MY else None) or seen_me or (order[0] if order else None)
     act_opp = b(trusted[1], 'opp') or fs_opp or seen_opp
+    # on a command screen the mon out is alive: if the tracked one fainted (the replacement's message was missed),
+    # take the one the screen shows, or the only alive one whose max HP is the one on the panel, or the only one left
+    def _down(n):
+        return n in fainted or any((v or {}).get('fainted') for k, v in fs['mons']['me'].items() if b(k) == n)
+    if act_me and _down(act_me) and from_screen:
+        alive = [n for n in order if not _down(n)]
+        mx = None
+        try:
+            if hp_me is not None and '/' in str(hp_me):
+                mx = int(str(hp_me).split('/')[1])
+        except Exception:
+            mx = None
+        same = [n for n in alive if mx and mine(n)[0].stat['hp'] == mx]
+        if seen_me in alive:
+            act_me = seen_me
+        elif len(same) == 1:
+            act_me = same[0]
+        elif len(alive) == 1:
+            act_me = alive[0]
     for n in [act_me] + [b(x) for x in fs['mons']['me']]:
         if n and n not in order and n in MY:
             order.append(n)
