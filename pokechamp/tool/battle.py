@@ -1543,6 +1543,9 @@ def auto_state(hp_me=None, hp_opp=None, me_name=None, opp_name=None, from_screen
             act_me = same[0]
         elif len(alive) == 1:
             act_me = alive[0]
+    if act_opp and seen_opp and seen_opp != act_opp and \
+            any((v or {}).get('fainted') for k, v in fs['mons']['opp'].items() if b(k, 'opp') == act_opp):
+        act_opp = seen_opp      # the tracked one is down: the one the screen shows came in
     for n in [act_me] + [b(x) for x in fs['mons']['me']]:
         if n and n not in order and n in MY:
             order.append(n)

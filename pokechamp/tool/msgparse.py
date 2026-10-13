@@ -94,6 +94,20 @@ def locate_name(s):
     return _fuzzy(s, 'name')
 
 
+def exact_name(s):
+    """A mon name read correctly (exactly, or only without 濁点): trusted even when it is not among the six the
+    team preview was taken to show (the preview can be misidentified)."""
+    s = apply_fixes(s)
+    for n in NAMES:
+        if n in s:
+            return n
+    d = devoice(s)
+    for dn, n in NAMES_DV:
+        if len(dn) >= 4 and dn in d:
+            return n
+    return None
+
+
 def find_name(s):
     r = locate_name(s)
     return r[0] if r else None
@@ -204,6 +218,12 @@ def _in_team(side, name):
         return not MY_BASES or any(m == b or m.endswith(b) or b.endswith(m) for m in MY_BASES)
     opp = _opp_team()
     return not opp or b in opp
+
+
+def _team_side_only_me(name):
+    """Ours and not in the opponent's six (so a message naming it is not about their side)."""
+    b = BASE.get(name, name)
+    return bool(MY_BASES) and any(m == b or m.endswith(b) or b.endswith(m) for m in MY_BASES) and b not in _opp_team()
 
 
 def _team_side(name):
@@ -409,7 +429,7 @@ def parse_turn(lines, dedupe=True):
         # a mon named in a message is on the field at that moment (unless the message takes it out)
         if name:
             psd = _team_side(name) or side
-            if not _in_team(psd, name):
+            if not _in_team(psd, name) and not (psd == 'opp' and exact_name(s) == name and not _team_side_only_me(name)):
                 psd = None               # not a mon of that side (side lost by the OCR): say nothing
         if name and psd:
             if has(s, ('引っこめ', 'ひっこめ', '戻れ', 'もどれ', 'たおれ', '倒れ', '戻っていく', 'もどっていく')):
@@ -482,7 +502,9 @@ def parse_turn(lines, dedupe=True):
         if has(s, ('繰り出した', 'くりだした', '繰り出し')):
             # the opponent sent one of its six in: pick the closest of them even when the OCR garbled the name
             opp6 = _opp_team()
-            n2 = name if name and (not opp6 or BASE.get(name, name) in opp6) else (best_of(s, opp6) if opp6 else None)
+            ex = exact_name(s)
+            n2 = ex if ex and not _team_side_only_me(ex) else \
+                (name if name and (not opp6 or BASE.get(name, name) in opp6) else (best_of(s, opp6) if opp6 else None))
             if n2:
                 ev['switch'].append({'side': 'opp', 'mon': n2})
                 came_in.update(opp=n2, moved=False)
@@ -732,6 +754,26 @@ class FieldTracker:
             name = self.s['active'][side]
         return side, name
 
+    def add_opp(self, name):
+        """A mon of theirs that was not in the six read from the team preview: add it to the battle record, so the
+        sets and the decisions know it (the preview was misidentified)."""
+        b = BASE.get(name, name)
+        p = os.path.join(os.path.dirname(self.path), '..', 'current.json')
+        try:
+            rec = json.load(open(p, encoding='utf-8'))
+        except Exception:
+            return
+        team = rec.get('opp_team') or []
+        if not team or b in [BASE.get(x, x) for x in team]:
+            return
+        rec['opp_team'] = team + [b]
+        rec.setdefault('opp_team_fixed', []).append(b)
+        try:
+            safeio.write_json(p, rec)
+            _CTX['key'] = None           # names / moves of this battle changed
+        except Exception:
+            pass
+
     def mon(self, side, name):
         mega = name in BASE
         name = canon(side, name, self.opp_team() if side == 'opp' else ())
@@ -771,6 +813,8 @@ class FieldTracker:
             if not any(sw['side'] == w['side'] for sw in ev['switch']):
                 s['active'][w['side']] = None      # taken back and the newcomer not read: unknown, not the old one
         for sw in ev['switch']:
+            if sw['side'] == 'opp':
+                self.add_opp(sw['mon'])
             old = s['active'][sw['side']]
             if old:
                 om = self.mon(sw['side'], old)
