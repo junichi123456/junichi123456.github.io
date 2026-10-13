@@ -44,6 +44,29 @@ _LOOKALIKE = str.maketrans('力口工二一夕卜ヰ三', 'カロエニータト
 _SMALL = str.maketrans('ァィゥェォッャュョヮぁぃぅぇぉっゃゅょゎ', 'アイウエオツヤユヨワあいうえおつやゆよわ')
 
 
+# katakana the OCR mixes up with each other in this font (グソクムシャ → ブソフムシャ, ン ↔ ソ, シ ↔ ツ): the same
+# letter when comparing names closely
+_LOOSE = str.maketrans('フソツ', 'クンシ')
+
+
+def loose(s):
+    return s.translate(_LOOSE)
+
+
+def best_of(s, names, th=0.5):
+    """The closest of a few given names in s (e.g. the opponent's six in 「…を 繰り出した」), or None."""
+    d = loose(devoice(s))
+    best = None
+    for n in names:
+        dn = loose(devoice(n))
+        for L in (len(dn) - 1, len(dn), len(dn) + 1):
+            for i in range(0, max(0, len(d) - L) + 1):
+                r = difflib.SequenceMatcher(None, d[i:i + L], dn).ratio()
+                if r >= th and (best is None or r > best[0]):
+                    best = (r, n)
+    return best[1] if best else None
+
+
 def devoice(s):
     """OCR often drops 濁点/半濁点 (ゴリランダー → コリランター, メガシンカ → メカシンカ), reads katakana as look-alike
     kanji (メガシノ力 → カ) and small kana as large ones (ウツボット → ウツボツト): compare without them."""
@@ -175,6 +198,31 @@ def context():
     return _CTX['names'], _CTX['moves']
 
 
+def _in_team(side, name):
+    b = BASE.get(name, name)
+    if side == 'me':
+        return not MY_BASES or any(m == b or m.endswith(b) or b.endswith(m) for m in MY_BASES)
+    opp = _opp_team()
+    return not opp or b in opp
+
+
+def _team_side(name):
+    """'me' / 'opp' when only one team has this mon, else None."""
+    b = BASE.get(name, name)
+    opp = _opp_team()
+    in_me = any(m == b or m.endswith(b) or b.endswith(m) for m in MY_BASES) if MY_BASES else False
+    in_opp = b in opp
+    return ('me' if in_me else 'opp') if in_me != in_opp else None
+
+
+def _opp_team():
+    try:
+        rec = json.load(open(os.path.join(LOGS, 'current.json'), encoding='utf-8'))
+        return [BASE.get(x, x) for x in rec.get('opp_team') or []]
+    except Exception:
+        return []
+
+
 def set_context(opp_team):
     """For tests / tools without current.json."""
     _CTX['key'] = None
@@ -247,13 +295,14 @@ def _fuzzy(s, kind):
     d = devoice(s)
     best = None
     if kind == 'name':
+        dl = loose(d)
         for n in names:
-            dn = devoice(n)
+            dn = loose(devoice(n))
             if len(dn) < 3:
                 continue
             for L in (len(dn) - 1, len(dn), len(dn) + 1):
                 for i in range(0, max(0, len(d) - L) + 1):
-                    r = difflib.SequenceMatcher(None, d[i:i + L], dn).ratio()
+                    r = difflib.SequenceMatcher(None, dl[i:i + L], dn).ratio()
                     if r >= 0.75 and (best is None or r > best[0] or (r == best[0] and len(n) > len(best[1]))):
                         best = (r, n, i, i + L)
     else:
@@ -348,6 +397,7 @@ def parse_turn(lines, dedupe=True):
     seen = set()
     ctx = {'side': None, 'name': None}  # whose message the previous line was (a message often spans two lines)
     came_in = {'moved': False}          # the mon each side sent in last, and whether a move was used since
+    on_field = {}                       # the mon last seen in play on each side
     for raw in lines:
         s = norm(raw)
         if not s or (dedupe and s in seen):
@@ -356,6 +406,16 @@ def parse_turn(lines, dedupe=True):
         side = side_of(s)
         name = find_name(s)
         prev = dict(ctx)
+        # a mon named in a message is on the field at that moment (unless the message takes it out)
+        if name:
+            psd = _team_side(name) or side
+            if not _in_team(psd, name):
+                psd = None               # not a mon of that side (side lost by the OCR): say nothing
+        if name and psd:
+            if has(s, ('引っこめ', 'ひっこめ', '戻れ', 'もどれ', 'たおれ', '倒れ', '戻っていく', 'もどっていく')):
+                on_field[psd] = None
+            elif not has(s, ('繰り出し', 'ゆけっ', 'いけっ')):
+                on_field[psd] = name
         if name or side_marked(s):
             ctx = {'side': side if side_marked(s) or name else ctx['side'], 'name': name}
         tc = type_change(s)
@@ -419,12 +479,20 @@ def parse_turn(lines, dedupe=True):
                     ev['hazards'].append({'side': hs, 'hazard': 'rocks'})
         if name and has(s, ('倒れた', 'たおれた')):
             ev['faint'].append({'side': side, 'mon': name})
-        if name and has(s, ('繰り出した', 'くりだした')):
-            ev['switch'].append({'side': 'opp', 'mon': name})
-            came_in.update(opp=name, moved=False)
+        if has(s, ('繰り出した', 'くりだした', '繰り出し')):
+            # the opponent sent one of its six in: pick the closest of them even when the OCR garbled the name
+            opp6 = _opp_team()
+            n2 = name if name and (not opp6 or BASE.get(name, name) in opp6) else (best_of(s, opp6) if opp6 else None)
+            if n2:
+                ev['switch'].append({'side': 'opp', 'mon': n2})
+                came_in.update(opp=n2, moved=False)
+                on_field['opp'] = n2
+        if has(s, ('引っこめた', 'ひっこめた')):
+            ev.setdefault('withdraw', []).append({'side': 'opp'})
         elif name and (devoice(s)[:5].startswith(('ゆけつ', 'いけつ', '行け')) or 'がんばれ' in s or 'たのんだ' in s):
             ev['switch'].append({'side': 'me', 'mon': name})
             came_in.update(me=name, moved=False)
+            on_field['me'] = name
         if MEGA_RE.search(devoice(s).replace('力', 'カ')) or MEGA_RE.search(s):
             # 「(相手の) Xは メガXに メガシンカした！」; the first half may be on the line before
             # (or the 「…ナイトと …リングが 反応した」 line); with no name the tracker uses the mon in play
@@ -448,6 +516,7 @@ def parse_turn(lines, dedupe=True):
             ev['moves'][-1]['hits'] = int(h.group(1))
         if has(s, ('効果はバツグン', 'こうかはばつぐん', 'バツグンだ', 'ばつぐんだ')):
             ev['super_effective'] += 1
+    ev['on_field'] = on_field
     first = ev['moves'][0]['side'] if ev['moves'] else None
     ev['first'] = first
     return ev
@@ -698,6 +767,9 @@ class FieldTracker:
             s['terrain'], s['terrain_turns'] = None, 0
         if ev['terrain']:
             s['terrain'], s['terrain_turns'] = ev['terrain'], 5
+        for w in ev.get('withdraw', []):
+            if not any(sw['side'] == w['side'] for sw in ev['switch']):
+                s['active'][w['side']] = None      # taken back and the newcomer not read: unknown, not the old one
         for sw in ev['switch']:
             old = s['active'][sw['side']]
             if old:
@@ -770,6 +842,9 @@ class FieldTracker:
                 mm['types'], mm['added_type'] = tc['type'], None
             else:
                 mm['added_type'] = tc['type']
+        for side, n in (ev.get('on_field') or {}).items():
+            if n:   # the last mon a message showed in play (catches a switch whose own message was misread)
+                s['active'][side] = canon(side, n, self.opp_team() if side == 'opp' else ())
         for side in ('me', 'opp'):        # a changed type lasts only while the mon stays in
             act = s['active'].get(side)
             for n, mm in s['mons'][side].items():

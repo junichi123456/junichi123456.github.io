@@ -572,6 +572,8 @@ class MsgWatch:
         self._hp = {'opp': None, 'me': None}
         self._shown = {}
         self._icon, self._iname, self._ipend, self._itry = {}, {}, {}, {}
+        self._iset, self._lib = {}, {}       # when the current picture was set; pictures per mon of this battle
+        self.known = None                    # () -> (our mon out, theirs) as tracked (set by main)
         threading.Thread(target=self._run, daemon=True).start()
 
     def take(self):
@@ -652,6 +654,7 @@ class MsgWatch:
         ref = self._icon.get(side)
         if ref is None:
             self._icon[side], self._iname[side], self._ipend[side] = f, self.panel_name(side, pc, ocr, dx), 0
+            self._iset[side] = now
             return
         sim = icon_sim(f, ref)
         if sim >= self.SAME:
@@ -659,6 +662,17 @@ class MsgWatch:
             if self._iname.get(side) is None and now - self._itry.get(side, -9) >= 1.0:
                 self._itry[side] = now                      # the name was not read yet: try again
                 self._iname[side] = self.panel_name(side, pc, ocr)
+            # remember this mon's picture (name from the panel, else as followed through the messages), so a later
+            # switch to it is recognised even when its name cannot be read
+            if now - self._iset.get(side, -9) >= 1.5:
+                who = self._iname.get(side)
+                if not who and self.known:
+                    try:
+                        who = self.known()[0 if side == 'me' else 1]
+                    except Exception:
+                        who = None
+                if who:
+                    self._lib.setdefault(side, {})[who] = f
             return
         if sim >= self.CHANGED:
             return
@@ -666,8 +680,12 @@ class MsgWatch:
         if self._ipend[side] < 3:
             return                                  # 3 times in a row: not a flash of an animation
         name = self.panel_name(side, pc, ocr)
+        if not name:          # not readable: the remembered pictures of this side's mons
+            sims = sorted(((icon_sim(f, g), n) for n, g in self._lib.get(side, {}).items()), reverse=True)
+            if sims and sims[0][0] >= 0.75 and (len(sims) == 1 or sims[0][0] - sims[1][0] >= 0.15):
+                name = sims[0][1]
         old = self._iname.get(side)
-        self._icon[side], self._ipend[side] = f, 0
+        self._icon[side], self._ipend[side], self._iset[side] = f, 0, now
         if name and old and name == old:
             self._emit({'t': now, 'side': side, 'form_change': name})     # same mon, other picture
         elif name and name != old:
@@ -1169,6 +1187,8 @@ def main():
     spec.live = live_active
     msgw = MsgWatch(make_source, WinOCR, os.path.join(OUT, 'messages.jsonl'),
                     skip=(lambda: fast.scene in ('command', 'party', 'preview')) if fast else None) if not a.no_msg else None
+    if msgw:
+        msgw.known = live_active
     timeline = []              # this turn's messages and HP panel readings from msgw, in order
     import msgparse
     field_p = os.path.join(OUT, 'field_state.json')
@@ -1337,6 +1357,7 @@ def main():
                 tracker = msgparse.FieldTracker(field_p)  # new battle
                 if msgw and hasattr(msgw, '_icon'):
                     msgw._icon, msgw._iname, msgw._ipend, msgw._itry = {}, {}, {}, {}     # panels of the last battle
+                    msgw._iset, msgw._lib = {}, {}
                 spec.reset()
                 pending_replace, replace_done = None, set()
                 tracker.save()
