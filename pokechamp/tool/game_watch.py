@@ -1030,7 +1030,7 @@ def decide_async(seq, sec, phase='command', party=None, bar=None, names=None, up
     import subprocess, threading
 
     def args_for(nm):
-        return ['auto', '--sec', str(sec)] + (['--screen'] if phase not in ('replace', 'pivot') else []) + \
+        return ['auto', '--sec', 'auto' if sec is None else str(sec), '--packet'] + (['--screen'] if phase not in ('replace', 'pivot') else []) + \
             (['--switch'] if phase == 'pivot' else []) + \
             (['--party', ','.join(f'{n}={hp or ""}' for n, hp in party)] if party else []) + \
             (['--panel'] + ['-' if v is None else str(v) for v in bar] if bar and any(v is not None for v in bar) else []) + \
@@ -1046,7 +1046,7 @@ def decide_async(seq, sec, phase='command', party=None, bar=None, names=None, up
                 nm = get_names() if get_names else nm
             try:
                 r = subprocess.run([sys.executable, os.path.join(HERE, 'battle.py')] + args_for(nm),
-                                   capture_output=True, text=True, encoding='utf-8', timeout=sec + 25)
+                                   capture_output=True, text=True, encoding='utf-8', timeout=(sec or 12) + 25)
                 out = (r.stdout or '').strip() or (r.stderr or '').strip()[-300:]
             except Exception as e:
                 out = f'判断に失敗: {e}'
@@ -1146,7 +1146,8 @@ def main():
     ap.add_argument('--interval', type=float, default=0.7)
     ap.add_argument('--record-every', type=float, default=0.5,
                     help='対戦開始から次の選出画面まで、この秒数ごとに画面を保存（0で保存しない）')
-    ap.add_argument('--decide-sec', type=float, default=5.0, help='行動選択画面で自動判断する探索秒数')
+    ap.add_argument('--decide-sec', type=float, default=None,
+                    help='行動選択画面で自動判断する探索秒数（省略すると局面に応じて自動: 最終局面2秒/通常5秒/分岐が多い9秒）')
     ap.add_argument('--no-decide', action='store_true', help='行動選択画面での自動判断をしない')
     ap.add_argument('--no-fast', action='store_true', help='ボタンの色による行動選択画面の高速検出をしない')
     ap.add_argument('--no-msg', action='store_true', help='メッセージ欄とHP欄だけを0.25秒ごとに読む監視をしない')

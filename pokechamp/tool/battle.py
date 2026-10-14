@@ -1193,7 +1193,7 @@ def field_defaults(js):
     except Exception:
         return js
     js = dict(js)
-    for k in ('weather', 'weather_turns', 'terrain', 'terrain_turns', 'rocks_me', 'rocks_opp', 'trick_room'):
+    for k in ('weather', 'weather_turns', 'terrain', 'terrain_turns', 'rocks_me', 'rocks_opp', 'trick_room', 'turn'):
         if k not in js and fs.get(k) is not None:
             js[k] = fs[k]
     if 'mega_used_me' not in js: js['mega_used_me'] = fs['mega_used']['me']
@@ -1366,13 +1366,24 @@ def fmt_action(st, a):
 DEFAULT_SEC = 5.0     # search time per turn (3-ply results were as good as 4-ply in the depth study)
 
 
-def decide_js(js, sec=DEFAULT_SEC, verbose=False, switch=False):
+def decide_js(js, sec=DEFAULT_SEC, verbose=False, switch=False, packet=False):
+    """sec=None: the search time follows the scene (facts.scene: S 2 s / N 5 s / B 9 s).
+    packet=True: also print / save the facts packet (facts.py) for the LLM."""
     t_fill = time.time()
     js, assumed = worst_case_fill(js, seconds=1.0)          # unseen back mons: the worst selection for us
-    sec = max(2.0, sec - (time.time() - t_fill))
     st = load_state(js)
     import search as _search
     est = _search.from_battle(st, js)
+    sc = None
+    if sec is None or packet:
+        try:
+            import facts as _facts
+            sc = _facts.scene(st, js)
+        except Exception:
+            sc = ('N', [])
+    if sec is None:
+        sec = _facts.SEC[sc[0]]
+    sec = max(2.0, sec - (time.time() - t_fill))
     if switch or not est.sides[0].mons[est.sides[0].act].alive:
         # after a faint, or after our U-turn type move (switch=True): who comes in
         opts = [j for j, m in enumerate(est.sides[0].mons) if m.alive and not (switch and j == est.sides[0].act)]
@@ -1382,6 +1393,14 @@ def decide_js(js, sec=DEFAULT_SEC, verbose=False, switch=False):
         print(f"次: {est.sides[0].mons[j].name}を出す"); return
     depth, res, nodes = _search.decide(est, sec)
     print(f"次: {_search.fmt(est, res[0][1])}")
+    if packet:
+        try:
+            pk = _facts.packet(st, js, res, est, sc)
+            print('PACKET ' + _facts.compact(pk))
+            import safeio as _sio
+            _sio.write_json(os.path.join(_learn.LOGS, 'live', 'packet.json'), pk, indent=1)
+        except Exception as e:
+            print(f'PACKET 生成失敗: {e}')
     if verbose:
         for m in st.sides[1]:
             print('  相手推定:', m.name, m.cur.nature, m.cur.sp_str(), m.cur.item, m.moves)
@@ -1743,11 +1762,11 @@ def main():
                         # names given by hand (Claude reading the screen) or as tracked are trusted; names game_watch
                         # read off the panels come with --seen and only fill a gap
                         '--seen' not in a)
-        sec = float((opt('--sec') or [DEFAULT_SEC])[0])
+        sec = float(opt('--sec')[0]) if opt('--sec') and opt('--sec')[0] != 'auto' else (None if opt('--sec') else DEFAULT_SEC)
         if not js['me'] or not js['opp']:  # no battle going on (result screen, field_state of a finished battle)
             print('次: （場のポケモンが分からないので判断できません）')
             sys.exit(0)
-        decide_js(js, sec, '-v' in a, switch='--switch' in a)
+        decide_js(js, sec, '-v' in a, switch='--switch' in a, packet='--packet' in a)
     elif len(sys.argv) >= 2 and sys.argv[1] == 'leadplan':
         # 選出確定後の待ち時間に、相手の先発候補ごとの1ターン目の行動を計算しておく（game_watch が自動で起動）
         a = sys.argv[2:]
