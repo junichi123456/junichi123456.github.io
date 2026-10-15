@@ -1367,7 +1367,7 @@ DEFAULT_SEC = 5.0     # search time per turn (3-ply results were as good as 4-pl
 
 
 def decide_js(js, sec=DEFAULT_SEC, verbose=False, switch=False, packet=False):
-    """sec=None: the search time follows the scene (facts.scene: S 2 s / N 5 s / B 9 s).
+    """sec=None: the search time follows the scene (facts.scene: S 2 s / N 7 s / B 9 s).
     packet=True: also print / save the facts packet (facts.py) for the LLM."""
     t_fill = time.time()
     js, assumed = worst_case_fill(js, seconds=1.0)          # unseen back mons: the worst selection for us
