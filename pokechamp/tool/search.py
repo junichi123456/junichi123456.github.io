@@ -167,9 +167,10 @@ def action_scores(st, i, acts=None):
             continue
         s = 0.1
         if md.boosts and md.target == 'self' or md.self_boost:
-            up = sum(v for v in (md.boosts or {}).values() if v > 0)
+            ign = boosts_ignored(me, foe)
+            up = sum(v for k, v in (md.boosts or {}).items() if v > 0 and not (ign and k != 'spe'))
             cur = sum(max(0, v) for v in me.boosts.values())
-            s = 0.45 if hp > 0.6 and cur < 4 and foe_threat < 0.6 else 0.05
+            s = 0.45 if up and hp > 0.6 and cur < 4 and foe_threat < 0.6 else 0.05
             s += 0.05 * up
         elif md.status:
             s = -1 if foe.status or 'substitute' in foe.vol else 0.45
@@ -195,7 +196,7 @@ def action_scores(st, i, acts=None):
             if md.volatile == 'destinybond':
                 s = 0.6 if hp < 0.35 and st.lastmove != 'destinybond' else -0.5
         elif md.force_switch:
-            s = 0.15 + 0.1 * sum(max(0, v) for v in foe.boosts.values())
+            s = 0.15 + (0 if boosts_ignored(foe, me) else 0.1 * sum(max(0, v) for v in foe.boosts.values()))
         out.append((s, a))
     return out
 
@@ -207,6 +208,15 @@ def prune(st, i, k):
 
 
 # ---------------------------------------------------------------- evaluation
+_BREAKERS = ('moldbreaker', 'teravolt', 'turboblaze')
+
+
+def boosts_ignored(m, foe):
+    """True if `foe` (て ん ね ん / unaware) ignores m's attack / defence boosts: they change no damage, so they are
+    worth nothing (speed boosts still count). Mold Breaker & co. break through it."""
+    return bool(foe is not None and foe.alive and foe.ability == 'unaware' and m.ability not in _BREAKERS)
+
+
 def _mon_value(st, i, m, active):
     if not m.alive:
         return 0.0
@@ -214,11 +224,12 @@ def _mon_value(st, i, m, active):
     v = 1.0 + 1.2 * f
     if active:
         b = m.boosts
+        ign = boosts_ignored(m, st.active(1 - i))
         phys = m.stat('atk') >= m.stat('spa')
-        off = b['atk'] if phys else b['spa']
+        off = 0 if ign else (b['atk'] if phys else b['spa'])
         v += 0.09 * max(off, 0) - 0.06 * max(-off, 0)
         v += 0.05 * max(b['spe'], 0) - 0.03 * max(-b['spe'], 0)
-        v += 0.03 * (b['def'] + b['spd'])
+        v += 0 if ign else 0.03 * (b['def'] + b['spd'])
         if 'substitute' in m.vol:
             v += 0.4 * m.vol['substitute'] / m.maxhp
     st_ = m.status

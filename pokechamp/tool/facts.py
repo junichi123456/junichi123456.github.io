@@ -10,7 +10,7 @@ LLM（Sonnet）には数値計算をさせない。ダメージ・確定数・�
 import itertools, json
 
 import battle as B
-from calc import MOVE
+from calc import MOVE, POKE
 
 SEC = {'S': 2.0, 'N': 7.0, 'B': 9.0}
 DEPTH = {'S': '1-2手', 'N': '3手', 'B': '4-5手+相手行動2-3分岐'}
@@ -171,6 +171,16 @@ def warnings(st, js, rows=None):
         w.append('A:自分のばけのかわ健在(最初の1撃は無効)')
     if opp.disguise:
         w.append('A:相手のばけのかわ健在(最初の1撃は無効)')
+    # てんねん: attack / defence boosts are ignored by the foe's unaware (and by ours)
+    mine_up = {k: v for k, v in me.boosts.items() if v > 0 and k != 'spe'}
+    opp_up = {k: v for k, v in opp.boosts.items() if v > 0 and k != 'spe'}
+    if opp.cur.ability == 'てんねん':
+        w.append('A:相手の特性てんねん: こちらの攻撃・防御の能力上昇は無効(積む技は無意味。素早さだけは有効)'
+                 + (f'。現在の上昇{mine_up}は無効' if mine_up else ''))
+    elif 'てんねん' in (POKE.get(B._base(opp.name), {}).get('ab') or []):
+        w.append(f'A:{opp.name}は特性てんねんの型もある: 積む技の効果が出ない場合は特性を疑う')
+    if me.cur.ability == 'てんねん' and opp_up:
+        w.append(f'A:自分の特性てんねん: 相手の能力上昇{opp_up}は無視して戦える(積まれても怖くない)')
     ab = opp.cur.ability
     if ab in NOTABLE_AB:
         w.append(f'A:相手の特性{ab}')
