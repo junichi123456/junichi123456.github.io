@@ -898,6 +898,41 @@ def match_known(opp_names, min_overlap=6):
     return None
 
 
+def similar_known(opp_names, min_overlap=3, limit=3):
+    """Published teams (with a guide) sharing 3+ of the opponent's mons: [(team, matched names, overlap)] best first.
+    Only a reference kept in the back of the head: the guide never changes the reading of the battle."""
+    bases = {_base(x) for x in opp_names if x}
+    out = []
+    for t in KNOWN_TEAMS:
+        if not t.get('guide'):
+            continue
+        tb = {_base(m['name']) for m in t['team']}
+        hit = sorted(bases & tb)
+        if len(hit) >= min_overlap:
+            r = t.get('rating') or {}
+            out.append((len(hit), -(r.get('rank') or 10 ** 6), t, hit))
+    out.sort(key=lambda x: (-x[0], x[1]))
+    return [(t, hit, n) for n, _, t, hit in out[:limit]]
+
+
+def guide_lines(opp_names, short=False):
+    """Text lines about similar lineups: type, plan, selection criteria, heavy opponents."""
+    L = []
+    for t, hit, n in similar_known(opp_names):
+        g, r = t['guide'], t.get('rating') or {}
+        rr = ' '.join(x for x in [f"{r['rank']}位" if r.get('rank') else '', f"R{r['final']}" if r.get('final') else ''] if x)
+        L.append(f"参考: {g.get('type', '')}（{rr}・{n}/6一致: {'・'.join(hit)}）「{t['title'][:28]}」")
+        if g.get('plan'):
+            L.append(f"  運用: {g['plan']}")
+        for p in (g.get('picks') or [])[:2 if short else 5]:
+            L.append(f"  選出: {p.get('when', '')} → {' / '.join(p.get('pick') or [])} {p.get('note', '')}".rstrip())
+        if g.get('heavy') and not short:
+            L.append(f"  重い相手: {'、'.join(g['heavy'])}")
+        if g.get('notes') and not short:
+            L.append(f"  注意: {g['notes']}")
+    return L
+
+
 def set_known_context(opp_names):
     _KNOWN_CTX['team'] = match_known(opp_names) if opp_names else None
     _OPP_CACHE.clear()
@@ -1740,6 +1775,8 @@ def main():
         kt = _KNOWN_CTX['team']
         if kt:
             print(f"（既知構築: {kt['title']}（6体一致）。型は記事を参考にし、対戦中に記事と違う技・持ち物・メガが見えたら記事の情報は使わない）")
+        for ln in guide_lines(six):
+            print(ln)
         if '--no-log' not in sys.argv:
             try:  # start a battle record so turns can be appended with learn.py
                 _learn.start()

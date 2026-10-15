@@ -1,16 +1,17 @@
-"""Nightly study of new team articles on pokesol.app (run by a scheduled routine, 0:01-7:00 JST).
+"""Nightly study of new team articles on pokesol.app (run by a scheduled routine).
 
-  python study.py [--until HH:MM | --slot] [--depth 4] [--dry] [--max N]
+  python study.py [--max N] [--dry]          記事の取り込み（シミュレーションはしない）
+  python study.py pending                    ガイド未記入の構築（id・題名・本文ファイル）を列挙
+  python study.py note <id> <json-file>      ガイドを known_teams.json に書き込む
 
 1. Reads the newest team articles (https://pokesol.app/?tab=new&category=team, newest first).
 2. Keeps singles articles under our rules (regulation M-C, any season) whose article states a final or reached
-   rating of 2000+ (or, when no rating is written, a final rank of 1000 or better). Articles without any rating or
-   rank are skipped. Higher final rank / rating first.
-3. For each (until --until, JST): adds the team to data/known_teams.json and plays every one of our 60 orders
-   against every likely selection of theirs, both sides reading --depth turns ahead (default 4), one game each.
-4. Stores the hardest selection of theirs (the one that beats the orders we would bring most often), the order of
-   ours that did best against it, and that order's average win rate over all their selections:
-   known_teams.json ("study", and "counter" so battle.py select uses it when all six match) and logs/STUDY.md.
+   rating of 2000+ (or, when no rating is written, a final rank of 1000 or better). Higher rank / rating first.
+3. Stores each team's six (sets) in data/known_teams.json with its rating, and the article text in
+   logs/study/text/<id>.txt. No battles are simulated.
+4. The routine's Claude reads each pending article and writes a short `guide` (型・軸・運用・選出基準・重い相手・注意)
+   with `note`. battle.py shows the guides of similar lineups (3+ of the opponent's six) when it meets them:
+   a thing to keep in the back of the head, never a rule that overrides the reading of the battle.
 """
 import datetime, html, json, os, re, sys, time, zlib
 
@@ -19,11 +20,11 @@ sys.path.insert(0, HERE)
 import battle as B  # noqa: E402
 import pokesol  # noqa: E402
 import prep  # noqa: E402
-import refine as R  # noqa: E402
 from calc import POKE  # noqa: E402
 
 LIST_URL = 'https://pokesol.app/?tab=new&category=team&page={}'
 OUT_D = os.path.join(HERE, '..', 'logs', 'study')
+TEXT_D = os.path.join(OUT_D, 'text')
 REPORT_P = os.path.join(HERE, '..', 'logs', 'STUDY.md')
 JST = datetime.timezone(datetime.timedelta(hours=9))
 MIN_RATE = 2000
@@ -145,8 +146,12 @@ def load_article(a):
     url = f"https://pokesol.app/u/{a['author']['username']}/articles/{a['id']}"
     page = pokesol.fetch(url)
     root = pokesol._stream(page)['loaderData']['routes/u.$username.articles.$id']
-    body = html.unescape(re.sub(r'<[^>]+>', ' ', str((root.get('article') or {}).get('body', ''))))
+    raw = str((root.get('article') or {}).get('body', ''))
+    full = html.unescape(re.sub(r'<[^>]+>', '', re.sub(r'</(p|h\d|li|div)>', '\n', raw)))
+    full = re.sub(r'\n{3,}', '\n\n', full).strip()
+    body = html.unescape(re.sub(r'<[^>]+>', ' ', raw))
     t = pokesol.parse(page, url)
+    t['_text'] = full
     for m in t['team']:
         m['moves'] = [x for x in m['moves'] if x]
     body = ' '.join(body.split())[:200]       # the author's own result is stated at the top; later text cites others
@@ -170,71 +175,45 @@ def valid_team(t):
     return True
 
 
-def study_team(t, depth):
-    """All 60 orders x their likely selections, both sides `depth` turns ahead, one game each."""
-    party = R.party_now()
-    cp = os.path.join(OUT_D, t['id'] + '.json')
-    if os.path.exists(cp):
-        c = json.load(open(cp, encoding='utf-8'))
-        if c.get('sig') == R.sig(party) and c.get('depth') == depth:
-            return c
-    B.KNOWN_TEAMS[:] = [x for x in B.KNOWN_TEAMS if x['id'] != t['id']] + [t]
-    opp6 = [B._base(m['name']) for m in t['team']]
-    trips = prep.opp_trips(t, opp6)
-    jobs, meta = [], []
-    for o in prep.all_orders():
-        for pw, oos in trips:
-            for oo in oos:
-                jobs.append((o, oo, t['id'], zlib.crc32(repr((o, oo, 'study')).encode()), depth))
-                meta.append((o, oo, pw / len(oos)))
-    t0 = time.time()
-    res = prep.pool_map(R.game, jobs)
-    games = [{'order': o, 'opp': oo, 'w': w, 'res': r[0], 'faints': r[2]} for (o, oo, w), r in zip(meta, res)]
-    st = R.team_stats(games)
-    top = {r[3] for r in st['rows'][:10]}
-    sel = {}
-    for g in games:
-        d = sel.setdefault(tuple(g['opp']), [0, 0, 0, 0])
-        if tuple(g['order']) in top:
-            d[0] += g['res'] == 1
-            d[1] += 1
-        d[2] += g['res'] == 1
-        d[3] += 1
-    hard = min(sel, key=lambda k: (sel[k][0] / max(1, sel[k][1]), sel[k][2] / sel[k][3]))
-    avg = {r[3]: r[1] for r in st['rows']}           # weighted average over their selections
-    vs_hard = {tuple(g['order']): g['res'] == 1 for g in games if tuple(g['opp']) == hard}
-    best = max(vs_hard, key=lambda o: (vs_hard[o], avg[o]))
-    ranked = sorted(vs_hard, key=lambda o: (-vs_hard[o], -avg[o]))
-    c = {'sig': R.sig(party), 'depth': depth, 'games': len(games), 'seconds': round(time.time() - t0),
-         'hardest': list(hard), 'hardest_rate_top10': round(sel[hard][0] / max(1, sel[hard][1]), 3),
-         'hardest_rate_all': round(sel[hard][2] / sel[hard][3], 3),
-         'best_vs_hardest': list(best), 'best_won_vs_hardest': vs_hard[best], 'best_avg': round(avg[best], 3),
-         'alternatives': [{'order': list(o), 'won_vs_hardest': vs_hard[o], 'avg': round(avg[o], 3)} for o in ranked[1:5]],
-         'date': now().strftime('%Y-%m-%d %H:%M')}
-    os.makedirs(OUT_D, exist_ok=True)
-    json.dump(c, open(cp, 'w', encoding='utf-8'), ensure_ascii=False)
-    return c
-
-
-def save(t, info, c):
+def save(t, info):
+    """Adds / updates the team (sets, rating) and keeps the article text for the guide. Existing study / counter /
+    guide / picks / notes of the same team are kept."""
     data = json.load(open(prep.KNOWN_P, encoding='utf-8'))
     old = next((x for x in data['teams'] if x['id'] == t['id']), None)
+    text = t.pop('_text', '')
     if old:
-        t['picks'] = old.get('picks', [])
-        t['notes'] = old.get('notes', t.get('notes'))
+        for k in ('picks', 'notes', 'study', 'counter', 'guide'):
+            if k in old:
+                t[k] = old[k]
     t['rating'] = {'rank': info[0], 'final': info[1], 'peak': info[2]}
-    t['study'] = {k: v for k, v in c.items() if k != 'sig'}
-    if old and (old.get('counter') or {}).get('pinned'):     # chosen by hand (logs/CHEATSHEET.md): keep it
-        t['counter'] = old['counter']
-    else:
-        t['counter'] = {'order': c['best_vs_hardest'], 'score': c['best_avg'], 'worst': c['hardest_rate_top10'],
-                        'alternatives': [{'order': a['order'], 'score': a['avg']} for a in c['alternatives']],
-                        'mode': f"study.py: 全60通り×相手の想定選出・各1戦・両者{c['depth']}手読み（最も厳しい相手選出に最も善戦した選出）"}
     if old:
         data['teams'][data['teams'].index(old)] = t
     else:
         data['teams'].append(t)
     json.dump(data, open(prep.KNOWN_P, 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
+    os.makedirs(TEXT_D, exist_ok=True)
+    open(os.path.join(TEXT_D, t['id'] + '.txt'), 'w', encoding='utf-8').write(
+        f"{t['title']}\n{t['url']}\n\n" + text[:12000])
+
+
+def pending():
+    data = json.load(open(prep.KNOWN_P, encoding='utf-8'))['teams']
+    return [t for t in data if not t.get('guide') and os.path.exists(os.path.join(TEXT_D, t['id'] + '.txt'))]
+
+
+GUIDE_KEYS = ('type', 'core', 'plan', 'picks', 'heavy', 'notes')
+
+
+def note(tid, path):
+    """guide = {type: 構築の型, core: [軸のポケモン], plan: 運用の要点, picks: [{when, pick, note}], heavy: [重い相手], notes: 注意}"""
+    g = json.load(open(path, encoding='utf-8'))
+    g = {k: g[k] for k in GUIDE_KEYS if k in g}
+    data = json.load(open(prep.KNOWN_P, encoding='utf-8'))
+    t = next(x for x in data['teams'] if x['id'] == tid)
+    g['date'] = now().strftime('%Y-%m-%d')
+    t['guide'] = g
+    json.dump(data, open(prep.KNOWN_P, 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
+    report()
 
 
 ARTSETS_P = os.path.join(HERE, 'data', 'article_sets.json')
@@ -276,22 +255,27 @@ def build_article_sets(teams_extra=()):
 
 def report():
     data = json.load(open(prep.KNOWN_P, encoding='utf-8'))
-    rows = [t for t in data['teams'] if t.get('study')]
+    rows = [t for t in data['teams'] if t.get('guide')]
     rows.sort(key=lambda t: ((t.get('rating') or {}).get('rank') or 10 ** 6,
                              -max((t.get('rating') or {}).get('final') or 0, (t.get('rating') or {}).get('peak') or 0)))
-    L = ['# 新着構築の学習（study.py が毎晩自動生成）', '',
-         'pokesol の新着構築記事（シングル・レギュレーションM-C・シーズン不問・最終/到達レート2000以上。レートの記載がない場合は最終1000位以内）を、',
-         'こちらの60通りの選出×相手の想定選出・各1戦・両者4手読みで対戦させた結果です。乱数あり。',
-         '「最も厳しい相手選出」は、こちらが実際に出す上位10選出に最も勝つ相手選出。「最善の選出」はそれに最も善戦した選出、',
-         '「平均勝率」はその選出の相手全選出への平均です。実戦では相手の6体が完全一致したときだけ参照します。', '',
-         '| 構築 | 順位・レート | 最も厳しい相手選出（こちら上位10選出の勝率） | 最善の選出 | その選出の平均勝率 | 学習日 |',
-         '|---|---|---|---|---|---|']
+    L = ['# 新着構築の記録（study.py が自動生成）', '',
+         'pokesol の新着構築記事（シングル・レギュレーションM-C・シーズン不問・最終/到達レート2000以上。レートの記載がない場合は最終1000位以内）の、',
+         '構築の型・運用・選出基準の記録です。対戦はシミュレーションしていません。',
+         '実戦では相手の6体のうち3体以上が一致する構築のガイドを、頭の片隅に置く参考として表示します（battle.py）。', '']
     for t in rows:
-        r, s = t.get('rating') or {}, t['study']
+        r, g = t.get('rating') or {}, t['guide']
         rr = ' '.join(x for x in [f"{r['rank']}位" if r.get('rank') else '', f"最終{r['final']}" if r.get('final') else '',
                                   f"最高{r['peak']}" if r.get('peak') else ''] if x)
-        L.append(f"| [{t['title'][:30]}]({t['url']}) | {rr} | {' → '.join(s['hardest'])}（{s['hardest_rate_top10']:.0%}） | "
-                 f"{' → '.join(s['best_vs_hardest'])}{'' if s['best_won_vs_hardest'] else '（勝てず）'} | {s['best_avg']:.0%} | {s['date'][:10]} |")
+        L += [f"## [{t['title'][:40]}]({t['url']})", f"- {rr}／{g.get('type', '')}／{' '.join(m['name'] for m in t['team'])}"]
+        if g.get('plan'):
+            L.append(f"- 運用: {g['plan']}")
+        for p in g.get('picks') or []:
+            L.append(f"- 選出: {p.get('when', '')} → {' / '.join(p.get('pick') or [])} {p.get('note', '')}")
+        if g.get('heavy'):
+            L.append(f"- 重い相手: {'、'.join(g['heavy'])}")
+        if g.get('notes'):
+            L.append(f"- 注意: {g['notes']}")
+        L.append('')
     open(REPORT_P, 'w', encoding='utf-8').write('\n'.join(L) + '\n')
 
 
@@ -301,23 +285,20 @@ def main():
     except Exception:
         pass
     a = sys.argv[1:]
-    until = a[a.index('--until') + 1] if '--until' in a else '07:00'
-    if '--slot' in a:      # one run of the nightly routine: about two hours, never past 07:00
-        until = min(now() + datetime.timedelta(minutes=110), now().replace(hour=7, minute=0, second=0, microsecond=0)
-                     if now().hour < 7 else now() + datetime.timedelta(minutes=110)).strftime('%H:%M')
-    depth = int(a[a.index('--depth') + 1]) if '--depth' in a else 4
-    hh, mm = map(int, until.split(':'))
-    end = now().replace(hour=hh, minute=mm, second=0, microsecond=0)
-    if end < now():
-        end += datetime.timedelta(days=1)
-    R.teams()
+    if a[:1] == ['pending']:
+        for t in pending():
+            print(t['id'], t['title'], os.path.join(TEXT_D, t['id'] + '.txt'))
+        return
+    if a[:1] == ['note']:
+        note(a[1], a[2])
+        return
     cands, targets = candidates()
-    print(f'{len(cands)} articles (regulation {RULES}, seasons {targets}); until {end:%m-%d %H:%M}', flush=True)
+    print(f'{len(cands)} articles (regulation {RULES}, seasons {targets})', flush=True)
     data = json.load(open(prep.KNOWN_P, encoding='utf-8'))
-    have = {t['id']: t for t in data['teams'] if t.get('study')}
+    have = {t['id'] for t in data['teams'] if os.path.exists(os.path.join(TEXT_D, t['id'] + '.txt'))}
     todo = []
     for art in cands:
-        if art['id'] in have and have[art['id']]['study'].get('depth') == depth:
+        if art['id'] in have:
             continue
         try:
             t, info = load_article(art)
@@ -332,32 +313,17 @@ def main():
             continue
         todo.append({'t': t, 'rating': info})
     todo.sort(key=priority)
-    arts = build_article_sets([c['t'] for c in todo])
-    print(f"article sets: {sum(len(v) for v in arts.values())} sets of {len(arts)} species", flush=True)
-    print('to study:', [(c['t']['title'][:24], c['rating']) for c in todo], flush=True)
-    if '--dry' in a or '--sets-only' in a:
-        return
-    per = None
     if '--max' in a:
         todo = todo[:int(a[a.index('--max') + 1])]
+    arts = build_article_sets([c['t'] for c in todo])
+    print(f"article sets: {sum(len(v) for v in arts.values())} sets of {len(arts)} species", flush=True)
+    print('new:', [(c['t']['title'][:24], c['rating']) for c in todo], flush=True)
+    if '--dry' in a:
+        return
     for c in todo:
-        left = (end - now()).total_seconds()
-        if per and left < per * 1.2:
-            print('time is up', flush=True)
-            break
-        t0 = time.time()
-        try:
-            res = study_team(c['t'], depth)
-        except Exception as e:
-            import traceback
-            print('error', c['t']['title'][:40], traceback.format_exc()[-600:], flush=True)
-            continue
-        per = max(per or 0, time.time() - t0)
-        save(c['t'], c['rating'], res)
-        report()
-        print(f"{c['t']['title'][:30]}: 厳しい {' → '.join(res['hardest'])} / 最善 {' → '.join(res['best_vs_hardest'])} "
-              f"平均 {res['best_avg']:.0%} ({res['seconds']}s)", flush=True)
-    report()
+        save(c['t'], c['rating'])
+        print('saved', c['t']['title'][:40], flush=True)
+    print(f'pending guides: {len(pending())}', flush=True)
 
 
 if __name__ == '__main__':

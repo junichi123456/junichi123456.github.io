@@ -256,6 +256,13 @@ def packet(st, js, res=None, est=None, sc=None):
         'bench': bench, 'opp_seen_back': back_opp,  # 見えた控え(倒=ひんし)
         'warn': warnings(st, js, rows),
     }
+    try:
+        team6 = js.get('opp_team') or [d['name'] for d in js.get('opp', [])]
+        ref = B.guide_lines(team6, short=True)
+        if ref:
+            pk['ref'] = ref     # similar lineups in published articles: a reference only
+    except Exception:
+        pass
     if res is not None and est is not None:
         import search as S
         pk['engine_top'] = [[S.fmt(est, a), round(v, 2)] for v, a in res[:3]]
