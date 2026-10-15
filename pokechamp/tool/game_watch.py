@@ -1201,6 +1201,7 @@ def main():
     pending_replace, replace_done = None, set()
     start_wait = None          # time the preview ended, until the 'start' event is sent
     plan_state = {}            # turn-1 moves computed per opposing lead during the preview (battle.py leadplan)
+    me_locked = False          # our あばれる状態 in progress: no move-selection screen, nothing to decide
     MY_ORDER_NAMES[:] = _my_order_names()
     skip_command_until = 0.0   # the turn-1 command screen was already handled by 'start'
     preview_seq, preview_n, preview_last_t, preview_last_text = 0, 0, 0.0, None
@@ -1253,6 +1254,13 @@ def main():
         if (new or mnew) and not det.in_preview:
             if preview_seq:
                 cur_turn = msgparse.parse_turn(turn_msgs(), dedupe=not msg_ok)
+                # あばれる状態 (げきりん etc.): until it ends (confusion) there is no move-selection screen for 2-3 turns
+                mine_moves = [m for m in cur_turn['moves'] if m['side'] == 'me']
+                locked_now = bool(mine_moves) and mine_moves[-1]['move'] in msgparse.RAMPAGE and \
+                    not any(c.get('side') != 'opp' for c in cur_turn.get('confusion', []))
+                if locked_now and not me_locked:
+                    print(time.strftime('%Y-%m-%dT%H:%M:%S'), f"{mine_moves[-1]['move']}: あばれる状態（行動選択画面は出ません。終わると混乱）", flush=True)
+                me_locked = locked_now
                 for f in cur_turn['faint']:
                     if f['side'] == 'me' and f['mon'] not in replace_done and not pending_replace:
                         pending_replace = (time.time(), f['mon'])
@@ -1268,7 +1276,7 @@ def main():
             apply_pick_order(img, plan_state)        # the order really picked (「対戦準備中」), if not the suggested one
             if not a.no_decide:
                 start_lead_plans(plan_state)
-        if not det.in_preview and preview_seq and not a.no_decide and phase != 'command':
+        if not det.in_preview and preview_seq and not a.no_decide and phase != 'command' and not me_locked:
             spec.feed(text, hp_now)            # HP panels during the animation: compute the next move ahead of time
         event = det.update(phase, now)
         if event is None and fast and fast.onset and det.command_armed and not det.in_preview and preview_seq:
@@ -1339,6 +1347,9 @@ def main():
                     ev['damage'] = damage_context(msgparse.damage_events(timeline, None, tracker.s.get('active')),
                                                   tracker, turn)
                 tracker.apply(turn)
+                if phase in ('command', 'start'):
+                    tracker.unlock('me')       # a move-selection screen came: our あばれる状態 is over
+                    me_locked = False
                 ev['turn_events'] = {k: v for k, v in turn.items() if v}
                 ev['active'] = dict(tracker.s.get('active') or {})
                 act = ev['active']

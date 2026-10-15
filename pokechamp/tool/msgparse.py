@@ -363,7 +363,10 @@ TR_START = ('時空をゆがめた', 'じくうをゆがめた')
 TR_END = ('時空が元に戻った', 'じくうがもとにもどった')
 SUB_UP = ('身代わりが現れた', 'みがわりがあらわれた', 'みがわりが現れた')
 SUB_DOWN = ('身代わりは消えてしまった', 'みがわりはきえてしまった', 'みがわりは消えてしまった')
+# あばれる状態（げきりん・あばれる・はなびらのまい）: 2〜3ターン同じ技を出し続け、その間は行動選択画面が出ない。終わると混乱する。
 RAMPAGE = {'げきりん', 'あばれる', 'はなびらのまい'}
+CONF_START = ('混乱した', 'こんらんした', '混乱している', 'こんらんしている')
+CONF_END = ('混乱が解けた', 'こんらんがとけた', '混乱がとけた', '混乱が治った', 'こんらんがなおった')
 CURE = ('治った', 'なおった', '目を覚ました', 'めをさました', '溶けた', 'とけた')
 ITEM_MSG = [('きあいのタスキ', True, ('きあいのタスキで',)), ('オボンのみ', True, ('オボンのみで', 'オボンのみを')),
             ('いのちのたま', False, ('いのちのたまで', '命が少し削られた', 'いのちがすこしけずられた')),
@@ -413,7 +416,7 @@ def parse_turn(lines, dedupe=True):
     ev = {'moves': [], 'boosts': [], 'weather': None, 'weather_end': False, 'terrain': None, 'terrain_end': False,
           'items': [], 'status': [], 'cured': [], 'hazards': [], 'faint': [], 'switch': [], 'mega': [], 'crit': 0,
           'super_effective': 0, 'abilities': [], 'trick_room': False, 'trick_room_end': False, 'sub': [], 'sub_end': [],
-          'types': []}
+          'types': [], 'confusion': [], 'confusion_end': []}
     seen = set()
     ctx = {'side': None, 'name': None}  # whose message the previous line was (a message often spans two lines)
     came_in = {'moved': False}          # the mon each side sent in last, and whether a move was used since
@@ -438,6 +441,10 @@ def parse_turn(lines, dedupe=True):
                 on_field[psd] = name
         if name or side_marked(s):
             ctx = {'side': side if side_marked(s) or name else ctx['side'], 'name': name}
+        if name and has(s, CONF_END):
+            ev['confusion_end'].append({'side': side, 'mon': name}); continue
+        if name and has(s, CONF_START) and not has(s, ('こんらんして', '混乱して')) or (name and has(s, ('混乱した', 'こんらんした'))):
+            ev['confusion'].append({'side': side, 'mon': name}); continue
         tc = type_change(s)
         if tc:
             # the type changed (an ability or a move): only the message says so
@@ -754,6 +761,13 @@ class FieldTracker:
             name = self.s['active'][side]
         return side, name
 
+    def unlock(self, side):
+        """We are choosing a move again, so our あばれる状態 (げきりん etc.) is over: while it lasts the game skips the
+        move-selection screen (2-3 turns). Their lock is not affected by our screens."""
+        act = self.s['active'].get(side)
+        if act and act in self.s['mons'][side]:
+            self.s['mons'][side][act]['rampage'] = False
+
     def add_opp(self, name):
         """A mon of theirs that was not in the six read from the team preview: add it to the battle record, so the
         sets and the decisions know it (the preview was misidentified)."""
@@ -786,7 +800,8 @@ class FieldTracker:
 
     def apply(self, ev):
         s = self.s
-        s['turn'] += 1
+        # the turns of an あばれる状態 have no move-selection screen: their messages arrive together, one 'me' move each
+        s['turn'] += max(1, sum(1 for m in ev['moves'] if m['side'] == 'me' and m['move'] in RAMPAGE))
         for t, key in (('weather', 'weather_turns'), ('terrain', 'terrain_turns')):
             if s[key]:
                 s[key] -= 1
@@ -819,7 +834,7 @@ class FieldTracker:
             if old:
                 om = self.mon(sw['side'], old)
                 om['boosts'] = {}
-                om.update(sub=0, last_move=None, rampage=False, toxn=0, types=None, added_type=None)
+                om.update(sub=0, last_move=None, rampage=False, toxn=0, types=None, added_type=None, confusion=False)
             s['active'][sw['side']] = canon(sw['side'], sw['mon'], self.opp_team() if sw['side'] == 'opp' else ())
             self.mon(sw['side'], sw['mon'])
         for m in ev['moves']:
@@ -870,6 +885,14 @@ class FieldTracker:
             side, name = self.whose(ab['side'], ab['mon'])    # the ability popup has no 「相手の」: the team decides
             if side and name:
                 self.mon(side, name)['ability'] = ab['ability']
+        for cf in ev.get('confusion', []):
+            side, name = self.whose(cf.get('side'), cf.get('mon'))
+            if side and name:
+                self.mon(side, name)['confusion'] = True
+        for cf in ev.get('confusion_end', []):
+            side, name = self.whose(cf.get('side'), cf.get('mon'))
+            if side and name:
+                self.mon(side, name)['confusion'] = False
         for fc in ev.get('forms', []):      # a form change seen on the HP panel (not a mega evolution)
             side, name = self.whose(fc.get('side'), fc.get('mon'))
             if side and name:

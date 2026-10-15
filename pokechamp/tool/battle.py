@@ -1209,7 +1209,7 @@ def field_defaults(js):
                 if 'status' not in d and info.get('status'): d['status'] = info['status']
                 if 'item' not in d and info.get('item_consumed'): d['item'] = False
                 if info.get('mega') and 'mega' not in d: d['mega'] = True
-                for k in ('sub', 'last_move', 'glaive', 'toxn', 'rampage', 'types', 'added_type', 'hero'):
+                for k in ('sub', 'last_move', 'glaive', 'toxn', 'rampage', 'types', 'added_type', 'hero', 'confusion'):
                     if k not in d and info.get(k): d[k] = info[k]
                 if side == 'opp':
                     seen = d.get('moves_seen', [])

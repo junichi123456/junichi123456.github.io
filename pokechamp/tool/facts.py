@@ -213,6 +213,15 @@ def warnings(st, js, rows=None):
             w.append(f'L:{who}は技が固定')
         if m.taunt:
             w.append(f'L:{who}はちょうはつ中')
+    for who, key, i in (('自分', 'me', st.act[0]), ('相手', 'opp', js.get('active_opp', 0))):
+        try:
+            d = js[key][i if key == 'opp' else js.get('active_me', 0)]
+        except Exception:
+            d = {}
+        if d.get('confusion'):
+            w.append(f'L:{who}は混乱中(技が出ず自傷する場合あり)')
+    if opp.rampage:
+        w.append(f'L:相手はあばれる状態({opp.rampage[0]}を継続・終了後に混乱)')
     return w
 
 
