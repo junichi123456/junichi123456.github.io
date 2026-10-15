@@ -1085,6 +1085,20 @@ def start_lead_plans(state):
         pass
 
 
+def bench_alive_me(tracker):
+    """Is there a mon of ours left on the bench (not out, not fainted)? A pivot move with no one to swap in only hits."""
+    try:
+        rec = json.load(open(os.path.join(OUT, '..', 'current.json'), encoding='utf-8'))
+        order = rec.get('my_order') or []
+        act = tracker.s['active'].get('me')
+        fs = tracker.s['mons']['me']
+        import msgparse as _mp
+        left = [n for n in order if _mp.canon('me', n) != act and not (fs.get(_mp.canon('me', n)) or {}).get('fainted')]
+        return bool(left) if order else True
+    except Exception:
+        return True
+
+
 def apply_pick_order(img, state):
     """Read our real pick (「対戦準備中」 shows the three with their order) and write it to the battle record when it
     differs from the suggested one, so the turn-1 plans are made for the lead we really sent."""
@@ -1268,8 +1282,19 @@ def main():
                     key = ('pivot', len(turn_lines), mv['mon'])
                     if mv['side'] == 'me' and mv['move'] in PIVOT_MOVES and not pending_pivot and \
                             mv['mon'] not in pivot_done:
-                        pending_pivot = time.time()
                         pivot_done.add(mv['mon'])
+                        if bench_alive_me(tracker):
+                            pending_pivot = time.time()
+                        else:
+                            print(time.strftime('%Y-%m-%dT%H:%M:%S'), f"{mv['move']}: 控えがいないので交代しません", flush=True)
+                if pending_pivot:
+                    oc = msgparse.pivot_outcome(turn_msgs())
+                    if oc in ('fail', 'forced', 'blocked'):
+                        pending_pivot = None       # no party screen will open
+                        print(time.strftime('%Y-%m-%dT%H:%M:%S'), {
+                            'fail': '交代の技が防がれた／外れた: 交代しません',
+                            'forced': '相手のレッドカード: こちらはランダムに交代（選べません）',
+                            'blocked': '相手の道具・特性で相手だけが交代: こちらは交代しません'}[oc], flush=True)
         now = time.time()
         hp_now = screen_hp(img) if preview_seq and not det.in_preview else (None, None)
         if preview_seq and (start_wait is not None or det.in_preview):
@@ -1422,7 +1447,8 @@ def main():
                 else:
                     decide_async(seq, a.decide_sec, 'pivot' if phase == 'replace' and replace_mode == 'pivot' else phase,
                                  party_read(text) if phase == 'replace' else None,
-                                 hp_now if phase != 'replace' else None, names, update=bool(plan),
+                                 hp_now if phase != 'replace' else
+                                 ((None, (msgw._hp.get('opp') if msgw else None)) if msgw else None), names, update=bool(plan),
                                  get_names=lambda: ((getattr(msgw, '_iname', None) or {}).get('me'),
                                                     (getattr(msgw, '_iname', None) or {}).get('opp')))
                 ev['replace_mode'] = replace_mode if phase == 'replace' else None

@@ -212,6 +212,42 @@ def context():
     return _CTX['names'], _CTX['moves']
 
 
+PIVOT = {'ボルトチェンジ', 'とんぼがえり', 'クイックターン', 'すてゼリフ', 'バトンタッチ', 'テレポート', 'しっぽきり',
+         'さよならのあいさつ'}
+# 交代する技（ボルトチェンジ・とんぼがえり・クイックターン）: 技が成功すると手持ち画面が開き交代先を自由に選べる。
+# 防がれた・外れた・効果がない、相手のレッドカード（こちらがランダムに交代）・だっしゅつボタン／にげごし／ききかいひ
+# （相手だけが交代しこちらは交代できない）、ゴツゴツメット等でひんしになった場合は手持ち画面は開かない。
+PIVOT_FAIL = ('当たらなかった', 'あたらなかった', '外れた', 'はずれた', '守った', 'まもった', '防いだ', 'ふせいだ',
+              '効果がない', 'こうかがない', 'うまく決まらなかった', 'うまくきまらなかった', '技は失敗', 'わざはしっぱい')
+PIVOT_BLOCKED_BY_FOE = ('だっしゅつボタン', 'にげごし', 'ききかいひ', 'レッドカード')
+
+
+def pivot_outcome(msgs):
+    """What happened to our pivot move in this turn's messages: None (no pivot move seen yet), 'ok' (a party screen will
+    open), 'fail' (blocked / missed / no effect), 'forced' (the foe's レッドカード switched us at random),
+    'blocked' (the foe's だっしゅつボタン / にげごし / ききかいひ: only they switch). Only the lines right after
+    the move, up to the next move, count."""
+    state = None
+    for raw in msgs:
+        s = norm(raw)
+        mu = move_use(s)
+        if mu:
+            if state is not None:
+                break               # the next move: the pivot move's own messages are over
+            if mu[0] == 'me' and mu[2] in PIVOT:
+                state = 'ok'
+            continue
+        if state is None:
+            continue
+        if has(s, ('レッドカード',)):
+            return 'forced'
+        if has(s, PIVOT_BLOCKED_BY_FOE):
+            return 'blocked'
+        if has(s, PIVOT_FAIL):
+            return 'fail'
+    return state
+
+
 def _in_team(side, name):
     b = BASE.get(name, name)
     if side == 'me':
