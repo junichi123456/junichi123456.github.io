@@ -25,8 +25,10 @@ OUT_D = os.path.join(HERE, '..', 'logs', 'design')
 ART_P = os.path.join(HERE, 'data', 'article_sets.json')
 CURRENT = ['ルカリオ', 'ガブリアス', 'アシレーヌ', 'ヒートロトム', 'ミミッキュ', 'メタグロス']
 EXTRA = ['カバルドン', 'リザードン', 'イダイトウ', 'ボーマンダ', 'ブリジュラス', 'セグレイブ', 'カイリュー', 'グソクムシャ']
-MAX_TEAMS = 45
-MAX_OPP_ORDERS = 8
+MAX_TEAMS = 20
+MAX_OPP_ORDERS = 4
+MUST = ('ガブリアス',)
+MAX_MEGA = 2
 
 
 def targets():
@@ -217,7 +219,8 @@ ITEM_FREE = True
 
 def legal(names, p):
     items = [p[n].item for n in names]
-    return len(set(items)) == 6
+    megas = sum(1 for n in names if p[n].species in B.BASE_OF)
+    return len(set(items)) == 6 and megas <= MAX_MEGA and all(m in names for m in MUST)
 
 
 def rank(top=15, depth=1):
