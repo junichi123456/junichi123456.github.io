@@ -347,29 +347,31 @@ def scene(img):
         return 'preview'
     if band(pink, 20, 23) and band(vio, 20, 23):
         return 'party'
-    if button_score(img) > FastWatch.ON:
+    if button_score(img) > 0.7:
         return 'command'
     return None
 
 
 class FastWatch:
-    """Looks at a small screenshot several times a second (colours only, no OCR), so the screens that need an answer
-    are known within ~0.3 s instead of waiting for the next full OCR pass:
-      - onset: the move-selection screen (buttons) is up
-      - forced: the party screen came up on its own (not opened from the move-selection screen), i.e. we must send a
-        mon in: after a faint or our U-turn type move. Browsing via 「ポケモン」 comes straight from the buttons."""
-    EVERY, ON, OFF = 0.15, 0.7, 0.5   # input screens score 0.77-0.87; the result screen reaches 0.61
-    BROWSE = 1.5      # party screen within this many seconds after the buttons = opened from the command screen
-    GAP = 4.0         # party screen gone this long = the episode is over
+    """Looks at a screenshot several times a second (colours and positions only, no OCR) and follows which screen is up
+    (scenes.py: SceneTracker), so the screens that need an answer are known within ~0.3 s:
+      - onset / session_id: a move-input session is open (the 「COMMAND ○○ / 様子を見る」 display is up: the 「たたかう」 buttons,
+        the move list, the status view and the party browsing are all part of the same session, one per turn)
+      - forced: a party list came up on its own (not opened from the input screen): we must send a mon in
+      - result / vs: the result screen / the VS screen"""
+    EVERY = 0.15
 
     def __init__(self, make_source, thread=True):
         import threading
+        import scenes as _sc
         self.make_source, self.onset, self.wake = make_source, None, threading.Event()
+        self.tracker = _sc.SceneTracker()
+        self._classify = _sc.classify
         self.forced = None          # time a forced party screen appeared (cleared by the caller once handled)
-        self.scene = None
-        self._hits = self._miss = 0
-        self._btn_t = self._party_t = -1e9
-        self._party_hits, self._episode_forced = 0, False
+        self.result = None          # time the result screen appeared (cleared by the caller)
+        self.session_id = 0
+        self.scene = None           # the latest frame's scene: input / party / preview / vs / result / battle / other
+        self.last_ok = -1e9         # last time a frame was classified (the caller falls back to OCR if this goes stale)
         if thread:
             threading.Thread(target=self._run, daemon=True).start()
 
@@ -379,7 +381,7 @@ class FastWatch:
             t0 = time.time()
             try:
                 src = src or self.make_source()
-                img = src.grab(320, 180) if isinstance(src, OBSSource) else src.grab()
+                img = src.grab(640, 360) if isinstance(src, OBSSource) else src.grab()
             except Exception:
                 src, img = None, None
                 time.sleep(1.0)
@@ -387,30 +389,29 @@ class FastWatch:
             time.sleep(max(0.0, self.EVERY - (time.time() - t0)))
 
     def step(self, img, now):
+        if img is None:
+            return
         try:
-            v = button_score(img) if img is not None else 0.0
-            sc = 'command' if v > self.ON else scene(img) if img is not None else None
+            label = self._classify(img)
         except Exception:
-            v, sc = 0.0, None
-        self.scene = sc
-        if v > self.ON:
-            self._btn_t = now
-            self._hits, self._miss = self._hits + 1, 0
-            if self._hits >= 2 and self.onset is None:
-                self.onset = now
+            return
+        self.scene, self.last_ok = label, now
+        for ev, t in self.tracker.step(label, now):
+            try:       # the scene transitions, for finding out later where a screen was misjudged
+                with open(os.path.join(OUT, 'scenes.jsonl'), 'a', encoding='utf-8') as f:
+                    f.write(json.dumps({'t': t, 'ev': ev, 'label': label}) + '\n')
+            except Exception:
+                pass
+            if ev == 'input_start':
+                self.onset, self.session_id = t, self.tracker.session_id
                 self.wake.set()
-        elif v < self.OFF:
-            self._miss += 1
-            if self._miss >= 3:
-                self._hits, self.onset = 0, None
-        if sc == 'party':
-            if now - self._party_t > self.GAP:          # a new party-screen episode
-                self._party_hits = 0
-                self._episode_forced = now - self._btn_t > self.BROWSE
-            self._party_t = now
-            self._party_hits += 1
-            if self._party_hits == 2 and self._episode_forced:
-                self.forced = now
+            elif ev == 'input_end':
+                self.onset = None
+            elif ev == 'party_forced':
+                self.forced = t
+                self.wake.set()
+            elif ev == 'result':
+                self.result = t
                 self.wake.set()
 
 
@@ -1202,7 +1203,7 @@ def main():
 
     spec.live = live_active
     msgw = MsgWatch(make_source, WinOCR, os.path.join(OUT, 'messages.jsonl'),
-                    skip=(lambda: fast.scene in ('command', 'party', 'preview')) if fast else None) if not a.no_msg else None
+                    skip=(lambda: fast.scene in ('input', 'party', 'preview')) if fast else None) if not a.no_msg else None
     if msgw:
         msgw.known = live_active
     timeline = []              # this turn's messages and HP panel readings from msgw, in order
@@ -1216,6 +1217,7 @@ def main():
     start_wait = None          # time the preview ended, until the 'start' event is sent
     plan_state = {}            # turn-1 moves computed per opposing lead during the preview (battle.py leadplan)
     me_locked = False          # our あばれる状態 in progress: no move-selection screen, nothing to decide
+    handled_session = 0        # the last move-input session (scenes.py) that produced a 'command' event
     MY_ORDER_NAMES[:] = _my_order_names()
     skip_command_until = 0.0   # the turn-1 command screen was already handled by 'start'
     preview_seq, preview_n, preview_last_t, preview_last_text = 0, 0, 0.0, None
@@ -1304,9 +1306,15 @@ def main():
         if not det.in_preview and preview_seq and not a.no_decide and phase != 'command' and not me_locked:
             spec.feed(text, hp_now)            # HP panels during the animation: compute the next move ahead of time
         event = det.update(phase, now)
-        if event is None and fast and fast.onset and det.command_armed and not det.in_preview and preview_seq:
-            event, det.command_armed = 'command', False      # the button watcher is sure enough on its own
-        if event == 'command' and not turn_msgs() and not turn_lines and now - last_command_t < 60:
+        fast_ok = bool(fast) and now - fast.last_ok < 3.0
+        if fast_ok and event == 'command':
+            event = None            # the scene tracker decides when a turn's input starts (one per session), not the OCR text
+        if event is None and fast_ok and fast.onset and fast.session_id != handled_session and \
+                not det.in_preview and preview_seq:
+            event, handled_session, det.command_armed = 'command', fast.session_id, False
+        if event is None and fast_ok and fast.result and preview_seq:
+            event, fast.result = 'result', None
+        if event == 'command' and not fast_ok and not turn_msgs() and not turn_lines and now - last_command_t < 60:
             event = None       # back on the same input screen after looking at the log / party: not a new turn
         if fast and fast.forced:
             # the party screen came up by itself (not from the 「ポケモン」 button): a mon must be sent in

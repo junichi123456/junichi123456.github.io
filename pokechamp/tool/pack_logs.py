@@ -9,7 +9,7 @@ import json, os, shutil, sys, time
 HERE = os.path.dirname(os.path.abspath(__file__))
 LOGS = os.environ.get('POKECHAMP_LOGS', os.path.join(HERE, '..', 'logs'))
 LIVE = os.path.join(LOGS, 'live')
-FILES = ('messages.jsonl', 'decisions.jsonl', 'game_events.jsonl', 'battle_messages.jsonl', 'field_state.json', 'auto_state.json',
+FILES = ('scenes.jsonl', 'messages.jsonl', 'decisions.jsonl', 'game_events.jsonl', 'battle_messages.jsonl', 'field_state.json', 'auto_state.json',
          'decision.json')
 
 
