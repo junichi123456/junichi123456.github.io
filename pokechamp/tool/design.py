@@ -29,6 +29,7 @@ MAX_TEAMS = 20
 MAX_OPP_ORDERS = 4
 MUST = ('ガブリアス',)
 MAX_MEGA = 2
+TOPK = 6          # a party is as good as its best few orders (one lucky order is not a plan)
 
 
 def targets():
@@ -207,7 +208,8 @@ def party_score(names, ts, tab, tw, detail=False):
     ords = orders_of(names)
     tot, wsum, per = 0.0, 0.0, {}
     for t in ts:
-        best = max((tab.get((o, t['id']), 0.0) for o in ords), default=0.0)
+        v = sorted((tab.get((o, t['id']), 0.0) for o in ords), reverse=True)[:TOPK]
+        best = sum(v) / max(1, len(v))
         per[t['id']] = best
         tot += tw[t['id']] * best
         wsum += tw[t['id']]
@@ -243,6 +245,63 @@ def rank(top=15, depth=1):
     return rows, p, ts, tab, tw
 
 
+def verify(k=8, depth=3, nord=TOPK):
+    """Top-k parties of the depth-1 table, their best orders per team replayed at `depth` (fresh seeds)."""
+    rows, p, ts, tab, tw = rank(0)
+    parties = [r[2] for r in rows[:k]]
+    if not any(set(c) == set(CURRENT) for c in parties):
+        parties.append(next(r[2] for r in rows if set(r[2]) == set(CURRENT)))
+    cache = load_cache(depth)
+    jobs, want = [], {}
+    for c in parties:
+        ords = orders_of(c)
+        for t in ts:
+            best = sorted(ords, key=lambda o: -tab.get((o, t['id']), 0.0))[:nord]
+            want[(c, t['id'])] = best
+            for o in best:
+                for _, _, oo in opp_orders(t):
+                    key = (o, oo, t['id'])
+                    if key not in cache and key not in [j[:3] for j in jobs]:
+                        jobs.append((o, oo, t['id'], zlib.crc32(repr((o, oo, 'vf')).encode()) & 0x7fffffff, depth))
+    print(f'verify {len(parties)} parties: {len(jobs)} games at depth {depth}', flush=True)
+    f = open(cache_path(depth), 'a', encoding='utf-8')
+    for i in range(0, len(jobs), 2000):
+        part = jobs[i:i + 2000]
+        for j, r in zip(part, prep.pool_map(_job, part)):
+            cache[(j[0], j[1], j[2])] = r
+            f.write(json.dumps([[list(j[0]), list(j[1]), j[2]], r], ensure_ascii=False) + '\n')
+        f.flush()
+        print(f'{i + len(part)}/{len(jobs)}', flush=True)
+    f.close()
+    out = []
+    for c in parties:
+        per, tot, ws = {}, 0.0, 0.0
+        for t in ts:
+            vals = []
+            for o in want[(c, t['id'])]:
+                oos = opp_orders(t)
+                trips = {}
+                for ti, w, oo in oos:
+                    trips.setdefault(ti, []).append((w, oo))
+                worst, avg = 1.0, 0.0
+                for ti, lst in trips.items():
+                    tw_ = sum(w for w, _ in lst)
+                    v = sum(w * (1.0 if cache[(o, oo, t['id'])] == 1 else 0.5 if cache[(o, oo, t['id'])] == 0 else 0.0) for w, oo in lst)
+                    avg += v
+                    worst = min(worst, v / tw_)
+                vals.append(0.5 * worst + 0.5 * avg)
+            per[t['id']] = sum(vals) / len(vals)
+            tot += tw[t['id']] * per[t['id']]
+            ws += tw[t['id']]
+        out.append((tot / ws, c, per))
+    out.sort(key=lambda x: -x[0])
+    names = {t['id']: t['title'][:22] for t in ts}
+    for sc, c, per in out:
+        worst3 = sorted(per.items(), key=lambda x: x[1])[:3]
+        print(f"{sc:.3f} {' '.join(c)}  苦手: " + ' / '.join(f'{names[k]}{v:.2f}' for k, v in worst3))
+    json.dump([[sc, list(c), per] for sc, c, per in out], open(os.path.join(OUT_D, 'verify_d3.json'), 'w', encoding='utf-8'), ensure_ascii=False)
+
+
 def main():
     a = sys.argv[1:]
     depth = int(a[a.index('--depth') + 1]) if '--depth' in a else 1
@@ -251,6 +310,8 @@ def main():
             print(b, m.species, m.item, m.ability, m.nature, dict(m.spv), '/'.join(m.moves))
     elif a[:1] == ['run']:
         run(depth)
+    elif a[:1] == ['verify']:
+        verify(int(a[a.index('--k') + 1]) if '--k' in a else 8)
     elif a[:1] == ['rank']:
         rank(int(a[a.index('--top') + 1]) if '--top' in a else 15, depth)
     else:
