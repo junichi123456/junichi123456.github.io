@@ -1144,6 +1144,27 @@ def opp_pick_weights(opp6, my6):
     return w
 
 
+def _load_select_rules():
+    try:
+        p = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data', 'select_rules.json')
+        return json.load(open(p, encoding='utf-8')).get('rules', [])
+    except Exception:
+        return []
+
+
+def active_select_rules(opp6, my_names):
+    """Hand-made rules (data/select_rules.json) that apply: every `when_opp_has` mon is in their six and every
+    `bring` mon is in our party. [(rule, bring base names)]"""
+    bases = {_base(x) for x in opp6}
+    mine = set(my_names)
+    out = []
+    for r in _load_select_rules():
+        if all(_base(x) in bases for x in r.get('when_opp_has', [])) and r.get('when_opp_has') and \
+                all(b in mine for b in r.get('bring', [])) and len(r.get('bring', [])) <= 3:
+            out.append((r, [b for b in r['bring']]))
+    return out
+
+
 def select(opp6, seconds=10.0, ignore_stored=False, return_all=False):
     """Choose 3 of our 6 and the lead: every order is played out on the engine against the opponent's likely
     picks and leads (greedy play), then the best 12 are replayed with a 1-turn look-ahead for our side."""
@@ -1203,8 +1224,17 @@ def select(opp6, seconds=10.0, ignore_stored=False, return_all=False):
     for mine3 in itertools.combinations(my_names, 3):
         for lead in mine3:
             orders.append([lead] + [x for x in mine3 if x != lead])
+    rules = active_select_rules(opp6, my_names)
+    if rules:
+        must = {b for _, bs in rules for b in bs}
+        kept = [o for o in orders if must <= set(o)]
+        if kept:                       # conflicting rules (more than 3 mons) are ignored
+            orders = kept
+        else:
+            rules = []
     if kt and kt.get('counter') and not ignore_stored and not return_all and \
-            all(x in my_names for x in kt['counter']['order']):   # stored before a team change? recompute
+            all(x in my_names for x in kt['counter']['order']) and \
+            (not rules or kt['counter'].get('pinned') or must <= set(kt['counter']['order'])):   # stored before a team change? recompute
         # prepared offline by prep.py (both sides look ahead, real randomness): use it as is
         c = kt['counter']
         top = [(c['score'], c['order'])] + [(a['score'], a['order']) for a in c.get('alternatives', [])]
@@ -1775,6 +1805,8 @@ def main():
         kt = _KNOWN_CTX['team']
         if kt:
             print(f"（既知構築: {kt['title']}（6体一致）。型は記事を参考にし、対戦中に記事と違う技・持ち物・メガが見えたら記事の情報は使わない）")
+        for r, bs in active_select_rules(six, [BASE_OF.get(m.species, m.species) for m in TEAM]):
+            print(f"選出ルール: {r.get('note', '')}（{'・'.join(bs)}を入れる）")
         for ln in guide_lines(six):
             print(ln)
         if '--no-log' not in sys.argv:
