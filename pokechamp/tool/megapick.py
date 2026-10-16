@@ -64,8 +64,29 @@ def main():
                 for _, _, o2 in oo[t['id']]:
                     jobs.append((o, o2, t['id'], zlib.crc32(repr((o, o2, tag)).encode()) & 0x7fffffff, depth))
     print(len(jobs), 'games, depth', depth, flush=True)
-    res = prep.pool_map(D._job, jobs)
-    r = {(j[0], j[1], j[2]): x for j, x in zip(jobs, res)}
+    # resumable: every finished game is appended to a cache file; a restart only plays what is missing
+    cp = os.path.join(D.OUT_D, f'mpcache_d{depth}.jsonl')
+    done = {}
+    if os.path.exists(cp):
+        for ln in open(cp, encoding='utf-8'):
+            try:
+                k, v = json.loads(ln)
+                done[json.dumps(k)] = v
+            except Exception:
+                pass
+    todo = [j for j in jobs if json.dumps([list(j[0]), list(j[1]), j[2], j[3], j[4]]) not in done]
+    print(len(todo), 'games to play (rest cached)', flush=True)
+    f = open(cp, 'a', encoding='utf-8')
+    for i in range(0, len(todo), 2000):
+        part = todo[i:i + 2000]
+        for j, x in zip(part, prep.pool_map(D._job, part)):
+            k = [list(j[0]), list(j[1]), j[2], j[3], j[4]]
+            done[json.dumps(k)] = x
+            f.write(json.dumps([k, x], ensure_ascii=False) + '\n')
+        f.flush()
+        print(f'{i + len(part)}/{len(todo)}', flush=True)
+    f.close()
+    r = {(j[0], j[1], j[2]): done[json.dumps([list(j[0]), list(j[1]), j[2], j[3], j[4]])] for j in jobs}
     out = {}
     for c, ords in plan.items():
         per = {}
