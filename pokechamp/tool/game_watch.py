@@ -1497,6 +1497,9 @@ def main():
                 pre = spec.answer(text, ev.get('turn_events') or {}, hp_now) if phase == 'command' else None
                 pn = getattr(msgw, '_iname', None) or {}
                 names = (pn.get('me'), pn.get('opp')) if pn and phase != 'replace' else None
+                ea = ev.get('active') or {}       # the field as read from this very screen beats the lagging panel watcher
+                if phase != 'replace' and (ea.get('me') or ea.get('opp')):
+                    names = (ea.get('me') or (names[0] if names else None), ea.get('opp') or (names[1] if names else None))
                 plan = None
                 if phase == 'start':
                     opp_lead = next((sw['mon'] for sw in (ev.get('turn_events') or {}).get('switch', [])
@@ -1512,8 +1515,8 @@ def main():
                                  party_read(text) if phase == 'replace' else None,
                                  hp_now if phase != 'replace' else
                                  ((None, (msgw._hp.get('opp') if msgw else None)) if msgw else None), names, update=bool(plan),
-                                 get_names=lambda: ((getattr(msgw, '_iname', None) or {}).get('me'),
-                                                    (getattr(msgw, '_iname', None) or {}).get('opp')))
+                                 get_names=lambda: (((ev.get('active') or {}).get('me') or (getattr(msgw, '_iname', None) or {}).get('me')),
+                                                    ((ev.get('active') or {}).get('opp') or (getattr(msgw, '_iname', None) or {}).get('opp'))))
                 ev['replace_mode'] = replace_mode if phase == 'replace' else None
         safeio.write_json(state_p, {'phase': phase, 'seq': seq, 'time': time.time(), 'text': text})
         if fast:
