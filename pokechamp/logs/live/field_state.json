@@ -2,33 +2,33 @@
  "turn": 7,
  "weather": null,
  "weather_turns": 0,
- "terrain": null,
- "terrain_turns": 0,
+ "terrain": "psychic",
+ "terrain_turns": 1,
  "trick_room": 0,
- "rocks_me": false,
+ "rocks_me": true,
  "rocks_opp": false,
  "active": {
-  "me": "メタグロス",
-  "opp": "ソウブレイズ"
+  "me": "ガブリアス",
+  "opp": "オオニューラ"
  },
  "mons": {
   "me": {
-   "イダイトウ": {
+   "ブリジュラス": {
     "boosts": {},
     "item_consumed": null,
     "items_seen": [],
     "status": null,
     "fainted": false,
     "moves_seen": [
-     "クイックターン"
+     "ステルスロック"
     ],
     "mega": false,
     "ability": null,
     "rampage": false,
-    "last_move": "クイックターン",
+    "last_move": "ステルスロック",
     "glaive": false
    },
-   "アシレーヌ": {
+   "ガブリアス": {
     "boosts": {},
     "item_consumed": null,
     "items_seen": [],
@@ -37,218 +37,183 @@
     "moves_seen": [],
     "mega": false,
     "ability": null,
-    "sub": 0,
-    "last_move": null,
     "rampage": false,
-    "toxn": 0,
-    "types": null,
-    "added_type": null,
-    "confusion": false,
     "glaive": false
-   },
-   "メタグロス": {
-    "boosts": {},
-    "item_consumed": null,
-    "items_seen": [],
-    "status": null,
-    "fainted": false,
-    "moves_seen": [
-     "じしん",
-     "バレットパンチ"
-    ],
-    "mega": true,
-    "ability": null,
-    "sub": 0,
-    "last_move": "バレットパンチ",
-    "rampage": false,
-    "toxn": 0,
-    "types": null,
-    "added_type": null,
-    "confusion": false,
-    "glaive": false,
-    "mega_name": "メガメタグロス",
-    "form_changes": 1
    }
   },
   "opp": {
-   "ソウブレイズ": {
+   "ブリジュラス": {
+    "boosts": {},
+    "item_consumed": null,
+    "items_seen": [
+     "たべのこし"
+    ],
+    "status": null,
+    "fainted": true,
+    "moves_seen": [],
+    "mega": false,
+    "ability": null,
+    "glaive": false
+   },
+   "イエッサン": {
     "boosts": {},
     "item_consumed": "きあいのタスキ",
     "items_seen": [
      "きあいのタスキ"
     ],
     "status": null,
-    "fainted": false,
+    "fainted": true,
     "moves_seen": [
-     "かげうち"
+     "ワイドフォース"
     ],
     "mega": false,
-    "ability": "くだけるよろい",
-    "rampage": false,
-    "last_move": null,
+    "ability": "サイコメイカー",
     "glaive": false,
     "sub": 0,
+    "last_move": "ワイドフォース",
+    "rampage": false,
     "toxn": 0,
     "types": null,
     "added_type": null,
     "confusion": false
    },
-   "ゲッコウガ": {
+   "オオニューラ": {
     "boosts": {},
     "item_consumed": null,
     "items_seen": [],
     "status": null,
-    "fainted": true,
-    "moves_seen": [],
-    "mega": true,
-    "ability": "へんげんじざい",
-    "glaive": false,
-    "sub": 0,
-    "last_move": null,
+    "fainted": false,
+    "moves_seen": [
+     "フェイタルクロー"
+    ],
+    "mega": false,
+    "ability": null,
     "rampage": false,
-    "toxn": 0,
-    "types": null,
-    "added_type": null,
-    "confusion": false
+    "last_move": "フェイタルクロー",
+    "glaive": false
    }
   }
  },
  "mega_used": {
-  "me": true,
-  "opp": true
+  "me": false,
+  "opp": false
  },
  "history": [
-  {},
+  {
+   "switch": [
+    {
+     "side": "opp",
+     "mon": "ブリジュラス"
+    }
+   ],
+   "on_field": {
+    "opp": "ブリジュラス"
+   }
+  },
   {
    "moves": [
     {
-     "side": "opp",
-     "mon": "ソウブレイズ",
-     "move": "かげうち"
-    },
-    {
      "side": "me",
-     "mon": "イダイトウ",
-     "move": "クイックターン"
+     "mon": "ブリジュラス",
+     "move": "ステルスロック"
     }
    ],
    "items": [
     {
      "side": "opp",
-     "mon": "ソウブレイズ",
-     "item": "きあいのタスキ",
-     "consumed": true
-    }
-   ],
-   "super_effective": 2,
-   "abilities": [
-    {
-     "side": "opp",
-     "mon": "ソウブレイズ",
-     "ability": "くだけるよろい",
+     "mon": "ブリジュラス",
+     "item": "たべのこし",
+     "consumed": false,
      "from": "popup"
     }
    ],
-   "on_field": {
-    "opp": "ソウブレイズ",
-    "me": null
-   },
-   "first": "opp"
-  },
-  {},
-  {
-   "switch": [
+   "hazards": [
     {
      "side": "me",
-     "mon": "アシレーヌ",
-     "from": "panel"
-    },
-    {
-     "side": "opp",
-     "mon": "ゲッコウガ",
-     "from": "panel"
+     "hazard": "rocks"
     }
    ],
    "on_field": {
-    "me": "アシレーヌ"
-   }
-  },
-  {
-   "abilities": [
-    {
-     "side": "opp",
-     "mon": "ゲッコウガ",
-     "ability": "へんげんじざい",
-     "from": "popup"
-    }
-   ],
-   "on_field": {
-    "me": "メタグロス",
-    "opp": "ゲッコウガ"
-   }
-  },
-  {
-   "moves": [
-    {
-     "side": "me",
-     "mon": "メタグロス",
-     "move": "じしん"
-    }
-   ],
-   "faint": [
-    {
-     "side": "opp",
-     "mon": "ゲッコウガ"
-    }
-   ],
-   "switch": [
-    {
-     "side": "me",
-     "mon": "メタグロス",
-     "from": "panel"
-    },
-    {
-     "side": "opp",
-     "mon": "ソウブレイズ",
-     "from": "panel"
-    }
-   ],
-   "mega": [
-    {
-     "side": "me",
-     "mon": "メガメタグロス"
-    },
-    {
-     "side": "opp",
-     "mon": "ゲッコウガ",
-     "from": "panel"
-    }
-   ],
-   "super_effective": 1,
-   "on_field": {
-    "me": "メタグロス",
-    "opp": null
+    "opp": "ブリジュラス"
    },
    "first": "me"
   },
   {
-   "moves": [
+   "terrain": "psychic",
+   "faint": [
     {
-     "side": "me",
-     "mon": "メタグロス",
-     "move": "バレットパンチ"
+     "side": "opp",
+     "mon": "ブリジュラス"
+    }
+   ],
+   "abilities": [
+    {
+     "side": "opp",
+     "mon": "イエッサン",
+     "ability": "サイコメイカー",
+     "from": "popup"
     }
    ],
    "on_field": {
-    "me": "メタグロス"
-   },
-   "first": "me",
-   "forms": [
+    "me": "ガブリアス",
+    "opp": null
+   }
+  },
+  {
+   "moves": [
     {
-     "side": "me",
-     "mon": "メタグロス"
+     "side": "opp",
+     "mon": "イエッサン",
+     "move": "ワイドフォース"
     }
-   ]
-  }
+   ],
+   "items": [
+    {
+     "side": "opp",
+     "mon": "イエッサン",
+     "item": "きあいのタスキ",
+     "consumed": true
+    }
+   ],
+   "switch": [
+    {
+     "side": "opp",
+     "mon": "イエッサン",
+     "from": "panel"
+    }
+   ],
+   "on_field": {
+    "me": "ガブリアス",
+    "opp": "イエッサン"
+   },
+   "first": "opp"
+  },
+  {
+   "faint": [
+    {
+     "side": "opp",
+     "mon": "イエッサン"
+    }
+   ],
+   "on_field": {
+    "me": "ガブリアス",
+    "opp": null
+   }
+  },
+  {
+   "moves": [
+    {
+     "side": "opp",
+     "mon": "オオニューラ",
+     "move": "フェイタルクロー"
+    }
+   ],
+   "on_field": {
+    "opp": "オオニューラ",
+    "me": "ガブリアス"
+   },
+   "first": "opp"
+  },
+  {}
  ]
 }
