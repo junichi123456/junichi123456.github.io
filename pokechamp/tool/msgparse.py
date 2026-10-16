@@ -94,6 +94,28 @@ def locate_name(s):
     return _fuzzy(s, 'name')
 
 
+def find_name_any(s):
+    """find_name, and when the six of this battle do not explain the text (the preview may have been misread):
+    a strict close match among ALL mons (for the HP panel's name, which holds nothing but the name)."""
+    r = find_name(s)
+    if r:
+        return r
+    d = loose(devoice(apply_fixes(s)))
+    if len(d) < 3:
+        return None
+    best = None
+    for n in NAMES:
+        dn = loose(devoice(n))
+        if len(dn) < 4:
+            continue
+        for L in (len(dn) - 1, len(dn), len(dn) + 1):
+            for i in range(0, max(0, len(d) - L) + 1):
+                r = difflib.SequenceMatcher(None, d[i:i + L], dn).ratio()
+                if r >= 0.8 and (best is None or r > best[0]):
+                    best = (r, n)
+    return best[1] if best else None
+
+
 def exact_name(s):
     """A mon name read correctly (exactly, or only without 濁点): trusted even when it is not among the six the
     team preview was taken to show (the preview can be misidentified)."""

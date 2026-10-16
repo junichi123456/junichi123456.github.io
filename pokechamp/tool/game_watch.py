@@ -641,7 +641,7 @@ class MsgWatch:
             k = 0.2              # the name is in italics: lean it back upright, the OCR reads it much better
             m = m.transform((W + int(H * k), H), _I.AFFINE, (1, -k, 0, 0, 1, 0), fillcolor='white')
             t = ocr.read(m)
-            return _mp.find_name(_mp.norm(t))
+            return _mp.find_name_any(_mp.norm(t))
         except Exception:
             return None
 
