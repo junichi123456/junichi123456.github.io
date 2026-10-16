@@ -1,0 +1,217 @@
+{
+ "turn": 8,
+ "weather": null,
+ "weather_turns": 0,
+ "terrain": null,
+ "terrain_turns": 0,
+ "trick_room": 0,
+ "rocks_me": false,
+ "rocks_opp": false,
+ "active": {
+  "me": "アシレーヌ",
+  "opp": "アシレーヌ"
+ },
+ "mons": {
+  "me": {
+   "ヒートロトム": {
+    "boosts": {},
+    "item_consumed": null,
+    "items_seen": [],
+    "status": null,
+    "fainted": false,
+    "moves_seen": [
+     "オーバーヒート",
+     "いたみわけ"
+    ],
+    "mega": false,
+    "ability": null,
+    "rampage": false,
+    "last_move": null,
+    "glaive": false,
+    "sub": 0,
+    "toxn": 0,
+    "types": null,
+    "added_type": null,
+    "confusion": false
+   },
+   "アシレーヌ": {
+    "boosts": {},
+    "item_consumed": null,
+    "items_seen": [],
+    "status": null,
+    "fainted": false,
+    "moves_seen": [],
+    "mega": false,
+    "ability": null,
+    "rampage": false,
+    "glaive": false
+   }
+  },
+  "opp": {
+   "マスカーニャ": {
+    "boosts": {},
+    "item_consumed": null,
+    "items_seen": [],
+    "status": null,
+    "fainted": false,
+    "moves_seen": [
+     "とんぼがえり"
+    ],
+    "mega": false,
+    "ability": null,
+    "glaive": false,
+    "sub": 0,
+    "last_move": "とんぼがえり",
+    "rampage": false,
+    "toxn": 0,
+    "types": null,
+    "added_type": null,
+    "confusion": false
+   },
+   "ガブリアス": {
+    "boosts": {},
+    "item_consumed": null,
+    "items_seen": [],
+    "status": "brn",
+    "fainted": false,
+    "moves_seen": [],
+    "mega": true,
+    "ability": null,
+    "sub": 0,
+    "last_move": null,
+    "rampage": false,
+    "toxn": 0,
+    "types": null,
+    "added_type": null,
+    "confusion": false,
+    "glaive": false
+   },
+   "アシレーヌ": {
+    "boosts": {},
+    "item_consumed": null,
+    "items_seen": [],
+    "status": null,
+    "fainted": false,
+    "moves_seen": [],
+    "mega": false,
+    "ability": null,
+    "glaive": false
+   }
+  }
+ },
+ "mega_used": {
+  "me": false,
+  "opp": true
+ },
+ "history": [
+  {
+   "switch": [
+    {
+     "side": "opp",
+     "mon": "マスカーニャ"
+    }
+   ],
+   "on_field": {
+    "opp": "マスカーニャ"
+   }
+  },
+  {
+   "moves": [
+    {
+     "side": "opp",
+     "mon": "マスカーニャ",
+     "move": "とんぼがえり"
+    },
+    {
+     "side": "me",
+     "mon": "ロトム",
+     "move": "オーバーヒート"
+    }
+   ],
+   "switch": [
+    {
+     "side": "opp",
+     "mon": "ガブリアス"
+    },
+    {
+     "side": "opp",
+     "mon": "マスカーニャ",
+     "from": "panel"
+    }
+   ],
+   "on_field": {
+    "opp": "ガブリアス",
+    "me": "ロトム"
+   },
+   "first": "opp"
+  },
+  {
+   "status": [
+    {
+     "side": "opp",
+     "mon": "ガブリアス",
+     "status": "brn"
+    }
+   ],
+   "mega": [
+    {
+     "side": "opp",
+     "mon": "ガブリアス"
+    }
+   ],
+   "super_effective": 1,
+   "on_field": {
+    "opp": "ガブリアス",
+    "me": "ロトム"
+   }
+  },
+  {
+   "moves": [
+    {
+     "side": "me",
+     "mon": "ロトム",
+     "move": "いたみわけ"
+    }
+   ],
+   "on_field": {
+    "opp": "ガブリアス",
+    "me": "ロトム"
+   },
+   "first": "me"
+  },
+  {
+   "withdraw": [
+    {
+     "side": "opp"
+    }
+   ],
+   "on_field": {
+    "me": null
+   }
+  },
+  {
+   "switch": [
+    {
+     "side": "opp",
+     "mon": "アシレーヌ",
+     "from": "panel"
+    },
+    {
+     "side": "me",
+     "mon": "アシレーヌ",
+     "from": "panel"
+    }
+   ],
+   "on_field": {
+    "opp": "アシレーヌ",
+    "me": "アシレーヌ"
+   }
+  },
+  {},
+  {
+   "on_field": {
+    "opp": "アシレーヌ"
+   }
+  }
+ ]
+}
