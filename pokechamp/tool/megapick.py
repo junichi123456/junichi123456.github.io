@@ -34,6 +34,11 @@ def main():
     cur = {B.BASE_OF.get(m.species, m.species): m for m in B.TEAM}
     core = {b: cur[b] for b in CORE}
     cs = cands('--all' in a)
+    if '--custom' in a:      # user-specified Meganium: おくびょう S28 C32 (H 6) まもる/ソーラービーム/ウェザーボール/+1
+        from calc import Mon
+        mv = a[a.index('--custom') + 1]
+        cs['メガニウム'] = Mon('メガメガニウム', 'おくびょう', {'hp': 6, 'spa': 32, 'spe': 28}, 'メガソーラー', 'メガニウムナイト',
+                          ['まもる', 'ソーラービーム', 'ウェザーボール', mv], label='メガニウム')
     if '--only' in a:
         keep = a[a.index('--only') + 1].split(',')
         cs = {b: m for b, m in cs.items() if b in keep}
