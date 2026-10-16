@@ -848,12 +848,14 @@ class FieldTracker:
 
     def mon(self, side, name):
         mega = name in BASE
+        raw = name
         name = canon(side, name, self.opp_team() if side == 'opp' else ())
         m = self.s['mons'][side].setdefault(name, {'boosts': {}, 'item_consumed': None, 'items_seen': [],
                                                    'status': None, 'fainted': False, 'moves_seen': [],
                                                    'mega': False, 'ability': None})
         if mega:
             m['mega'] = True
+            m['mega_name'] = raw
         return m
 
     def apply(self, ev):

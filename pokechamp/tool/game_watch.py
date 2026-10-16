@@ -866,6 +866,22 @@ class Speculator:
                 self.start(key, nxt)
 
 
+def _opp_disp(tracker, name):
+    """Opponent name for the log: 'メガ○○' once it has mega evolved ('メガ○○Z' for the Z mega)."""
+    if not name:
+        return '?'
+    try:
+        m = tracker.s['mons']['opp'].get(name) or {}
+        if not m.get('mega'):
+            return name
+        mn = m.get('mega_name')
+        if mn and mn.startswith('メガ'):
+            return mn.replace('Ｚ', 'Z')
+        return 'メガ' + name
+    except Exception:
+        return name
+
+
 def popup_events(timeline, turn, tracker):
     """Abilities / items read from the popup (MsgWatch.watch_popup) added to the turn. Whose it is follows from the
     teams (the popup shows no 「相手の」)."""
@@ -1396,7 +1412,7 @@ def main():
                         lead = None
                     if lead:
                         act['me'] = tracker.s['active']['me'] = lead
-                print(time.strftime('%Y-%m-%dT%H:%M:%S'), f"場: 自分 {act.get('me') or '?'} / 相手 {act.get('opp') or '?'}", flush=True)
+                print(time.strftime('%Y-%m-%dT%H:%M:%S'), f"場: 自分 {act.get('me') or '?'} / 相手 {_opp_disp(tracker, act.get('opp'))}", flush=True)
                 ev['field_state'] = field_p
                 with open(log_p, 'a', encoding='utf-8') as f:
                     f.write(json.dumps({'seq': seq, 'time': ts, 'lines': turn_msgs(), 'parsed': ev['turn_events'],
