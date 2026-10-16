@@ -1165,6 +1165,15 @@ def active_select_rules(opp6, my_names):
     return out
 
 
+def _focus_mons(opp6):
+    try:
+        p = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data', 'select_rules.json')
+        f = json.load(open(p, encoding='utf-8')).get('focus', {})
+    except Exception:
+        return {}
+    return {k: v for k, v in f.items() if any(_base(x) == k for x in opp6)}
+
+
 def select(opp6, seconds=10.0, ignore_stored=False, return_all=False):
     """Choose 3 of our 6 and the lead: every order is played out on the engine against the opponent's likely
     picks and leads (greedy play), then the best 12 are replayed with a 1-turn look-ahead for our side."""
@@ -1177,7 +1186,17 @@ def select(opp6, seconds=10.0, ignore_stored=False, return_all=False):
         for n in c: p *= w[n]
         trip.append((p, c))
     trip.sort(key=lambda x: -x[0])
-    trip = trip[:6]
+    focus = _focus_mons(opp6)          # 重点対策の相手(data/select_rules.json の focus): その入る3体組を重く、必ず評価に含める
+    if focus:
+        bump = [(p * (1 + 1.0 * sum(focus.get(_base(x), 0) for x in c)), c) for p, c in trip]
+        bump.sort(key=lambda x: -x[0])
+        have = [t for t in bump if any(_base(x) in focus for x in t[1])][:4]
+        trip = bump[:6]
+        for t in have:
+            if t not in trip:
+                trip.append(t)
+    else:
+        trip = trip[:6]
     fixed = set()   # selections written in the team's article: lead first
     if kt and kt.get('picks'):
         by_base = {_base(x): x for x in opp6}
