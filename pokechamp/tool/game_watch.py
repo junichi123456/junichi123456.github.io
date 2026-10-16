@@ -1404,6 +1404,19 @@ def main():
                 ev['turn_events'] = {k: v for k, v in turn.items() if v}
                 ev['active'] = dict(tracker.s.get('active') or {})
                 act = ev['active']
+                try:                    # the HP panels may not have been read yet: the names on the command screen decide
+                    flat = (text or '').replace(' ', '').replace('\u3000', '').replace('\n', '')
+                    mine = [n for n in msgparse.MY_BASES if n in flat]
+                    theirs = [n for n in tracker.opp_team() if n in flat]
+                    if len(mine) > 1 and len(theirs) == 1 and theirs[0] in mine:
+                        mine = [n for n in mine if n != theirs[0]]
+                    if len(theirs) > 1 and len(mine) == 1 and mine[0] in theirs:
+                        theirs = [n for n in theirs if n != mine[0]]
+                    for side, c in (('me', mine), ('opp', theirs)):
+                        if len(c) == 1 and act.get(side) != c[0]:
+                            act[side] = tracker.s['active'][side] = c[0]
+                except Exception:
+                    pass
                 if phase == 'start' and not act.get('me'):      # turn 1: the lead is the first of our picked order
                     try:
                         lead = (json.load(open(os.path.join(OUT, '..', 'current.json'), encoding='utf-8'))
