@@ -1417,6 +1417,22 @@ def main():
                             act[side] = tracker.s['active'][side] = c[0]
                 except Exception:
                     pass
+                try:                    # read both HP panels straight from this command screen (the watcher lags by seconds)
+                    from PIL import Image as _PI
+                    _img = _PI.open(snap).convert('RGB')
+                    for side, box, pool in (('opp', OPP_PANEL, tracker.opp_team()), ('me', MY_PANEL, msgparse.MY_BASES)):
+                        pc = _crop(_img, box)
+                        if not panel_present(pc, side):
+                            continue
+                        for dx in (0.0, -0.03, 0.03, -0.06):
+                            nm = MsgWatch.panel_name(None, side, pc, ocr, dx)
+                            nm = msgparse.canon(side, nm, pool) if nm else None
+                            if nm and (nm in pool or any(msgparse.BASE.get(x, x) == nm for x in pool)):
+                                if act.get(side) != nm:
+                                    act[side] = tracker.s['active'][side] = nm
+                                break
+                except Exception as _e:
+                    print('panel read failed:', _e, flush=True)
                 if phase == 'start' and not act.get('me'):      # turn 1: the lead is the first of our picked order
                     try:
                         lead = (json.load(open(os.path.join(OUT, '..', 'current.json'), encoding='utf-8'))
