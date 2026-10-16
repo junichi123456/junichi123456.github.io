@@ -1,5 +1,5 @@
 {
- "turn": 8,
+ "turn": 7,
  "weather": null,
  "weather_turns": 0,
  "terrain": null,
@@ -8,31 +8,25 @@
  "rocks_me": false,
  "rocks_opp": false,
  "active": {
-  "me": "アシレーヌ",
-  "opp": "アシレーヌ"
+  "me": "メタグロス",
+  "opp": "ソウブレイズ"
  },
  "mons": {
   "me": {
-   "ヒートロトム": {
+   "イダイトウ": {
     "boosts": {},
     "item_consumed": null,
     "items_seen": [],
     "status": null,
     "fainted": false,
     "moves_seen": [
-     "オーバーヒート",
-     "いたみわけ"
+     "クイックターン"
     ],
     "mega": false,
     "ability": null,
     "rampage": false,
-    "last_move": null,
-    "glaive": false,
-    "sub": 0,
-    "toxn": 0,
-    "types": null,
-    "added_type": null,
-    "confusion": false
+    "last_move": "クイックターン",
+    "glaive": false
    },
    "アシレーヌ": {
     "boosts": {},
@@ -42,40 +36,6 @@
     "fainted": false,
     "moves_seen": [],
     "mega": false,
-    "ability": null,
-    "rampage": false,
-    "glaive": false
-   }
-  },
-  "opp": {
-   "マスカーニャ": {
-    "boosts": {},
-    "item_consumed": null,
-    "items_seen": [],
-    "status": null,
-    "fainted": false,
-    "moves_seen": [
-     "とんぼがえり"
-    ],
-    "mega": false,
-    "ability": null,
-    "glaive": false,
-    "sub": 0,
-    "last_move": "とんぼがえり",
-    "rampage": false,
-    "toxn": 0,
-    "types": null,
-    "added_type": null,
-    "confusion": false
-   },
-   "ガブリアス": {
-    "boosts": {},
-    "item_consumed": null,
-    "items_seen": [],
-    "status": "brn",
-    "fainted": false,
-    "moves_seen": [],
-    "mega": true,
     "ability": null,
     "sub": 0,
     "last_move": null,
@@ -86,132 +46,209 @@
     "confusion": false,
     "glaive": false
    },
-   "アシレーヌ": {
+   "メタグロス": {
     "boosts": {},
     "item_consumed": null,
     "items_seen": [],
     "status": null,
     "fainted": false,
-    "moves_seen": [],
-    "mega": false,
+    "moves_seen": [
+     "じしん",
+     "バレットパンチ"
+    ],
+    "mega": true,
     "ability": null,
-    "glaive": false
+    "sub": 0,
+    "last_move": "バレットパンチ",
+    "rampage": false,
+    "toxn": 0,
+    "types": null,
+    "added_type": null,
+    "confusion": false,
+    "glaive": false,
+    "mega_name": "メガメタグロス",
+    "form_changes": 1
+   }
+  },
+  "opp": {
+   "ソウブレイズ": {
+    "boosts": {},
+    "item_consumed": "きあいのタスキ",
+    "items_seen": [
+     "きあいのタスキ"
+    ],
+    "status": null,
+    "fainted": false,
+    "moves_seen": [
+     "かげうち"
+    ],
+    "mega": false,
+    "ability": "くだけるよろい",
+    "rampage": false,
+    "last_move": null,
+    "glaive": false,
+    "sub": 0,
+    "toxn": 0,
+    "types": null,
+    "added_type": null,
+    "confusion": false
+   },
+   "ゲッコウガ": {
+    "boosts": {},
+    "item_consumed": null,
+    "items_seen": [],
+    "status": null,
+    "fainted": true,
+    "moves_seen": [],
+    "mega": true,
+    "ability": "へんげんじざい",
+    "glaive": false,
+    "sub": 0,
+    "last_move": null,
+    "rampage": false,
+    "toxn": 0,
+    "types": null,
+    "added_type": null,
+    "confusion": false
    }
   }
  },
  "mega_used": {
-  "me": false,
+  "me": true,
   "opp": true
  },
  "history": [
+  {},
   {
-   "switch": [
+   "moves": [
     {
      "side": "opp",
-     "mon": "マスカーニャ"
+     "mon": "ソウブレイズ",
+     "move": "かげうち"
+    },
+    {
+     "side": "me",
+     "mon": "イダイトウ",
+     "move": "クイックターン"
+    }
+   ],
+   "items": [
+    {
+     "side": "opp",
+     "mon": "ソウブレイズ",
+     "item": "きあいのタスキ",
+     "consumed": true
+    }
+   ],
+   "super_effective": 2,
+   "abilities": [
+    {
+     "side": "opp",
+     "mon": "ソウブレイズ",
+     "ability": "くだけるよろい",
+     "from": "popup"
     }
    ],
    "on_field": {
-    "opp": "マスカーニャ"
+    "opp": "ソウブレイズ",
+    "me": null
+   },
+   "first": "opp"
+  },
+  {},
+  {
+   "switch": [
+    {
+     "side": "me",
+     "mon": "アシレーヌ",
+     "from": "panel"
+    },
+    {
+     "side": "opp",
+     "mon": "ゲッコウガ",
+     "from": "panel"
+    }
+   ],
+   "on_field": {
+    "me": "アシレーヌ"
+   }
+  },
+  {
+   "abilities": [
+    {
+     "side": "opp",
+     "mon": "ゲッコウガ",
+     "ability": "へんげんじざい",
+     "from": "popup"
+    }
+   ],
+   "on_field": {
+    "me": "メタグロス",
+    "opp": "ゲッコウガ"
    }
   },
   {
    "moves": [
     {
-     "side": "opp",
-     "mon": "マスカーニャ",
-     "move": "とんぼがえり"
-    },
-    {
      "side": "me",
-     "mon": "ロトム",
-     "move": "オーバーヒート"
+     "mon": "メタグロス",
+     "move": "じしん"
+    }
+   ],
+   "faint": [
+    {
+     "side": "opp",
+     "mon": "ゲッコウガ"
     }
    ],
    "switch": [
     {
-     "side": "opp",
-     "mon": "ガブリアス"
+     "side": "me",
+     "mon": "メタグロス",
+     "from": "panel"
     },
     {
      "side": "opp",
-     "mon": "マスカーニャ",
+     "mon": "ソウブレイズ",
      "from": "panel"
-    }
-   ],
-   "on_field": {
-    "opp": "ガブリアス",
-    "me": "ロトム"
-   },
-   "first": "opp"
-  },
-  {
-   "status": [
-    {
-     "side": "opp",
-     "mon": "ガブリアス",
-     "status": "brn"
     }
    ],
    "mega": [
     {
+     "side": "me",
+     "mon": "メガメタグロス"
+    },
+    {
      "side": "opp",
-     "mon": "ガブリアス"
+     "mon": "ゲッコウガ",
+     "from": "panel"
     }
    ],
    "super_effective": 1,
    "on_field": {
-    "opp": "ガブリアス",
-    "me": "ロトム"
-   }
+    "me": "メタグロス",
+    "opp": null
+   },
+   "first": "me"
   },
   {
    "moves": [
     {
      "side": "me",
-     "mon": "ロトム",
-     "move": "いたみわけ"
+     "mon": "メタグロス",
+     "move": "バレットパンチ"
     }
    ],
    "on_field": {
-    "opp": "ガブリアス",
-    "me": "ロトム"
+    "me": "メタグロス"
    },
-   "first": "me"
-  },
-  {
-   "withdraw": [
-    {
-     "side": "opp"
-    }
-   ],
-   "on_field": {
-    "me": null
-   }
-  },
-  {
-   "switch": [
-    {
-     "side": "opp",
-     "mon": "アシレーヌ",
-     "from": "panel"
-    },
+   "first": "me",
+   "forms": [
     {
      "side": "me",
-     "mon": "アシレーヌ",
-     "from": "panel"
+     "mon": "メタグロス"
     }
-   ],
-   "on_field": {
-    "opp": "アシレーヌ",
-    "me": "アシレーヌ"
-   }
-  },
-  {},
-  {
-   "on_field": {
-    "opp": "アシレーヌ"
-   }
+   ]
   }
  ]
 }
