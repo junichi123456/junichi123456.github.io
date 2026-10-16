@@ -572,7 +572,7 @@ class MsgWatch:
         self._sig = {'msg': None, 'opp': None, 'me': None}
         self._hp = {'opp': None, 'me': None}
         self._shown = {}
-        self._icon, self._iname, self._ipend, self._itry = {}, {}, {}, {}
+        self._icon, self._iname, self._ipend, self._itry, self._ntry = {}, {}, {}, {}, {}
         self._iset, self._lib = {}, {}       # when the current picture was set; pictures per mon of this battle
         self.known = None                    # () -> (our mon out, theirs) as tracked (set by main)
         threading.Thread(target=self._run, daemon=True).start()
@@ -660,9 +660,11 @@ class MsgWatch:
         sim = icon_sim(f, ref)
         if sim >= self.SAME:
             self._ipend[side] = 0
-            if self._iname.get(side) is None and now - self._itry.get(side, -9) >= 1.0:
-                self._itry[side] = now                      # the name was not read yet: try again
-                self._iname[side] = self.panel_name(side, pc, ocr)
+            if self._iname.get(side) is None and now - self._itry.get(side, -9) >= 0.4:
+                self._itry[side] = now                      # the name was not read yet: try again, the crop shifted a bit
+                k = self._ntry[side] = self._ntry.get(side, 0) + 1
+                dx = (0.0, -0.03, 0.03, -0.06, 0.06, -0.015, 0.015)[k % 7]
+                self._iname[side] = self.panel_name(side, pc, ocr, dx)
             # remember this mon's picture (name from the panel, else as followed through the messages), so a later
             # switch to it is recognised even when its name cannot be read
             if now - self._iset.get(side, -9) >= 1.5:
@@ -1386,6 +1388,14 @@ def main():
                 ev['turn_events'] = {k: v for k, v in turn.items() if v}
                 ev['active'] = dict(tracker.s.get('active') or {})
                 act = ev['active']
+                if phase == 'start' and not act.get('me'):      # turn 1: the lead is the first of our picked order
+                    try:
+                        lead = (json.load(open(os.path.join(OUT, '..', 'current.json'), encoding='utf-8'))
+                                .get('my_order') or [None])[0]
+                    except Exception:
+                        lead = None
+                    if lead:
+                        act['me'] = tracker.s['active']['me'] = lead
                 print(time.strftime('%Y-%m-%dT%H:%M:%S'), f"場: 自分 {act.get('me') or '?'} / 相手 {act.get('opp') or '?'}", flush=True)
                 ev['field_state'] = field_p
                 with open(log_p, 'a', encoding='utf-8') as f:
@@ -1402,7 +1412,7 @@ def main():
                 ev['preview_frames'] = os.path.join(OUT, f'game_{seq:04d}_preview_*.png')
                 tracker = msgparse.FieldTracker(field_p)  # new battle
                 if msgw and hasattr(msgw, '_icon'):
-                    msgw._icon, msgw._iname, msgw._ipend, msgw._itry = {}, {}, {}, {}     # panels of the last battle
+                    msgw._icon, msgw._iname, msgw._ipend, msgw._itry, msgw._ntry = {}, {}, {}, {}, {}     # panels of the last battle
                     msgw._iset, msgw._lib = {}, {}
                 spec.reset()
                 pending_replace, replace_done = None, set()
