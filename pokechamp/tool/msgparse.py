@@ -355,10 +355,20 @@ def learn_fix(seen, right):
 
 
 def apply_fixes(s):
-    for seen, right in _fixes_sorted():
-        if seen in s and not FIXES[seen].get('bad'):
-            s = s.replace(seen, right)
-    return s
+    """One pass: a replacement is never scanned again (三ッキュ → ミミッキュ must not then become ミミミッキュ through
+    the shorter fix ミッキュ → ミミッキュ), and text that already reads right is left alone."""
+    fx = [(a, r) for a, r in _fixes_sorted() if a in s and not FIXES[a].get('bad')]
+    if not fx:
+        return s
+    right = dict(fx)
+
+    def sub(m):
+        a, r = m.group(0), right[m.group(0)]
+        i = r.find(a)
+        if i >= 0 and m.string[max(0, m.start() - i):m.start() - i + len(r)] == r:
+            return a
+        return r
+    return re.sub('|'.join(re.escape(a) for a, _ in fx), sub, s)
 
 
 from functools import lru_cache  # noqa: E402
@@ -525,7 +535,7 @@ def parse_turn(lines, dedupe=True):
             continue
         # stat change
         # (OCR reads 「っ」 as 「つ」 and 「が」 as 「か」: 下がつた / 下かった)
-        m = re.search(r'の(こうげき|攻撃|ぼうぎょ|防御|とくこう|特攻|とくぼう|特防|すばやさ|素早さ|命中率|回避率)[がか]'
+        m = re.search(r'の[^のがか]{0,5}?(こうげき|攻撃|ぼうぎょ|防御|とくこう|特攻|とくぼう|特防|すばやさ|素早さ|命中率|回避率)[がか]'
                       r'(ぐぐーんと|ぐーんと|ぐんと|がくーんと|がく[っつ]と)?(上[がか][っつ]た|あ[がか][っつ]た|下[がか][っつ]た|さ[がか][っつ]た)', s)
         if m and name:
             up = m.group(3)[0] in '上あ'
