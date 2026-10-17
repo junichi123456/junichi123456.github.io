@@ -21,6 +21,7 @@ import battle as B  # noqa: E402
 import pokesol  # noqa: E402
 import prep  # noqa: E402
 import regulation  # noqa: E402
+import yakkun_parse  # noqa: E402
 from calc import POKE  # noqa: E402
 
 LIST_URL = 'https://pokesol.app/?tab=new&category=team&page={}'
@@ -308,6 +309,34 @@ def report():
     open(REPORT_P, 'w', encoding='utf-8').write('\n'.join(L) + '\n')
 
 
+def yakkun_todo(have):
+    """PCの yakkun_fetch.py が保存した記事（logs/study/yakkun/*.json）から、基準を満たす新しい構築を作る。"""
+    out = []
+    cur = regulation.current()
+    for aid, d in yakkun_parse.load_all():
+        tid = 'yakkun_' + aid
+        if tid in have:
+            continue
+        txt = d.get('text', '')
+        reg = yakkun_parse.regulation_of(txt)
+        if reg and reg != cur:
+            print('skip (regulation', reg, ')', d['title'][:30], flush=True)
+            continue
+        title = d['title'].split('｜')[0]
+        info = rating(title, yakkun_parse.intro(txt), yakkun_parse.season_of(txt))
+        if not qualifies(*info):
+            print(f'skip (rating {info})', title[:40], flush=True)
+            continue
+        team, why = yakkun_parse.parse(d, B, POKE)
+        if not team:
+            print('skip (team)', title[:40], why, flush=True)
+            continue
+        t = {'id': tid, 'title': title, 'url': d['url'], 'team': team, 'picks': [], '_text': txt}
+        if valid_team(t):
+            out.append({'t': t, 'rating': info})
+    return out
+
+
 def main():
     try:
         sys.stdout.reconfigure(encoding='utf-8')
@@ -341,6 +370,7 @@ def main():
             print('skip (team)', t['title'][:40], flush=True)
             continue
         todo.append({'t': t, 'rating': info})
+    todo += yakkun_todo(have | {c['t']['id'] for c in todo})
     todo.sort(key=priority)
     if '--max' in a:
         todo = todo[:int(a[a.index('--max') + 1])]

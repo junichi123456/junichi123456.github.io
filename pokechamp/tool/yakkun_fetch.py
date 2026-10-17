@@ -16,6 +16,7 @@ import datetime, json, os, re, subprocess, sys, time, urllib.parse
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 import regulation  # noqa: E402
+import yakkun_parse  # noqa: E402
 
 OUT = os.path.join(HERE, '..', 'logs', 'study', 'yakkun')
 INDEX_P = os.path.join(OUT, 'index.json')
@@ -84,7 +85,7 @@ def run(a):
     mx = int(a[a.index('--max') + 1]) if '--max' in a else 40
     pages = int(a[a.index('--pages') + 1]) if '--pages' in a else 5
     os.makedirs(os.path.join(OUT, '_samples'), exist_ok=True)
-    ix = load_index()
+    ix = {k: v for k, v in load_index().items() if v.get('v') == 2 or v.get('status') == 'saved'}   # 旧判定のskipは取り直す
     got = 0
     with sync_playwright() as p:
         kw = dict(user_data_dir=os.path.join(OUT, '_profile'), headless='--headless' in a, locale='ja-JP',
@@ -122,8 +123,8 @@ def run(a):
                     title = (pg.title() or lt).strip()
                     text = pg.inner_text('body')
                     alts = pg.eval_on_selector_all('img[alt]', 'els => els.map(e => e.alt).filter(x => x)')
-                    ok, info = qualifies(title + ' ' + lt, text[:400])
-                    row = {'url': u, 'title': title, 'list_text': lt, 'fetched': datetime.datetime.now(JST).isoformat(timespec='seconds')}
+                    ok, info = qualifies(title + ' ' + lt, yakkun_parse.intro(text))
+                    row = {'v': 2, 'url': u, 'title': title, 'list_text': lt, 'fetched': datetime.datetime.now(JST).isoformat(timespec='seconds')}
                     if ok:
                         row['status'] = 'saved'
                         json.dump({**row, 'rating': info, 'text': text[:20000], 'alts': alts[:200],
