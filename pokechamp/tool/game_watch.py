@@ -155,6 +155,20 @@ def party_read(text):
     return out
 
 
+def party_from_tracker(tracker):
+    """The switch-in screen's OCR is often unreadable (a stats panel over the list): our bench as tracked instead,
+    [(name, None), ...] = picked mons that are neither out nor fainted."""
+    try:
+        import msgparse as _mp
+        rec = json.load(open(os.path.join(OUT, '..', 'current.json'), encoding='utf-8'))
+        act = tracker.s['active'].get('me')
+        fs = tracker.s['mons']['me']
+        return [(n, None) for n in (rec.get('my_order') or [])
+                if _mp.canon('me', n) != act and not (fs.get(_mp.canon('me', n)) or {}).get('fainted')]
+    except Exception:
+        return []
+
+
 def is_party(text, bscore):
     """The screen listing our party to choose who comes in (after a faint or a U-turn type move, or when browsing):
     several of our names with 「cur/max」 HP, and no 「たたかう」/「ポケモン」 buttons."""
@@ -1510,9 +1524,12 @@ def main():
                 if pre:
                     publish(seq, pre[0], pre[1] + f'\n（演出中に先読み済み・{pre[2]:.0f}秒読み）', 0.0)
                     spec.shown(text, seq, pre[0], hp_now)
+                elif phase == 'replace' and len(party_read(text)) < 2 and len(party_from_tracker(tracker)) == 1:
+                    only = party_from_tracker(tracker)[0][0]        # one mon left: no decision to make
+                    publish(seq, f'次: {only}を出す', f'次: {only}を出す\n（控えの生存は{only}のみ）', 0.0)
                 else:
                     decide_async(seq, a.decide_sec, 'pivot' if phase == 'replace' and replace_mode == 'pivot' else phase,
-                                 party_read(text) if phase == 'replace' else None,
+                                 (party_read(text) if len(party_read(text)) >= 2 else party_from_tracker(tracker)) if phase == 'replace' else None,
                                  hp_now if phase != 'replace' else
                                  ((None, (msgw._hp.get('opp') if msgw else None)) if msgw else None), names, update=bool(plan),
                                  get_names=lambda: (((ev.get('active') or {}).get('me') or (getattr(msgw, '_iname', None) or {}).get('me')),
