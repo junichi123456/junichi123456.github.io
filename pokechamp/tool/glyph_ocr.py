@@ -219,29 +219,44 @@ def save_crop(mask_img, text, n):
         pass
 
 
-def build():
+def build(verbose=True):
     """Templates from the saved crops: lines whose OCR text, after the usual corrections (msgparse), is one of this
-    battle's mon / move sentences and whose character count matches the cut. Misread lines are left out."""
+    battle's mon / move sentences and whose character count matches the cut. Misread lines are left out.
+    The reasons for skipped crops are counted and printed (why 0 templates?)."""
     import msgparse as mp
-    total = used = 0
-    for f in sorted(os.listdir(CROPS)) if os.path.isdir(CROPS) else []:
+    why = {'crop数': 0, '技の文ではない': 0, '2行・空など(1行ではない)': 0, '文字数が合わない': 0, '追加した行': 0}
+    shown = 0
+    names = sorted(os.listdir(CROPS)) if os.path.isdir(CROPS) else []
+    for f in names:
         if not f.endswith('.png'):
             continue
         try:
             ocr = json.load(open(os.path.join(CROPS, f[:-4] + '.json'), encoding='utf-8')).get('ocr') or ''
         except Exception:
             continue
-        total += 1
+        why['crop数'] += 1
         s = mp.apply_fixes(mp.norm(ocr))
         mu = mp.move_use(s)
-        ok = bool(mu) and mu[1] in s       # the move may be misread: it is taken from the corrected parse
-        if not ok:
+        if not (mu and mu[1] in s):       # the move may be misread: it is taken from the corrected parse
+            why['技の文ではない'] += 1
             continue
         lines = split_lines(Image.open(os.path.join(CROPS, f)))
         text = ('相手の' if mu[0] == 'opp' else '') + mu[1] + 'の' + mu[2] + '！'      # the sentence as the game prints it
-        if len(lines) == 1:
-            used += 1 if learn_line(lines[0], text) else 0
-    print(f'{total} 枚のうち {used} 枚から見本を追加しました')
+        if len(lines) != 1:
+            why['2行・空など(1行ではない)'] += 1
+            continue
+        n_add = learn_line(lines[0], text)
+        if n_add:
+            why['追加した行'] += 1
+        else:
+            cols, _ = segment(ink(lines[0]))
+            why['文字数が合わない'] += 1
+            if verbose and shown < 5:
+                shown += 1
+                print(f'  例 {f}: 期待 {len(text)} 文字「{text}」/ 切り出し {len(cols)} 文字')
+    print(f'見本づくり: ' + ' / '.join(f'{k} {v}' for k, v in why.items()))
+    if not os.path.isdir(CROPS):
+        print(f'crop の保存先がありません: {os.path.abspath(CROPS)}（game_watch.py を先に動かしてください）')
     stats()
 
 
