@@ -606,6 +606,32 @@ class MsgWatch:
             except Exception:
                 pass
 
+    GLYPH = True        # --no-glyph turns the template reader off
+    _crop_n = 0
+
+    def read_box(self, msg, ocr):
+        """The message box as text: our own glyph templates first (the game's font; the Windows OCR swaps 三/ミ, き/ぎ ...),
+        the Windows OCR when the templates are missing or a character is not sure. The picture and OCR text are kept in
+        logs/live/msgcrops/ so glyph_ocr.py build can make templates from them."""
+        mask = text_mask(msg, 2 if msg.width < 1400 else 1)
+        if self.GLYPH:
+            try:
+                import glyph_ocr
+                r = glyph_ocr.read_box(mask)
+                if r and r[1] >= glyph_ocr.ACCEPT:
+                    return r[0]
+            except Exception:
+                pass
+        text = ocr.read(mask)
+        if self.GLYPH:
+            try:
+                import glyph_ocr
+                MsgWatch._crop_n += 1
+                glyph_ocr.save_crop(mask, text, MsgWatch._crop_n)
+            except Exception:
+                pass
+        return text
+
     def add_msg(self, text, now):
         """One OCR read of the message box. Messages appear over several reads (and the text may still be typing
         out): a read that continues / nearly equals the previous one updates it instead of adding a message.
@@ -749,7 +775,7 @@ class MsgWatch:
             if not m.any():
                 self.gap = True
             elif prev is None or prev.shape != m.shape or (m ^ prev).mean() > 0.01:
-                self.add_msg(ocr.read(text_mask(msg, 2 if msg.width < 1400 else 1)), now)
+                self.add_msg(self.read_box(msg, ocr), now)
             self._sig['msg'] = m
             self.watch_popup(img, ocr, now)
         for side, box in (('opp', OPP_PANEL), ('me', MY_PANEL)):
@@ -1196,6 +1222,7 @@ def main():
     ap.add_argument('--decide-sec', type=float, default=None,
                     help='行動選択画面で自動判断する探索秒数（省略すると局面に応じて自動: 最終局面2秒/通常5秒/分岐が多い9秒）')
     ap.add_argument('--no-decide', action='store_true', help='行動選択画面での自動判断をしない')
+    ap.add_argument('--no-glyph', action='store_true', help='字体の見本照合による文字読み取りを使わない（Windows OCRのみ）')
     ap.add_argument('--no-fast', action='store_true', help='ボタンの色による行動選択画面の高速検出をしない')
     ap.add_argument('--no-msg', action='store_true', help='メッセージ欄とHP欄だけを0.25秒ごとに読む監視をしない')
     a = ap.parse_args()
@@ -1234,6 +1261,16 @@ def main():
         return act.get('me'), act.get('opp')
 
     spec.live = live_active
+    MsgWatch.GLYPH = not a.no_glyph
+    if MsgWatch.GLYPH:
+        import threading
+        def _glyph_build():
+            try:
+                import glyph_ocr
+                glyph_ocr.build()
+            except Exception as e:
+                print('glyph build failed:', e, flush=True)
+        threading.Thread(target=_glyph_build, daemon=True).start()
     msgw = MsgWatch(make_source, WinOCR, os.path.join(OUT, 'messages.jsonl'),
                     skip=(lambda: fast.scene in ('input', 'party', 'preview')) if fast else None) if not a.no_msg else None
     if msgw:
