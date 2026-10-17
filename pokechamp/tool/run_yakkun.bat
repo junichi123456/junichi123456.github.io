@@ -1,6 +1,5 @@
 @echo off
-rem やっくん構築記事の取得（PC起動時に自動実行。手動で実行してもよい）
-chcp 65001 >nul
+rem Fetch yakkun.com team articles (runs at logon; can also be run by hand)
 cd /d "%~dp0"
 timeout /t 90 /nobreak >nul
 for /f "delims=" %%b in ('git rev-parse --abbrev-ref HEAD') do set BR=%%b
