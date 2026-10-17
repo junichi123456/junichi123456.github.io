@@ -5,7 +5,7 @@
   python study.py note <id> <json-file>      ガイドを known_teams.json に書き込む
 
 1. Reads the newest team articles (https://pokesol.app/?tab=new&category=team, newest first).
-2. Keeps singles articles under our rules (regulation M-C, any season) whose article states a final or reached
+2. Keeps singles articles under our rules (current regulation per data/regulation.json, any season) whose article states a final or reached
    rating of 2000+ (or, when no rating is written, a final rank of 1000 or better). Higher rank / rating first.
 3. Stores each team's six (sets) in data/known_teams.json with its rating, and the article text in
    logs/study/text/<id>.txt. No battles are simulated.
@@ -20,6 +20,7 @@ sys.path.insert(0, HERE)
 import battle as B  # noqa: E402
 import pokesol  # noqa: E402
 import prep  # noqa: E402
+import regulation  # noqa: E402
 from calc import POKE  # noqa: E402
 
 LIST_URL = 'https://pokesol.app/?tab=new&category=team&page={}'
@@ -133,12 +134,39 @@ def priority(c):
     return (rank if rank is not None else 10 ** 6, -(max(final or 0, peak or 0)))
 
 
-RULES = ('mc',)          # same rules as ours (regulation M-C): any season is fine
+SWITCH_MIN = 8           # 新レギュレーションの記事がこの件数（直近7日）を超え、現行より多ければ切り替える
+
+
+def detect_regulation(arts):
+    """直近7日のシングル構築記事のレギュレーション別の件数。新しいレギュレーションが現行を上回ったら自動で切り替える
+    （古い構築は data/known_teams_archive.json に移るだけで消えない）。切り替えたら新しいコードを返す。"""
+    cfg = regulation.load()
+    cnt = {}
+    for a in arts:
+        if a.get('_ts') and time.time() - a['_ts'] < 7 * 86400 and a.get('regulation'):
+            cnt[a['regulation']] = cnt.get(a['regulation'], 0) + 1
+    print('regulation (7 days):', cnt, 'current:', cfg['current'], flush=True)
+    new = [(n, c) for c, n in cnt.items() if c != cfg['current'] and n >= SWITCH_MIN and n > cnt.get(cfg['current'], 0)]
+    if not new:
+        return None
+    code = max(new)[1]
+    seasons = [_season_no(a.get('season')) for a in arts if a.get('regulation') == code and _season_no(a.get('season'))]
+    regulation.switch(code, min(seasons) if seasons else None, why=f'新着記事 {cnt}')
+    print('REGULATION SWITCHED ->', code, flush=True)
+    return code
 
 
 def candidates():
     arts = [a for a in list_articles() if a.get('battleFormat') == 'single' and a.get('category') == 'team']
-    out = [a for a in arts if a.get('regulation') in RULES]
+    detect_regulation(arts)
+    cur = regulation.current()
+    out = [a for a in arts if a.get('regulation') == cur]
+    seasons = [_season_no(a.get('season')) for a in out if _season_no(a.get('season'))]
+    if seasons:                                   # やっくん用の最新シーズン（regulation_fetch が参照）
+        cfg = regulation.load()
+        if max(seasons) != cfg.get('latest_season'):
+            cfg['latest_season'] = max(seasons)
+            regulation.save(cfg)
     return out, sorted({a.get('season') for a in out if a.get('season')})
 
 
@@ -186,6 +214,7 @@ def save(t, info):
             if k in old:
                 t[k] = old[k]
     t['rating'] = {'rank': info[0], 'final': info[1], 'peak': info[2]}
+    t['regulation'] = regulation.current()
     if old:
         data['teams'][data['teams'].index(old)] = t
     else:
@@ -259,7 +288,7 @@ def report():
     rows.sort(key=lambda t: ((t.get('rating') or {}).get('rank') or 10 ** 6,
                              -max((t.get('rating') or {}).get('final') or 0, (t.get('rating') or {}).get('peak') or 0)))
     L = ['# 新着構築の記録（study.py が自動生成）', '',
-         'pokesol の新着構築記事（シングル・レギュレーションM-C・シーズン不問・最終/到達レート2000以上。レートの記載がない場合は最終1000位以内）の、',
+         'pokesol の新着構築記事（シングル・現行レギュレーション（data/regulation.json）・シーズン不問・最終/到達レート2000以上。レートの記載がない場合は最終1000位以内）の、',
          '構築の型・運用・選出基準の記録です。対戦はシミュレーションしていません。',
          '実戦では相手の6体のうち3体以上が一致する構築のガイドを、頭の片隅に置く参考として表示します（battle.py）。', '']
     for t in rows:
@@ -293,7 +322,7 @@ def main():
         note(a[1], a[2])
         return
     cands, targets = candidates()
-    print(f'{len(cands)} articles (regulation {RULES}, seasons {targets})', flush=True)
+    print(f'{len(cands)} articles (regulation {regulation.current()}, seasons {targets})', flush=True)
     data = json.load(open(prep.KNOWN_P, encoding='utf-8'))
     have = {t['id'] for t in data['teams'] if os.path.exists(os.path.join(TEXT_D, t['id'] + '.txt'))}
     todo = []

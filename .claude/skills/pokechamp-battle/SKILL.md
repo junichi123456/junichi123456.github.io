@@ -112,6 +112,10 @@ description: ポケモンチャンピオンズ（シングル）の対戦中に�
 - 夜間のルーチン（study.py）は、新着構築記事の型・運用・選出基準を `data/known_teams.json` の `guide` に記録する（対戦のシミュレーションはしない）。
 - `battle.py select` の出力と、packet の `ref` に、相手の6体のうち3体以上が一致する構築のガイドが「参考」として出る。
   頭の片隅に置く材料であり、見えた技・持ち物・メガが記事と違えば使わない。選出・技の判断は従来どおり実際の盤面で行う。
+- 現行レギュレーションは `pokechamp/tool/data/regulation.json`。切り替わると（新レギュレーションの記事が直近7日で8件以上かつ現行より多い）、
+  study.py が自動で切り替え、古い構築は `known_teams_archive.json` に移す（消さない）。battle.py は現行の構築だけを見る。手動は `python regulation.py switch <コード> <開始シーズン>`。
+- やっくん（yakkun.com）の構築記事は Cloudflare でクラウドから取れないため、PCの `yakkun_fetch.py`（起動時に自動実行）が
+  `logs/study/yakkun/*.json` に保存・push する。夜間学習ではそのファイルを読んで取り込み・ガイド作成をする（初回は `_samples/` のHTMLで構造を確認して取り込み処理を作る）。
 
 ## 手で決めた選出ルール
 - `pokechamp/tool/data/select_rules.json` に「相手に○○がいるとき△△を選出に入れる」を書く。`battle.py select`（game_watch の選出提案も同じ）がその範囲で最善の選出・先発を選ぶ。

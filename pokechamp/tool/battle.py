@@ -873,7 +873,9 @@ MY_TYPES = tuple(tuple(m.types) for m in TEAM)
 def _load_known():
     try:
         p = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data', 'known_teams.json')
-        return json.load(open(p, encoding='utf-8'))['teams']
+        import regulation
+        cfg = regulation.load()
+        return [t for t in json.load(open(p, encoding='utf-8'))['teams'] if regulation.is_current(t, cfg)]
     except Exception:
         return []
 
