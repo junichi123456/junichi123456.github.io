@@ -53,6 +53,13 @@ def panels(img):
     top = full[0][0]
     while top - pitch > -h * 0.2 and any(abs((top - pitch) - r[0]) < h * 0.3 for r in runs):
         top -= pitch
+    # a panel above the first found one can be hidden by the highlight band (green triangles / lit panel): look at the
+    # colour of the strip itself, else all six boxes sit one slot too low and every name is read off the wrong picture
+    cols0 = np.where(m[full[0][0]:full[0][1]].mean(axis=0) > 0.3)[0]
+    if len(cols0):
+        c0, c1 = int(cols0[0]) + int((cols0[-1] - cols0[0]) * 0.5), int(cols0[-1])
+        while top - pitch >= -h * 0.1 and m[max(0, top - pitch):top - pitch + h, c0:c1].mean() > 0.35:
+            top -= pitch
     ys = [(int(top + i * pitch), int(top + i * pitch + h)) for i in range(6)]
     cols = np.where(m[full[0][0]:full[0][1]].mean(axis=0) > 0.3)[0]
     if not len(cols):
