@@ -1,7 +1,7 @@
 """ゲーム画面そのものを監視し、「選出画面」「技選択（行動決定）」を検出する。
 
-PCBL のライブスキャンは選出画面を拾えないため、OBS が受け取っているゲーム映像を直接見る。
-  - 映像: OBS WebSocket の GetSourceScreenshot（OBS 28 以降内蔵。PCBL と同じ WebSocket 設定でよい）
+OBS が受け取っているゲーム映像を直接見る。
+  - 映像: OBS WebSocket の GetSourceScreenshot（OBS 28 以降内蔵）
           取れない場合は --window でウィンドウ撮影（OBS のプロジェクター等）
   - 文字: Windows 標準 OCR（日本語）で画面の文字を読む
 

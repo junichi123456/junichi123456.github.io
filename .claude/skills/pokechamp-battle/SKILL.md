@@ -49,7 +49,7 @@ description: ポケモンチャンピオンズ（シングル）の対戦中に�
 
 ## 手順
 
-0. **観測は game_watch.py だけを使う**（PCBL・pcbl_watch.py は使わない）:
+0. **観測は game_watch.py だけを使う**（入力は OBS WebSocket の映像だけ）:
    ユーザーが `python game_watch.py --password <OBSのWebSocketパスワード>` を起動し、OBS の映像から選出画面・行動選択画面・戦闘メッセージ・0.5秒ごとのフレームを取得する。
    判断は上の「自動進行モード」で `wait_event.py` のイベントを受けて行う。ユーザーにスクリーンショットや画面の説明を求めない。
    **時間制限**: 選出は `battle.py select`（約3〜10秒）、各ターンは `battle.py auto --hp …`（通常の場面で約7秒）。画像読み取りを含め10秒以内に答える。

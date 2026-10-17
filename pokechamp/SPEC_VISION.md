@@ -9,7 +9,7 @@
 | B | ゲームの字体に合わせた文字読み取り（見本照合） | クラウド側（Sonnet 5.5）で実装・push | 無料 |
 
 共通の前提（変更しない）:
-- 観測は OBS の映像だけ。PCBL / `pcbl_watch.py` は使わない。Star Crusade は触らない。
+- 観測は OBS の映像だけ。入力は OBS WebSocket の映像だけ（PCBL は使わない）。Star Crusade は触らない。
 - `game_watch.py` が今の手法で出す結果が**基準**。A・B はどちらも「うまくいけば上書き、失敗・遅延したら今の結果のまま」とする（A・B が壊れても今より悪くならない）。
 - 画面座標は 16:9 の割合で書く（`game_watch.py` 冒頭の `MSG_BOX` `OPP_PANEL` `MY_PANEL` `PNAME` と同じ流儀）。
 - OBS のパスワード・個人情報をコミットに入れない。
