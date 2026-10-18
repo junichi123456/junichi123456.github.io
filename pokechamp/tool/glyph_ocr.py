@@ -247,7 +247,8 @@ def sentence_candidates(ocr):
         for adv in ({1: [''], 2: ['ぐーんと', 'ぐんと'], 3: ['ぐぐーんと']} if up else {1: [''], 2: ['がくっと'], 3: ['がくーんと']}).get(abs(b['delta']), ['']):
             out.append(f"{pre}{b['mon']}の{st}が{adv}{'上がった' if up else '下がった'}！")
     for f in ev.get('faint') or []:
-        out.append(('相手の' if f['side'] == 'opp' else '') + f['mon'] + 'は倒れた！')
+        pre = '相手の' if f['side'] == 'opp' else ''
+        out += [pre + f['mon'] + 'はたおれた！', pre + f['mon'] + 'は倒れた！']       # the game prints it in kana
     for sw in ev.get('switch') or []:
         if sw.get('side') == 'opp' and not sw.get('from'):
             out += [f"相手のトレーナーは{sw['mon']}を繰り出した！", f"トレーナーは{sw['mon']}を繰り出した！"]
