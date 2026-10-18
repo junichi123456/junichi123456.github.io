@@ -1360,7 +1360,7 @@ def load_state(js):
         if d.get('disguise') is False: m.disguise = False
         for mv in d.get('moves_seen', []):
             if mv in MOVE and mv not in m.moves:
-                m.moves = [mv] + m.moves[:3]
+                m.moves = _infer.force_moves(m.moves, [x for x in d.get('moves_seen', []) if x in MOVE])
         if d.get('item_seen'): m.item = d['item_seen'] if d.get('item') is not False else None
         extra_state(m, d)
         opp.append(m)
@@ -1452,6 +1452,82 @@ def fmt_action(st, a):
 DEFAULT_SEC = 5.0     # search time per turn (3-ply results were as good as 4-ply in the depth study)
 
 
+def _switch_hist(js, who):
+    """Names of our active mon in the order they were out this battle (logs/live/switch_hist.json), updated with who."""
+    p = os.path.join(_learn.LOGS, 'live', 'switch_hist.json')
+    rec = _learn._load(_learn.CURRENT, None) or {}
+    try:
+        h = json.load(open(p, encoding='utf-8'))
+    except Exception:
+        h = {}
+    if h.get('battle') != rec.get('id'):
+        h = {'battle': rec.get('id'), 'hist': []}
+    if who and (not h['hist'] or h['hist'][-1] != who):
+        h['hist'].append(who)
+        try:
+            import safeio as _sio
+            _sio.write_json(p, h)
+        except Exception:
+            pass
+    return h['hist']
+
+
+SWITCH_MARGIN, RETURN_MARGIN = 2.0, 5.0
+
+
+def stabilize(est, st, js, res):
+    """Keep the search from switching back and forth for nothing. res is best first [(value, action), ...].
+    R3-1 a switch that is barely better than the best attack is not worth it: attack.
+    R3-2 switching back to the mon we pulled out last time needs a clear gain.
+    R3-3 when one of our attacks surely KOs and the foe's moves seen so far cannot KO us (or we move first), attack."""
+    try:
+        import facts as _f
+        import search as _s
+        if len(res) < 2 or res[0][1][0] != 's':
+            return res
+        moves = [x for x in res if x[1][0] == 'm']
+        if not moves:
+            return res
+        top, best_mv = res[0], moves[0]
+        spread = max(abs(v) for v, _ in res) * 2 or 1.0
+        margin = max(SWITCH_MARGIN, 0.03 * spread)
+        hist = _switch_hist(js, _f._me_active(st).name)
+        back = len(hist) >= 2 and est.sides[0].mons[top[1][1]].name == hist[-2]
+        why = None
+        if top[0] - best_mv[0] < (RETURN_MARGIN if back else margin):
+            why = 'R3-1/2'
+        else:
+            me, opp = _f._me_active(st), _f._opp_active(st)
+            ko_ok = {}
+            if not opp.disguise:
+                for mv in legal_moves(me):
+                    r = list(rolls(me, opp, mv, st))
+                    n, p = _f.ko_info(r, opp.hp)
+                    if n == 1 and p >= 0.95:
+                        ko_ok[mv] = r[0]
+            if ko_ok:
+                import copy as _copy
+                jd = field_defaults(_copy.deepcopy(js))
+                seen = (jd.get('opp', [{}])[jd.get('active_opp', 0)] or {}).get('moves_seen', [])
+                danger = False
+                if me.speed(st) <= opp.speed(st):
+                    for mv in seen:
+                        if mv in MOVE and MOVE[mv]['cat'] != 'status' and not me.disguise:
+                            r = list(rolls(opp, me, mv, st))
+                            if r and r[-1] >= me.hp:
+                                danger = True
+                if not danger:
+                    ja = lambda a: (_s.E.MOVES.get(a[1]).ja if _s.E.MOVES.get(a[1]) else None)
+                    cand = sorted((x for x in moves if ja(x[1]) in ko_ok), key=lambda x: -ko_ok[ja(x[1])])
+                    if cand:
+                        best_mv, why = cand[0], 'R3-3'
+        if why:
+            return [best_mv] + [x for x in res if x is not best_mv]
+    except Exception:
+        pass
+    return res
+
+
 def decide_js(js, sec=DEFAULT_SEC, verbose=False, switch=False, packet=False):
     """sec=None: the search time follows the scene (facts.scene: S 2 s / N 7 s / B 9 s).
     packet=True: also print / save the facts packet (facts.py) for the LLM."""
@@ -1478,6 +1554,7 @@ def decide_js(js, sec=DEFAULT_SEC, verbose=False, switch=False, packet=False):
         j = _search.chooser(est, 0, opts)
         print(f"次: {est.sides[0].mons[j].name}を出す"); return
     depth, res, nodes = _search.decide(est, sec)
+    res = stabilize(est, st, js, res)
     print(f"次: {_search.fmt(est, res[0][1])}")
     if packet:
         try:

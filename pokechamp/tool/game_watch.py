@@ -155,6 +155,22 @@ def party_read(text):
     return out
 
 
+def my_by_maxhp(mx):
+    """Which of our picked mons has this max HP (the number after the slash on our panel), None if not exactly one."""
+    import msgparse as _mp
+    from team import TEAM
+    try:
+        order = json.load(open(os.path.join(OUT, '..', 'current.json'), encoding='utf-8')).get('my_order') or []
+    except Exception:
+        order = []
+    hits = []
+    for m in TEAM:
+        n = _mp.BASE.get(m.species, m.species)
+        if (not order or any(_mp.canon('me', o) == _mp.canon('me', n) for o in order)) and m.stat['hp'] == mx:
+            hits.append(n)
+    return hits[0] if len(hits) == 1 else None
+
+
 def party_from_tracker(tracker):
     """The switch-in screen's OCR is often unreadable (a stats panel over the list): our bench as tracked instead,
     [(name, None), ...] = picked mons that are neither out nor fainted."""
@@ -1484,6 +1500,27 @@ def main():
                                 break
                 except Exception as _e:
                     print('panel read failed:', _e, flush=True)
+                try:                    # our max HP on the panel tells who is out (the three picked have different max HP)
+                    mh = screen_hp(_img)[0]
+                    who = my_by_maxhp(int(mh.split('/')[1])) if mh and '/' in mh else None
+                    if who and act.get('me') != who:
+                        print(time.strftime('%Y-%m-%dT%H:%M:%S'), f"場（最大HPから）: 自分 {act.get('me') or '?'} → {who}", flush=True)
+                        act['me'] = tracker.s['active']['me'] = who
+                        ev['me_by_maxhp'] = who
+                except Exception:
+                    pass
+                try:                    # we sent the advice 「Xに交代」 and the box says ゆけっ (no name read): X is out now
+                    if phase == 'command' and not ev.get('me_by_maxhp') and any('ゆけっ' in (l or '').replace(' ', '') for l in turn_msgs()):
+                        dj = json.load(open(os.path.join(OUT, 'decision.json'), encoding='utf-8'))
+                        import re as _re2
+                        m = _re2.match(r'次: (.+?)に交代', dj.get('decision') or '')
+                        who = msgparse.canon('me', m.group(1)) if m else None
+                        if who and who in msgparse.MY_BASES and act.get('me') != who and time.time() - dj.get('time', 0) < 120:
+                            print(time.strftime('%Y-%m-%dT%H:%M:%S'), f"場（交代の助言とゆけっから）: 自分 {act.get('me') or '?'} → {who}", flush=True)
+                            act['me'] = tracker.s['active']['me'] = who
+                            ev['me_by_advice'] = who
+                except Exception:
+                    pass
                 if phase == 'start' and not act.get('me'):      # turn 1: the lead is the first of our picked order
                     try:
                         lead = (json.load(open(os.path.join(OUT, '..', 'current.json'), encoding='utf-8'))

@@ -122,6 +122,12 @@ def _likelihood(c, o):
             return 1.0 if (os_ > ms) == first_opp else EPS / 2
         if k == 'move':
             mv = o['move']
+            have = set(c.base.moves) | set(c.mega.moves if c.mega else ())
+            if mv in MOVE and mv not in have:
+                same = any(MOVE.get(x, {}).get('type') == MOVE[mv]['type'] and MOVE.get(x, {}).get('cat') == MOVE[mv]['cat']
+                           and MOVE[mv]['cat'] != 'status' for x in have)
+                if same:
+                    return 0.08           # it would have to carry two like moves (Flash Cannon and Steel Beam): unlikely
             if c.base.item == 'こだわりスカーフ' and MOVE.get(mv, {}).get('cat') == 'status' and mv not in ('トリック', 'すりかえ'):
                 return EPS / 2
             return 1.0
@@ -162,15 +168,31 @@ def revealed_moves(obs):
     return out
 
 
+def force_moves(moves, rev, pool=None):
+    """The 4 moves of a set with the moves seen in this battle forced in. A seen move pushes out first a move of the
+    same type and category (a Flash Cannon seen = the set has no Steel Beam), else the least used unseen move."""
+    moves = list(moves)
+    for mv in rev[:4]:
+        if mv in moves:
+            continue
+        mi = MOVE.get(mv, {})
+        victims = [x for x in moves if x not in rev]
+        if not victims:
+            break
+        same = [x for x in victims if MOVE.get(x, {}).get('type') == mi.get('type') and MOVE.get(x, {}).get('cat') == mi.get('cat')
+                and mi.get('cat') != 'status']
+        pool_of = lambda x: (pool or {}).get(x, 0)
+        v = min(same, key=pool_of) if same else min(victims, key=pool_of)
+        moves[moves.index(v)] = mv
+    return moves if len(moves) <= 4 else moves[:4]
+
+
 def apply_reveals(c, obs):
     """Return (base, mega) Mons of candidate c with revealed moves forced in."""
     rev = revealed_moves(obs)
     def fix(m):
         if m is None: return None
-        keep = [x for x in m.moves if x not in rev]
-        # drop lowest-usage unrevealed moves first
-        keep.sort(key=lambda x: -c.pool.get(x, 0))
-        moves = (rev + keep)[:4] if len(rev) < 4 else rev[:4]
+        moves = force_moves(m.moves, rev, c.pool)
         if moves == m.moves: return m
         return Mon(m.species, m.nature, m.spv, m.ability, m.item, moves, label=m.label)
     return fix(c.base), fix(c.mega)
