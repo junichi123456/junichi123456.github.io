@@ -3,6 +3,7 @@
   python glyph_ocr.py learn <マスク画像> "<正しい文字列>"   1行ぶんの文字画像から見本を追加（text_mask の出力と同じ白黒画像）
   python glyph_ocr.py build                                    logs/live/msgcrops/ に溜まった読み取り結果から見本を作る
   python glyph_ocr.py read <マスク画像>                        見本で読んで文字列を表示
+  python glyph_ocr.py purge                                    文字に見えない見本（ごく小さい断片など）を除く
   python glyph_ocr.py stats                                    見本の数を表示
 見本は data/glyph_templates.json（文字 → 24x24 の2値画像のビット列、最大 KEEP 個）。
 読み取りの入口は read_line(mask_img)。見本が少ない・点数が低いときは None を返し、呼び出し側が従来の読み取りへ戻る。
@@ -78,6 +79,15 @@ def cell(a, x0, x1, band):
     sq[oy:oy + c.shape[0], ox:ox + c.shape[1]] = c
     im = Image.fromarray((sq * 255).astype(np.uint8)).resize((N, N), Image.BILINEAR)
     return np.asarray(im) > 90
+
+
+PUNCT = set('！？、。…・ー「」（）')
+
+
+def glyph_like(b, ch):
+    """A cut that can be a character: enough ink for its name (a mark of a few pixels, a ruby fragment or a speck is not),
+    punctuation excepted."""
+    return b.sum() >= (4 if ch in PUNCT else 20)
 
 
 def _bits(b):
@@ -197,7 +207,8 @@ def learn_line(mask_img, text, stage=None):
     if not cols or len(cols) != len(text):
         return 0
     if stage is not None:          # collected first, checked against each other, written by write_stage()
-        stage.append([(ch, cell(a, x0, x1, band)) for (x0, x1), ch in zip(cols, text)])
+        cs = [(ch, cell(a, x0, x1, band)) for (x0, x1), ch in zip(cols, text)]
+        stage.append([(ch, b) for ch, b in cs if glyph_like(b, ch)])
         return len(text)
     try:
         d = json.load(open(TPL_P, encoding='utf-8'))
@@ -206,7 +217,7 @@ def learn_line(mask_img, text, stage=None):
     added = 0
     for (x0, x1), ch in zip(cols, text):
         b = cell(a, x0, x1, band)
-        if b.sum() < 4:
+        if not glyph_like(b, ch):
             continue
         lst = d.setdefault(ch, [])
         cur = [_arr(s) for s in lst]
@@ -309,7 +320,7 @@ def write_stage(stage, verbose=True):
     whose cut happened to give the right count with the wrong cells (「ま」 got the picture of half a 「い」) would put
     wrong pictures under right names. A cell is compared with its closest cell on other lines; a line is dropped when
     fewer than 60% of its comparable cells (3 or more) have the same name there."""
-    flat = [(i, ch, b) for i, cells in enumerate(stage) for ch, b in cells if b.sum() >= 4]
+    flat = [(i, ch, b) for i, cells in enumerate(stage) for ch, b in cells if glyph_like(b, ch)]
     drop = set()
     if len(flat) > 3:
         M = np.array([b.reshape(-1) for _, _, b in flat], dtype=bool)
@@ -333,7 +344,7 @@ def write_stage(stage, verbose=True):
         if i in drop:
             continue
         for ch, b in cells:
-            if b.sum() < 4:
+            if not glyph_like(b, ch):
                 continue
             lst = d.setdefault(ch, [])
             if all(float((b & _arr(x)).sum() / max(1, (b | _arr(x)).sum())) < 0.93 for x in lst):
@@ -427,6 +438,17 @@ def main():
         print(learn_line(Image.open(a[1]), a[2]), '個の見本を追加しました')
     elif len(a) >= 2 and a[0] == 'read':
         print(read_line(Image.open(a[1])))
+    elif a[:1] == ['purge']:
+        d = json.load(open(TPL_P, encoding='utf-8'))
+        n = 0
+        for ch in list(d):
+            keep = [x for x in d[ch] if glyph_like(_arr(x), ch)]
+            n += len(d[ch]) - len(keep)
+            d[ch] = keep
+            if not keep:
+                del d[ch]
+        json.dump(d, open(TPL_P, 'w', encoding='utf-8'), ensure_ascii=False)
+        print(f'{n} 個の見本（文字に見えないもの）を除きました')
     elif a[:1] == ['build']:
         build()
     else:
