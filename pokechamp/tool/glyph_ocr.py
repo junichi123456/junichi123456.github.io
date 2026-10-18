@@ -301,6 +301,22 @@ def sentence_candidates(ocr):
     return list(dict.fromkeys(out))
 
 
+def tail_learn(lines, counts, cands):
+    """「〇〇(相手の名前)は / △△を繰り出した！」: the first line is the opponent's player name (unknown), the rest is
+    known. Learn the lines after the first when their count equals the end of a candidate sentence."""
+    for c in cands:
+        if 'を繰り出した' not in c:
+            continue
+        tail = c[c.index('は') + 1:] if 'トレーナーは' not in c else c[c.index('は') + 1:]
+        for k in range(1, len(lines)):
+            if sum(counts[k:]) == len(tail):
+                i = 0
+                for l, n in zip(lines[k:], counts[k:]):
+                    learn_line(l, tail[i:i + n]); i += n
+                return True
+    return False
+
+
 def build(verbose=True):
     """Templates from the saved crops: the OCR text of each crop is turned into the sentence the game printed
     (sentence_candidates); the candidate whose length equals the number of characters cut from the picture is used.
@@ -333,6 +349,8 @@ def build(verbose=True):
             for l, n in zip(lines, counts):
                 learn_line(l, fit[0][i:i + n])
                 i += n
+            why['追加した行'] += 1
+        elif tail_learn(lines, counts, cands):
             why['追加した行'] += 1
         else:
             why['文字数が合わない'] += 1
