@@ -20,6 +20,7 @@ N = 24            # template cell
 KEEP = 8          # templates kept per character
 SHEAR = 0.2       # the game text is italic: lean it back upright first (same as MsgWatch.panel_name)
 MIN_CHARS = 150   # characters with a template before the reader is trusted at all
+MAX_CROPS = 3000  # message pictures kept
 ACCEPT = 0.55     # a character reads as its best template when the overlap is at least this
 
 _TPL = {'mtime': None, 'chars': [], 'mat': None, 'matd': None}
@@ -208,13 +209,22 @@ def learn_line(mask_img, text):
     return added
 
 
-def save_crop(mask_img, text, n):
-    """Called by game_watch for each message it reads: keep the picture and the OCR text so templates can be built later."""
+def save_crop(mask_img, text, n=None):
+    """Called by game_watch for each message it reads: keep the picture and the OCR text so templates can be built later.
+    Named by time (a new run never overwrites the crops of an earlier one); the oldest go beyond MAX_CROPS."""
     try:
+        import time
         os.makedirs(CROPS, exist_ok=True)
-        base = os.path.join(CROPS, f'{n % 1500:04d}')
+        base = os.path.join(CROPS, time.strftime('%m%d_%H%M%S') + f'_{time.time_ns() % 1000000:06d}')
         mask_img.save(base + '.png')
         json.dump({'ocr': text}, open(base + '.json', 'w', encoding='utf-8'), ensure_ascii=False)
+        names = sorted(f for f in os.listdir(CROPS) if f.endswith('.png'))
+        for f in names[:max(0, len(names) - MAX_CROPS)]:
+            for ext in ('.png', '.json'):
+                try:
+                    os.remove(os.path.join(CROPS, f[:-4] + ext))
+                except OSError:
+                    pass
     except Exception:
         pass
 
