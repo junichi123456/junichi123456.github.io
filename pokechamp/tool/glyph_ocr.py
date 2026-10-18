@@ -188,7 +188,7 @@ def read_box(mask_img):
     return (' '.join(parts), low) if parts else None
 
 
-def learn_line(mask_img, text):
+def learn_line(mask_img, text, stage=None):
     """Add templates from one line whose correct text is known. Only when the number of cut characters equals the
     number of characters (spaces ignored), so a bad cut never spoils the templates. Returns the number added."""
     text = ''.join(text.split())
@@ -196,6 +196,9 @@ def learn_line(mask_img, text):
     cols, band = segment(a)
     if not cols or len(cols) != len(text):
         return 0
+    if stage is not None:          # collected first, checked against each other, written by write_stage()
+        stage.append([(ch, cell(a, x0, x1, band)) for (x0, x1), ch in zip(cols, text)])
+        return len(text)
     try:
         d = json.load(open(TPL_P, encoding='utf-8'))
     except Exception:
@@ -301,7 +304,47 @@ def sentence_candidates(ocr):
     return list(dict.fromkeys(out))
 
 
-def tail_learn(lines, counts, cands):
+def write_stage(stage, verbose=True):
+    """Write staged lines, leaving out the lines whose characters disagree with the same characters elsewhere: a line
+    whose cut happened to give the right count with the wrong cells (「ま」 got the picture of half a 「い」) would put
+    wrong pictures under right names. A cell is compared with its closest cell on other lines; a line is dropped when
+    fewer than 60% of its comparable cells (3 or more) have the same name there."""
+    flat = [(i, ch, b) for i, cells in enumerate(stage) for ch, b in cells if b.sum() >= 4]
+    drop = set()
+    if len(flat) > 3:
+        M = np.array([b.reshape(-1) for _, _, b in flat], dtype=bool)
+        Md = _dilate_rows(M)
+        inter = (M[:, None, :] & Md[None, :, :]).sum(axis=2) / np.maximum(1, M.sum(axis=1))[:, None]     # i covered by j
+        sc = np.minimum(inter, inter.T)
+        line = np.array([i for i, _, _ in flat])
+        sc[line[:, None] == line[None, :]] = -1
+        agree, comp = {}, {}
+        for k, (i, ch, _) in enumerate(flat):
+            j = int(sc[k].argmax())
+            if sc[k, j] >= 0.65:
+                comp[i] = comp.get(i, 0) + 1
+                agree[i] = agree.get(i, 0) + (flat[j][1] == ch)
+        drop = {i for i, n in comp.items() if n >= 3 and agree.get(i, 0) / n < 0.6}
+    try:
+        d = json.load(open(TPL_P, encoding='utf-8'))
+    except Exception:
+        d = {}
+    for i, cells in enumerate(stage):
+        if i in drop:
+            continue
+        for ch, b in cells:
+            if b.sum() < 4:
+                continue
+            lst = d.setdefault(ch, [])
+            if all(float((b & _arr(x)).sum() / max(1, (b | _arr(x)).sum())) < 0.93 for x in lst):
+                lst.append(_bits(b))
+                d[ch] = lst[-KEEP:]
+    os.makedirs(os.path.dirname(TPL_P), exist_ok=True)
+    json.dump(d, open(TPL_P, 'w', encoding='utf-8'), ensure_ascii=False)
+    return len(drop)
+
+
+def tail_learn(lines, counts, cands, stage=None):
     """「〇〇(相手の名前)は / △△を繰り出した！」: the first line is the opponent's player name (unknown), the rest is
     known. Learn the lines after the first when their count equals the end of a candidate sentence."""
     for c in cands:
@@ -312,7 +355,7 @@ def tail_learn(lines, counts, cands):
             if sum(counts[k:]) == len(tail):
                 i = 0
                 for l, n in zip(lines[k:], counts[k:]):
-                    learn_line(l, tail[i:i + n]); i += n
+                    learn_line(l, tail[i:i + n], stage); i += n
                 return True
     return False
 
@@ -325,6 +368,7 @@ def build(verbose=True):
     import msgparse as mp
     why = {'crop数': 0, '文を作れない': 0, '2行・空など': 0, '文字数が合わない': 0, '追加した行': 0}
     shown = 0
+    stage = []
     names = sorted(os.listdir(CROPS)) if os.path.isdir(CROPS) else []
     for f in names:
         if not f.endswith('.png'):
@@ -344,19 +388,24 @@ def build(verbose=True):
             continue
         counts = [len(segment(ink(l))[0]) for l in lines]
         fit = [c for c in cands if len(c) == sum(counts)]
+        body = mp.apply_fixes(mp.norm(ocr)).replace('/', '')
+        sim = lambda c: difflib.SequenceMatcher(None, body, c).ratio()
+        fit = sorted((c for c in fit if sim(c) >= 0.45), key=lambda c: -sim(c))     # same length, different sentence: the read decides
         if fit:
             i = 0
             for l, n in zip(lines, counts):
-                learn_line(l, fit[0][i:i + n])
+                learn_line(l, fit[0][i:i + n], stage)
                 i += n
             why['追加した行'] += 1
-        elif tail_learn(lines, counts, cands):
+        elif tail_learn(lines, counts, cands, stage):
             why['追加した行'] += 1
         else:
             why['文字数が合わない'] += 1
             if verbose and shown < 5:
                 shown += 1
                 print(f'  例 {f}: 候補 {[ (c, len(c)) for c in cands[:2] ]} / 切り出し {counts} 文字')
+    dropped = write_stage(stage)
+    why['食い違いで除いた行'] = dropped
     print('見本づくり: ' + ' / '.join(f'{k} {v}' for k, v in why.items()))
     if not os.path.isdir(CROPS):
         print(f'crop の保存先がありません: {os.path.abspath(CROPS)}（game_watch.py を先に動かしてください）')
