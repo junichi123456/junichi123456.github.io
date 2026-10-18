@@ -219,12 +219,53 @@ def save_crop(mask_img, text, n):
         pass
 
 
-def build(verbose=True):
-    """Templates from the saved crops: lines whose OCR text, after the usual corrections (msgparse), is one of this
-    battle's mon / move sentences and whose character count matches the cut. Misread lines are left out.
-    The reasons for skipped crops are counted and printed (why 0 templates?)."""
+STAT_JA = {'atk': '攻撃', 'def': '防御', 'spa': '特攻', 'spd': '特防', 'spe': '素早さ', 'acc': '命中率', 'eva': '回避率'}
+FIXED = ('効果はばつぐんだ！', '効果はいまひとつのようだ…', '効果がないようだ…', '急所に当たった！', 'メガシンカした！')
+
+
+def sentence_candidates(ocr):
+    """Sentences the game may have printed for this OCR read, built from what msgparse understands of it (the names,
+    moves and stat changes are taken from the corrected parse, the wording from the game's patterns). Several are
+    returned when the wording varies (ぐーんと / ぐんと); the caller picks the one whose length fits the cut."""
     import msgparse as mp
-    why = {'crop数': 0, '技の文ではない': 0, '2行・空など(1行ではない)': 0, '文字数が合わない': 0, '追加した行': 0}
+    s = mp.apply_fixes(mp.norm(ocr))
+    out = []
+    mu = mp.move_use(s)
+    if mu and mu[1] in s:
+        pre = '相手の' if mu[0] == 'opp' else ''
+        out.append(pre + mu[1] + 'の' + mu[2] + '！')
+    try:
+        ev = mp.parse_turn([ocr], dedupe=False)
+    except Exception:
+        ev = {}
+    for b in ev.get('boosts') or []:
+        pre = '相手の' if b['side'] == 'opp' else ''
+        st = STAT_JA.get(b['stat'])
+        if not st:
+            continue
+        up = b['delta'] > 0
+        for adv in ({1: [''], 2: ['ぐーんと', 'ぐんと'], 3: ['ぐぐーんと']} if up else {1: [''], 2: ['がくっと'], 3: ['がくーんと']}).get(abs(b['delta']), ['']):
+            out.append(f"{pre}{b['mon']}の{st}が{adv}{'上がった' if up else '下がった'}！")
+    for f in ev.get('faint') or []:
+        out.append(('相手の' if f['side'] == 'opp' else '') + f['mon'] + 'は倒れた！')
+    for sw in ev.get('switch') or []:
+        if sw.get('side') == 'opp' and not sw.get('from'):
+            out += [f"相手のトレーナーは{sw['mon']}を繰り出した！", f"トレーナーは{sw['mon']}を繰り出した！"]
+    body = s.replace('/', '')
+    import difflib
+    for f in FIXED:
+        if difflib.SequenceMatcher(None, body, f).ratio() >= 0.75:
+            out.append(f)
+    return out
+
+
+def build(verbose=True):
+    """Templates from the saved crops: the OCR text of each crop is turned into the sentence the game printed
+    (sentence_candidates); the candidate whose length equals the number of characters cut from the picture is used.
+    Misread / unrecognised crops are left out. The reasons for skipped crops are counted and printed."""
+    import difflib
+    import msgparse as mp
+    why = {'crop数': 0, '文を作れない': 0, '2行・空など': 0, '文字数が合わない': 0, '追加した行': 0}
     shown = 0
     names = sorted(os.listdir(CROPS)) if os.path.isdir(CROPS) else []
     for f in names:
@@ -235,26 +276,25 @@ def build(verbose=True):
         except Exception:
             continue
         why['crop数'] += 1
-        s = mp.apply_fixes(mp.norm(ocr))
-        mu = mp.move_use(s)
-        if not (mu and mu[1] in s):       # the move may be misread: it is taken from the corrected parse
-            why['技の文ではない'] += 1
+        cands = sentence_candidates(ocr)
+        if not cands:
+            why['文を作れない'] += 1
             continue
         lines = split_lines(Image.open(os.path.join(CROPS, f)))
-        text = ('相手の' if mu[0] == 'opp' else '') + mu[1] + 'の' + mu[2] + '！'      # the sentence as the game prints it
         if len(lines) != 1:
-            why['2行・空など(1行ではない)'] += 1
+            why['2行・空など'] += 1
             continue
-        n_add = learn_line(lines[0], text)
-        if n_add:
+        cols, _ = segment(ink(lines[0]))
+        fit = [c for c in cands if len(c) == len(cols)]
+        if fit:
+            learn_line(lines[0], fit[0])
             why['追加した行'] += 1
         else:
-            cols, _ = segment(ink(lines[0]))
             why['文字数が合わない'] += 1
             if verbose and shown < 5:
                 shown += 1
-                print(f'  例 {f}: 期待 {len(text)} 文字「{text}」/ 切り出し {len(cols)} 文字')
-    print(f'見本づくり: ' + ' / '.join(f'{k} {v}' for k, v in why.items()))
+                print(f'  例 {f}: 候補 {[ (c, len(c)) for c in cands[:2] ]} / 切り出し {len(cols)} 文字')
+    print('見本づくり: ' + ' / '.join(f'{k} {v}' for k, v in why.items()))
     if not os.path.isdir(CROPS):
         print(f'crop の保存先がありません: {os.path.abspath(CROPS)}（game_watch.py を先に動かしてください）')
     stats()

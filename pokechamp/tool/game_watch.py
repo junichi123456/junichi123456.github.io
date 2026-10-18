@@ -642,8 +642,10 @@ class MsgWatch:
         if self.GLYPH:
             try:
                 import glyph_ocr
-                MsgWatch._crop_n += 1
-                glyph_ocr.save_crop(mask, text, MsgWatch._crop_n)
+                import msgparse as _mp2
+                if _mp2.is_message(text):             # only real battle messages (not menus / timers / background noise)
+                    MsgWatch._crop_n += 1
+                    glyph_ocr.save_crop(mask, text, MsgWatch._crop_n)
             except Exception:
                 pass
         return text
