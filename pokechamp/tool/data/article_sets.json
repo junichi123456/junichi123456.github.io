@@ -340,6 +340,27 @@
 "teams": [
 "2d220d1107ad8d26"
 ]
+},
+{
+"nature": "いじっぱり",
+"ap": {
+"hp": 16,
+"atk": 20,
+"spe": 30
+},
+"item": "リザードナイトX",
+"moves": [
+"フレアドライブ",
+"かみなりパンチ",
+"ドラゴンクロー",
+"りゅうのまい"
+],
+"ability": "かたいツメ",
+"mega": "メガリザードンＸ",
+"mega_ability": "かたいツメ",
+"teams": [
+"yakkun_n8943"
+]
 }
 ],
 "セグレイブ": [
@@ -1727,6 +1748,50 @@
 "teams": [
 "6e1e5745888a8b71"
 ]
+},
+{
+"nature": "ひかえめ",
+"ap": {
+"hp": 24,
+"def": 11,
+"spa": 9,
+"spd": 3,
+"spe": 19
+},
+"item": "ルカリオナイトZ",
+"moves": [
+"はどうだん",
+"てっていこうせん",
+"しんくうは",
+"めいそう"
+],
+"ability": "はどうのぼうご",
+"mega": "メガルカリオＺ",
+"mega_ability": "はどうのぼうご",
+"teams": [
+"yakkun_n8943"
+]
+},
+{
+"nature": "おくびょう",
+"ap": {
+"def": 2,
+"spa": 32,
+"spe": 32
+},
+"item": "ルカリオナイトZ",
+"moves": [
+"はどうだん",
+"あくのはどう",
+"てっていこうせん",
+"わるだくみ"
+],
+"ability": "はどうのぼうご",
+"mega": "メガルカリオＺ",
+"mega_ability": "はどうのぼうご",
+"teams": [
+"yakkun_n8938"
+]
 }
 ],
 "カイリュー": [
@@ -1928,6 +1993,27 @@
 "mega_ability": "マルチスケイル",
 "teams": [
 "56d52ca0e3a5554f"
+]
+},
+{
+"nature": "いじっぱり",
+"ap": {
+"hp": 31,
+"atk": 26,
+"spe": 9
+},
+"item": "ゴツゴツメット",
+"moves": [
+"しんそく",
+"ドラゴンテール",
+"じしん",
+"はねやすめ"
+],
+"ability": "マルチスケイル",
+"mega": null,
+"mega_ability": null,
+"teams": [
+"yakkun_n8938"
 ]
 }
 ],
@@ -2706,6 +2792,27 @@
 "mega_ability": null,
 "teams": [
 "db0f358227bfac3d"
+]
+},
+{
+"nature": "わんぱく",
+"ap": {
+"hp": 32,
+"def": 32,
+"spd": 2
+},
+"item": "ゴツゴツメット",
+"moves": [
+"じしん",
+"こおりのキバ",
+"あくび",
+"なまける"
+],
+"ability": "すなおこし",
+"mega": null,
+"mega_ability": null,
+"teams": [
+"yakkun_n8943"
 ]
 }
 ],
@@ -3560,6 +3667,27 @@
 "mega_ability": null,
 "teams": [
 "6e1e5745888a8b71"
+]
+},
+{
+"nature": "ひかえめ",
+"ap": {
+"hp": 2,
+"spa": 32,
+"spe": 32
+},
+"item": "しろいハーブ",
+"moves": [
+"りゅうせいぐん",
+"てっていこうせん",
+"ステルスロック",
+"がんせきふうじ"
+],
+"ability": "がんじょう",
+"mega": null,
+"mega_ability": null,
+"teams": [
+"yakkun_n8943"
 ]
 }
 ],
@@ -6024,6 +6152,28 @@
 "mega_ability": null,
 "teams": [
 "b41000de81ddc5e2"
+]
+},
+{
+"nature": "いじっぱり",
+"ap": {
+"hp": 1,
+"atk": 32,
+"spd": 1,
+"spe": 32
+},
+"item": "いのちのたま",
+"moves": [
+"じゃれつく",
+"シャドークロー",
+"かげうち",
+"つるぎのまい"
+],
+"ability": "ばけのかわ",
+"mega": null,
+"mega_ability": null,
+"teams": [
+"yakkun_n8943"
 ]
 }
 ],
@@ -9367,6 +9517,27 @@
 "teams": [
 "db0f358227bfac3d"
 ]
+},
+{
+"nature": "ひかえめ",
+"ap": {
+"hp": 2,
+"spa": 32,
+"spe": 32
+},
+"item": "きあいのタスキ",
+"moves": [
+"れいとうビーム",
+"ヘドロウェーブ",
+"くろいきり",
+"まきびし"
+],
+"ability": "へんげんじざい",
+"mega": null,
+"mega_ability": null,
+"teams": [
+"yakkun_n8938"
+]
 }
 ],
 "ウルガモス": [
@@ -9848,6 +10019,27 @@
 "teams": [
 "7dbcab8fc7edb1ef"
 ]
+},
+{
+"nature": "わんぱく",
+"ap": {
+"hp": 22,
+"def": 32,
+"spd": 12
+},
+"item": "たべのこし",
+"moves": [
+"あくび",
+"れいとうパンチ",
+"じしん",
+"まもる"
+],
+"ability": "あついしぼう",
+"mega": null,
+"mega_ability": null,
+"teams": [
+"yakkun_n8938"
+]
 }
 ],
 "オリーヴァ": [
@@ -9870,6 +10062,76 @@
 "mega_ability": null,
 "teams": [
 "63d678f5ff656c87"
+]
+}
+],
+"ブリムオン": [
+{
+"nature": "れいせい",
+"ap": {
+"hp": 27,
+"spa": 32,
+"spd": 7
+},
+"item": "ふうせん",
+"moves": [
+"トリックルーム",
+"いやしのねがい",
+"マジカルシャイン",
+"マジカルフレイム"
+],
+"ability": "マジックミラー",
+"mega": null,
+"mega_ability": null,
+"teams": [
+"yakkun_n8943"
+]
+}
+],
+"ワルビアル": [
+{
+"nature": "しんちょう",
+"ap": {
+"hp": 32,
+"def": 10,
+"spd": 23,
+"spe": 1
+},
+"item": "オボンのみ",
+"moves": [
+"じしん",
+"はたきおとす",
+"ほえる",
+"ステルスロック"
+],
+"ability": "いかく",
+"mega": null,
+"mega_ability": null,
+"teams": [
+"yakkun_n8938"
+]
+}
+],
+"ピカチュウ": [
+{
+"nature": "ずぶとい",
+"ap": {
+"hp": 32,
+"def": 32,
+"spe": 2
+},
+"item": "(持ち物なし)",
+"moves": [
+"ほっぺすりすり",
+"アンコール",
+"フェイント",
+"がむしゃら"
+],
+"ability": "せいでんき",
+"mega": null,
+"mega_ability": null,
+"teams": [
+"yakkun_n8938"
 ]
 }
 ]
