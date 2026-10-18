@@ -38,7 +38,8 @@ def segment(a):
     """Bool ink image -> [(x0, x1), ...] character column ranges and the text band (y0, y1). Gaps between ink columns
     split characters; pieces of one character (the dots of が, the strokes of い) are merged up to one character width;
     a run much wider than a character (two touching) is split evenly."""
-    rows = np.where(a.sum(axis=1) > 0)[0]
+    rs = a.sum(axis=1)
+    rows = np.where(rs >= max(2, 0.12 * rs.max()))[0] if rs.max() else np.array([])    # furigana / specks above the text are thin
     if len(rows) < 6:
         return [], None
     y0, y1 = int(rows[0]), int(rows[-1]) + 1
@@ -51,10 +52,10 @@ def segment(a):
         if (not v or x == len(cols) - 1) and s is not None:
             runs.append([s, x if not v else x + 1])
             s = None
-    pitch = h * 1.05
+    pitch = h * 1.15
     merged = []
     for r in runs:
-        if merged and (r[1] - merged[-1][0] <= pitch * 0.95) and (r[0] - merged[-1][1] <= pitch * 0.3):
+        if merged and (r[1] - merged[-1][0] <= pitch * 1.25) and (r[0] - merged[-1][1] <= pitch * 0.15):
             merged[-1][1] = r[1]
         else:
             merged.append(list(r))
@@ -165,9 +166,15 @@ def split_lines(mask_img):
         if (not v or y == len(rows) - 1) and s is not None:
             e = y if not v else y + 1
             if e - s >= 8:
-                out.append(mask_img.crop((0, max(0, s - 2), mask_img.width, min(mask_img.height, e + 2))))
+                out.append((s, e))
             s = None
-    return out
+    if not out:
+        return []
+    big = max(e - s for s, e in out)
+    ink_rows = a.sum(axis=1)
+    keep = [(s, e) for s, e in out if (e - s) >= 0.65 * big and ink_rows[s:e].sum() >= 40]
+    # the furigana line over kanji can be a line of its own: it is thin
+    return [mask_img.crop((0, max(0, s - 4), mask_img.width, min(mask_img.height, e + 2))) for s, e in keep]
 
 
 def read_box(mask_img):
@@ -230,7 +237,8 @@ def save_crop(mask_img, text, n=None):
 
 
 STAT_JA = {'atk': '攻撃', 'def': '防御', 'spa': '特攻', 'spd': '特防', 'spe': '素早さ', 'acc': '命中率', 'eva': '回避率'}
-FIXED = ('効果はばつぐんだ！', '効果はいまひとつのようだ…', '効果がないようだ…', '急所に当たった！', 'メガシンカした！')
+FIXED = ('効果はばつぐんだ！', '効果はいまひとつだ', '効果はいまひとつだ…', '効果はいまひとつのようだ', '効果はいまひとつのようだ…',
+         '効果がないようだ…', '急所に当たった！', 'メガシンカした！')
 
 
 def sentence_candidates(ocr):
@@ -263,11 +271,34 @@ def sentence_candidates(ocr):
         if sw.get('side') == 'opp' and not sw.get('from'):
             out += [f"相手のトレーナーは{sw['mon']}を繰り出した！", f"トレーナーは{sw['mon']}を繰り出した！"]
     body = s.replace('/', '')
+    names = [n for n in dict.fromkeys(mp.find_name(x) for x in [t for t in (mp.norm(l) for l in ocr.splitlines())]) if n]
+    side_pre = lambda t: '相手の' if mp.side_marked(t) else ''
+    flat = body
+    # 〇〇、戻れ！ / ゆけっ！〇〇！ (our own switches: the comma may be missing from the read, the length decides)
+    if '戻れ' in flat or 'もどれ' in flat:
+        for n in names:
+            out += [f'{n}、戻れ！', f'{n}戻れ！']
+    if 'ゆけっ' in flat or 'ゆけつ' in flat:
+        for n in names:
+            out += [f'ゆけっ！{n}！', f'ゆけっ！{n}！']
+    # mega evolution: 〇〇は メガ〇〇に メガシンカした！
+    if 'メガシ' in flat or 'メカシ' in flat:
+        for n in names:
+            pre = side_pre(flat)
+            out += [f'{pre}{n}はメガ{n}にメガシンカした！', f'{n}はメガ{n}にメガシンカした！', f'相手の{n}はメガ{n}にメガシンカした！']
+    if '効果が' in flat or '効果か' in flat:
+        for n in names:
+            out += [f'{side_pre(flat)}{n}には効果がないようだ…', f'相手の{n}には効果がないようだ…', f'{n}には効果がないようだ…']
+    if 'ひる' in flat:
+        for n in names:
+            out += [f'{n}はひるんで技がだせない！', f'相手の{n}はひるんで技がだせない！']
+    if flat.startswith('効果'):
+        out += list(FIXED)
     import difflib
     for f in FIXED:
         if difflib.SequenceMatcher(None, body, f).ratio() >= 0.75:
             out.append(f)
-    return out
+    return list(dict.fromkeys(out))
 
 
 def build(verbose=True):
@@ -292,19 +323,22 @@ def build(verbose=True):
             why['文を作れない'] += 1
             continue
         lines = split_lines(Image.open(os.path.join(CROPS, f)))
-        if len(lines) != 1:
+        if not lines or len(lines) > 3:
             why['2行・空など'] += 1
             continue
-        cols, _ = segment(ink(lines[0]))
-        fit = [c for c in cands if len(c) == len(cols)]
+        counts = [len(segment(ink(l))[0]) for l in lines]
+        fit = [c for c in cands if len(c) == sum(counts)]
         if fit:
-            learn_line(lines[0], fit[0])
+            i = 0
+            for l, n in zip(lines, counts):
+                learn_line(l, fit[0][i:i + n])
+                i += n
             why['追加した行'] += 1
         else:
             why['文字数が合わない'] += 1
             if verbose and shown < 5:
                 shown += 1
-                print(f'  例 {f}: 候補 {[ (c, len(c)) for c in cands[:2] ]} / 切り出し {len(cols)} 文字')
+                print(f'  例 {f}: 候補 {[ (c, len(c)) for c in cands[:2] ]} / 切り出し {counts} 文字')
     print('見本づくり: ' + ' / '.join(f'{k} {v}' for k, v in why.items()))
     if not os.path.isdir(CROPS):
         print(f'crop の保存先がありません: {os.path.abspath(CROPS)}（game_watch.py を先に動かしてください）')
