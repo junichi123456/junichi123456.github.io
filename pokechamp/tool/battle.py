@@ -1472,7 +1472,39 @@ def _switch_hist(js, who):
     return h['hist']
 
 
-SWITCH_MARGIN, RETURN_MARGIN = 2.0, 5.0
+def _opp_ko_mass(st, js, me, opp):
+    """Probability (over the opponent's possible sets, given what was seen) that it carries an attack that KOs
+    our active from its current HP. 1.0 when it cannot be worked out."""
+    try:
+        import copy as _copy
+        jd = field_defaults(_copy.deepcopy(js))
+        d = jd['opp'][jd.get('active_opp', 0)]
+        nm = norm(d['name']); b = BASE_OF.get(nm, nm)
+        obs = list(d.get('obs', [])) + battle_obs(b) + [{'kind': 'move', 'move': mv} for mv in d.get('moves_seen', [])]
+        is_mega = bool(d.get('mega') or nm.startswith('メガ'))
+        if is_mega:
+            obs.append({'kind': 'mega'})
+        if b not in POKE:
+            return 1.0
+        mass = 0.0
+        for p, c in _infer.posterior(b, obs, MY_TYPES, prior_boost_for(b)):
+            if p < 0.005:
+                continue
+            base, mega = _infer.apply_reveals(c, obs)
+            m = BM(base, mega)
+            if is_mega and mega:
+                m.cur, m.name = mega, mega.species
+            m.can_mega = False
+            m.hp, m.maxhp = opp.hp, opp.maxhp
+            m.boosts, m.status = dict(opp.boosts), opp.status
+            if any(MOVE[mv]['cat'] != 'status' and max(rolls(m, me, mv, st) or [0]) >= me.hp for mv in m.moves if mv in MOVE):
+                mass += p
+        return mass
+    except Exception:
+        return 1.0
+
+
+SWITCH_MARGIN, RETURN_MARGIN, KO_MASS_MAX = 2.0, 5.0, 0.35
 
 
 def stabilize(est, st, js, res):
@@ -1516,6 +1548,8 @@ def stabilize(est, st, js, res):
                             r = list(rolls(opp, me, mv, st))
                             if r and r[-1] >= me.hp:
                                 danger = True
+                if not danger and not me.disguise and _opp_ko_mass(st, js, me, opp) > KO_MASS_MAX:
+                    danger = True              # many of the sets it may carry have an attack that KOs us first
                 if not danger:
                     ja = lambda a: (_s.E.MOVES.get(a[1]).ja if _s.E.MOVES.get(a[1]) else None)
                     cand = sorted((x for x in moves if ja(x[1]) in ko_ok), key=lambda x: -ko_ok[ja(x[1])])

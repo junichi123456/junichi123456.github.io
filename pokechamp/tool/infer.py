@@ -123,11 +123,20 @@ def _likelihood(c, o):
         if k == 'move':
             mv = o['move']
             have = set(c.base.moves) | set(c.mega.moves if c.mega else ())
+            f = 1.0
             if mv in MOVE and mv not in have:
-                same = any(MOVE.get(x, {}).get('type') == MOVE[mv]['type'] and MOVE.get(x, {}).get('cat') == MOVE[mv]['cat']
-                           and MOVE[mv]['cat'] != 'status' for x in have)
-                if same:
-                    return 0.08           # it would have to carry two like moves (Flash Cannon and Steel Beam): unlikely
+                f *= 0.5                  # the set has to be edited to fit what was seen
+            elif mv in MOVE and MOVE[mv]['cat'] != 'status':
+                # it used this move although it carries a stronger one of the same type, category and priority:
+                # a little evidence against the stronger one (never excluded: two Steel moves, Wave Crash + Aqua Jet
+                # + Quick Turn (priority differs), Moonblast + Dazzling Gleam, ... are real sets)
+                m0 = MOVE[mv]
+                if any(x != mv and x in MOVE and MOVE[x]['type'] == m0['type'] and MOVE[x]['cat'] == m0['cat']
+                       and MOVE[x].get('pri', 0) == m0.get('pri', 0) and (MOVE[x].get('pow') or 0) > (m0.get('pow') or 0)
+                       for x in have):
+                    f *= 0.6
+            if f != 1.0:
+                return f
             if c.base.item == 'こだわりスカーフ' and MOVE.get(mv, {}).get('cat') == 'status' and mv not in ('トリック', 'すりかえ'):
                 return EPS / 2
             return 1.0
@@ -169,20 +178,19 @@ def revealed_moves(obs):
 
 
 def force_moves(moves, rev, pool=None):
-    """The 4 moves of a set with the moves seen in this battle forced in. A seen move pushes out first a move of the
-    same type and category (a Flash Cannon seen = the set has no Steel Beam), else the least used unseen move."""
+    """The 4 moves of a set with the moves seen in this battle forced in: the least used unseen move makes room
+    (the last one when usage is unknown). Nothing is removed for being "like" a seen move: two moves of one type
+    (Flash Cannon + Steel Beam, Wave Crash + Aqua Jet + Quick Turn) are real sets; whether the set has them is
+    left to the posterior (likelihood 'move')."""
     moves = list(moves)
     for mv in rev[:4]:
         if mv in moves:
             continue
-        mi = MOVE.get(mv, {})
         victims = [x for x in moves if x not in rev]
         if not victims:
             break
-        same = [x for x in victims if MOVE.get(x, {}).get('type') == mi.get('type') and MOVE.get(x, {}).get('cat') == mi.get('cat')
-                and mi.get('cat') != 'status']
-        pool_of = lambda x: (pool or {}).get(x, 0)
-        v = min(same, key=pool_of) if same else min(victims, key=pool_of)
+        order = {x: i for i, x in enumerate(moves)}
+        v = min(victims, key=lambda x: ((pool or {}).get(x, 0), -order[x]))
         moves[moves.index(v)] = mv
     return moves if len(moves) <= 4 else moves[:4]
 
