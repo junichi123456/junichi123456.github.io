@@ -124,4 +124,4 @@ description: ポケモンチャンピオンズ（シングル）の対戦中に�
 - 戦闘メッセージ欄は、ゲームの字体の見本照合（`tool/glyph_ocr.py`・見本は `data/glyph_templates.json`）で先に読み、
   見本が足りない・点数が低いときだけWindows OCRに戻る（`game_watch.py --no-glyph` で無効）。見本は game_watch 起動時に
   `logs/live/msgcrops/` の読み取り結果から自動で増える（手動: `python glyph_ocr.py learn <画像> "<正しい文字列>"`）。
-  見本が約150文字を超えるまでは従来どおり。仕様と今後の予定は `pokechamp/SPEC_VISION.md`。
+  見本が約150文字を超えるまでは従来どおり。仕様と今後の予定は `pokechamp/specs/SPEC_VISION.md`。
