@@ -41,16 +41,16 @@ def _has(font, ch):
         return False
 
 
-def _ink(font, ch):
+def _ink(font, ch, stroke=0):
     im = Image.new('L', (SIZE * 2, SIZE * 2), 0)
-    ImageDraw.Draw(im).text((SIZE // 2, SIZE // 2), ch, font=font, fill=255)
+    ImageDraw.Draw(im).text((SIZE // 2, SIZE // 2), ch, font=font, fill=255, stroke_width=stroke, stroke_fill=255)
     return np.asarray(im) > 110
 
 
-def band_of(font):
+def band_of(font, stroke=0):
     ys = []
     for c in REF:
-        a = _ink(font, c)
+        a = _ink(font, c, stroke)
         r = np.where(a.any(axis=1))[0]
         if len(r):
             ys.append((r[0], r[-1] + 1))
@@ -59,9 +59,9 @@ def band_of(font):
     return int(min(y[0] for y in ys)), int(max(y[1] for y in ys))
 
 
-def render_cell(font, ch, band):
+def render_cell(font, ch, band, stroke=0):
     """The character as glyph_ocr.cell() would cut it from a line drawn in this font."""
-    a = _ink(font, ch)
+    a = _ink(font, ch, stroke)
     cols = np.where(a.any(axis=0))[0]
     if not len(cols):
         return None

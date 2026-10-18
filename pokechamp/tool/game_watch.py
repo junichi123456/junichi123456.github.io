@@ -623,12 +623,15 @@ class MsgWatch:
                 pass
 
     GLYPH = True        # --no-glyph turns the template reader off
+    SEED = True         # --no-seed turns off the font seeds only
     _crop_n = 0
 
     def read_box(self, msg, ocr):
         """The message box as text: our own glyph templates first (the game's font; the Windows OCR swaps 三/ミ, き/ぎ ...),
-        the Windows OCR when the templates are missing or a character is not sure. The picture and OCR text are kept in
-        logs/live/msgcrops/ so glyph_ocr.py build can make templates from them."""
+        the Windows OCR when the templates are missing or a character is not sure. When the real templates are not enough,
+        the font seeds (glyph_ocr.make_seed) may fill the characters that have no real template: that reading replaces the
+        OCR text only when the OCR agrees where a seed was used (glyph_ocr.adopt_seed). The picture and OCR text are kept
+        in logs/live/msgcrops/ so glyph_ocr.py build can make templates from them."""
         mask = text_mask(msg, 2 if msg.width < 1400 else 1)
         if self.GLYPH:
             try:
@@ -646,9 +649,31 @@ class MsgWatch:
                 if _mp2.is_message(text):             # only real battle messages (not menus / timers / background noise)
                     MsgWatch._crop_n += 1
                     glyph_ocr.save_crop(mask, text, MsgWatch._crop_n)
+                if self.SEED:
+                    d = glyph_ocr.read_box(mask, seed=True, detail=True)
+                    if d:
+                        ok, why = glyph_ocr.adopt_seed(d, text, why=True)
+                        self._seed_log(text, d, ok, why)
+                        if ok:
+                            return d['text']
             except Exception:
                 pass
         return text
+
+    def _seed_log(self, ocr_text, d, ok, why):
+        """One line per reading that used seeds (logs/live/glyph_seed.jsonl): was it adopted, and why not."""
+        if not d.get('seed_n'):
+            return
+        try:
+            p = os.path.join(OUT, 'glyph_seed.jsonl')
+            with open(p, 'a', encoding='utf-8') as f:
+                f.write(json.dumps({'t': time.time(), 'ocr': ocr_text, 'glyph': d['text'], 'n': d['n'], 'seed_n': d['seed_n'],
+                                    'low': d['low'], 'adopted': ok, 'why': why}, ensure_ascii=False) + '\n')
+            if os.path.getsize(p) > 2_000_000:           # about 10k lines: keep the newer half
+                lines = open(p, encoding='utf-8').read().splitlines()
+                open(p, 'w', encoding='utf-8').write('\n'.join(lines[len(lines) // 2:]) + '\n')
+        except Exception:
+            pass
 
     def add_msg(self, text, now):
         """One OCR read of the message box. Messages appear over several reads (and the text may still be typing
@@ -1242,6 +1267,7 @@ def main():
     ap.add_argument('--decide', action='store_true', help='行動選択画面での自動判断（行動の指示）を出す。既定は出さない（観測だけ）')
     ap.add_argument('--no-decide', action='store_true', help='（互換用・既定で無効）')
     ap.add_argument('--no-glyph', action='store_true', help='字体の見本照合による文字読み取りを使わない（Windows OCRのみ）')
+    ap.add_argument('--no-seed', action='store_true', help='フォントの補助見本だけを使わない（実戦の見本は使う）')
     ap.add_argument('--no-fast', action='store_true', help='ボタンの色による行動選択画面の高速検出をしない')
     ap.add_argument('--no-msg', action='store_true', help='メッセージ欄とHP欄だけを0.25秒ごとに読む監視をしない')
     a = ap.parse_args()
@@ -1286,12 +1312,14 @@ def main():
 
     spec.live = live_active
     MsgWatch.GLYPH = not a.no_glyph
+    MsgWatch.SEED = not a.no_seed
     if MsgWatch.GLYPH:
         import threading
         def _glyph_build():
             try:
                 import glyph_ocr
                 glyph_ocr.build()
+                glyph_ocr.make_seed()        # font seeds (POKECHAMP_FONT / data/font_seed.json), a cache: quick when unchanged
             except Exception as e:
                 print('glyph build failed:', e, flush=True)
         threading.Thread(target=_glyph_build, daemon=True).start()

@@ -1,1 +1,10 @@
 pokechamp/tool/data/home_cache/
+
+# フォント（再配布しない）とそこから作る補助見本・設定（PCごとに違う）
+pokechamp/**/*.ttf
+pokechamp/**/*.TTF
+pokechamp/**/*.otf
+pokechamp/**/*.ttc
+pokechamp/tool/data/font_seed.json
+pokechamp/tool/data/glyph_seed.json
+pokechamp/tool/data/glyph_seed.json.tmp

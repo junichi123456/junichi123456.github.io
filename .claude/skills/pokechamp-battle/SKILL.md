@@ -127,3 +127,8 @@ description: ポケモンチャンピオンズ（シングル）の対戦中に�
   見本が約150文字を超えるまでは従来どおり。仕様と今後の予定は `pokechamp/specs/SPEC_VISION.md`。
 - **game_watch.py は観測だけ**（場・HP・メッセージ・イベントの記録）。行動の指示（自動判断の「次: 〇〇」）は既定で出さない。
   必要なときだけ `python game_watch.py --decide` で従来の自動判断を有効にできる（wait_event.py も `decide_mode.json` を見て判断待ちを省く）。
+- 補助見本（任意）: 実戦の見本が無い文字だけ、ゲームに近いフォント（ニタラゴルイカ 03/04 等）で描いて補う。
+  `POKECHAMP_FONT` か `tool/data/font_seed.json`（見本は font_seed.example.json）でフォントを指定し、`python glyph_ocr.py seed` で作る
+  （`data/glyph_seed.json` はキャッシュ・コミットしない。フォントも入れない）。補助で読んだ文字は Windows OCR と一致したときだけ採用
+  （`adopt_seed`）。`python glyph_ocr.py eval --font ... [--simulate-free]` で効果と「フォントに無くて読めない文字」を測る。
+  `game_watch.py --no-seed` で補助だけ無効。仕様: `pokechamp/specs/SPEC_FONT_SEED.md`。
