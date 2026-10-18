@@ -87,7 +87,11 @@ def main():
                 safeio.write_json(LAST, {'seq': ev['seq']})
             except Exception:
                 pass
-            if ev.get('phase') in ('command', 'start', 'replace'):
+            try:
+                decide_on = json.load(open(os.path.join(OUT, 'decide_mode.json'), encoding='utf-8')).get('decide', False)
+            except Exception:
+                decide_on = False          # game_watch.py gives no advice unless started with --decide
+            if decide_on and ev.get('phase') in ('command', 'start', 'replace'):
                 ev['decision'] = wait_decision(ev['seq'])
             print(json.dumps(ev, ensure_ascii=False))
             return 0

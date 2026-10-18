@@ -125,3 +125,5 @@ description: ポケモンチャンピオンズ（シングル）の対戦中に�
   見本が足りない・点数が低いときだけWindows OCRに戻る（`game_watch.py --no-glyph` で無効）。見本は game_watch 起動時に
   `logs/live/msgcrops/` の読み取り結果から自動で増える（手動: `python glyph_ocr.py learn <画像> "<正しい文字列>"`）。
   見本が約150文字を超えるまでは従来どおり。仕様と今後の予定は `pokechamp/specs/SPEC_VISION.md`。
+- **game_watch.py は観測だけ**（場・HP・メッセージ・イベントの記録）。行動の指示（自動判断の「次: 〇〇」）は既定で出さない。
+  必要なときだけ `python game_watch.py --decide` で従来の自動判断を有効にできる（wait_event.py も `decide_mode.json` を見て判断待ちを省く）。

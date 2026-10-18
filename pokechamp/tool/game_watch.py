@@ -37,7 +37,7 @@ HP欄のアイコンと名前も見て、名前が同じでアイコンが変わ
 増減と分けて切り出し（battle_messages.jsonl の damage）、相手の型（持ち物・性格・能力）の推定に使う。--no-msg で無効。
 
 行動選択画面（start / command）では、画面の文字（場のポケモン・HP）と記録から battle.py auto --screen で
-すぐに次の行動を計算し、このウィンドウに大きく表示して decision.json に書く（約5秒。--no-decide で無効）。
+画面の文字（場のポケモン・HP）と記録を読んでイベントとして記録する。行動の指示（自動判断）は既定では出さない（--decide で有効）。
 対戦中の Claude は  python wait_event.py  をバックグラウンドで実行して待ち、イベント（判断つき）を受け取る。
 """
 import argparse, base64, io, json, os, sys, time
@@ -1239,11 +1239,17 @@ def main():
                     help='対戦開始から次の選出画面まで、この秒数ごとに画面を保存（0で保存しない）')
     ap.add_argument('--decide-sec', type=float, default=None,
                     help='行動選択画面で自動判断する探索秒数（省略すると局面に応じて自動: 最終局面2秒/通常5秒/分岐が多い9秒）')
-    ap.add_argument('--no-decide', action='store_true', help='行動選択画面での自動判断をしない')
+    ap.add_argument('--decide', action='store_true', help='行動選択画面での自動判断（行動の指示）を出す。既定は出さない（観測だけ）')
+    ap.add_argument('--no-decide', action='store_true', help='（互換用・既定で無効）')
     ap.add_argument('--no-glyph', action='store_true', help='字体の見本照合による文字読み取りを使わない（Windows OCRのみ）')
     ap.add_argument('--no-fast', action='store_true', help='ボタンの色による行動選択画面の高速検出をしない')
     ap.add_argument('--no-msg', action='store_true', help='メッセージ欄とHP欄だけを0.25秒ごとに読む監視をしない')
     a = ap.parse_args()
+    a.no_decide = not a.decide or a.no_decide         # action advice is off unless asked for: this program only observes
+    try:
+        safeio.write_json(os.path.join(OUT, 'decide_mode.json'), {'decide': not a.no_decide})
+    except Exception:
+        pass
     try:
         sys.stdout.reconfigure(encoding='utf-8')
     except Exception:
