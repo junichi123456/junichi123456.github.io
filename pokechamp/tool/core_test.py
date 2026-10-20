@@ -10,6 +10,10 @@ Spec: pokechamp/specs/SPEC_CORES.md.   Run in this folder:
                            [--procs N] [--max-games N] [--rules R1,T1 | -M1] [--force]
   python3 core_test.py report [--out path]    logs/CORES_R9.md from whatever is saved so far
 
+R10 adjustment (spec SPEC_ADJUST.md; results logs/refine/adjust_R10.json):
+  check-diff | adjust-plan [--force] | replay [--procs N --max-games N --no-control]
+  deep [--depth 6 --games 5 --procs N --max-games N] | adjust-report [--out path] | adjust-selftest
+
 Results: logs/refine/cores_R9.json (one write per finished game; run again to resume).
 """
 import argparse, datetime, json, os, sys, time, zlib
@@ -75,13 +79,7 @@ ASHI_EVAL = ['96073793', '1e1ecbc7', 'b8201cf9', '1acfca2d', 'db0baa28', 'a99ce3
 
 def _init_r9():
     """Idempotent: put R9 into battle.py without touching team.py. Must run before the pool forks."""
-    party = refine.load_party(PARTY_N)
-    if refine._BASE_SPECIES is None or refine._BASE_SPECIES != [p['species'] for p in party]:
-        refine._BASE_SPECIES = [p['species'] for p in party]
-    refine.apply_party(party)
-    B.MY_TYPES = tuple(tuple(m.types) for m in B.TEAM)
-    refine.teams()
-    return party
+    return _init_party('R9')
 
 
 def _team(kid):
@@ -759,6 +757,496 @@ def cmd_report(a):
     print(f'{out} に書きました（on {nmode.get("on", 0)} 戦 / off {nmode.get("off", 0)} 戦）')
 
 
+# ---------------------------------------------------------------- party adjustment R10 vs R9 (spec SPEC_ADJUST.md)
+
+ADJ_P = lambda tag: os.path.join(HERE, '..', 'logs', 'refine', f'adjust_{tag}.json')   # adjust_R10.json
+ADJ_REPORT = lambda tag: os.path.join(HERE, '..', 'logs', f'ADJUST_{tag}.md')          # ADJUST_R10.md
+ADJ_VERSION = 1
+N_WIN = N_LOSE = 10
+EMP = 'エンペルト'
+ICE = 'れいとうビーム'
+
+
+def _init_party(tag='R9'):
+    """Idempotent: put party `tag` (R9 / R10 ...) into battle.py. Species must be the same as R9's."""
+    party = refine.load_tag(tag)
+    if refine._BASE_SPECIES is None or refine._BASE_SPECIES != [p['species'] for p in party]:
+        refine._BASE_SPECIES = [p['species'] for p in party]
+    refine.apply_party(party)
+    B.MY_TYPES = tuple(tuple(m.types) for m in B.TEAM)
+    refine.teams()
+    return party
+
+
+def _diff_parties(new, base):
+    """List of (path, base value, new value) for every leaf that differs."""
+    out = []
+    if len(new) != len(base):
+        return [('len', len(base), len(new))]
+    for i, (n, b) in enumerate(zip(new, base)):
+        for k in sorted(set(n) | set(b)):
+            if k == 'moves':
+                if len(n[k]) != len(b[k]):
+                    out.append((f'[{i}].moves', b[k], n[k]))
+                    continue
+                for j, (x, y) in enumerate(zip(n[k], b[k])):
+                    if x != y:
+                        out.append((f'[{i}].moves[{j}]', y, x))
+            elif n.get(k) != b.get(k):
+                out.append((f'[{i}].{k}', b.get(k), n.get(k)))
+    return out
+
+
+def cmd_check_diff(a):
+    new, base = refine.load_tag(a.party), refine.load_tag(a.base)
+    diffs = _diff_parties(new, base)
+    for path, b, n in diffs:
+        print(f'{a.base}{path}: {b} -> {a.party}{path}: {n}')
+    ok = len(diffs) == 1 and diffs[0][0] == '[3].moves[1]' and new[3]['species'] == EMP
+    _init_party(a.base)
+    _init_party(a.party)                            # apply_party asserts
+    import calc
+    ok = ok and ICE in calc.learnset(EMP)
+    print(f"差分 {len(diffs)} 件、{EMP} の覚える技に {ICE}: {ICE in calc.learnset(EMP)} -> {'OK' if ok else 'NG'}")
+    return ok
+
+
+def _adj_sigs(a):
+    return {a.party: refine.sig(refine.load_tag(a.party)), a.base: refine.sig(refine.load_tag(a.base))}
+
+
+def _cores_raw():
+    p = RESULT_P
+    return json.load(open(p, encoding='utf-8'))       # read only
+
+
+def _adj_check(d, a, depth=None):
+    p = ADJ_P(a.party)
+    bad = d.get('version') != ADJ_VERSION or d.get('party') != a.party or d.get('base') != a.base or \
+        d.get('sig') != _adj_sigs(a) or d.get('policy_version') != policy.POLICY_VERSION or \
+        d.get('source', {}).get('sig') != _cores_raw()['sig'] or \
+        (depth is not None and d.get('deep', {}).get('depth') != [depth, OPP_DEPTH])
+    if bad:
+        raise SystemExit(f'{p}: version / party / sig / policy_version / source.sig / deep.depth が違います'
+                         '（adjust-plan --force で退避して新しく始める）')
+
+
+def adj_save(d, a):
+    os.makedirs(os.path.dirname(ADJ_P(a.party)), exist_ok=True)
+    safeio.write_json(ADJ_P(a.party), d)
+
+
+def pick_pairs(cores):
+    """Spec 3.1: 10 wins + 10 losses from R9 games where Empoleon was in our selection. Wins first, then losses."""
+    variants = [('on-NONE', 'on', ['NONE']), ('on', 'on', list(policy.ALL_RULES)), ('off', 'off', None)]
+    seen, wins, losses = set(), [], []
+    for vname, selkey, rules in variants:
+        cands = []
+        for kid in EVAL_IDS:
+            pl = cores['plan'].get(kid)
+            if not pl or EMP not in pl[selkey]['my_order']:
+                continue
+            for k in range(NGAMES):
+                g = cores['games'].get(f'{kid}|{vname}|{k}')
+                if g and g.get('res') is not None:
+                    cands.append((k, EVAL_IDS.index(kid), kid, g, pl))
+        for k, _i, kid, g, pl in sorted(cands, key=lambda c: (c[0], c[1])):
+            key = (kid, tuple(pl[selkey]['my_order']), tuple(pl['opp_order']), g['seed'])
+            if key in seen:
+                continue
+            win = g['res'] == 1
+            if (win and len(wins) >= N_WIN) or (not win and len(losses) >= N_LOSE):
+                continue
+            seen.add(key)
+            (wins if win else losses).append({
+                'src': f'{kid}|{vname}|{k}', 'kid': kid, 'variant': vname, 'rules': rules,
+                'my_order': list(pl[selkey]['my_order']), 'opp_order': list(pl['opp_order']), 'seed': g['seed'],
+                'orig_res': g['res'], 'orig_turns': g.get('turns'), 'orig_log': g.get('log')})
+    if len(wins) < N_WIN or len(losses) < N_LOSE:
+        raise SystemExit(f'再戦の組が足りません: 勝ち {len(wins)} 負け {len(losses)}')
+    pairs = wins + losses
+    for n, p in enumerate(pairs, 1):
+        p['id'] = f'P{n:02d}'
+    return [{'id': p['id'], **{k: v for k, v in p.items() if k != 'id'}} for p in pairs]
+
+
+def make_deep_plan(a, cores, depth):
+    """Spec 4: teams where Empoleon is in the R10 'on' selection and/or the R9 'on' selection."""
+    plan = {}
+    new = _init_party(a.party)
+    for kid in EVAL_IDS:
+        t = _team(kid)
+        opp6 = [B._base(m['name']) for m in t['team']]
+        t0 = time.time()
+        _init_party(a.party)
+        filt = policy.select_filter(opp6)
+        best, top = refine.blind_select(t, order_filter=filt)
+        relaxed = []
+        if not filt(best):
+            orders = [[x] + [y for y in m3 if y != x] for m3 in __import__('itertools').combinations(
+                [B.BASE_OF.get(m.species, m.species) for m in B.TEAM], 3) for x in m3]
+            f2, relaxed = policy.relaxed_filter(opp6, orders)
+            best, top = refine.blind_select(t, order_filter=f2)
+        cp = cores['plan'][kid]
+        why = [tag for tag, o in ((a.party, best), (a.base, cp['on']['my_order'])) if EMP in o]
+        print(f"deep-plan {kid[:8]} R10 {best} R9 {cp['on']['my_order']}{' 緩和' + str(relaxed) if relaxed else ''}"
+              f"{' 対象' + str(why) if why else ''} ({time.time() - t0:.0f}s)", flush=True)
+        if why:
+            plan[kid] = {'title': t['title'], 'why': why, 'opp_order': list(cp['opp_order']),
+                         a.party: {'my_order': best, 'my_top': top, 'relaxed': relaxed},
+                         a.base: {'my_order': list(cp['on']['my_order'])}}
+    _init_party(a.base)
+    return plan
+
+
+def adj_load(a, force=False, depth=6, games=5, build=False):
+    """Load adjust_<party>.json (checked), or start a new one. build: compute pairs / deep plan if missing."""
+    p = ADJ_P(a.party)
+    d = None
+    if os.path.exists(p):
+        if force:
+            os.replace(p, p.replace('.json', '.' + datetime.datetime.now().strftime('%Y%m%d%H%M%S') + '.json'))
+        else:
+            d = json.load(open(p, encoding='utf-8'))
+            _adj_check(d, a, depth if build else None)
+    if d is None:
+        cores = _cores_raw()
+        d = {'version': ADJ_VERSION, 'party': a.party, 'base': a.base, 'sig': _adj_sigs(a),
+             'policy_version': policy.POLICY_VERSION, 'opp_depth': OPP_DEPTH,
+             'source': {'file': 'logs/refine/cores_R9.json', 'sig': cores['sig']},
+             'pairs': [], 'deep': {'depth': [depth, OPP_DEPTH], 'games': games, 'plan': {}}, 'games': {}}
+    if build:
+        cores = _cores_raw()
+        if not d['pairs']:
+            d['pairs'] = pick_pairs(cores)
+            adj_save(d, a)
+        if not d['deep']['plan']:
+            d['deep']['plan'] = make_deep_plan(a, cores, depth)
+            adj_save(d, a)
+    return d
+
+
+def cmd_adjust_plan(a):
+    d = adj_load(a, force=a.force, depth=a.depth, games=NGAMES, build=True)
+    print(f"再戦 {len(d['pairs'])} 組（勝 {sum(p['orig_res'] == 1 for p in d['pairs'])} / "
+          f"負 {sum(p['orig_res'] != 1 for p in d['pairs'])}）、6 手読み対象 {len(d['deep']['plan'])} 構築 -> {os.path.abspath(ADJ_P(a.party))}")
+    print('| 組 | 元の試合 | 自分の選出 | 相手の選出 | 種 | 元の結果 |')
+    print('|---|---|---|---|---|---|')
+    for p in d['pairs']:
+        s = p['src'].split('|')
+        print(f"| {p['id']} | {s[0][:8]}|{s[1]}|{s[2]} | {'→'.join(p['my_order'])} | {'→'.join(p['opp_order'])} | "
+              f"{p['seed']} | {'勝' if p['orig_res'] == 1 else '負'} |")
+    print('6 手読みの対象:')
+    for kid, pl in d['deep']['plan'].items():
+        print(f"  {kid[:8]} {pl['title'][:24]} 理由{pl['why']} R10 {pl[a.party]['my_order']} R9 {pl[a.base]['my_order']}")
+
+
+def _work_adj(job):
+    key, tag, party, kid, my_order, opp_order, seed, my_depth, rules = job
+    t0 = time.time()
+    try:
+        _init_party(tag)
+        r = refine.blind_play((party, kid, my_order, opp_order, seed, my_depth, OPP_DEPTH, False,
+                               tuple(rules) if rules is not None else None, True))
+    except Exception:
+        import traceback
+        r = {'res': None, 'error': traceback.format_exc()[-800:]}
+    r['seed'] = seed
+    r['sec'] = round(time.time() - t0, 1)
+    r['party'] = tag
+    r['depth'] = [my_depth, OPP_DEPTH]
+    return key, r
+
+
+def _run_adj(a, d, jobs, prefix, total):
+    """Run jobs in a pool; one atomic save per finished game (spec 5.3)."""
+    done_before = sum(1 for k, g in d['games'].items() if k.startswith(prefix) and g.get('res') is not None)
+    if a.max_games:
+        jobs = jobs[:a.max_games]
+    print(f'実行 {len(jobs)} 戦（済み {done_before} / 全体 {total}）procs={a.procs}', flush=True)
+    if not jobs:
+        return
+    import multiprocessing as mp
+    ctx = mp.get_context('fork') if hasattr(os, 'fork') else mp.get_context('spawn')
+    t0 = time.time()
+    n = 0
+    with ctx.Pool(min(a.procs, len(jobs))) as pool:
+        for key, r in pool.imap_unordered(_work_adj, jobs, chunksize=1):
+            d['games'][key] = r
+            adj_save(d, a)
+            n += 1
+            res = {1: '勝', -1: '負', 0: '分', None: '例外'}.get(r['res'], str(r['res']))
+            print(f"[{done_before + n}/{total}] {key} {res} {r.get('turns', '-')}T {r['sec']}s "
+                  f"経過{(time.time() - t0) / 60:.1f}分", flush=True)
+            if r.get('error'):
+                print('   error:', r['error'].strip().splitlines()[-1], flush=True)
+
+
+def _todo(d, key):
+    g = d['games'].get(key)
+    return not (g and g.get('res') is not None)
+
+
+def cmd_replay(a):
+    d = adj_load(a, build=True)
+    parties = {a.party: refine.load_tag(a.party), a.base: refine.load_tag(a.base)}
+    tags = [a.party] if a.no_control else [a.party, a.base]
+    jobs = []
+    for p in d['pairs']:
+        for tag in tags:
+            key = f"replay|{tag}|{p['id']}"
+            if _todo(d, key):
+                jobs.append((key, tag, parties[tag], p['kid'], p['my_order'], p['opp_order'], p['seed'], 5, p['rules']))
+    _run_adj(a, d, jobs, 'replay|', len(d['pairs']) * len(tags))
+
+
+def cmd_deep(a):
+    d = adj_load(a, depth=a.depth, games=a.games, build=True)
+    d['deep']['games'] = a.games
+    parties = {a.party: refine.load_tag(a.party), a.base: refine.load_tag(a.base)}
+    jobs = []
+    for k in range(a.games):
+        for kid, pl in d['deep']['plan'].items():
+            for tag in (a.party, a.base):
+                key = f'deep|{tag}|{kid}|{k}'
+                if _todo(d, key):
+                    jobs.append((key, tag, parties[tag], kid, pl[tag]['my_order'], pl['opp_order'], seed_of(kid, k),
+                                 a.depth, ['NONE']))
+    _run_adj(a, d, jobs, 'deep|', len(d['deep']['plan']) * a.games * 2)
+
+
+# ---- adjust-selftest (spec 5.4)
+
+def cmd_adjust_selftest(a):
+    party = _init_party('R10')
+    ok, bad = 0, []
+
+    def check(name, cond, info=''):
+        nonlocal ok
+        if cond:
+            ok += 1
+            print(f'  OK   {name}')
+        else:
+            bad.append(name)
+            print(f'  FAIL {name} {info}')
+
+    def play(a1, mid='icebeam', foe_moves=('じしん', 'まもる', 'つるぎのまい', 'げきりん')):
+        foe = _foe('ガブリアス', 'きあいのタスキ', 'さめはだ', 'ようき', {'spe': 32}, list(foe_moves))
+        st = _game([EMP, 'ドヒドイデ', 'グレンアルマ'], foe)
+        a0 = policy.find(E.actions(st, 0), mid)
+        assert a0, E.actions(st, 0)
+        if a1[0] == 'm':
+            a1 = policy.find(E.actions(st, 1), a1[1])
+        assert a1 in E.actions(st, 1), (a1, E.actions(st, 1))
+        my_nm, foe_nm = st.active(0).name, st.active(1).name
+        elog = []
+        E.step(st, a0, a1, rng=prep.RandomRNG(1), log=elog)
+        return refine._trace_move(1, my_nm, foe_nm, mid, elog), elog
+
+    r, el = play(('m', 'earthquake'))
+    check('エンペルト れいとうビーム vs ガブリアス(じしん) → hit', r == [1, EMP, ICE, 'ガブリアス', 'hit'], (r, el))
+    r, el = play(('m', 'protect'))
+    check('相手が まもる → protect', r[:4] == [1, EMP, ICE, 'ガブリアス'] and r[4] == 'protect', (r, el))
+    r, el = play(('s', 1))
+    check('相手が交代 → 対象は交代先', r[3] == 'ミミッキュ' and r[4] in ('hit', 'unknown'), (r, el))
+    cores = _cores_raw()
+    kid = _full('1e1ecbc7')
+    pl = cores['plan'][kid]
+    args = (party, kid, pl['on']['my_order'], pl['opp_order'], seed_of(kid, 0), 3, 3, False, ('NONE',))
+    t0 = time.time()
+    r0 = refine.blind_play(args + (False,))
+    r1 = refine.blind_play(args + (True,))
+    same = r0['res'] is not None and r0['res'] == r1['res'] and r0['log'] == r1['log'] and \
+        {k: v for k, v in r1.items() if k != 'mv'} == r0 and 'mv' not in r0 and 'mv' in r1
+    check(f"trace=False と True で res・log が一致（3 手読み 1 戦 x2, {time.time() - t0:.0f}s, "
+          f"{r0.get('turns')}T, mv {len(r1.get('mv', []))} 件）", same, (r0.get('error'), r1.get('error')))
+    print(f'adjust-selftest: {ok} 合格 / {len(bad)} 不合格 {bad}')
+    return not bad
+
+
+# ---- adjust-report
+
+def _games_of(d, prefix):
+    return {k: g for k, g in d['games'].items() if k.startswith(prefix) and g.get('res') is not None}
+
+
+def _emp_stats(games, moves):
+    """Empoleon's move counts and ice beam details over a list of game dicts."""
+    use = {m: 0 for m in moves}
+    res = {x: 0 for x in ('hit', 'miss', 'protect', 'immune', 'none', 'unknown')}
+    targets, kills, turns, withfield, withice = {}, 0, 0, 0, 0
+    for g in games:
+        on_field = sum(1 for l in g.get('log', []) if l[0] == EMP)
+        turns += on_field
+        withfield += on_field > 0
+        ice_here = False
+        for t, me, mv, tg, r in g.get('mv', []):
+            if me != EMP:
+                continue
+            use[mv] = use.get(mv, 0) + 1
+            if mv == ICE:
+                ice_here = True
+                res[r] = res.get(r, 0) + 1
+                if r == 'hit':
+                    targets[tg] = targets.get(tg, 0) + 1
+                    if any(f[0] == t and f[1] == 1 and f[2] == tg for f in g.get('faints', [])):
+                        kills += 1
+        withice += ice_here and on_field > 0
+    return {'use': use, 'ice': res, 'targets': targets, 'kills': kills, 'turns': turns, 'games': len(games),
+            'field': withfield, 'with_ice': withice}
+
+
+def cmd_adjust_report(a):
+    p = ADJ_P(a.party)
+    if not os.path.exists(p):
+        raise SystemExit(f'{p} がありません')
+    d = json.load(open(p, encoding='utf-8'))
+    _adj_check(d, a)
+    P, Bs = a.party, a.base
+    G = d['games']
+    mark = lambda r: '○' if r == 1 else '×'
+    jp = lambda s: '→'.join(s)
+    L = []
+    secs = sum(g.get('sec', 0) for g in G.values())
+    rp = {p_['id']: (G.get(f"replay|{P}|{p_['id']}"), G.get(f"replay|{Bs}|{p_['id']}")) for p_ in d['pairs']}
+    n_rp = sum(1 for v in rp.values() if v[0] and v[0].get('res') is not None)
+    n_ct = sum(1 for v in rp.values() if v[1] and v[1].get('res') is not None)
+    dg = d['deep']
+    n_dp = {t: len(_games_of(d, f'deep|{t}|')) for t in (P, Bs)}
+    depth = dg['depth']
+    L += [f'# {Bs} の 1 匹調整（{EMP}: あくび → {ICE}）の検証', '',
+          '## 1. 条件', '',
+          f'- 差分: {EMP}（4 番目）の技 あくび → {ICE}（こおり・特殊、威力 90・命中 100、追加効果 10% こおり）の 1 つだけ。他の 5 体・努力値・並び順は {Bs} と同じ',
+          f'- 再戦の深さ: 自分 5 手・相手 {OPP_DEPTH} 手（元の {Bs} 試合と同じ）、6 手読みの深さ: 自分 {depth[0]} 手・相手 {depth[1]} 手、最大 30 ターン（決着しなければ評価値で判定）',
+          '- 種: 再戦は元の試合の保存値、6 手読みは crc32("core{構築id}{k}")（R10 と R9 で同じ）。両者とも相手の型は推測（ブラインド）',
+          f'- 作成: {datetime.datetime.now():%Y-%m-%d %H:%M}、対戦の合計時間 {secs / 3600:.1f} 時間（のべ、並列分を含む）',
+          f"- 6 手読み 1 戦の実測: {', '.join(f'{k} {g['sec']}s/{g.get('turns')}T' for k, g in list(_games_of(d, 'deep|').items())[:3]) or '-'}",
+          f'- 戦数: 再戦 {P} {n_rp}/{len(d["pairs"])}・{Bs}対照 {n_ct}/{len(d["pairs"])}、6 手読み {P} {n_dp[P]}・{Bs} {n_dp[Bs]}'
+          f'（対象 {len(dg["plan"])} 構築 x {dg["games"]} 戦）',
+          '- 注意: 5 戦単位（構築別）の勝率の誤差は ±20% 程度、6 手読みの合計（25〜35 戦）でも ±10% 程度、'
+          '再戦 20 組の差（負→勝 − 勝→負）は ±3 程度が偶然で起きる', '']
+    # 2 replay
+    L += ['## 2. 再戦 20 組の勝敗変化', '',
+          f'| 組 | 構築 | 変種 | 自分の選出 | 相手の選出 | 種 | 元の結果 | {Bs}対照 | {P} の結果 | 変化 | {P} T | {P} の{ICE} 回数 |',
+          '|---|---|---|---|---|---|---|---|---|---|---|---|']
+    a_up = b_dn = rep = 0
+    for pr in d['pairs']:
+        g10, g9 = rp[pr['id']]
+        o = pr['orig_res']
+        if g9 and g9.get('res') is not None:
+            same = g9['res'] == o and g9.get('log') == pr['orig_log']
+            rep += same
+            ctl = '再現' if same else f"{mark(g9['res'])} 不一致*"
+            base = o if same else g9['res']
+        else:
+            ctl, base = '-', o
+        if g10 and g10.get('res') is not None:
+            new = g10['res']
+            ch = '負→勝' if base != 1 and new == 1 else '勝→負' if base == 1 and new != 1 else '同じ'
+            a_up += ch == '負→勝'
+            b_dn += ch == '勝→負'
+            nice = sum(1 for m in g10.get('mv', []) if m[1] == EMP and m[2] == ICE)
+            cells = [mark(new), ch, str(g10.get('turns')), str(nice)]
+        else:
+            cells = ['-', '-', '-', '-']
+        s = pr['src'].split('|')
+        L.append(f"| {pr['id']} | {s[0][:8]} | {s[1]} | {jp(pr['my_order'])} | {jp(pr['opp_order'])} | {pr['seed']} | "
+                 f"{mark(o)} | {ctl} | " + ' | '.join(cells) + ' |')
+    L += ['', f'合計: 負→勝 {a_up}、勝→負 {b_dn}、純増 {a_up - b_dn:+d}、{Bs}対照の再現数 {rep}/{len(d["pairs"])}'
+          f'（対照 {n_ct} 戦済み。* は元と違う組で、その組の基準は対照の結果）', '']
+    # 3 deep
+    L += ['## 3. 6 手読みの構築別勝率', '',
+          f'| 構築 | 題名 | 理由 | 相手の選出 | {Bs}の選出 | {P}の選出 | {Bs} 5戦 | {P} 5戦 | 差 | 判定決着 {Bs}/{P} |',
+          '|---|---|---|---|---|---|---|---|---|---|']
+    tot = {P: [0, 0], Bs: [0, 0]}
+    emp = {P: [0, 0], Bs: [0, 0]}
+    for kid, pl in dg['plan'].items():
+        cells, wins, jud = {}, {}, {}
+        for tag in (Bs, P):
+            gs = [G.get(f'deep|{tag}|{kid}|{k}') for k in range(dg['games'])]
+            gs = [g if g and g.get('res') is not None else None for g in gs]
+            cells[tag] = ''.join(mark(g['res']) if g else '-' for g in gs)
+            ok_ = [g for g in gs if g]
+            wins[tag] = sum(g['res'] == 1 for g in ok_)
+            jud[tag] = sum(bool(g.get('judged')) for g in ok_)
+            tot[tag][0] += wins[tag]
+            tot[tag][1] += len(ok_)
+            if EMP in pl[tag]['my_order']:
+                emp[tag][0] += wins[tag]
+                emp[tag][1] += len(ok_)
+        L.append(f"| {kid[:8]} | {pl['title'][:22]} | {'・'.join(pl['why'])} | {jp(pl['opp_order'])} | "
+                 f"{jp(pl[Bs]['my_order'])} | {jp(pl[P]['my_order'])}{' 緩和' if pl[P].get('relaxed') else ''} | {cells[Bs]} | {cells[P]} | "
+                 f"{wins[P] - wins[Bs]:+d} | {jud[Bs]}/{jud[P]} |")
+    pc = lambda w, n: f'{100 * w / n:.0f}% ({w}/{n})' if n else '-'
+    dd = f"{100 * (tot[P][0] / tot[P][1] - tot[Bs][0] / tot[Bs][1]):+.0f}pt" if tot[P][1] and tot[Bs][1] else '-'
+    L += ['', f'合計: {Bs} {pc(*tot[Bs])}、{P} {pc(*tot[P])}、差 {dd}（勝ち数の差 {tot[P][0] - tot[Bs][0]:+d}）',
+          f'{EMP}を選出した試合に限る: {Bs} {pc(*emp[Bs])}、{P} {pc(*emp[P])}', '']
+    # 4 moves
+    cols = [(f'再戦 {P}', [g for k, g in _games_of(d, f'replay|{P}|').items()]),
+            (f'再戦 {Bs}対照', [g for k, g in _games_of(d, f'replay|{Bs}|').items()]),
+            (f'6手 {P}', [g for k, g in _games_of(d, f'deep|{P}|').items()]),
+            (f'6手 {Bs}', [g for k, g in _games_of(d, f'deep|{Bs}|').items()])]
+    mvnames = ['なみのり', 'あくび', ICE, 'ステルスロック', 'クイックターン']
+    st = [_emp_stats(gs, mvnames) for _, gs in cols]
+    L += [f'## 4. {EMP}の技の使用回数', '', '| 項目 | ' + ' | '.join(c for c, _ in cols) + ' |', '|---|---|---|---|---|']
+    L.append('| 戦数（うち場に出た試合） | ' + ' | '.join(f"{s['games']}（{s['field']}）" for s in st) + ' |')
+    L.append('| 場に出たターン数 | ' + ' | '.join(str(s['turns']) for s in st) + ' |')
+    for m in mvnames:
+        L.append(f'| {m} | ' + ' | '.join(str(s['use'].get(m, 0)) for s in st) + ' |')
+    for r in ('hit', 'miss', 'protect', 'immune', 'none', 'unknown'):
+        L.append(f'| {ICE} {r} | ' + ' | '.join(str(s['ice'][r]) for s in st) + ' |')
+    L.append(f'| {ICE} を撃った試合 / 場に出た試合 | ' + ' | '.join(f"{s['with_ice']}/{s['field']}" for s in st) + ' |')
+    L += ['', f'{ICE} を当てた相手（回数、うち倒した回数）:']
+    for c, s in zip([c for c, _ in cols], st):
+        tg = ' '.join(f'{k}{v}' for k, v in sorted(s['targets'].items(), key=lambda x: -x[1])) or '-'
+        L.append(f"- {c}: {tg}（倒した {s['kills']}）")
+    L.append('')
+    # 5 verdict
+    r10 = [g for _, gs in (cols[0], cols[2]) for g in gs]
+    f10 = sum(1 for g in r10 if any(l[0] == EMP for l in g.get('log', [])))
+    i10 = sum(1 for g in r10 if any(l[0] == EMP for l in g.get('log', [])) and
+              any(m[1] == EMP and m[2] == ICE for m in g.get('mv', [])))
+    net = a_up - b_dn
+    dwin = tot[P][0] - tot[Bs][0]
+    complete = n_rp == len(d['pairs']) and n_ct == len(d['pairs']) and n_dp[P] == n_dp[Bs] == len(dg['plan']) * dg['games']
+    if n_ct and (len(d['pairs']) - n_ct) + rep < 18:
+        v = f'判断不能（再現性）: {Bs}対照の再現 {rep}/{len(d["pairs"])} が 18 未満（不一致が確定）'
+    elif f10 and i10 / f10 < 0.2:
+        v = f'判断不能（技が使われていない）: {EMP}が場に出た {P} の試合 {f10} 戦のうち{ICE}を撃ったのは {i10} 戦（{100 * i10 / f10:.0f}%）'
+    elif (net <= 0 and dwin <= 0) or dwin <= -3:
+        v = f'不採用: 再戦の純増 {net:+d}、6 手読みの勝ち数差 {dwin:+d}'
+    elif net >= 3 and dwin >= 0:
+        v = f'採用: 再戦の純増 {net:+d}、6 手読みの勝ち数差 {dwin:+d}（有意とは言えない。悪化の兆候が無く改善の方向、という意味）'
+    else:
+        v = (f'判断不能（差が小さい）: 再戦の純増 {net:+d}、6 手読みの勝ち数差 {dwin:+d}。追加で回すなら、'
+             '6 手読みを差が出た 1 構築で 10 戦ずつ増やす')
+    L += ['## 5. 判定', '', ('' if complete else '（途中の結果からの暫定。戦数がそろっていない）\n\n') + '**' + v + '**', '',
+          f'- {Bs}対照の再現 {rep}/{len(d["pairs"])}（対照 {n_ct} 戦済み）',
+          f'- {ICE} を撃った試合 {i10}/{f10}（{EMP}が場に出た {P} の試合）',
+          f'- 再戦の純増 {net:+d}（負→勝 {a_up}、勝→負 {b_dn}）、6 手読みの勝ち数 {Bs} {tot[Bs][0]} / {P} {tot[P][0]}', '']
+    # 6 notes
+    L += ['## 6. 所見', '']
+    for pr in d['pairs']:
+        g10, g9 = rp[pr['id']]
+        if not (g10 and g10.get('res') is not None):
+            continue
+        base = g9['res'] if g9 and g9.get('res') is not None and (g9['res'] != pr['orig_res'] or g9.get('log') != pr['orig_log']) \
+            else pr['orig_res']
+        if (base == 1) == (g10['res'] == 1):
+            continue
+        ices = [f"T{m[0]}→{m[3]}({m[4]})" for m in g10.get('mv', []) if m[1] == EMP and m[2] == ICE]
+        yawn = sum(1 for l in pr['orig_log'] if l[1] == 'あくび')
+        L.append(f"- {pr['id']} {'負→勝' if g10['res'] == 1 else '勝→負'}: {ICE} {' '.join(ices) or 'なし'}、"
+                 f"元の試合のあくび {yawn} 回、{P} {g10.get('turns')}T（元 {pr['orig_turns']}T）")
+    if L[-1] == '':
+        L.append('- 変化した組はまだありません')
+    txt = '\n'.join(L) + '\n'
+    out = a.out or ADJ_REPORT(a.party)
+    os.makedirs(os.path.dirname(os.path.abspath(out)), exist_ok=True)
+    open(out, 'w', encoding='utf-8').write(txt)
+    print(f'{out} に書きました（再戦 {n_rp}/対照 {n_ct}、6 手読み {n_dp[P]}/{n_dp[Bs]}）')
+
+
 # ---------------------------------------------------------------- main
 
 def main():
@@ -790,6 +1278,35 @@ def main():
     p = sub.add_parser('report')
     p.add_argument('--out')
     p.set_defaults(f=cmd_report)
+    def common(p, procs=False):
+        p.add_argument('--party', default='R10')
+        p.add_argument('--base', default='R9')
+        if procs:
+            p.add_argument('--procs', type=int, default=os.cpu_count() or 1)
+            p.add_argument('--max-games', type=int, default=0, dest='max_games')
+
+    p = sub.add_parser('check-diff')
+    common(p)
+    p.set_defaults(f=cmd_check_diff)
+    p = sub.add_parser('adjust-plan')
+    common(p)
+    p.add_argument('--force', action='store_true')
+    p.add_argument('--depth', type=int, default=6)
+    p.set_defaults(f=cmd_adjust_plan)
+    p = sub.add_parser('replay')
+    common(p, True)
+    p.add_argument('--no-control', action='store_true', dest='no_control')
+    p.set_defaults(f=cmd_replay)
+    p = sub.add_parser('deep')
+    common(p, True)
+    p.add_argument('--depth', type=int, default=6)
+    p.add_argument('--games', type=int, default=NGAMES)
+    p.set_defaults(f=cmd_deep)
+    p = sub.add_parser('adjust-report')
+    common(p)
+    p.add_argument('--out')
+    p.set_defaults(f=cmd_adjust_report)
+    sub.add_parser('adjust-selftest').set_defaults(f=cmd_adjust_selftest)
     a = ap.parse_args()
     r = a.f(a)
     if r is False:

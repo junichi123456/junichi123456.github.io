@@ -507,12 +507,44 @@ def blind_select(t, order_filter=None):
     return best, [o for _, o in top[:3]]
 
 
+def _trace_move(turn, my_nm, foe_nm, mid, elog):
+    """[turn, our mon, move (ja), target, result] from the engine's per-turn text log (spec 5.4)."""
+    md = E.MOVES.get(mid)
+    ja = md.ja if md else mid
+    uses = f'{my_nm} uses {mid}'
+    idx = [i for i, l in enumerate(elog) if l == uses]
+    tgt = foe_nm
+    if not idx:
+        return [turn, my_nm, ja, tgt, 'none']
+    for l in elog[:idx[0]]:
+        if l.startswith('switch 1 '):
+            tgt = l[len('switch 1 '):]
+    if len(idx) > 1:
+        return [turn, my_nm, ja, tgt, 'unknown']
+    end = len(elog)
+    for i in range(idx[0] + 1, len(elog)):
+        if ' uses ' in elog[i]:
+            end = i
+            break
+    seg = elog[idx[0] + 1:end]
+    if any(l.startswith(f'{mid} missed') for l in seg):
+        r = 'miss'
+    elif any(l.endswith((' protected', ' guarded')) for l in seg):
+        r = 'protect'
+    elif any(l.endswith(' immune') for l in seg):
+        r = 'immune'
+    else:
+        r = 'hit'
+    return [turn, my_nm, ja, tgt, r]
+
+
 def blind_play(args):
     """One game: true sets on both sides; each side reads ahead on its own guess of the other's sets (usage data
     and the moves seen so far). We read my_depth turns ahead, they read opp_depth."""
     party, kid, my_order, opp_order, seed, my_depth, opp_depth = args[:7]
     know = len(args) > 7 and args[7]          # True: we read on their true sets (perfect information for us)
     rules = args[8] if len(args) > 8 else None   # None: no action rules; else a tuple of policy rule ids (policy.py)
+    trace = len(args) > 9 and args[9]         # True: also return 'mv', one record per move of ours (no effect on the game)
     import sets as _sets
     _sets.EXCLUDE = {kid}                      # the opponent's own article never feeds the guesses about it
     apply_party(party)
@@ -531,7 +563,7 @@ def blind_play(args):
         _ctx(kid)
         seen = [{}, {}]
         rng = prep.RandomRNG(seed)
-        log, faints = [], []
+        log, faints, mv = [], [], []
         rocks_turn, tox, fired = None, [], []
         if rules is not None:
             import policy
@@ -558,7 +590,14 @@ def blind_play(args):
             fj = st.sides[1].act
             pois = a0 and a0[0] == 'm' and a0[1] == 'toxic' and st.active(0).name == 'ドヒドイデ' and \
                 st.sides[1].mons[fj].status == ''
-            st = E.step(st, a0, a1, rng=rng, chooser=chooser)
+            if trace:
+                my_nm, foe_nm = st.active(0).name, st.active(1).name
+                elog = []
+                st = E.step(st, a0, a1, rng=rng, chooser=chooser, log=elog)
+                if a0 and a0[0] == 'm' and a0[1] != 'recharge':
+                    mv.append(_trace_move(tn + 1, my_nm, foe_nm, a0[1], elog))
+            else:
+                st = E.step(st, a0, a1, rng=rng, chooser=chooser)
             if rocks_turn is None and st.sides[1].cond.get('stealthrock'):
                 rocks_turn = tn + 1
             if pois and st.sides[1].mons[fj].status in ('psn', 'tox'):
@@ -571,7 +610,8 @@ def blind_play(args):
         res = st.winner if st.winner is not None else (1 if S.evaluate(st) > 0 else -1)
         left = [[(m.name, round(100 * m.hp / m.maxhp)) for m in s.mons] for s in st.sides]
         return {'res': res, 'log': log, 'faints': faints, 'left': left, 'fired': list(ctx.fired) if ctx else [],
-                'rocks_turn': rocks_turn, 'tox': tox, 'turns': len(log), 'judged': judged}
+                'rocks_turn': rocks_turn, 'tox': tox, 'turns': len(log), 'judged': judged,
+                **({'mv': mv} if trace else {})}
     except Exception:
         import traceback
         return {'res': None, 'error': traceback.format_exc()[-800:]}
