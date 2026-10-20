@@ -491,7 +491,7 @@ def worst_selection(n):
     return out
 
 
-def blind_select(t):
+def blind_select(t, order_filter=None):
     """Our order from their six species only: not their own article (usage data, other articles and our logs)."""
     import sets as _sets
     _sets.EXCLUDE = {t['id']}
@@ -501,7 +501,7 @@ def blind_select(t):
     B.match_known = lambda *a, **k: None
     try:
         B.set_known_context(None)
-        best, top, _ = B.select(opp6, ignore_stored=True)
+        best, top, _ = B.select(opp6, ignore_stored=True, order_filter=order_filter)
     finally:
         B.match_known = real_match
     return best, [o for _, o in top[:3]]
@@ -512,6 +512,7 @@ def blind_play(args):
     and the moves seen so far). We read my_depth turns ahead, they read opp_depth."""
     party, kid, my_order, opp_order, seed, my_depth, opp_depth = args[:7]
     know = len(args) > 7 and args[7]          # True: we read on their true sets (perfect information for us)
+    rules = args[8] if len(args) > 8 else None   # None: no action rules; else a tuple of policy rule ids (policy.py)
     import sets as _sets
     _sets.EXCLUDE = {kid}                      # the opponent's own article never feeds the guesses about it
     apply_party(party)
@@ -531,10 +532,21 @@ def blind_play(args):
         seen = [{}, {}]
         rng = prep.RandomRNG(seed)
         log, faints = [], []
+        rocks_turn, tox, fired = None, [], []
+        if rules is not None:
+            import policy
+            ctx = policy.Ctx([m.name for m in st.sides[1].mons], rules)
+            chooser = policy.make_chooser(ctx)
+        else:
+            ctx, chooser = None, S.chooser
         for tn in range(30):
             if st.winner is not None:
                 break
-            a0 = S.lookahead_action(st if know else belief(st, 1, t_opp, seen[1]), 0, my_depth)
+            if ctx is None:
+                a0 = S.lookahead_action(st if know else belief(st, 1, t_opp, seen[1]), 0, my_depth)
+            else:
+                bst = st if know else belief(st, 1, t_opp, seen[1])
+                a0, _rid = policy.choose(st, bst, policy.ranked_root(bst, my_depth), ctx)
             a1 = S.lookahead_action(belief(st, 0, t_me, seen[0]), 1, opp_depth)
             log.append((st.active(0).name, _name(st, 0, a0), st.active(1).name, _name(st, 1, a1)))
             for i, a in ((0, a0), (1, a1)):
@@ -543,14 +555,23 @@ def blind_play(args):
                     if a[1] not in lst:
                         lst.append(a[1])
             before = [[m.alive for m in s.mons] for s in st.sides]
-            st = E.step(st, a0, a1, rng=rng, chooser=S.chooser)
+            fj = st.sides[1].act
+            pois = a0 and a0[0] == 'm' and a0[1] == 'toxic' and st.active(0).name == 'ドヒドイデ' and \
+                st.sides[1].mons[fj].status == ''
+            st = E.step(st, a0, a1, rng=rng, chooser=chooser)
+            if rocks_turn is None and st.sides[1].cond.get('stealthrock'):
+                rocks_turn = tn + 1
+            if pois and st.sides[1].mons[fj].status in ('psn', 'tox'):
+                tox.append(B._base(st.sides[1].mons[fj].name))
             for i in (0, 1):
                 for j, m in enumerate(st.sides[i].mons):
                     if before[i][j] and not m.alive:
                         faints.append((tn + 1, i, m.name, log[-1][2 if i == 0 else 0]))
+        judged = st.winner is None
         res = st.winner if st.winner is not None else (1 if S.evaluate(st) > 0 else -1)
         left = [[(m.name, round(100 * m.hp / m.maxhp)) for m in s.mons] for s in st.sides]
-        return {'res': res, 'log': log, 'faints': faints, 'left': left}
+        return {'res': res, 'log': log, 'faints': faints, 'left': left, 'fired': list(ctx.fired) if ctx else [],
+                'rocks_turn': rocks_turn, 'tox': tox, 'turns': len(log), 'judged': judged}
     except Exception:
         import traceback
         return {'res': None, 'error': traceback.format_exc()[-800:]}

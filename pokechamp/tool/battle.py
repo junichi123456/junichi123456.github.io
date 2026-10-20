@@ -1176,7 +1176,7 @@ def _focus_mons(opp6):
     return {k: v for k, v in f.items() if any(_base(x) == k for x in opp6)}
 
 
-def select(opp6, seconds=10.0, ignore_stored=False, return_all=False):
+def select(opp6, seconds=10.0, ignore_stored=False, return_all=False, order_filter=None):
     """Choose 3 of our 6 and the lead: every order is played out on the engine against the opponent's likely
     picks and leads (greedy play), then the best 12 are replayed with a 1-turn look-ahead for our side."""
     my_names = [BASE_OF.get(m.species, m.species) for m in TEAM]
@@ -1253,7 +1253,12 @@ def select(opp6, seconds=10.0, ignore_stored=False, return_all=False):
             orders = kept
         else:
             rules = []
+    if order_filter is not None:       # caller's own rule (policy.select_filter): applied after select_rules.json
+        kept = [o for o in orders if order_filter(o)]
+        if kept:
+            orders = kept
     if kt and kt.get('counter') and not ignore_stored and not return_all and \
+            (order_filter is None or order_filter(kt['counter']['order'])) and \
             all(x in my_names for x in kt['counter']['order']) and \
             (not rules or kt['counter'].get('pinned') or must <= set(kt['counter']['order'])):   # stored before a team change? recompute
         # prepared offline by prep.py (both sides look ahead, real randomness): use it as is
