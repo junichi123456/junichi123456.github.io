@@ -1774,6 +1774,493 @@ def cmd_slot4_report(a):
 
 # ---------------------------------------------------------------- main
 
+# ---------------------------------------------------------------- R11 Airmed item comparison (spec SPEC_ITEM.md)
+
+ITEM_VERSION = 1
+ITEM_BASE = ('ゴツゴツメット', 'rockyhelmet')
+ITEM_CANDS = {
+    1: ('レッドカード', 'redcard', '殴ってきた相手を1回強制交代させ、積みエース・相手エアームドのボディプレスを流す'),
+    2: ('オッカのみ', 'occaberry', '炎を一度だけ半減し、ガブZ・リザードンX・ボーマンダ相手にはねやすめ／てっぺきの起点を作る'),
+    3: ('ソクノのみ', 'wacanberry', '電気を一度だけ半減し、ブリジュラス・パーモット相手に居座ってボディプレスを通す'),
+    4: ('メンタルハーブ', 'mentalherb', 'ちょうはつ・アンコールを1回解除し、てっぺき／はねやすめが止まるのを防ぐ'),
+}
+ITEM_USAGE = {0: '最多', 1: '10.0%', 2: '0.3%', 3: '0%（データに無い）', 4: '1.1%'}
+ITEM_MOVE_CHANGE = {
+    0: '接触技を受けると攻撃側に最大HPの1/6',
+    1: 'ふきとばしと役割が重なる。カード使用後はふきとばしだけが流し手段。ゴツメの削りは無くなる',
+    2: '炎抜群を1回半減（はねやすめ回数が増える）。ゴツメの削りは無くなる',
+    3: '電気抜群を1回半減（はねやすめ回数が増える）。ゴツメの削りは無くなる',
+    4: 'ちょうはつ・アンコール後も1回だけてっぺき／はねやすめが打てる。ゴツメの削りは無くなる',
+}
+ITEM_AIRMED = 'エアームド'
+ITEM_MOVES = ('はねやすめ', 'ふきとばし', 'ボディプレス', 'てっぺき')
+ITEM_P = lambda n: os.path.join(HERE, '..', 'logs', 'refine', 'item_R11.json' if n == 0 else f'item_{n}.json')
+ITEM_REPORT = os.path.join(HERE, '..', 'logs', 'ITEM.md')
+ITEM_PARTY = lambda n: os.path.join(HERE, 'data', 'party', f'I5_{n}.json')
+ITEM_BASELINE_P = os.path.join(HERE, '..', 'logs', 'refine', 'slot4_8.json')
+ITEM_CORE_BOLD = ('C8', 'C10', 'C11')
+
+
+def _item_tag(n):
+    return 'R11' if n == 0 else f'I5_{n}'
+
+
+def _item_party(n):
+    """R11 with only [3].item replaced by candidate n."""
+    base = json.load(open(os.path.join(HERE, 'data', 'party', 'R11.json'), encoding='utf-8'))
+    assert base[3]['species'] == ITEM_AIRMED and base[3]['item'] == ITEM_BASE[0], (base[3]['species'], base[3]['item'])
+    new = json.loads(json.dumps(base))
+    new[3]['item'] = ITEM_CANDS[n][0]
+    return new
+
+
+def _item_verify(n):
+    """Spec 4.1 checks 1-5 for candidate n -> list of (name, ok, info)."""
+    jp, eid, _ = ITEM_CANDS[n]
+    tag = f'I5_{n}'
+    out = []
+    try:
+        new, base = refine.load_tag(tag), refine.load_tag('R11')
+        diffs = _diff_parties(new, base)
+        out.append(('1 差分が [3].item の1件だけ', len(diffs) == 1 and diffs[0][0] == '[3].item',
+                    f'{len(diffs)} 件 {[d[0] for d in diffs]}'))
+        try:
+            _init_party(tag)
+            out.append(('2 _init_party が通る（持ち物の重複なし）', True, ''))
+        except Exception as e:      # noqa: BLE001
+            out.append(('2 _init_party が通る（持ち物の重複なし）', False, repr(e)[:120]))
+            return out
+        st = B.engine_game([ITEM_AIRMED, 'カバルドン', 'ドヒドイデ'], ['ガブリアス', 'フラエッテ', 'カバルドン'])
+        m = st.sides[0].mons[st.sides[0].act]
+        ok3 = m.item == eid and m.ability == 'sturdy' and set(m.moves) == {'roost', 'whirlwind', 'bodypress', 'irondefense'}
+        out.append(('3 engine の持ち物・特性・技', ok3, f'{m.item}/{m.ability}/{list(m.moves)}'))
+        exp = {(p['species'].replace('メガ', '') if p['species'].startswith('メガ') else p['species']): dex.item_id(p['item'])
+               for p in refine.load_tag('R11') if p['species'] != ITEM_AIRMED}
+        got = {}
+        for grp in (['カバルドン', 'ドヒドイデ', 'マスカーニャ'], ['グレンアルマ', 'セグレイブ', ITEM_AIRMED]):
+            s2 = B.engine_game(grp, ['ガブリアス', 'フラエッテ', 'カバルドン'])
+            for mm in s2.sides[0].mons:
+                got[mm.name] = mm.item
+        got.pop(ITEM_AIRMED, None)
+        out.append(('4 他の5体の持ち物が R11 と同じ', got == exp and all(exp.values()), f'{got}'))
+    finally:
+        _init_party('R11')
+    st = B.engine_game([ITEM_AIRMED, 'カバルドン', 'ドヒドイデ'], ['ガブリアス', 'フラエッテ', 'カバルドン'])
+    m = st.sides[0].mons[st.sides[0].act]
+    out.append(('5 R11 に戻るとゴツゴツメット', m.item == ITEM_BASE[1], m.item))
+    return out
+
+
+def cmd_item_build(a):
+    allok = True
+    for n in sorted(ITEM_CANDS):
+        new = _item_party(n)
+        p = ITEM_PARTY(n)
+        if os.path.exists(p):
+            if json.load(open(p, encoding='utf-8')) == new:
+                state = '変更なし'
+            elif a.force:
+                json.dump(new, open(p, 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
+                state = '上書き'
+            else:
+                print(f'{p} が違う内容で存在します（--force で上書き）')
+                sys.exit(1)
+        else:
+            json.dump(new, open(p, 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
+            state = '作成'
+        res = _item_verify(n)
+        ok = all(r[1] for r in res)
+        allok &= ok
+        print(f"{n} {ITEM_CANDS[n][0]} {ITEM_CANDS[n][1]} [{state}] -> "
+              f"{'OK' if ok else 'NG ' + str([r[0] + ' ' + r[2] for r in res if not r[1]])}")
+    _init_party('R11')
+    print('item-build:', 'OK' if allok else 'NG')
+    return allok
+
+
+def cmd_item_selftest(a):
+    ok, bad = 0, []
+
+    def check(name, cond, info=''):
+        nonlocal ok
+        if cond:
+            ok += 1
+            print(f'  OK   {name}')
+        else:
+            bad.append(name)
+            print(f'  FAIL {name} {info}')
+
+    for n in sorted(ITEM_CANDS):
+        if not os.path.exists(ITEM_PARTY(n)):
+            check(f'I5_{n}.json がある', False, '（item-build を先に）')
+            continue
+        for name, cond, info in _item_verify(n):
+            check(f'候補{n} {name}', cond, info)
+    for tag, jpn, eid in (('I5_1', 'レッドカード', 'redcard'), ('I5_4', 'メンタルハーブ', 'mentalherb'), ('R11', 'ゴツゴツメット', 'rockyhelmet')):
+        if tag != 'R11' and not os.path.exists(os.path.join(HERE, 'data', 'party', f'{tag}.json')):
+            check(f'{tag} に切り替え', False, '（item-build を先に）')
+            continue
+        party = _init_party(tag)
+        sp = [p['species'] for p in party]
+        r11 = [p['species'] for p in refine.load_tag('R11')]
+        check(f'{tag} に切り替え: TEAM[3].item・_BASE_SPECIES・MY_TYPES',
+              B.TEAM[3].item == party[3]['item'] == jpn and dex.item_id(B.TEAM[3].item) == eid and refine._BASE_SPECIES == r11 == sp and
+              tuple(B.MY_TYPES) == tuple(tuple(m.types) for m in B.TEAM), (B.TEAM[3].item, refine._BASE_SPECIES))
+    base = json.load(open(ITEM_BASELINE_P, encoding='utf-8'))
+    check('slot4_8.json の sig == sig(R11)', base['sig'] == refine.sig(refine.load_tag('R11')))
+    print(f'item-selftest: {ok} 合格 / {len(bad)} 不合格 {bad}')
+    return not bad
+
+
+def _item_baseline(cores):
+    base = json.load(open(ITEM_BASELINE_P, encoding='utf-8'))      # read only
+    assert base['sig'] == refine.sig(refine.load_tag('R11')), 'slot4_8.json の sig が R11 と違う'
+    for kid in EVAL_IDS:
+        assert base['plan'][kid]['opp_order'] == cores['plan'][kid]['opp_order'], kid
+    return base
+
+
+def item_head(n, cores, base):
+    tag = _item_tag(n)
+    return {'version': ITEM_VERSION, 'cand': n, 'tag': tag, 'item': ITEM_BASE[0] if n == 0 else ITEM_CANDS[n][0],
+            'sig': refine.sig(refine.load_tag(tag)), 'base_sig': refine.sig(refine.load_tag('R11')),
+            'baseline_sig': base['sig'], 'source_sig': cores['sig'],
+            'policy_version': policy.POLICY_VERSION, 'depth': [5, OPP_DEPTH]}
+
+
+def item_load(n, cores, base, force=False):
+    p = ITEM_P(n)
+    head = item_head(n, cores, base)
+    if os.path.exists(p):
+        if force:
+            os.replace(p, p.replace('.json', '.' + datetime.datetime.now().strftime('%Y%m%d%H%M%S') + '.json'))
+        else:
+            d = json.load(open(p, encoding='utf-8'))
+            if any(d.get(k) != v for k, v in head.items()):
+                raise SystemExit(f'{p}: version / sig / base_sig / baseline_sig / source_sig / policy_version / depth が違います'
+                                 '（--force で退避して新しく始める）')
+            return d
+    return {**head, 'plan': {}, 'games': {}}
+
+
+def item_save(d):
+    p = ITEM_P(d['cand'])
+    os.makedirs(os.path.dirname(p), exist_ok=True)
+    safeio.write_json(p, d)
+
+
+def cmd_item_run(a):
+    n = a.cand
+    if n != 0 and n not in ITEM_CANDS:
+        raise SystemExit('--cand は 0〜4')
+    tag = _item_tag(n)
+    cores = _cores_raw()
+    base = _item_baseline(cores)
+    d = item_load(n, cores, base, a.force)
+    party = _init_party(tag)
+    for kid in EVAL_IDS:
+        if kid in d['plan']:
+            continue
+        t0 = time.time()
+        best, top = refine.blind_select(_team(kid))
+        bo = base['plan'][kid]['my_order']
+        d['plan'][kid] = {'my_order': best, 'my_top': top, 'opp_order': list(cores['plan'][kid]['opp_order']),
+                          'sec': round(time.time() - t0, 1), 'same_as_base': best == bo}
+        item_save(d)
+        print(f"plan {kid[:8]} {best} {'基準と同じ' if best == bo else '基準と違う ' + str(bo)} ({d['plan'][kid]['sec']}s)", flush=True)
+    nsame = sum(1 for p in d['plan'].values() if p['same_as_base'])
+    print(f'選出が基準と同じ {nsame}/{len(d["plan"])}', flush=True)
+    jobs = []
+    keys = [f'{kid}|0' for kid in EVAL_IDS[:5]] if n == 0 else [f'{kid}|{k}' for k in range(NGAMES) for kid in EVAL_IDS]
+    for key in keys:
+        if _todo(d, key):
+            kid, k = key.split('|')
+            bp = base['plan'][kid]
+            my = bp['my_order'] if n == 0 else d['plan'][kid]['my_order']     # cand 0: reproduce with slot4_8's own selection
+            jobs.append((key, tag, party, kid, my, bp['opp_order'], seed_of(kid, int(k))))
+    total = len(keys)
+    done_before = total - len(jobs)
+    if a.max_games:
+        jobs = jobs[:a.max_games]
+    print(f'実行 {len(jobs)} 戦（済み {done_before} / 全体 {total}）procs={a.procs}', flush=True)
+    secs = []
+    if jobs:
+        import multiprocessing as mp
+        ctx = mp.get_context('fork') if hasattr(os, 'fork') else mp.get_context('spawn')
+        t0 = time.time()
+        i = 0
+        with ctx.Pool(min(a.procs, len(jobs))) as pool:
+            for key, r in pool.imap_unordered(_work_slot4, jobs, chunksize=1):
+                kid, k = key.split('|')
+                bg = base['games'].get(key)
+                if n == 0 and bg and bg.get('res') is not None and r.get('res') is not None:
+                    r['repro'] = bg['res'] == r['res'] and _norm(bg['log']) == _norm(r['log'])
+                    r['repro_res'] = bg['res'] == r['res']
+                d['games'][key] = r
+                item_save(d)
+                i += 1
+                secs.append(r['sec'])
+                res = {1: '勝', -1: '負', 0: '分', None: '例外'}.get(r['res'], str(r['res']))
+                bres = '-' if not bg or bg.get('res') is None else ('○' if bg['res'] == 1 else '×')
+                print(f"[{done_before + i}/{total}] {kid[:8]}|{k} {res} {r.get('turns', '-')}T {r['sec']}s "
+                      f"経過{(time.time() - t0) / 60:.1f}分 基準{bres}", flush=True)
+                if r.get('error'):
+                    print('   error:', r['error'].strip().splitlines()[-1], flush=True)
+    if n == 0:
+        rg = [g for g in d['games'].values() if 'repro' in g]
+        print(f"選出の一致 {nsame}/{len(d['plan'])}、再現 res+log 一致 {sum(g['repro'] for g in rg)}/{len(rg)}"
+              f"（res のみ {sum(g['repro_res'] for g in rg)}/{len(rg)}）")
+    if secs:
+        ss = sorted(secs)
+        print(f'この実行の 1 戦あたり 平均 {sum(secs) / len(secs):.1f} 秒 / 中央値 {ss[len(ss) // 2]:.1f} 秒 '
+              f'（{len(secs)} 戦、最大 {ss[-1]:.1f} 秒）')
+
+
+# ---- report
+
+def _item_games(d):
+    out = {}
+    for key, g in d['games'].items():
+        if g.get('res') is not None:
+            kid, k = key.split('|')
+            out[(kid, int(k))] = g
+    return out
+
+
+def _item_foe_move(row):
+    m = row[3] if len(row) > 3 else ''
+    return m[2:] if m.startswith('M+') else m
+
+
+def _item_airmed(plan, games):
+    """Airmed statistics for one side of the comparison (plan: kid -> {my_order}, games: (kid,k) -> game)."""
+    import calc
+    s = dict(sel_g=0, sel_w=0, sel_teams=0, fld_g=0, fld_w=0, fld_turns=0, moves={}, kills=0, faint_g=0,
+             reasons={}, hint={'redcard': 0, 'occaberry': 0, 'wacanberry': 0, 'mentalherb': 0})
+    s['sel_teams'] = sum(1 for kid in {k[0] for k in games} if ITEM_AIRMED in plan[kid]['my_order'])
+    for (kid, k), g in games.items():
+        log = g.get('log') or []
+        w = g['res'] == 1
+        if ITEM_AIRMED in plan[kid]['my_order']:
+            s['sel_g'] += 1
+            s['sel_w'] += w
+        rows = [i for i, r in enumerate(log) if r[0] == ITEM_AIRMED]
+        if rows:
+            s['fld_g'] += 1
+            s['fld_w'] += w
+            s['fld_turns'] += len(rows)
+        seen = set()
+        for i in rows:
+            r = log[i]
+            fm = _item_foe_move(r)
+            info = calc.MOVE.get(fm)
+            if info:
+                if info['type'] == 'fire':
+                    seen.add('occaberry')
+                if info['type'] == 'electric':
+                    seen.add('wacanberry')
+                if info['cat'] != 'status':
+                    seen.add('redcard')
+            if fm in ('ちょうはつ', 'アンコール'):
+                seen.add('mentalherb')
+            if r[1] in ITEM_MOVES:
+                res = next((m[4] for m in g.get('mv', []) if m[0] == i + 1 and m[1] == ITEM_AIRMED and m[2] == r[1]), '?')
+                c = s['moves'].setdefault(r[1], {})
+                c[res] = c.get(res, 0) + 1
+        for h in seen:
+            s['hint'][h] += 1
+        for f in g.get('faints', []):
+            if f[1] == 1 and f[3] == ITEM_AIRMED:
+                s['kills'] += 1
+            if f[1] == 0 and f[2] == ITEM_AIRMED:
+                s['faint_g'] += 1
+                fm = _item_foe_move(log[f[0] - 1]) if 0 < f[0] <= len(log) else '?'
+                key = f'{f[3]}の{fm}'
+                s['reasons'][key] = s['reasons'].get(key, 0) + 1
+    return s
+
+
+def cmd_item_report(a):
+    import statistics
+    cores = _cores_raw()
+    base = _item_baseline(cores)
+    bplan = base['plan']
+    BG = _item_games(base)
+    D = {n: json.load(open(ITEM_P(n), encoding='utf-8')) for n in [0] + sorted(ITEM_CANDS) if os.path.exists(ITEM_P(n))}
+    G = {n: _item_games(d) for n, d in D.items()}
+    mark = lambda r: '○' if r == 1 else '×'
+    wins = lambda gs: sum(1 for g in gs if g['res'] == 1)
+    pct = lambda w, n: f'{100 * w / n:.0f}%' if n else '-'
+    L = []
+    bw = wins(BG.values())
+    bsel = [(kid, k) for (kid, k) in BG if ITEM_AIRMED in bplan[kid]['my_order']]
+    allsec = [g.get('sec', 0) for d in D.values() for g in d['games'].values()]
+    # ---- 1
+    L += ['# R11 のエアームドの持ち物 比較評価', '', '## 1. 条件', '',
+          '- R11 の4番目（エアームド＠ゴツゴツメット）の持ち物だけを4候補に差し替え。他の5体・種族・特性・性格・努力値・技は固定。',
+          '- 規則なし・ブラインド・自分5手／相手3手、最大30ターン。相手は EVAL_IDS の20構築、相手の選出は cores_R9.json の opp_order（slot4_8 と同じ）。'
+          '自分の選出は候補ごとに blind_select で再計算。種は crc32("core{構築id}{k}")、k=0〜4（100戦）。',
+          f'- 基準（slot4_8.json、読み取りのみ）: {bw}/{len(BG)}（{pct(bw, len(BG))}）、エアームド選出 '
+          f'{wins([BG[x] for x in bsel])}/{len(bsel)}（{pct(wins([BG[x] for x in bsel]), len(bsel))}）',
+          f'- 作成: {datetime.datetime.now():%Y-%m-%d %H:%M}、対戦の合計時間 {sum(allsec) / 3600:.1f} 時間（のべ、並列分を含む）']
+    for n, d in D.items():
+        s = [g['sec'] for g in d['games'].values() if g.get('sec') is not None and g.get('res') is not None]
+        if s:
+            L.append(f"- 1 戦の所要時間 {'確認(item_R11)' if n == 0 else f'候補{n}'}: 平均 {sum(s) / len(s):.0f} 秒 / 中央値 "
+                     f"{statistics.median(s):.0f} 秒（{len(s)} 戦）")
+    if 0 in D:
+        rg = [g for g in D[0]['games'].values() if 'repro' in g]
+        ns = sum(1 for p in D[0]['plan'].values() if p['same_as_base'])
+        L.append(f"- 再現確認（item_R11.json）: 選出の一致 {ns}/{len(D[0]['plan'])}、res+log 一致 "
+                 f"{sum(g['repro'] for g in rg)}/{len(rg)}（res のみ {sum(g['repro_res'] for g in rg)}/{len(rg)}）。基準の数字には使わない")
+    else:
+        L.append('- 再現確認（item_R11.json）: 未実行')
+    L += ['- 誤差: 100戦で ±10pt（95%）。同じ相手・同じ種の対比較なので差の誤差はこれより小さいが、±2勝は偶然で説明できる', '']
+    # ---- 2
+    L += ['## 2. 候補一覧', '', '| 番号 | 持ち物 | engine ID | 使用率 | 狙い | 技の運用の変化 |', '|---|---|---|---|---|---|',
+          f'| 0（基準） | {ITEM_BASE[0]} | {ITEM_BASE[1]} | {ITEM_USAGE[0]} | 接触技を受けて削る | {ITEM_MOVE_CHANGE[0]} |']
+    for n, (jp, eid, aim) in ITEM_CANDS.items():
+        L.append(f'| {n} | {jp} | {eid} | {ITEM_USAGE[n]} | {aim} | {ITEM_MOVE_CHANGE[n]} |')
+    L += ['', '- 技（はねやすめ／ふきとばし／ボディプレス／てっぺき）・努力値・性格・特性（がんじょう）は全候補で同じ。', '']
+    # ---- 3 results
+    P, rows = {}, {}
+    for n in ITEM_CANDS:
+        if n not in D:
+            rows[n] = None
+            continue
+        pairs = [x for x in G[n] if x in BG]
+        cw = sum(1 for x in pairs if G[n][x]['res'] == 1)
+        bww = sum(1 for x in pairs if BG[x]['res'] == 1)
+        up = sum(1 for x in pairs if BG[x]['res'] != 1 and G[n][x]['res'] == 1)
+        dn = sum(1 for x in pairs if BG[x]['res'] == 1 and G[n][x]['res'] != 1)
+        P[n] = pairs
+        rows[n] = dict(n=len(pairs), cw=cw, bw=bww, up=up, dn=dn, done=len(pairs) == len(EVAL_IDS) * NGAMES)
+    L += ['## 3. 勝ち数', '', '| 候補 | 勝ち/100 | 勝率 | 基準との差（勝ち） | 基準×→候補○ | 基準○→候補× | 判定 |', '|---|---|---|---|---|---|---|',
+          f'| 0 {ITEM_BASE[0]}（基準） | {bw}/{len(BG)} | {pct(bw, len(BG))} | - | - | - | - |']
+    adopt = []
+    for n, (jp, _, _) in ITEM_CANDS.items():
+        r = rows[n]
+        if r is None:
+            L.append(f'| {n} {jp} | 未実行 | - | - | - | - | 判定保留 |')
+            continue
+        diff = r['cw'] - r['bw']
+        if not r['done']:
+            v = f"判定保留（{r['n']}/100戦）"
+        elif diff >= 3:
+            v = '採用条件を満たす'
+            adopt.append((n, r['cw']))
+        elif diff <= -3:
+            v = '現状維持（悪化）'
+        else:
+            v = '現状維持（僅差）'
+        L.append(f"| {n} {jp} | {r['cw']}/{r['n']} | {pct(r['cw'], r['n'])} | {diff:+d}（基準 {r['bw']}） | {r['up']} | {r['dn']} | {v} |")
+    L.append('')
+    # ---- 4 airmed
+    S = {0: _item_airmed(bplan, BG)}
+    for n in D:
+        if n:
+            S[n] = _item_airmed(D[n]['plan'], G[n])
+    L += ['## 4. エアームドの出番', '', '| 候補 | 選出された構築数 | 選出試合 | 選出試合の勝率 | 場に出た試合 | 場に出た試合の勝率 | 場に出たターン数 |',
+          '|---|---|---|---|---|---|---|']
+    names = {0: f'0 {ITEM_BASE[0]}（基準）', **{n: f'{n} {c[0]}' for n, c in ITEM_CANDS.items()}}
+    for n in [0] + list(ITEM_CANDS):
+        if n not in S:
+            L.append(f'| {names[n]} | 未実行 | - | - | - | - | - |')
+            continue
+        s = S[n]
+        L.append(f"| {names[n]} | {s['sel_teams']} | {s['sel_g']} | {s['sel_w']}/{s['sel_g']}（{pct(s['sel_w'], s['sel_g'])}） | "
+                 f"{s['fld_g']} | {s['fld_w']}/{s['fld_g']}（{pct(s['fld_w'], s['fld_g'])}） | {s['fld_turns']} |")
+    L.append('')
+    # ---- 5 selection
+    L += ['## 5. 選出の変化', '']
+    for n in ITEM_CANDS:
+        if n not in D:
+            L.append(f'- 候補{n} {ITEM_CANDS[n][0]}: 未実行')
+            continue
+        d = D[n]
+        same = [kid for kid in EVAL_IDS if kid in d['plan'] and d['plan'][kid]['same_as_base']]
+        diff = [kid for kid in EVAL_IDS if kid in d['plan'] and not d['plan'][kid]['same_as_base']]
+        ps = [x for x in G[n] if x in BG and x[0] in same]
+        cw, bww = sum(1 for x in ps if G[n][x]['res'] == 1), sum(1 for x in ps if BG[x]['res'] == 1)
+        agree = sum(1 for x in ps if G[n][x]['res'] == BG[x]['res'])
+        L.append(f"- 候補{n} {ITEM_CANDS[n][0]}: 選出が基準と同じ {len(same)}/{len(d['plan'])} 構築。同じ構築だけの勝ち数 候補 {cw} vs 基準 {bww}"
+                 f"（{len(ps)}戦）、結果一致率 {pct(agree, len(ps))}")
+        for kid in diff:
+            marks = ''.join(mark(G[n][(kid, k)]['res']) if (kid, k) in G[n] else '-' for k in range(NGAMES))
+            bmarks = ''.join(mark(BG[(kid, k)]['res']) if (kid, k) in BG else '-' for k in range(NGAMES))
+            L.append(f"  - {kid[:8]}: {'→'.join(bplan[kid]['my_order'])}（基準 {bmarks}） → {'→'.join(d['plan'][kid]['my_order'])}（候補 {marks}）")
+    L.append('')
+    # ---- 6 moves
+    L += ['## 6. エアームドの使用技', '', '（log の自分側の技と mv の結果を突き合わせた回数。相手エアームドと同名技が同じターンに出た場合は先頭の結果を使う）', '',
+          '| 候補 | ' + ' | '.join(ITEM_MOVES) + ' | 倒した数 |', '|---|' + '---|' * (len(ITEM_MOVES) + 1)]
+    for n in [0] + list(ITEM_CANDS):
+        if n not in S:
+            L.append(f'| {names[n]} | 未実行 |' + ' |' * len(ITEM_MOVES))
+            continue
+        cells = []
+        for mv in ITEM_MOVES:
+            c = S[n]['moves'].get(mv, {})
+            cells.append(f"{sum(c.values())}（" + ' '.join(f'{k}{v}' for k, v in sorted(c.items())) + '）' if c else '0')
+        L.append(f"| {names[n]} | " + ' | '.join(cells) + f" | {S[n]['kills']} |")
+    L.append('')
+    # ---- 7 faint
+    L += ['## 7. エアームドが倒された理由の上位', '']
+    for n in [0] + list(ITEM_CANDS):
+        if n not in S:
+            L.append(f'- {names[n]}: 未実行')
+            continue
+        top = sorted(S[n]['reasons'].items(), key=lambda x: (-x[1], x[0]))[:5]
+        L.append(f"- {names[n]}: 倒された試合 {S[n]['faint_g']}。" + ('、'.join(f'{k} {v}' for k, v in top) if top else 'なし'))
+    L.append('')
+    # ---- 8 hints
+    L += ['## 8. 持ち物が関わった可能性のある場面（log からの推定）', '',
+          'エアームドが場にいるターンに、相手が該当の技を使った試合数（推定。実際に持ち物が発動したかは log からは分からない）。'
+          '技のタイプ・分類は calc.MOVE による。', '',
+          '| 候補 | 場面 | 試合数 |', '|---|---|---|']
+    for n, (jp, eid, _) in ITEM_CANDS.items():
+        what = {'redcard': '相手の攻撃技（初回）', 'occaberry': '相手の炎技', 'wacanberry': '相手の電気技',
+                'mentalherb': '相手のちょうはつ／アンコール'}[eid]
+        L.append(f"| {n} {jp} | {what} | {S[n]['hint'][eid]} 試合 |" if n in S else f'| {n} {jp} | {what} | 未実行 |')
+    L.append('')
+    # ---- 9 cores
+    L += ['## 9. 並び（C1〜C11）ごとの勝率（重複あり）', '', '| 並び | 基準 | ' + ' | '.join(f'候補{n}' for n in ITEM_CANDS) + ' |',
+          '|---|---|' + '---|' * len(ITEM_CANDS)]
+    for c in CORES:
+        kids = [kid for kid in EVAL_IDS if c['id'] in cores_of(kid)]
+        if not kids:
+            continue
+        nm = f"**{c['id']}**" if c['id'] in ITEM_CORE_BOLD else c['id']
+        bws = sum(1 for kid in kids for k in range(NGAMES) if (kid, k) in BG and BG[(kid, k)]['res'] == 1)
+        bn = sum(1 for kid in kids for k in range(NGAMES) if (kid, k) in BG)
+        cells = []
+        for n in ITEM_CANDS:
+            if n not in G:
+                cells.append('未実行')
+                continue
+            w = sum(1 for kid in kids for k in range(NGAMES) if (kid, k) in G[n] and G[n][(kid, k)]['res'] == 1)
+            nn = sum(1 for kid in kids for k in range(NGAMES) if (kid, k) in G[n])
+            cells.append(f'{w}/{nn}（{pct(w, nn)}）')
+        L.append(f'| {nm}（{len(kids)}構築） | {bws}/{bn}（{pct(bws, bn)}） | ' + ' | '.join(cells) + ' |')
+    L.append('')
+    # ---- 10 verdict
+    L += ['## 10. 採用判定', '',
+          '- 基準: 採用 = 100戦そろった候補で 候補の勝ち ≥ 基準の勝ち + 3（51勝以上）。差 −2〜+2 は現状維持（僅差）、−3 以下も現状維持（悪化）。'
+          '複数ならば勝ち数が多い方、同数なら番号の小さい方。未完了は判定保留。',
+          '- これは100戦で ±10pt の誤差の中での判定である。']
+    if adopt:
+        n = sorted(adopt, key=lambda x: (-x[1], x[0]))[0][0]
+        L.append(f'- 判定: **採用 → R12 案 = I5_{n}（エアームド＠{ITEM_CANDS[n][0]}）**。data/party/R12.json・ADOPTED.json は作っていない（ユーザー確認後）。')
+    elif all(rows[n] and rows[n]['done'] for n in ITEM_CANDS):
+        L.append(f'- 判定: **現状維持（{ITEM_BASE[0]}）**。採用条件を満たす候補なし。')
+    else:
+        L.append('- 判定: 判定保留（未完了または未実行の候補あり）。採用条件を満たした候補はまだ無い。')
+    out = a.out or ITEM_REPORT
+    os.makedirs(os.path.dirname(out) or '.', exist_ok=True)
+    open(out, 'w', encoding='utf-8').write('\n'.join(L) + '\n')
+    print(f'{out} を書きました（{len(L)} 行）')
+
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = ap.add_subparsers(dest='cmd', required=True)
@@ -1846,6 +2333,19 @@ def main():
     p.add_argument('--out')
     p.set_defaults(f=cmd_slot4_report)
     sub.add_parser('slot4-selftest').set_defaults(f=cmd_slot4_selftest)
+    p = sub.add_parser('item-build')
+    p.add_argument('--force', action='store_true')
+    p.set_defaults(f=cmd_item_build)
+    p = sub.add_parser('item-run')
+    p.add_argument('--cand', type=int, required=True)
+    p.add_argument('--procs', type=int, default=os.cpu_count() or 1)
+    p.add_argument('--max-games', type=int, default=0, dest='max_games')
+    p.add_argument('--force', action='store_true')
+    p.set_defaults(f=cmd_item_run)
+    p = sub.add_parser('item-report')
+    p.add_argument('--out')
+    p.set_defaults(f=cmd_item_report)
+    sub.add_parser('item-selftest').set_defaults(f=cmd_item_selftest)
     a = ap.parse_args()
     r = a.f(a)
     if r is False:
