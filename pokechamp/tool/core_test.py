@@ -1247,6 +1247,531 @@ def cmd_adjust_report(a):
     print(f'{out} に書きました（再戦 {n_rp}/対照 {n_ct}、6 手読み {n_dp[P]}/{n_dp[Bs]}）')
 
 
+# ---------------------------------------------------------------- slot 4 replacement (spec SPEC_SLOT4.md)
+
+S4_VERSION = 1
+S4_P = lambda n: os.path.join(HERE, '..', 'logs', 'refine', 'slot4_R9.json' if n == 0 else f'slot4_{n}.json')
+S4_REPORT = os.path.join(HERE, '..', 'logs', 'SLOT4.md')
+S4_PARTY = lambda n: os.path.join(HERE, 'data', 'party', f'S4_{n}.json')
+S4_EMP_RATE = (12, 25)          # R9 off: Empoleon selected 12 wins / 25 games
+S4_CORE_BOLD = ('C2', 'C11', 'C1', 'C10', 'C8')
+
+
+def _c4(species, item, ability, nature, ap, moves, eng, aim, overlap, hist):
+    return dict(species=species, item=item, ability=ability, nature=nature, ap=ap, moves=moves, eng=eng,
+                aim=aim, overlap=overlap, hist=hist)
+
+
+SLOT4_CANDS = {
+    1: _c4('アシレーヌ', 'しんぴのしずく', 'げきりゅう', 'ひかえめ', dict(hp=32, spa=32, spe=2),
+           ['うたかたのアリア', 'ムーンフォース', 'アクアジェット', 'アンコール'],
+           ('torrent', 'mysticwater', {'sparklingaria', 'moonblast', 'aquajet', 'encore'}),
+           '火力型。ドラゴンに上から打点、アンコールで積みを縛る',
+           'ドヒドイデと水が重なる（電気・草の一貫が増える）', 'あり（アシレーヌ 15 試合ぶん）'),
+    2: _c4('アシレーヌ', 'カゴのみ', 'げきりゅう', 'ずぶとい', dict(hp=32, defn=20, spa=14),
+           ['うたかたのアリア', 'ムーンフォース', 'めいそう', 'ねむる'],
+           ('torrent', 'chestoberry', {'sparklingaria', 'moonblast', 'calmmind', 'rest'}),
+           'めいそう＋ねむるで鋼・受け軸を崩す',
+           'ドヒドイデと水が重なる（電気・草の一貫が増える）。ねむるはドヒドイデの回復役と近い', 'あり（アシレーヌ 15 試合ぶん）'),
+    3: _c4('サーフゴー', 'シュカのみ', 'おうごんのからだ', 'ひかえめ', dict(hp=32, spa=32, spe=2),
+           ['シャドーボール', 'ゴールドラッシュ', 'わるだくみ', 'じこさいせい'],
+           ('goodasgold', 'shucaberry', {'shadowball', 'makeitrain', 'nastyplot', 'recover'}),
+           '耐久わるだくみ。ガブエッテ軸・ミミッキュへの回答',
+           'エンペルトと同じ鋼。じこさいせいはドヒドイデの回復役と重なる', 'なし'),
+    4: _c4('サーフゴー', 'ふうせん', 'おうごんのからだ', 'ひかえめ', dict(hp=2, spa=32, spe=32),
+           ['シャドーボール', 'ゴールドラッシュ', 'わるだくみ', '10まんボルト'],
+           ('goodasgold', 'airballoon', {'shadowball', 'makeitrain', 'nastyplot', 'thunderbolt'}),
+           '速い攻撃型。じしん無効で地面の受けが不要、鳥に打点',
+           'エンペルトと同じ鋼', 'なし'),
+    5: _c4('アーマーガア', 'ゴツゴツメット', 'ミラーアーマー', 'わんぱく', dict(hp=32, defn=32, spd=2),
+           ['はねやすめ', 'とんぼがえり', 'ボディプレス', 'てっぺき'],
+           ('mirrorarmor', 'rockyhelmet', {'roost', 'uturn', 'bodypress', 'irondefense'}),
+           '物理受け・クッション。じしん無効、ゴツメで接触を削る',
+           'ひこう。はねやすめはドヒドイデの回復役と重なる', 'なし'),
+    6: _c4('ガブリアス', 'ゴツゴツメット', 'さめはだ', 'いじっぱり', dict(hp=32, atk=32, defn=2),
+           ['じしん', 'げきりん', 'どくづき', 'ほのおのキバ'],
+           ('roughskin', 'rockyhelmet', {'earthquake', 'outrage', 'poisonjab', 'firefang'}),
+           'ドラゴン/じめんへの打点＋接触削り',
+           'カバルドンとじめん、メガセグレイブとドラゴンが重なり、氷4倍', 'あり（ガブリアス 17 試合ぶん）'),
+    7: _c4('ハッサム', 'ゴツゴツメット', 'テクニシャン', 'いじっぱり', dict(hp=32, atk=32, defn=2),
+           ['バレットパンチ', 'はたきおとす', 'つるぎのまい', 'はねやすめ'],
+           ('technician', 'rockyhelmet', {'bulletpunch', 'knockoff', 'swordsdance', 'roost'}),
+           '先制技でフラエッテ・ガブZ対策',
+           'エンペルトと同じ鋼。はねやすめはドヒドイデの回復役と重なる', 'なし'),
+    8: _c4('エアームド', 'ゴツゴツメット', 'がんじょう', 'わんぱく', dict(hp=32, defn=32, spd=2),
+           ['はねやすめ', 'ふきとばし', 'ボディプレス', 'てっぺき'],
+           ('sturdy', 'rockyhelmet', {'roost', 'whirlwind', 'bodypress', 'irondefense'}),
+           '物理受け＋ふきとばしで積みを流す',
+           'エンペルトと同じ鋼、ひこう。はねやすめはドヒドイデの回復役と重なる', 'なし'),
+    9: _c4('ギルガルド', 'のろいのおふだ', 'バトルスイッチ', 'いじっぱり', dict(hp=32, atk=32, defn=1, spd=1),
+           ['かげうち', 'キングシールド', 'ポルターガイスト', 'せいなるつるぎ'],
+           ('stancechange', 'spelltag', {'shadowsneak', 'kingsshield', 'poltergeist', 'sacredsword'}),
+           'ゴースト打点・先制技',
+           'エンペルトと同じ鋼', 'なし'),
+}
+
+
+def _s4_party(n):
+    """R9 with slot 4 (index 3, Empoleon) replaced by candidate n."""
+    c = SLOT4_CANDS[n]
+    base = json.load(open(os.path.join(HERE, 'data', 'party', 'R9.json'), encoding='utf-8'))
+    assert base[3]['species'] == EMP, base[3]['species']
+    new = json.loads(json.dumps(base))
+    new[3] = {'species': c['species'], 'nature': c['nature'], 'ap': dict(c['ap']), 'ability': c['ability'],
+              'item': c['item'], 'moves': list(c['moves']), 'label': c['species'][0] + c['species']}
+    return new
+
+
+def _s4_verify(n):
+    """Spec 4.1 checks 1-6 for candidate n -> list of (name, ok, info)."""
+    import calc
+    c = SLOT4_CANDS[n]
+    tag = f'S4_{n}'
+    out = []
+    try:
+        new, base = refine.load_tag(tag), refine.load_tag('R9')
+        diffs = _diff_parties(new, base)
+        out.append(('1 差分が [3].* だけ', bool(diffs) and all(p.startswith('[3].') for p, _, _ in diffs),
+                    f'{len(diffs)} 件'))
+        try:
+            _init_party(tag)
+            out.append(('2 _init_party が通る', True, ''))
+        except Exception as e:      # noqa: BLE001
+            out.append(('2 _init_party が通る', False, repr(e)[:120]))
+            return out
+        ls = calc.learnset(c['species'])
+        miss = [m for m in c['moves'] if m not in ls]
+        out.append(('3 技がすべて learnset に含まれる', not miss, f'不足 {miss}' if miss else ''))
+        st = B.engine_game([c['species'], 'カバルドン', 'ドヒドイデ'], ['ガブリアス', 'フラエッテ', 'カバルドン'])
+        side = st.sides[0]
+        m = side.mons[side.act]
+        ab, it, mv = c['eng']
+        ok4 = len(m.moves) == 4 and bool(m.ability) and bool(m.item) and \
+            (m.ability, m.item, set(m.moves)) == (ab, it, mv)
+        out.append(('4 engine の特性・持ち物・技4つ', ok4, f'{m.ability}/{m.item}/{list(m.moves)}'))
+        ty = tuple(calc.POKE[c['species']]['types'])
+        ok5 = tuple(B.MY_TYPES[3]) == ty and refine._BASE_SPECIES[3] == c['species'] and \
+            B.TEAM[3].species == c['species']
+        out.append(('5 MY_TYPES[3]・_BASE_SPECIES[3]', ok5, f'{B.MY_TYPES[3]} {refine._BASE_SPECIES[3]}'))
+    finally:
+        _init_party('R9')
+    ok6 = B.TEAM[3].species == EMP and tuple(B.MY_TYPES[3]) == ('water', 'steel')
+    out.append(('6 R9 に戻る', ok6, f'{B.TEAM[3].species} {B.MY_TYPES[3]}'))
+    return out
+
+
+def cmd_slot4_build(a):
+    import calc
+    allok = True
+    for n in sorted(SLOT4_CANDS):
+        new = _s4_party(n)
+        p = S4_PARTY(n)
+        if os.path.exists(p):
+            if json.load(open(p, encoding='utf-8')) == new:
+                state = '変更なし'
+            elif a.force:
+                json.dump(new, open(p, 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
+                state = '上書き'
+            else:
+                print(f'{p} が違う内容で存在します（--force で上書き）')
+                sys.exit(1)
+        else:
+            json.dump(new, open(p, 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
+            state = '作成'
+        res = _s4_verify(n)
+        ok = all(r[1] for r in res)
+        allok &= ok
+        c = SLOT4_CANDS[n]
+        mon = calc.Mon(c['species'], c['nature'], c['ap'], c['ability'], c['item'], c['moves'])
+        print(f"{n} {c['species']}＠{c['item']} {c['ability']} {c['nature']} {mon.sp_str()} / {'・'.join(c['moves'])} / "
+              f"{mon.stat_str()} [{state}] -> {'OK' if ok else 'NG ' + str([r[0] + ' ' + r[2] for r in res if not r[1]])}")
+    _init_party('R9')
+    print('slot4-build:', 'OK' if allok else 'NG')
+    return allok
+
+
+def cmd_slot4_selftest(a):
+    ok, bad = 0, []
+
+    def check(name, cond, info=''):
+        nonlocal ok
+        if cond:
+            ok += 1
+            print(f'  OK   {name}')
+        else:
+            bad.append(name)
+            print(f'  FAIL {name} {info}')
+
+    for n in sorted(SLOT4_CANDS):
+        if not os.path.exists(S4_PARTY(n)):
+            check(f'S4_{n}.json がある', False, '（slot4-build を先に）')
+            continue
+        for name, cond, info in _s4_verify(n):
+            check(f'候補{n} {name}', cond, info)
+    for tag in ('S4_1', 'S4_6', 'R9'):
+        party = _init_party(tag)
+        sp = [p['species'] for p in party]
+        check(f'{tag} に切り替え: TEAM・MY・MY_TYPES・_BASE_SPECIES',
+              [m.species for m in B.TEAM] == sp and refine._BASE_SPECIES == sp and
+              set(B.MY) >= {B.BASE_OF.get(s, s) for s in sp[3:4]} | {sp[3]} and
+              tuple(B.MY_TYPES) == tuple(tuple(m.types) for m in B.TEAM), (sp, list(B.MY)))
+    print(f'slot4-selftest: {ok} 合格 / {len(bad)} 不合格 {bad}')
+    return not bad
+
+
+# ---- result file
+
+def _s4_tag(n):
+    return 'R9' if n == 0 else f'S4_{n}'
+
+
+def s4_head(n, cores):
+    tag = _s4_tag(n)
+    return {'version': S4_VERSION, 'cand': n, 'tag': tag, 'sig': refine.sig(refine.load_tag(tag)),
+            'base_sig': refine.sig(refine.load_tag('R9')), 'source_sig': cores['sig'],
+            'policy_version': policy.POLICY_VERSION, 'depth': [5, OPP_DEPTH]}
+
+
+def s4_load(n, force=False):
+    p = S4_P(n)
+    cores = _cores_raw()
+    head = s4_head(n, cores)
+    if os.path.exists(p):
+        if force:
+            os.replace(p, p.replace('.json', '.' + datetime.datetime.now().strftime('%Y%m%d%H%M%S') + '.json'))
+        else:
+            d = json.load(open(p, encoding='utf-8'))
+            if any(d.get(k) != v for k, v in head.items()):
+                raise SystemExit(f'{p}: version / sig / base_sig / source_sig / policy_version / depth が違います'
+                                 '（--force で退避して新しく始める）')
+            return d
+    return {**head, 'plan': {}, 'games': {}}
+
+
+def s4_save(d):
+    p = S4_P(d['cand'])
+    os.makedirs(os.path.dirname(p), exist_ok=True)
+    safeio.write_json(p, d)
+
+
+def _work_slot4(job):
+    key, tag, party, kid, my_order, opp_order, seed = job
+    t0 = time.time()
+    try:
+        _init_party(tag)
+        r = refine.blind_play((party, kid, my_order, opp_order, seed, 5, OPP_DEPTH, False, None, True))
+    except Exception:
+        import traceback
+        r = {'res': None, 'error': traceback.format_exc()[-800:]}
+    r['seed'] = seed
+    r['sec'] = round(time.time() - t0, 1)
+    r['tag'] = tag
+    return key, r
+
+
+def _norm(x):
+    return json.loads(json.dumps(x, ensure_ascii=False))
+
+
+def cmd_slot4_run(a):
+    n = a.cand
+    if n not in SLOT4_CANDS and n != 0:
+        raise SystemExit('--cand は 0〜9')
+    tag = _s4_tag(n)
+    cores = _cores_raw()
+    d = s4_load(n, a.force)
+    party = _init_party(tag)
+    # plan (selection), one save per team
+    for kid in EVAL_IDS:
+        if kid in d['plan']:
+            continue
+        t0 = time.time()
+        best, top = refine.blind_select(_team(kid))
+        pl = {'my_order': best, 'my_top': top, 'opp_order': list(cores['plan'][kid]['opp_order']),
+              'sec': round(time.time() - t0, 1)}
+        if n == 0:
+            pl['match'] = best == cores['plan'][kid]['off']['my_order']
+        d['plan'][kid] = pl
+        s4_save(d)
+        print(f"plan {kid[:8]} {best}{' 一致' if pl.get('match') else ' 不一致' if n == 0 else ''} ({pl['sec']}s)", flush=True)
+    if n == 0:
+        print(f"選出の一致 {sum(1 for p in d['plan'].values() if p.get('match'))}/{len(d['plan'])}", flush=True)
+    # jobs
+    jobs = []
+    if n == 0:
+        want = [(kid, 0) for kid in EVAL_IDS[:5]] + [('6abd49d970032380', 3), ('6abd49d970032380', 4)]
+        for kid, k in want:
+            key = f'{kid}|{k}'
+            if _todo(d, key):
+                cp = cores['plan'][kid]
+                jobs.append((key, tag, party, kid, cp['off']['my_order'], cp['opp_order'], seed_of(kid, k)))
+    else:
+        for k in range(a.games):
+            for kid in EVAL_IDS:
+                key = f'{kid}|{k}'
+                if _todo(d, key):
+                    pl = d['plan'][kid]
+                    jobs.append((key, tag, party, kid, pl['my_order'], pl['opp_order'], seed_of(kid, k)))
+    total = len(jobs) + sum(1 for k, g in d['games'].items() if g.get('res') is not None)
+    done_before = total - len(jobs)
+    if a.max_games:
+        jobs = jobs[:a.max_games]
+    print(f'実行 {len(jobs)} 戦（済み {done_before} / 全体 {total}）procs={a.procs}', flush=True)
+    secs = []
+    if jobs:
+        import multiprocessing as mp
+        ctx = mp.get_context('fork') if hasattr(os, 'fork') else mp.get_context('spawn')
+        t0 = time.time()
+        i = 0
+        with ctx.Pool(min(a.procs, len(jobs))) as pool:
+            for key, r in pool.imap_unordered(_work_slot4, jobs, chunksize=1):
+                kid, k = key.split('|')
+                if n == 0:
+                    og = cores['games'].get(f'{kid}|off|{k}')
+                    if og and og.get('res') is not None and r.get('res') is not None:
+                        r['repro'] = og['res'] == r['res'] and _norm(og['log']) == _norm(r['log'])
+                        r['repro_res'] = og['res'] == r['res']
+                d['games'][key] = r
+                s4_save(d)
+                i += 1
+                secs.append(r['sec'])
+                res = {1: '勝', -1: '負', 0: '分', None: '例外'}.get(r['res'], str(r['res']))
+                extra = f" 再現{'○' if r['repro'] else '×'}" if 'repro' in r else ''
+                print(f"[{done_before + i}/{total}] {kid[:8]}|{k} {res} {r.get('turns', '-')}T {r['sec']}s "
+                      f"経過{(time.time() - t0) / 60:.1f}分{extra}", flush=True)
+                if r.get('error'):
+                    print('   error:', r['error'].strip().splitlines()[-1], flush=True)
+    if n == 0:
+        rg = [g for g in d['games'].values() if 'repro' in g]
+        print(f"再現 res+log 一致 {sum(g['repro'] for g in rg)}/{len(rg)}（res のみ {sum(g['repro_res'] for g in rg)}/{len(rg)}）、"
+              f"補完 {sum(1 for k in d['games'] if k.split('|')[1] in ('3', '4') and d['games'][k].get('res') is not None)}/2 戦")
+    if secs:
+        ss = sorted(secs)
+        print(f'この実行の 1 戦あたり 平均 {sum(secs) / len(secs):.1f} 秒 / 中央値 {ss[len(ss) // 2]:.1f} 秒 '
+              f'（{len(secs)} 戦、最大 {ss[-1]:.1f} 秒）')
+
+
+# ---- report
+
+def _s4_r9(cores, sup):
+    """{(kid, k): game} of R9 off, plus the two supplement games."""
+    out = {}
+    for key, g in cores['games'].items():
+        kid, mode, k = key.split('|')
+        if mode == 'off' and g.get('res') is not None:
+            out[(kid, int(k))] = g
+    for key, g in (sup or {}).get('games', {}).items():
+        kid, k = key.split('|')
+        if (kid, int(k)) not in out and g.get('res') is not None:
+            out[(kid, int(k))] = g
+    return out
+
+
+def _s4_games(d):
+    return {(k.split('|')[0], int(k.split('|')[1])): g for k, g in d['games'].items() if g.get('res') is not None}
+
+
+def _s4_sel(d, r9plan, kid, species):
+    return species in d['plan'].get(kid, {}).get('my_order', [])
+
+
+def cmd_slot4_report(a):
+    import statistics
+    cores = _cores_raw()
+    R9P = {kid: cores['plan'][kid]['off']['my_order'] for kid in EVAL_IDS}
+    sup = json.load(open(S4_P(0), encoding='utf-8')) if os.path.exists(S4_P(0)) else None
+    r9 = _s4_r9(cores, sup)
+    D = {}
+    for n in sorted(SLOT4_CANDS):
+        if os.path.exists(S4_P(n)):
+            D[n] = json.load(open(S4_P(n), encoding='utf-8'))
+    G = {n: _s4_games(d) for n, d in D.items()}
+    mark = lambda r: '○' if r == 1 else '×'
+    jp = lambda s: '→'.join(s)
+    wins = lambda gs: sum(1 for g in gs if g['res'] == 1)
+    L = []
+    allsec = [g.get('sec', 0) for d in D.values() for g in d['games'].values()]
+    if sup:
+        allsec += [g.get('sec', 0) for g in sup['games'].values()]
+    r9k = lambda ks: [r9[(kid, k)] for kid in EVAL_IDS for k in ks if (kid, k) in r9]
+    w3, n3 = wins(r9k(range(3))), len(r9k(range(3)))
+    w5, n5 = wins(r9k(range(5))), len(r9k(range(5)))
+    nsup = len(sup['games']) if sup else 0
+    L += ['# R9 の 4 番目（エンペルト）入れ替え評価', '',
+          '## 1. 条件', '',
+          '- R9 の 4 番目（エンペルト＠シュカのみ）だけを 9 候補に差し替え。残り 5 体は R9 のまま。規則なし（off 相当）・ブラインド・自分 5 手・相手 3 手、最大 30 ターン',
+          '- 相手: EVAL_IDS の 20 構築、相手の選出は cores_R9.json の opp_order。自分の選出は候補ごとに blind_select で再計算。種: crc32("core{構築id}{k}")（R9 off と同じ）',
+          f'- 対照（R9 off）: k0-2 {w3}/{n3}（{100 * w3 / max(n3, 1):.1f}%）、k0-4 {w5}/{n5}（{100 * w5 / max(n5, 1):.1f}%）'
+          f'、うちエンペルト選出 12/25（48.0%）。補完 2 戦（6abd49d9 の k3・k4）: {nsup}/2 戦済み',
+          f'- 作成: {datetime.datetime.now():%Y-%m-%d %H:%M}、対戦の合計時間 {sum(allsec) / 3600:.1f} 時間（のべ、並列分を含む）']
+    for n, d in D.items():
+        s = [g['sec'] for g in d['games'].values() if g.get('sec') is not None and g.get('res') is not None]
+        if s:
+            L.append(f'- 1 戦の所要時間 候補{n}: 平均 {sum(s) / len(s):.0f} 秒 / 中央値 {statistics.median(s):.0f} 秒（{len(s)} 戦）')
+    L += ['- 誤差: 60 戦で ±12pt、100 戦で ±10pt（95%）、並びごとは ±20% 程度。同じ相手・同じ種の対比較なので差の誤差はこれより小さいが、5 勝未満の差は偶然で説明できる', '']
+    # 2 candidates
+    import calc
+    L += ['## 2. 候補一覧', '',
+          '| 番号 | 種族＠持ち物 | 特性 | 性格 | 努力値 | 技 | 実数値 H-A-B-C-D-S | 狙い | 重なり | history_bonus の記録 |',
+          '|---|---|---|---|---|---|---|---|---|---|']
+    for n, c in SLOT4_CANDS.items():
+        mon = calc.Mon(c['species'], c['nature'], c['ap'], c['ability'], c['item'], c['moves'])
+        L.append(f"| {n} | {c['species']}＠{c['item']} | {c['ability']} | {c['nature']} | {mon.sp_str()} | {'・'.join(c['moves'])} | "
+                 f"{mon.stat_str()} | {c['aim']} | {c['overlap']} | {c['hist']} |")
+    L += ['', '- history_bonus は選出の点数に実戦の記録を足す既知の偏り。あり（候補 1・2・6）は選出にわずかな補正がかかる。実運用と同じ挙動なので外していない', '']
+    # 3 stage 1
+    rows = []
+    base1 = w3
+    for n, c in SLOT4_CANDS.items():
+        if n not in D:
+            rows.append((n, None))
+            continue
+        gs = {key: g for key, g in G[n].items() if key[1] < 3}
+        ws = wins(gs.values())
+        sel = [g for (kid, k), g in gs.items() if _s4_sel(D[n], R9P, kid, c['species'])]
+        done = len(gs) == len(EVAL_IDS) * 3
+        rows.append((n, dict(w=ws, n=len(gs), sel_n=len(sel), sel_w=wins(sel), done=done)))
+    cands_ok = [(n, r) for n, r in rows if r and r['done'] and r['w'] > base1]
+    cands_ok.sort(key=lambda x: (-x[1]['w'], -(x[1]['sel_w'] / x[1]['sel_n'] if x[1]['sel_n'] else 0), -x[1]['sel_w'], x[0]))
+    passed = [n for n, _ in cands_ok[:3]]
+    L += ['## 3. 段階 1（k=0〜2、60 戦）', '',
+          f'基準 R9 off の同じ 60 戦: {w3}/{n3}。通過 = 勝ち数 {base1 + 1} 以上の上位 3 つ（順位: 勝ち数、新メンバー選出試合の勝率、同勝ち数、候補番号）', '',
+          '| 候補 | 勝ち/戦数 | 勝率 | R9 との差 | 新メンバー選出試合 | その勝率 | 通過 |', '|---|---|---|---|---|---|---|']
+    L.append(f"| R9（エンペルト） | {w3}/{n3} | {100 * w3 / max(n3, 1):.1f}% | - | "
+             f"{wins([r9[(kid, k)] for kid in EVAL_IDS for k in range(3) if (kid, k) in r9 and EMP in R9P[kid]])}/"
+             f"{sum(1 for kid in EVAL_IDS for k in range(3) if (kid, k) in r9 and EMP in R9P[kid])} 勝/戦 | - | - |")
+    for n, r in rows:
+        c = SLOT4_CANDS[n]
+        nm = f"{n} {c['species']}＠{c['item']}"
+        if r is None:
+            L.append(f'| {nm} | 未実行 | | | | | |')
+            continue
+        pv = (f"○ {passed.index(n) + 1} 位" if n in passed else '×') if r['done'] else '未完了'
+        rate = f"{100 * r['sel_w'] / r['sel_n']:.0f}%" if r['sel_n'] else '-'
+        L.append(f"| {nm} | {r['w']}/{r['n']} | {100 * r['w'] / max(r['n'], 1):.1f}% | {r['w'] - base1:+d} | "
+                 f"{r['sel_n']} 戦 | {rate} | {pv} |")
+    if not passed and all(r and r['done'] for _, r in rows):
+        L += ['', '通過 0: 段階 2 は行わず「採用なし（現状維持）」']
+    L.append('')
+    # 4 stage 2
+    L += ['## 4. 段階 2（通過候補、k=0〜4、100 戦）', '',
+          f'対の集合 P = 候補と R9（off 98 戦＋補完 {nsup} 戦）の両方に結果がある (構築, k)。条件 A: P での勝ち数 ≥ R9 + 3。条件 B: 新メンバー選出 10 戦以上かつ勝率 ≥ 12/25（48.0%）', '',
+          '| 候補 | P の戦数 | 勝ち | R9 の勝ち | 勝率 | 差 | 新メンバー選出試合 | その勝率 | 条件A | 条件B | 採用 |',
+          '|---|---|---|---|---|---|---|---|---|---|---|']
+    adopt = []
+    st2 = [n for n in passed if any(k >= 3 for (_, k) in G.get(n, {}))]
+    for n in st2:
+        c = SLOT4_CANDS[n]
+        P = [key for key in G[n] if key in r9]
+        wc, wr = wins([G[n][p] for p in P]), wins([r9[p] for p in P])
+        sel = [G[n][p] for p in P if _s4_sel(D[n], R9P, p[0], c['species'])]
+        A = wc >= wr + 3
+        if len(sel) < 10:
+            Bv = None
+        else:
+            Bv = wins(sel) * S4_EMP_RATE[1] >= S4_EMP_RATE[0] * len(sel)
+        full = len(P) >= 98
+        ok = A and bool(Bv) and full
+        if ok:
+            adopt.append((n, wc / len(P), len(sel)))
+        bs = '判断不能（選出が少ない）' if Bv is None else '○' if Bv else '×'
+        L.append(f"| {n} {c['species']}＠{c['item']} | {len(P)} | {wc} | {wr} | {100 * wc / max(len(P), 1):.1f}% | {wc - wr:+d} | "
+                 f"{len(sel)} 戦 | {f'{100 * wins(sel) / len(sel):.0f}%' if sel else '-'} | {'○' if A else '×'} | {bs} | "
+                 f"{'○' if ok else '×' if full else '未完了'} |")
+    if not st2:
+        L.append('| （段階 2 は未実行） | | | | | | | | | | |')
+    L.append('')
+    # 5 cores
+    L += ['## 5. 並び（C1〜C11）ごとの勝率（候補 / R9 off、同じ (構築, k) の対で数える、重複あり）', '']
+    head = '| 並び | ' + ' | '.join(f'候補{n}' for n in D) + ' |'
+    L += [head, '|---' * (len(D) + 1) + '|']
+    for c in CORES:
+        cells = []
+        for n in D:
+            P = [key for key in G[n] if key in r9 and c['id'] in cores_of(key[0])]
+            cells.append(f"{wins([G[n][p] for p in P])}/{len(P)} vs {wins([r9[p] for p in P])}/{len(P)}" if P else '-')
+        nm = f"{c['id']} {c['name']}"
+        if c['id'] in S4_CORE_BOLD:
+            nm = f'**{nm}**'
+            cells = [f'**{x}**' for x in cells]
+        L.append(f"| {nm} | " + ' | '.join(cells) + ' |')
+    if not D:
+        L.append('| （未実行） |')
+    L.append('')
+    # 6 selections
+    L += ['## 6. 構築ごとの選出の変化', '']
+    for n in SLOT4_CANDS:
+        c = SLOT4_CANDS[n]
+        L.append(f"### 候補{n} {c['species']}＠{c['item']}")
+        if n not in D:
+            L += ['', '未実行', '']
+            continue
+        L += ['', '| 構築 | R9 off の選出 | 候補の選出 | 候補の各戦 | R9 の各戦 |', '|---|---|---|---|---|']
+        same_n = same_eq = 0
+        for kid in EVAL_IDS:
+            pl = D[n]['plan'].get(kid)
+            if not pl:
+                continue
+            ks = sorted({k for (kk, k) in G[n] if kk == kid})
+            cm = ''.join(mark(G[n][(kid, k)]['res']) for k in ks)
+            rm = ''.join(mark(r9[(kid, k)]['res']) if (kid, k) in r9 else '-' for k in ks)
+            if pl['my_order'] == R9P[kid]:
+                for k in ks:
+                    if (kid, k) in r9:
+                        same_n += 1
+                        same_eq += G[n][(kid, k)]['res'] == r9[(kid, k)]['res']
+            L.append(f"| {kid[:8]} | {jp(R9P[kid])} | {jp(pl['my_order'])}{' (同じ)' if pl['my_order'] == R9P[kid] else ''} | {cm or '-'} | {rm or '-'} |")
+        L += ['', f"選出が R9 と同じ構築での結果一致率: {same_eq}/{same_n}" + (f'（{100 * same_eq / same_n:.0f}%）' if same_n else ''), '']
+    # 7 moves
+    L += ['## 7. 新メンバーの使用技', '']
+    for n in SLOT4_CANDS:
+        c = SLOT4_CANDS[n]
+        if n not in D:
+            L += [f"- 候補{n} {c['species']}: 未実行"]
+            continue
+        sp = c['species']
+        use, resd, kills, turns, field = {}, {}, 0, 0, 0
+        for g in G[n].values():
+            on = sum(1 for l in g.get('log', []) if l[0] == sp)
+            turns += on
+            field += on > 0
+            for t, me, mvn, tg, r in g.get('mv', []):
+                if me != sp:
+                    continue
+                use[mvn] = use.get(mvn, 0) + 1
+                rr = resd.setdefault(mvn, {})
+                rr[r] = rr.get(r, 0) + 1
+                if r == 'hit' and any(f[0] == t and f[1] == 1 and f[2] == tg for f in g.get('faints', [])):
+                    kills += 1
+        L.append(f"- 候補{n} {sp}: {len(G[n])} 戦中 {field} 戦で場に出た（計 {turns} ターン）、倒した数 {kills}")
+        for mvn in c['moves']:
+            rr = resd.get(mvn, {})
+            L.append(f"  - {mvn}: {use.get(mvn, 0)} 回（命中 {rr.get('hit', 0)}・外れ {rr.get('miss', 0)}・守られ {rr.get('protect', 0)}・"
+                     f"無効 {rr.get('immune', 0)}・他 {sum(v for k, v in rr.items() if k not in ('hit', 'miss', 'protect', 'immune'))}）")
+    L.append('')
+    # 8 verdict
+    L += ['## 8. 採用判定', '']
+    if adopt:
+        adopt.sort(key=lambda x: (-x[1], -x[2], x[0]))
+        n = adopt[0][0]
+        c = SLOT4_CANDS[n]
+        L += [f"**採用: 候補{n} {c['species']}＠{c['item']}**（条件 A・B を満たす）", '',
+              f"- R11 案 = S4_{n}（data/party/S4_{n}.json）: 4 番目 {c['species']}＠{c['item']}、{c['ability']}、{c['nature']}、"
+              f"{calc.Mon(c['species'], c['nature'], c['ap'], c['ability'], c['item'], c['moves']).sp_str()}、{'・'.join(c['moves'])}",
+              '- data/party/R11.json はまだ作らない（ユーザーの確認後）']
+    elif st2 and all(len([k for k in G[n] if k in r9]) >= 98 for n in st2):
+        L += ['**採用なし（R9 のまま）**: 条件 A・B を両方満たす候補がない']
+    elif not D:
+        L += ['未実行']
+    else:
+        L += ['（途中の結果。段階 2 まで終わっていないので判定は未確定）']
+    L += ['', '注: 判定は 100 戦での ±10pt の誤差の中のものである。', '']
+    out = a.out or S4_REPORT
+    os.makedirs(os.path.dirname(os.path.abspath(out)), exist_ok=True)
+    open(out, 'w', encoding='utf-8').write('\n'.join(L) + '\n')
+    print(f'{out} に書きました（候補 {len(D)} 件、段階 1 通過 {passed}）')
+
+
 # ---------------------------------------------------------------- main
 
 def main():
@@ -1307,6 +1832,20 @@ def main():
     p.add_argument('--out')
     p.set_defaults(f=cmd_adjust_report)
     sub.add_parser('adjust-selftest').set_defaults(f=cmd_adjust_selftest)
+    p = sub.add_parser('slot4-build')
+    p.add_argument('--force', action='store_true')
+    p.set_defaults(f=cmd_slot4_build)
+    p = sub.add_parser('slot4-run')
+    p.add_argument('--cand', type=int, required=True)
+    p.add_argument('--games', type=int, default=3, choices=[3, 5])
+    p.add_argument('--procs', type=int, default=os.cpu_count() or 1)
+    p.add_argument('--max-games', type=int, default=0, dest='max_games')
+    p.add_argument('--force', action='store_true')
+    p.set_defaults(f=cmd_slot4_run)
+    p = sub.add_parser('slot4-report')
+    p.add_argument('--out')
+    p.set_defaults(f=cmd_slot4_report)
+    sub.add_parser('slot4-selftest').set_defaults(f=cmd_slot4_selftest)
     a = ap.parse_args()
     r = a.f(a)
     if r is False:
