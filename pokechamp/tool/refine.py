@@ -546,6 +546,13 @@ def blind_play(args):
     rules = args[8] if len(args) > 8 else None   # None: no action rules; else a tuple of policy rule ids (policy.py)
     trace = len(args) > 9 and args[9]         # True: also return 'mv', one record per move of ours (no effect on the game)
     excl = args[10] if len(args) > 10 and args[10] else ()   # extra article ids left out of the guesses (roundrobin.py)
+    deny = args[11] if len(args) > 11 and args[11] else (False, False)   # (side 0 / side 1 reads in deny mode, SPEC_DENY.md)
+    if deny[0] and args[8:9] and args[8] is not None:
+        raise ValueError('deny and rules cannot be combined')
+    import collections
+    dinfo = [{}, {}]
+    dstats = [collections.Counter(), collections.Counter()]
+    dturns = [0, 0]
     import sets as _sets
     _sets.EXCLUDE = {kid} | set(excl)          # the opponent's own article never feeds the guesses about it
     if party is not None:                      # None: the caller has already applied our party
@@ -577,11 +584,24 @@ def blind_play(args):
             if st.winner is not None:
                 break
             if ctx is None:
-                a0 = S.lookahead_action(st if know else belief(st, 1, t_opp, seen[1]), 0, my_depth)
+                if deny[0]:
+                    dinfo[0] = {}
+                    a0 = S.lookahead_action(st if know else belief(st, 1, t_opp, seen[1]), 0, my_depth, mode='deny', info=dinfo[0])
+                else:
+                    a0 = S.lookahead_action(st if know else belief(st, 1, t_opp, seen[1]), 0, my_depth)
             else:
                 bst = st if know else belief(st, 1, t_opp, seen[1])
                 a0, _rid = policy.choose(st, bst, policy.ranked_root(bst, my_depth), ctx)
-            a1 = S.lookahead_action(belief(st, 0, t_me, seen[0]), 1, opp_depth)
+            if deny[1]:
+                dinfo[1] = {}
+                a1 = S.lookahead_action(belief(st, 0, t_me, seen[0]), 1, opp_depth, mode='deny', info=dinfo[1])
+            else:
+                a1 = S.lookahead_action(belief(st, 0, t_me, seen[0]), 1, opp_depth)
+            for _s in (0, 1):
+                if deny[_s] and dinfo[_s].get('threats_root'):
+                    dturns[_s] += 1
+                    for _k, _a in dinfo[_s]['threats_root']:
+                        dstats[_s][_k] += 1
             log.append((st.active(0).name, _name(st, 0, a0), st.active(1).name, _name(st, 1, a1)))
             for i, a in ((0, a0), (1, a1)):
                 if a and a[0] == 'm' and a[1] != 'recharge':
@@ -613,7 +633,9 @@ def blind_play(args):
         left = [[(m.name, round(100 * m.hp / m.maxhp)) for m in s.mons] for s in st.sides]
         return {'res': res, 'log': log, 'faints': faints, 'left': left, 'fired': list(ctx.fired) if ctx else [],
                 'rocks_turn': rocks_turn, 'tox': tox, 'turns': len(log), 'judged': judged,
-                **({'mv': mv} if trace else {})}
+                **({'mv': mv} if trace else {}),
+                **({'deny_stats': {_s: {'turns': dturns[_s], 'kinds': dict(dstats[_s])} for _s in (0, 1) if deny[_s]}}
+                   if deny[0] or deny[1] else {})}
     except Exception:
         import traceback
         return {'res': None, 'error': traceback.format_exc()[-800:]}

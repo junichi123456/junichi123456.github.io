@@ -22,6 +22,11 @@ import dex
 HORIZON = 8          # turns looked ahead (tree + roll-out)
 MIN_DEPTH = 5        # tree depth the time budget is planned for
 PESS = 0.6
+DENY_PESS = 0.85      # deny mode (SPEC_DENY.md): reply mix 0.85*worst + 0.15*mean
+DENY_ROOT_THREATS = 2 # extra "winning line" replies added at the root
+DENY_W_SWEEP = 0.12   # penalty per effective boost stage of an unstopped sweeper
+DENY_W_PRIO = 0.25    # penalty when a priority move of the foe is in range
+DENY_SWEEP_CAP = 4    # cap on the effective stage
 FRONT_W = 0.15       # slight preference for attacks that are good against the foe in front (see front_bias)
 
 _HAZ = ('stealthrock', 'spikes', 'toxicspikes', 'stickyweb')
@@ -634,10 +639,12 @@ def play(st, max_turns=20, smart=False):
     return evaluate(st)
 
 
-def lookahead_action(st, i=0, depth=3, k_self=3, k_opp=2):
+def lookahead_action(st, i=0, depth=3, k_self=3, k_opp=2, mode=None, info=None):
     """Action for side i from a `depth`-turn simultaneous-move tree (side i's best k_self actions x the other side's
     best k_opp replies at every turn, most likely outcomes, PESS mix over replies), evaluated at the leaves.
     Used for whole-game play-outs (prep.py) where both sides read ahead the same way."""
+    if mode == 'deny':
+        return _lookahead_deny(st, i, depth, k_self, k_opp, info)
     acts = E.actions(st, i)
     if len(acts) <= 1:
         return acts[0] if acts else None
@@ -665,4 +672,123 @@ def lookahead_action(st, i=0, depth=3, k_self=3, k_opp=2):
         v = PESS * min(vs) + (1 - PESS) * sum(vs) / len(vs) + (front_bias(st, a) if i == 0 else 0)
         if v > bv:
             best, bv = a, v
+    return best
+
+
+# ---------------------------------------------------------------- deny mode (SPEC_DENY.md)
+def _threat_list(s, j):
+    """[(points, kind, action)] of side j's actions that are winning lines against side 1-j, best first."""
+    me, foe = _me(s, j), _foe(s, j)
+    if not me.alive or not foe.alive:
+        return []
+    i = 1 - j
+    acts = E.actions(s, j)
+    order = {a: n for n, (_, a) in enumerate(sorted(action_scores(s, j, acts), key=lambda x: -x[0]))}
+    out = []
+    for a in acts:
+        if a[0] != 'm':
+            continue
+        md = E.MOVES.get(a[1])
+        if md is None:
+            continue
+        if md.pri > 0 and md.cat != 'status' and est(s, j, a[1]) >= 1:
+            out.append((3, 'prio', a))
+            continue
+        bs = md.boosts if (md.boosts and md.target == 'self') else ((md.self_boost or {}).get('boosts') or {})
+        if bs and not boosts_ignored(foe, me) and any(
+                bs.get(k, 0) > 0 and me.boosts[k] < 6 for k in ('atk', 'spa', 'spe')):
+            out.append((2, 'setup', a))
+            continue
+        if md.side in _HAZ and md.target == 'foeSide':
+            c = s.sides[i].cond
+            if not c.get(md.side) or md.side in ('spikes', 'toxicspikes') and c.get(md.side, 0) < 2:
+                out.append((1, 'hazard', a))
+    sw = [(switch_score(s, j, a[1]), a) for a in acts if a[0] == 's']
+    if sw:
+        _, a = max(sw, key=lambda x: x[0])
+        if best_damage(s, i, target=s.sides[j].mons[a[1]]) < 0.5:
+            out.append((1.5, 'switch', a))
+    out.sort(key=lambda x: (-x[0], order.get(x[2], 99)))
+    return out
+
+
+def threat_replies(s, j, n):
+    return [a for _, _, a in _threat_list(s, j)[:n]]
+
+
+def deny_threat(s, i):
+    """Penalty for the winning lines the foe of side i still has in leaf state s."""
+    j = 1 - i
+    me, foe = _me(s, i), _foe(s, i)
+    if not me.alive or not foe.alive:
+        return 0.0
+    T = 0.0
+    if not boosts_ignored(foe, me):
+        off = foe.boosts['atk'] if foe.stat('atk') >= foe.stat('spa') else foe.boosts['spa']
+        eff = min(max(off, 0) + 0.5 * max(foe.boosts['spe'], 0), DENY_SWEEP_CAP)
+        if eff >= 1:
+            stop = best_damage(s, i) >= 1 and faster(s, i) >= 1
+            T += DENY_W_SWEEP * eff * (0.3 if stop else 1.0)
+    if faster(s, i) >= 1 and any(
+            (md := E.MOVES.get(x)) is not None and md.pri > 0 and md.cat != 'status' and est(s, j, x) >= 1
+            for x in foe.moves):
+        T += DENY_W_PRIO
+    return T
+
+
+def _dedupe(l):
+    out = []
+    for a in l:
+        if a not in out:
+            out.append(a)
+    return out
+
+
+def _lookahead_deny(st, i, depth, k_self, k_opp, info=None):
+    acts = E.actions(st, i)
+    if len(acts) <= 1:
+        return acts[0] if acts else None
+    sign = 1 if i == 0 else -1
+    j = 1 - i
+
+    def val(s, d):
+        if s.winner is not None or d == 0:
+            v = sign * evaluate(s)
+            if s.winner is not None:
+                v += 0.3 * sign * s.winner * d
+            else:
+                v -= deny_threat(s, i)
+            return v
+        mine = prune(s, i, k_self) if E.actions(s, i) else [None]
+        if E.actions(s, j):
+            h = prune(s, j, k_opp)
+            t = threat_replies(s, j, 1)
+            theirs = [h[0], t[0]] if h and t and t[0] not in h else h
+        else:
+            theirs = [None]
+        best = -1e9
+        for a in mine:
+            vs = [val(E.step(s, *((a, b) if i == 0 else (b, a)), chooser=chooser), d - 1) for b in theirs]
+            best = max(best, DENY_PESS * min(vs) + (1 - DENY_PESS) * sum(vs) / len(vs))
+        return best
+
+    tl = _threat_list(st, j) if E.actions(st, j) else []
+    top = tl[:DENY_ROOT_THREATS]
+    theirs = _dedupe(prune(st, j, k_opp) + [a for _, _, a in top]) if E.actions(st, j) else [None]
+    best, bv = None, -1e9
+    values, worst, lose = [], {}, []
+    for a in acts:
+        vs = [val(E.step(st, *((a, b) if i == 0 else (b, a)), chooser=chooser), depth - 1) for b in theirs]
+        v = DENY_PESS * min(vs) + (1 - DENY_PESS) * sum(vs) / len(vs) + (front_bias(st, a) if i == 0 else 0)
+        if info is not None:
+            m = min(range(len(vs)), key=lambda n: vs[n])
+            values.append((a, v))
+            worst[a] = theirs[m]
+            if vs[m] < -1.0:
+                lose.append((a, theirs[m], vs[m]))
+        if v > bv:
+            best, bv = a, v
+    if info is not None:
+        info.update({'mode': 'deny', 'values': values, 'worst': worst,
+                     'threats_root': [(k, a) for _, k, a in top], 'lose_lines': lose})
     return best

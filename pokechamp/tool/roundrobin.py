@@ -1302,6 +1302,495 @@ def cmd_selftest(a):
         shutil.rmtree(D, ignore_errors=True)
 
 
+# ---------------------------------------------------------------- deny モード (SPEC_DENY.md)
+def deny_paths(out_dir=None):
+    d = out_dir or DEF_OUT
+    return {'dir': d, 'games': os.path.join(d, 'rr_deny_games.json'), 'logs': os.path.join(d, 'rr_deny_logs.jsonl'),
+            'md': os.path.join(d, 'rr_deny_report.md')}
+
+
+def _job_deny(a):
+    key, X, Y, selX, selY, seed, deny = a
+    t0 = time.time()
+    try:
+        rr_apply(_TEAMS[X])
+        r = R.blind_play((None, Y, selX, selY, seed, DEPTH[0], DEPTH[1], False, None, False, (X,), deny))
+    except Exception:
+        r = {'res': None, 'error': traceback.format_exc()[-800:]}
+    r['key'] = key
+    r['sec'] = round(time.time() - t0, 2)
+    return r
+
+
+def deny_record(job, r):
+    key, X, Y, selX, selY, seed, deny = job
+    a, b, k = key.split(':', 1)[1].split('|')[-3:]
+    res = r.get('res')
+    w = None if res is None else (X if res == 1 else (Y if res == -1 else None))
+    rec = {'a': a, 'b': b, 'k': int(k), 'side0': X, 'side1': Y, 'sel0': selX, 'sel1': selY, 'seed': seed, 'res': res, 'winner': w,
+           'judged': r.get('judged'), 'turns': r.get('turns'), 'left': r.get('left'), 'faints': r.get('faints'),
+           'sec': r.get('sec'), 'error': r.get('error'), 'rematch': False, 'deny': list(deny)}
+    if r.get('deny_stats') is not None:
+        rec['deny_stats'] = r['deny_stats']
+    return rec
+
+
+def load_dgames(PD, sig):
+    if os.path.exists(PD['games']):
+        g = json.load(open(PD['games'], encoding='utf-8'))
+        if g.get('plan_sig') != sig:
+            raise SystemExit('rr_deny_games.json の plan_sig が rr_plan.json と違います')
+        return g
+    return {'version': RR_VERSION, 'plan_sig': sig, 'depth': list(DEPTH), 'mode': 'deny', 'games': {}}
+
+
+def _mk_job(plan, key, a, b, k, deny):
+    X, Y = game_sides(a, b, k)
+    if f'{X}|{Y}' not in plan['sel'] or f'{Y}|{X}' not in plan['sel']:
+        raise SystemExit(f'rr_plan.json に選出がありません: {X}|{Y}')
+    return (key, X, Y, plan['sel'][f'{X}|{Y}']['order'], plan['sel'][f'{Y}|{X}']['order'], game_seed(a, b, k), tuple(deny))
+
+
+TOP2 = ('bab22dcc629688e8', '096193444e19a2f0')
+
+
+def deny_jobs_full(plan):
+    pairs = circle_pairs(tier_ids(plan, 1))
+    return [_mk_job(plan, f'full:{a}|{b}|{k}', a, b, k, (True, True)) for k in range(6) for a, b in pairs]
+
+
+def deny_jobs_r11(plan):
+    out = []
+    for o in tier_ids(plan, 1):
+        if o == 'R11':
+            continue
+        a, b = pair_ab('R11', o)
+        for k in (0, 1):
+            X, Y = game_sides(a, b, k)
+            out.append(_mk_job(plan, f'deny:R11|{a}|{b}|{k}', a, b, k, (X == 'R11', Y == 'R11')))
+    return out
+
+
+def deny_jobs_top2(plan):
+    A, Bn = TOP2
+    a, b = pair_ab(A, Bn)
+    out = []
+    for k in range(10):
+        X, Y = game_sides(a, b, k)
+        out.append(_mk_job(plan, f'deny:{A}|{a}|{b}|{k}', a, b, k, (X == A, Y == A)))
+        out.append(_mk_job(plan, f'deny:{Bn}|{a}|{b}|{k}', a, b, k, (X == Bn, Y == Bn)))
+        if k >= 6:
+            out.append(_mk_job(plan, f'base:{a}|{b}|{k}', a, b, k, (False, False)))
+    return out
+
+
+def run_deny_jobs(PD, plan, games, jobs, procs, retry, max_games, label=''):
+    todo = [j for j in jobs if not done_game(games, j[0], not retry)]
+    tot = len(jobs)
+    base = tot - len(todo)
+    if max_games:
+        todo = todo[:max_games]
+    print(f'{label}全体 {tot}戦、済み {base}、今回 {len(todo)}戦', flush=True)
+    if not todo:
+        return 0
+    os.makedirs(PD['dir'], exist_ok=True)
+    t0 = time.time()
+    n = 0
+    with make_pool(procs, plan['teams']) as pool:
+        for r in pool.imap_unordered(_job_deny, todo, chunksize=1):
+            n += 1
+            job = next(j for j in todo if j[0] == r['key'])
+            games['games'][r['key']] = deny_record(job, r)
+            safeio.write_json(PD['games'], games)
+            if r.get('log') is not None:
+                lg = {'logs': PD['logs']}
+                append_log(lg, r['key'], r['log'])
+            mark = '例外' if r.get('res') is None else ('勝' if r['res'] == 1 else '負')
+            el = (time.time() - t0) / 60
+            rem = el / n * (len(todo) - n)
+            print(f"[{base + n}/{tot}] {r['key']} {job[1][:8]}側{mark} {r.get('turns')}手 {r['sec']:.0f}秒 経過{el:.1f}分 残り約{rem:.1f}分", flush=True)
+    return n
+
+
+def cmd_deny_run(a, full=False):
+    plan = load_plan(paths(None))
+    PD = deny_paths(a.out_dir)
+    games = load_dgames(PD, plan['sig'])
+    if full:
+        run_deny_jobs(PD, plan, games, deny_jobs_full(plan), a.procs, a.retry_errors, a.max_games, 'full ')
+        return
+    jobs = []
+    if a.part in ('r11', 'all'):
+        jobs += deny_jobs_r11(plan)
+    if a.part in ('top2', 'all'):
+        jobs += deny_jobs_top2(plan)
+    run_deny_jobs(PD, plan, games, jobs, a.procs, a.retry_errors, a.max_games)
+
+
+def _binom_p(b, c):
+    n = b + c
+    if n == 0:
+        return 1.0
+    m = min(b, c)
+    return min(1.0, 2 * sum(math.comb(n, x) for x in range(m + 1)) / 2 ** n)
+
+
+def _avg(l):
+    l = [x for x in l if x is not None]
+    return sum(l) / len(l) if l else 0.0
+
+
+def cmd_deny_report(a):
+    P0 = paths(None)
+    plan = load_plan(P0)
+    base = load_games(P0, plan['sig'])
+    PD = deny_paths(a.out_dir)
+    dg = load_dgames(PD, plan['sig'])['games']
+    ids1 = tier_ids(plan, 1)
+    ttl = lambda i: f"{plan['teams'][i]['title'][:16]}({i[:6]})"
+    L = ['# deny モード（相手の勝ち筋を潰す読み）の結果', '', f'- 条件: 4手読み・rr_plan.json の選出・種規則は本戦と同じ。deny 結果 {len(dg)}戦（{PD["games"]}）', '']
+    # --- 順位比較
+    full = {k: v for k, v in dg.items() if k.startswith('full:')}
+    nbase = {k: v for k, v in base['games'].items() if not v.get('rematch') and v['side0'] in ids1 and v['side1'] in ids1}
+    if full:
+        rk0, st0 = ranking(plan, {'games': nbase}, ids1)
+        rk1, st1 = ranking(plan, {'games': full}, ids1)
+        L += ['## 通常 対 deny（第1段階・両側 deny）', '', '| 構築 | 通常 勝率 | 通常 順位 | deny 勝率 | deny 順位 | 順位差 | deny 95% | 判定(通常/deny) | 平均ターン(通常/deny) |', '|---|---|---|---|---|---|---|---|---|']
+        trn = lambda gs, x: _avg([g['turns'] for g in gs.values() if g['res'] is not None and x in (g['side0'], g['side1'])])
+        moved = []
+        for n1, i in enumerate(rk1, 1):
+            n0 = rk0.index(i) + 1
+            s0, s1 = st0[i], st1[i]
+            lo, hi = wilson(s1['W'], s1['G'])
+            L.append(f"| {ttl(i)} | {s0['W']:g}/{s0['G']}={s0['W'] / max(1, s0['G']) * 100:.1f}% | {n0} | {s1['W']:g}/{s1['G']}={s1['W'] / max(1, s1['G']) * 100:.1f}% | {n1} | {n0 - n1:+d} | "
+                     f"{lo * 100:.0f}-{hi * 100:.0f}% | {s0['J']}/{s1['J']} | {trn(nbase, i):.1f}/{trn(full, i):.1f} |")
+            if abs(n0 - n1) >= 5:
+                moved.append(f'{ttl(i)} {n0}位→{n1}位')
+        L += ['', f"- R11 の順位: 通常 {rk0.index('R11') + 1}位 → deny {rk1.index('R11') + 1}位（/{len(ids1)}）" if 'R11' in ids1 else '- R11 は第1段階に無い']
+        jn = sum(1 for g in nbase.values() if g.get('judged'))
+        jd = sum(1 for g in full.values() if g.get('judged'))
+        L.append(f"- 判定決着: 通常 {jn}/{len(nbase)}、deny {jd}/{len(full)}。平均ターン: 通常 {_avg([g['turns'] for g in nbase.values() if g['res'] is not None]):.1f}、deny {_avg([g['turns'] for g in full.values() if g['res'] is not None]):.1f}")
+        L.append('- 順位が5以上動いた構築: ' + ('、'.join(moved) if moved else 'なし'))
+        f01 = {k: v for k, v in full.items() if v['k'] in (0, 1)}
+        L += ['', '### k=0,1 だけの勝率（同じ種どうし）', '', '| 構築 | 通常 | deny(k=0,1) |', '|---|---|---|']
+        for i in rk1:
+            s0 = st0[i]
+            s1 = team_stats(plan, {'games': f01}, [i])[i]
+            L.append(f"| {ttl(i)} | {s0['W']:g}/{s0['G']} | {s1['W']:g}/{s1['G']} |")
+        L += ['', '- 注記: 通常は1ペア2戦、deny は6戦で戦数が違う。順位差は区間の幅を見て読むこと。', '']
+    # --- r11
+    r11 = {k: v for k, v in dg.items() if k.startswith('deny:R11|')}
+    if r11:
+        rows = []
+        for k, g in r11.items():
+            nk = k.split(':', 1)[1].split('|', 1)[1]
+            n = base['games'].get(nk)
+            if n and g['res'] is not None and n['res'] is not None:
+                rows.append((g, n))
+        wn = sum(_wr(n, 'R11') for _, n in rows)
+        wd = sum(_wr(g, 'R11') for g, _ in rows)
+        N = len(rows)
+        lo, hi = wilson(wd, N)
+        L += ['## A/B 1: R11 が deny（対 他24構築 × k=0,1）', '',
+              f'- 通常 {wn:g}/{N}、deny {wd:g}/{N}（deny の Wilson 95%: {lo * 100:.0f}-{hi * 100:.0f}%）',
+              f"- 判定決着 通常/deny: {sum(1 for _, n in rows if n.get('judged'))}/{sum(1 for g, _ in rows if g.get('judged'))}、平均ターン {_avg([n['turns'] for _, n in rows]):.1f}/{_avg([g['turns'] for g, _ in rows]):.1f}、平均秒 {_avg([n['sec'] for _, n in rows]):.1f}/{_avg([g['sec'] for g, _ in rows]):.1f}"]
+        flips, up, dn = [], 0, 0
+        per = collections.defaultdict(lambda: [0, 0])
+        for g, n in rows:
+            o = g['a'] if g['b'] == 'R11' else g['b']
+            x, y = _wr(n, 'R11'), _wr(g, 'R11')
+            per[o][0] += x
+            per[o][1] += y
+            if x != y:
+                flips.append(f"{ttl(o)} k={g['k']}: 通常{'勝' if x == 1 else '負' if x == 0 else '分'} → deny{'勝' if y == 1 else '負' if y == 0 else '分'}")
+                up += y > x
+                dn += y < x
+        L += ['- 勝敗が入れ替わった対戦: ' + (str(len(flips)) + '件')] + [f'  - {f}' for f in flips]
+        L.append('- 相手構築ごとの勝数の変化（通常→deny）: ' + '、'.join(f'{ttl(o)} {v[0]:g}→{v[1]:g}' for o, v in per.items() if v[0] != v[1]))
+        L.append(f'- 符号検定（McNemar 正確）: 通常負→deny勝 {up}、通常勝→deny負 {dn}、p={_binom_p(up, dn):.3f}。48戦では有意差は期待しにくい。判断材料は勝ち数と入れ替わりの中身。')
+        L.append('')
+    # --- top2
+    A, Bn = TOP2
+    t2 = {k: v for k, v in dg.items() if k.startswith(('deny:' + A, 'deny:' + Bn, 'base:'))}
+    if t2:
+        a, b = pair_ab(A, Bn)
+        cond = {'N': {}, 'DA': {}, 'DB': {}}
+        for k in range(10):
+            ng = base['games'].get(f'{a}|{b}|{k}') if k < 6 else dg.get(f'base:{a}|{b}|{k}')
+            if ng:
+                cond['N'][k] = ng
+            if f'deny:{A}|{a}|{b}|{k}' in dg:
+                cond['DA'][k] = dg[f'deny:{A}|{a}|{b}|{k}']
+            if f'deny:{Bn}|{a}|{b}|{k}' in dg:
+                cond['DB'][k] = dg[f'deny:{Bn}|{a}|{b}|{k}']
+        L += ['## A/B 2: 上位2構築（A=' + ttl(A) + '、B=' + ttl(Bn) + '）', '', '| 条件 | A側の勝ち | 判定決着 | 平均ターン |', '|---|---|---|---|']
+        wins = {}
+        for c, gs in cond.items():
+            gs = {k: g for k, g in gs.items() if g['res'] is not None}
+            wins[c] = {k: _wr(g, A) for k, g in gs.items()}
+            L.append(f"| {c} | {sum(wins[c].values()):g}/{len(gs)} | {sum(1 for g in gs.values() if g.get('judged'))} | {_avg([g['turns'] for g in gs.values()]):.1f} |")
+        for c, nm in (('DA', 'DA−N（A が deny を使った効果）'), ('DB', 'N−DB（B が deny を使った効果）')):
+            ks = sorted(set(wins[c]) & set(wins['N']))
+            up = sum(1 for k in ks if (wins[c][k] > wins['N'][k]) == (c == 'DA') and wins[c][k] != wins['N'][k])
+            dn = sum(1 for k in ks if wins[c][k] != wins['N'][k]) - up
+            L.append(f'- {nm}: 共通{len(ks)}戦で向きが変わった {up + dn}件（効果の向き {up}、逆 {dn}）、McNemar p={_binom_p(up, dn):.3f}')
+        L += ['- 注記: 戦数が少なく有意差は期待しにくい。', '']
+    # --- deny_stats
+    tot = collections.Counter()
+    turns = 0
+    for g in dg.values():
+        for s in (g.get('deny_stats') or {}).values():
+            tot.update(s.get('kinds', {}))
+            turns += s.get('turns', 0)
+    L += ['## deny_stats（根で勝ち筋の手が見つかった件数・種類別）', '', f'- 該当ターン延べ {turns}、種類別: ' + (', '.join(f'{k}×{v}' for k, v in tot.most_common()) or 'なし'), '']
+    os.makedirs(PD['dir'], exist_ok=True)
+    open(PD['md'], 'w', encoding='utf-8').write('\n'.join(L) + '\n')
+    print(f"書きました: {PD['md']}")
+
+
+def _sha_all():
+    d = {}
+    for root, _, fs in os.walk(os.path.join(HERE, '..', 'logs', 'refine')):
+        for f in fs:
+            p = os.path.join(root, f)
+            d[p] = hashlib.sha256(open(p, 'rb').read()).hexdigest()
+    d.update(sha_files())
+    return d
+
+
+def _setup_moves(m):
+    out = []
+    for x in m.moves:
+        md = E_MOVES.get(x)
+        if md is None:
+            continue
+        bs = md.boosts if (md.boosts and md.target == 'self') else ((md.self_boost or {}).get('boosts') or {})
+        if any(bs.get(k, 0) > 0 for k in ('atk', 'spa', 'spe')):
+            out.append(x)
+    return out
+
+
+def _prio_moves(m):
+    return [x for x in m.moves if E_MOVES.get(x) is not None and E_MOVES[x].pri > 0 and E_MOVES[x].cat != 'status']
+
+
+def cmd_deny_selftest(a):
+    import shutil, subprocess, tempfile, statistics as stt
+    import search as S
+    import engine as E
+    global E_MOVES
+    E_MOVES = E.MOVES
+    keep = bool(a.out_dir)
+    D = a.out_dir or tempfile.mkdtemp(prefix='rrdeny_')
+    os.makedirs(D, exist_ok=True)
+    results = []
+
+    def ok(n, cond, msg=''):
+        results.append((n, bool(cond)))
+        print(f"{'○' if cond else '×'} {n} {msg}", flush=True)
+
+    P0 = paths(None)
+    before = _sha_all()
+    p = subprocess.run([sys.executable, '-m', 'py_compile', 'search.py', 'refine.py', 'roundrobin.py'], cwd=HERE, capture_output=True, text=True)
+    ok('1 py_compile', p.returncode == 0, p.stderr[-200:])
+    plan = load_plan(P0)
+    base = load_games(P0, plan['sig'])['games']
+    logs = {r['key']: r['log'] for r in read_jsonl(P0['logs'])}
+    _worker_init(plan['teams'])
+    j = lambda o: json.loads(json.dumps(o))
+
+    # ---- 局面の記録つきでゲームを回す
+    rec = []
+    calls = []
+    orig = S.lookahead_action
+
+    def wrap(st, i=0, depth=3, k_self=3, k_opp=2, mode=None, info=None):
+        calls.append((i, mode))
+        if mode is None:
+            rec.append((st.clone(), i, depth))
+        return orig(st, i, depth, k_self, k_opp, mode=mode, info=info)
+
+    def inproc(key, deny=None, variant=None):
+        a_, b_, k_ = key.split('|')
+        job = _mk_job(plan, key, a_, b_, int(k_), (False, False))
+        calls.clear()
+        S.lookahead_action = wrap
+        try:
+            args = (None, job[2], job[3], job[4], job[5], DEPTH[0], DEPTH[1], False, None, False, (job[1],))
+            if variant == 'none':
+                args += (None,)
+            elif variant == 'tuple':
+                args += (deny,)
+            rr_apply(_TEAMS[job[1]])
+            return R.blind_play(args)
+        finally:
+            S.lookahead_action = orig
+
+    r11 = sorted([k for k, g in base.items() if 'R11' in (g['a'], g['b']) and not g.get('rematch') and g['res'] is not None], key=lambda k: base[k]['turns'])
+    A_, B_ = TOP2
+    t2 = [k for k, g in base.items() if {g['a'], g['b']} == {A_, B_} and not g.get('rematch') and g['res'] is not None]
+    keys = [r11[0], r11[1], t2[0]]
+    allok = True
+    for key in keys:
+        r = inproc(key)
+        g = base[key]
+        same = all(j(r[f]) == j(g[f]) for f in ('res', 'turns', 'judged', 'left', 'faints')) and j(r['log']) == j(logs[key])
+        allok &= same
+        print(f'   従来 {key[:24]}.. 一致={same}', flush=True)
+    ok('2a 従来3戦 res/turns/judged/left/faints/log 完全一致', allok)
+    key0 = keys[0]
+    for nm, var, dn in (('args[11]=None', 'none', None), ('args[11]=(False,False)', 'tuple', (False, False))):
+        r = inproc(key0, dn, var)
+        g = base[key0]
+        same = all(j(r[f]) == j(g[f]) for f in ('res', 'turns', 'judged', 'left', 'faints')) and j(r['log']) == j(logs[key0]) and 'deny_stats' not in r
+        ok(f'2b {nm} で同一', same)
+    positions = list(rec)
+    # ---- 片側 deny
+    r = inproc(key0, (True, False), 'tuple')
+    s0 = {i for i, m in calls if m == 'deny'}
+    n0 = {i for i, m in calls if m is None}
+    ok('4a (True,False): 側0だけ deny', s0 == {0} and n0 == {1} and set(r.get('deny_stats', {})) == {0}, f"deny側={s0} 通常側={n0} stats={list(r.get('deny_stats', {}))}")
+    r = inproc(key0, (False, True), 'tuple')
+    s0 = {i for i, m in calls if m == 'deny'}
+    n0 = {i for i, m in calls if m is None}
+    ok('4b (False,True): 側1だけ deny', s0 == {1} and n0 == {0} and set(r.get('deny_stats', {})) == {1}, f"deny側={s0} 通常側={n0} stats={list(r.get('deny_stats', {}))}")
+    # ---- 局面テスト
+    def both(st, i, d=4):
+        info = {}
+        S._EC.clear()
+        a1 = S.lookahead_action(st, i, d)
+        S._EC.clear()
+        a2 = S.lookahead_action(st, i, d, mode='deny', info=info)
+        return a1, a2, info
+
+    def fmt_a(x):
+        return None if x is None else (x[1] if x[0] == 'm' else f'交代{x[1]}')
+
+    def show(tag, i, a1, a2, info):
+        print(f"   {tag} 側{i}: 従来={fmt_a(a1)} deny={fmt_a(a2)} threats_root={[(k, fmt_a(x)) for k, x in info.get('threats_root', [])]}", flush=True)
+
+    pos0 = [(st, i) for st, i, d in positions if len(E.actions(st, i)) > 1]
+    cnt = {'T1': [0, 0], 'T2': [0, 0], 'T3': [0, 0], 'T4': [0, 0]}
+    shown = collections.Counter()
+
+    def rec_test(t, st, i, tag):
+        a1, a2, info = both(st, i)
+        cnt[t][0] += 1
+        cnt[t][1] += a1 != a2
+        if shown[t] < 3 or (a1 != a2 and shown[t + 'd'] < 2):
+            show(f'{t} {tag}', i, a1, a2, info)
+            shown[t] += 1
+            shown[t + 'd'] += a1 != a2
+        return a1, a2, info
+
+    def mons(st, i):
+        me = st.sides[i].mons[st.sides[i].act]
+        foe = st.sides[1 - i].mons[st.sides[1 - i].act]
+        return me, foe
+
+    sample = pos0[::max(1, len(pos0) // 12)][:12]
+    for st, i in sample:
+        # T1: 相手に積み技を持たせる（無ければ つるぎのまい を足す）
+        s = st.clone()
+        me, foe = mons(s, i)
+        if not me.alive or not foe.alive:
+            continue
+        if not _setup_moves(foe):
+            foe.moves = list(foe.moves) + ['swordsdance']
+        rec_test('T1', s, i, '積み技持ち')
+        # T2: 相手が +2
+        s = st.clone()
+        me, foe = mons(s, i)
+        foe.boosts['atk'] = 2
+        foe.boosts['spa'] = 2
+        rec_test('T2', s, i, '相手+2')
+        # T3: 先制技圏内
+        s = st.clone()
+        me, foe = mons(s, i)
+        if not _prio_moves(foe):
+            foe.moves = list(foe.moves) + ['extremespeed']
+        me.hp = max(1, me.maxhp // 12)
+        me.boosts['spe'] = 6
+        rec_test('T3', s, i, '先制圏内')
+        # T4: 脅威なし（積み・先制技を除く、ランク0）
+        s = st.clone()
+        me, foe = mons(s, i)
+        foe.moves = [x for x in foe.moves if x not in _setup_moves(foe) and x not in _prio_moves(foe)]
+        foe.boosts = dict.fromkeys(foe.boosts, 0)
+        rec_test('T4', s, i, '脅威なし')
+    for t in ('T1', 'T2', 'T3', 'T4'):
+        print(f'   {t}: 手が違った {cnt[t][1]}/{cnt[t][0]}', flush=True)
+    ok('3 deny: T1〜T3 のうち2つ以上で手が異なる', sum(1 for t in ('T1', 'T2', 'T3') if cnt[t][1] > 0) >= 2, str({t: cnt[t] for t in cnt}))
+    ok('3 対照T4: 手が一致（脅威なし）', cnt['T4'][1] == 0, f'{cnt["T4"][1]}/{cnt["T4"][0]} 件で違い')
+    # ---- 時間比
+    sel = [(st, i) for st, i in pos0]
+    sel = sel[::max(1, len(sel) // 40)][:40]
+    ratios = {0: [], 1: []}
+    changed = 0
+    for st, i in sel:
+        S._EC.clear()
+        t0 = time.time()
+        a1 = S.lookahead_action(st, i, 4)
+        t1 = time.time() - t0
+        S._EC.clear()
+        t0 = time.time()
+        a2 = S.lookahead_action(st, i, 4, mode='deny')
+        t2_ = time.time() - t0
+        ratios[i].append(t2_ / max(t1, 1e-3))
+        changed += a1 != a2
+    allr = ratios[0] + ratios[1]
+    print(f'   時間比: 局面{len(sel)}（側0 {len(ratios[0])}, 側1 {len(ratios[1])}）手が違った{changed}件', flush=True)
+    for i in (0, 1):
+        if ratios[i]:
+            print(f'   側{i}: 中央値{stt.median(ratios[i]):.2f} 最大{max(ratios[i]):.2f}', flush=True)
+    ok('5a 時間比 30局面以上・中央値≤1.5・最大≤2.0（側0/側1）', len(sel) >= 30 and all(ratios[i] for i in (0, 1)) and stt.median(allr) <= 1.5 and max(allr) <= 2.0
+       and all(stt.median(ratios[i]) <= 1.5 and max(ratios[i]) <= 2.0 for i in (0, 1) if ratios[i]))
+    # ---- 一時フォルダでの run / full
+    def cli(*args):
+        p = subprocess.run([sys.executable, 'roundrobin.py', 'deny', *args], cwd=HERE, capture_output=True, text=True)
+        print('   ' + ' '.join(args) + f' -> rc={p.returncode}', flush=True)
+        if p.returncode:
+            print(p.stderr[-400:])
+        return p
+
+    Dr = os.path.join(D, 'r11')
+    cli('run', '--part', 'r11', '--max-games', '1', '--procs', '1', '--out-dir', Dr)
+    gd = json.load(open(os.path.join(Dr, 'rr_deny_games.json'), encoding='utf-8'))['games']
+    k1 = list(gd)[0]
+    nk = k1.split(':', 1)[1].split('|', 1)[1]
+    ok('5b r11 の1戦 deny の sec が従来の2倍以内', gd[k1]['sec'] <= 2 * base[nk]['sec'], f"deny {gd[k1]['sec']}秒 / 従来 {base[nk]['sec']}秒 (res {gd[k1]['res']})")
+    Dt = os.path.join(D, 'top2')
+    cli('run', '--part', 'top2', '--max-games', '2', '--procs', '2', '--out-dir', Dt)
+    g1 = set(json.load(open(os.path.join(Dt, 'rr_deny_games.json'), encoding='utf-8'))['games'])
+    cli('run', '--part', 'top2', '--max-games', '2', '--procs', '2', '--out-dir', Dt)
+    g2 = set(json.load(open(os.path.join(Dt, 'rr_deny_games.json'), encoding='utf-8'))['games'])
+    ok('7 top2 再開: 2戦→さらに2戦（重複なし）', len(g1) == 2 and len(g2) == 4 and g1 < g2, f'{sorted(g1)} -> {len(g2)}戦')
+    Df = os.path.join(D, 'full')
+    cli('full', '--max-games', '3', '--procs', '3', '--out-dir', Df)
+    f1 = json.load(open(os.path.join(Df, 'rr_deny_games.json'), encoding='utf-8'))['games']
+    ds = all(set(g.get('deny_stats', {})) == {'0', '1'} for g in f1.values())
+    exp = [f'full:{x}|{y}|0' for x, y in circle_pairs(tier_ids(plan, 1))[:3]]
+    ok('9a full: 鍵 full: ・k=0 から・(True,True)', set(f1) == set(exp) and ds and all(g['deny'] == [True, True] for g in f1.values()), f'{sorted(f1)} deny_stats両側={ds}')
+    cli('full', '--max-games', '1', '--procs', '1', '--out-dir', Df)
+    f2 = json.load(open(os.path.join(Df, 'rr_deny_games.json'), encoding='utf-8'))['games']
+    nx = f'full:{circle_pairs(tier_ids(plan, 1))[3][0]}|{circle_pairs(tier_ids(plan, 1))[3][1]}|0'
+    ok('9b full 再実行で続きから', len(f2) == 4 and set(f2) - set(f1) == {nx}, f'新規={sorted(set(f2) - set(f1))}')
+    cli('report', '--out-dir', Df)
+    md = open(os.path.join(Df, 'rr_deny_report.md'), encoding='utf-8').read()
+    ok('10 report: 比較表の列と R11 順位行', '| 構築 | 通常 勝率 | 通常 順位 | deny 勝率 | deny 順位 | 順位差 |' in md and 'R11 の順位' in md and 'R11' in md, md[:0])
+    after = _sha_all()
+    ok('6 既存ファイルの sha256 不変', before == after, f'{len(before)}件')
+    ok('11 本番の deny ファイルが作られていない', not any(os.path.exists(os.path.join(DEF_OUT, f)) for f in ('rr_deny_games.json', 'rr_deny_logs.jsonl', 'rr_deny_report.md')))
+    print('\n結果:', 'すべて ○' if all(c for _, c in results) else '×あり: ' + ', '.join(n for n, c in results if not c))
+    if not keep:
+        shutil.rmtree(D, ignore_errors=True)
+
+
+def cmd_deny(a):
+    {'run': lambda: cmd_deny_run(a), 'full': lambda: cmd_deny_run(a, True), 'report': lambda: cmd_deny_report(a),
+     'selftest': lambda: cmd_deny_selftest(a)}[a.what]()
+
+
 def main():
     ap = argparse.ArgumentParser()
     sp = ap.add_subparsers(dest='cmd', required=True)
@@ -1328,8 +1817,15 @@ def main():
     p = sp.add_parser('show')
     p.add_argument('id')
     p.add_argument('--out-dir')
+    p = sp.add_parser('deny')
+    p.add_argument('what', choices=['run', 'full', 'report', 'selftest'])
+    p.add_argument('--part', choices=['r11', 'top2', 'all'], default='all')
+    p.add_argument('--procs', type=int, default=4)
+    p.add_argument('--retry-errors', action='store_true')
+    p.add_argument('--max-games', type=int, default=0)
+    p.add_argument('--out-dir')
     a = ap.parse_args()
-    {'plan': cmd_plan, 'run': cmd_run, 'report': cmd_report, 'selftest': cmd_selftest, 'show': cmd_show}[a.cmd](a)
+    {'deny': cmd_deny, 'plan': cmd_plan, 'run': cmd_run, 'report': cmd_report, 'selftest': cmd_selftest, 'show': cmd_show}[a.cmd](a)
 
 
 if __name__ == '__main__':
