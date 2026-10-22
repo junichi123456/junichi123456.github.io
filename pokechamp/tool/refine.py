@@ -545,9 +545,11 @@ def blind_play(args):
     know = len(args) > 7 and args[7]          # True: we read on their true sets (perfect information for us)
     rules = args[8] if len(args) > 8 else None   # None: no action rules; else a tuple of policy rule ids (policy.py)
     trace = len(args) > 9 and args[9]         # True: also return 'mv', one record per move of ours (no effect on the game)
+    excl = args[10] if len(args) > 10 and args[10] else ()   # extra article ids left out of the guesses (roundrobin.py)
     import sets as _sets
-    _sets.EXCLUDE = {kid}                      # the opponent's own article never feeds the guesses about it
-    apply_party(party)
+    _sets.EXCLUDE = {kid} | set(excl)          # the opponent's own article never feeds the guesses about it
+    if party is not None:                      # None: the caller has already applied our party
+        apply_party(party)
     real_match = B.match_known
     try:
         _ctx(kid)
