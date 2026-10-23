@@ -32,6 +32,7 @@ LAYERS = {
     "A-TERRAIN": (30, "Continuous", 25, "地形断面（DEM）"),
     "A-FLOOD": (5, "DASHDOT", 25, "想定浸水深"),
     "A-FLOW": (6, "DASHED", 35, "動線（回遊・家事・搬入）"),
+    "A-COLOR": (8, "Continuous", 9, "仕上げ色の塗り（立面・色見本）"),
     "A-VIS": (7, "Continuous", 18, "見え掛り（細線）"),
     "A-HIDDEN": (8, "HIDDEN", 13, "隠れ線（破線）"),
     "A-GLAZ": (5, "Continuous", 18, "建具・ガラス"),
@@ -147,13 +148,15 @@ class Sheet:
         m.set_location(p)
         return m
 
-    def hatch_polys(self, polys, layer="A-CUT-HATCH", pattern="ANSI31", spacing=1.0, solid=False, color=None):
+    def hatch_polys(self, polys, layer="A-CUT-HATCH", pattern="ANSI31", spacing=1.0, solid=False, color=None, rgb=None):
         """spacing: 用紙上のハッチ線間隔 (mm)。"""
         h = self.msp.add_hatch(color=color or 256, dxfattribs={"layer": layer})
         if solid:
             h.set_solid_fill(color=color or 8)
         else:
             h.set_pattern_fill(pattern, scale=spacing * self.S / 3.175)
+        if rgb is not None:
+            h.dxf.true_color = ezdxf.colors.rgb2int(tuple(int(v) for v in rgb))
         for poly in polys:
             h.paths.add_polyline_path(list(poly.exterior.coords)[:-1], is_closed=True,
                                       flags=ezdxf.const.BOUNDARY_PATH_EXTERNAL)
@@ -225,6 +228,7 @@ class Sheet:
         """用紙座標 (x, y)=左上。cols: 列幅リスト。rows: 文字列の 2 次元リスト。
         長い文字列は列幅で折り返し、行高を自動拡張する。戻り値: 下端 y。"""
         cy = y
+        self.last_table_rows = []
         total_w = sum(cols)
         self.pline([self.P(x, y), self.P(x + total_w, y)], layer, lineweight=35)
         for ri, row in enumerate(rows):
@@ -236,6 +240,7 @@ class Sheet:
                 for li, line in enumerate(wl):
                     self.text(line, (cx + 1.0, cy - 1.2 - h - li * h * 1.45), h, "A-TEXT", "LEFT", paper=True)
                 cx += w
+            self.last_table_rows.append((cy, cy - rh))
             cy -= rh
             lw = 35 if (header and ri == 0) else 18
             self.pline([self.P(x, cy), self.P(x + total_w, cy)], layer, lineweight=lw)

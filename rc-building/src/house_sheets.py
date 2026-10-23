@@ -516,6 +516,40 @@ def roof_plan(h, number):
 
 
 # ================================================================ elevations / sections
+def facade_fill(h, sh, t, view, o):
+    """立面の塗り（印刷で淡く出るよう、指定色を白と混ぜる）。ガラス・扉の開口は塗らない。"""
+    from shapely.ops import unary_union
+    uv = uv_fn(view)
+    us = [uv(x, y, 0)[0] for x in (o[0], o[2]) for y in (o[1], o[3])]
+    u0, u1 = min(us), max(us)
+    z = h.spec["facade_zones"]
+    c = h.spec["colors"]
+    holes = []
+    side = {"S": "S", "N": "N", "E": "E", "W": "W"}[view]
+    for op in h.openings(exterior=True):
+        if op.wall.side != side:
+            continue
+        a, b = (op.u0, op.u1) if view in ("S", "E") else (-op.u1, -op.u0)
+        holes.append(sbox(a, op.z0, b, op.z1))
+    hole = unary_union(holes) if holes else Polygon()
+
+    def soft(hx, k=0.55):
+        return tuple(round(v + (255 - v) * k) for v in _hex_rgb(hx))
+
+    def fill(a0, a1, z0, z1, key, k=0.55):
+        poly = sbox(a0, z0, a1, z1).difference(hole)
+        polys = [Polygon([t(*p) for p in g.exterior.coords], [[t(*p) for p in r.coords] for r in g.interiors]) for g in iter_polygons(poly)]
+        if polys:
+            sh.hatch_polys(polys, layer="A-COLOR", solid=True, rgb=soft(c[key], k))
+    fill(u0, u1, h.fgl, z["tile"]["z"][1], "assort")
+    fill(u0, u1, z["tile"]["z"][1], z["top_band"]["z"][0], "base", 0.0)
+    fill(u0, u1, z["top_band"]["z"][0], h.parapet_top + 50, "assort")
+    fill(u0, u1, z["floor_line"]["z"][0], z["floor_line"]["z"][1], "accent")
+    if view == "S":
+        en = z["entrance"]
+        fill(en["x"][0], en["x"][1], en["z"][0], en["z"][1], "accent")
+
+
 def elevations(h, number):
     sh = frame(h, number, "立面図", 200)
     o = h.outer_dims()
@@ -529,8 +563,16 @@ def elevations(h, number):
         uv = uv_fn(view)
         us = [uv(x, y, 0)[0] for x in (o[0], o[2]) for y in (o[1], o[3])]
         t = T(sh, (min(us), 0), paper)
+        facade_fill(h, sh, t, view, o)
         proj = project(h.boxes, view, ground=h.fgl, filt=lambda b: b.level != "EXT" or view == "S")
         emit(sh, proj, t, cut_lw=35, vis_lw=18)
+        zb = h.spec["facade_zones"]
+        for zz in (zb["top_band"]["z"][0], *zb["floor_line"]["z"]):
+            sh.line(t(min(us), zz), t(max(us), zz), "A-VIS")
+        if view == "S":
+            en = zb["entrance"]
+            sh.rect(*t(en["x"][0], en["z"][0]), *t(en["x"][1], en["z"][1]), "A-VIS")
+            sh.text(f"アクセント {h.spec['colors']['accent']}", t(en["x"][1] + 200, en["z"][0] + 600), 1.5, "A-TEXT", "LEFT")
         u_lo, u_hi = min(us) - 2500, max(us) + 2500
         sh.line(t(u_lo, h.fgl), t(u_hi, h.fgl), "A-GROUND", lineweight=50)
         sh.line(t(u_lo, 0), t(u_hi, 0), "A-HIDDEN")
@@ -542,11 +584,15 @@ def elevations(h, number):
             sh.text(f"{name} {'+' if z else '±'}{z:,.0f}", t(u_lo - 400, z + (100 if name != "設計GL" else -100)), 1.6, "A-SYMB", va)
         sh.text("想定浸水深 FGL+1.0m", t(u_hi - 200, h.fgl + h.spec["site"]["flood_depth"] + 150), 1.5, "A-FLOOD", "BOTTOM_RIGHT")
         sh.line(t(min(us), h.fl["1F"]), t(max(us), h.fl["1F"]), "A-VIS")
-        sh.text("腰壁 タイル張り", t(max(us) - 300, h.fgl + 250), 1.4, "A-TEXT", "BOTTOM_RIGHT")
+        sh.text(f"腰壁 二丁掛タイル {h.spec['colors']['assort']}（FGL〜1FL）", t(max(us) - 300, h.fgl + 250), 1.4, "A-TEXT", "BOTTOM_RIGHT")
+        sh.text(f"頂部帯 {h.spec['colors']['assort']}（z7,600〜）／2FL見切り {h.spec['colors']['accent']}", t(max(us) - 300, zb["top_band"]["z"][0] - 450), 1.4, "A-TEXT", "BOTTOM_RIGHT")
         p = t(u_lo, -2400)
         sh.text(title, p, 3.2, "A-TEXT", "BOTTOM_LEFT")
-    sh.text(f"外壁: {h.spec['finish']['exterior']}", (18, 36), 2.2, "A-TEXT", paper=True)
-    sh.text("窓: 全窓 FIX 樹脂サッシ・Low-E トリプル（UVカット合わせ）。南・東・西の窓上の箱は外付け電動スクリーンのボックス（M-03）", (18, 30), 2.2, "A-TEXT", paper=True)
+    ext_txt = h.spec["finish"]["exterior"]
+    k = ext_txt.index("、腰壁") + 1
+    sh.text(f"外壁: {ext_txt[:k]}", (18, 38), 2.2, "A-TEXT", paper=True)
+    sh.text(f"　　　{ext_txt[k:]}", (18, 34), 2.2, "A-TEXT", paper=True)
+    sh.text("窓: 全窓 FIX 樹脂サッシ・Low-E トリプル（UVカット合わせ）。南・東・西の窓上の箱は外付け電動スクリーンのボックス（M-03）", (18, 29), 2.2, "A-TEXT", paper=True)
     return sh
 
 
@@ -1106,7 +1152,38 @@ def finish_sheet(h, number):
     y = sh.table(12, 272, [8, 32, 10, 72, 44, 64, 36, 126], rows, row_h=4.4, h=1.65)
     sh.text("共通: 出隅 R10（手の届く高さ）、コンセントはシャッター付き、床の段差5mm以下（掃除ロボット走行）、照明は調光・調色 LED、家具は突っ張り式（RC 壁に固定しない）。数量・品番は実施設計で決める",
             (12, y - 5), 2.2, "A-TEXT", paper=True)
+    exterior_finish_table(h, sh, y - 14)
     return sh
+
+
+def _hex_rgb(hx):
+    return tuple(int(hx[i:i + 2], 16) for i in (1, 3, 5))
+
+
+def exterior_finish_table(h, sh, y):
+    """外部仕上表・色彩計画（色はいずれも仮定。施主指定 2026-10-23）。"""
+    c = h.spec["colors"]
+    sh.text("外部仕上表・色彩計画 — 色はいずれも仮定（実物の見本板で確認）", (12, y + 4), 3.0, "A-TEXT", paper=True)
+    rows = [["部位", "範囲", "仕上げ", "色", "見本"],
+            ["外壁 ベース（約70%）", "一般部 1FL〜RFL−300、窓の抱き", "外装塗装（微弾性・つや消し、砂骨の塗り肌）", c["base"], ""],
+            ["外壁 アソート（約25%）腰壁", "FGL〜1FL（GL+1,500）外周4面", "磁器質タイル 二丁掛 227×60・半つや・目地8（目地 " + c["tile_joint"] + "）", c["assort"], ""],
+            ["アソート 頂部帯・笠木・窓枠・ZIPボックス", "RFL−300〜パラペット天端／窓枠 見付60", "外装塗装／アルミ笠木 フッ素樹脂焼付／樹脂サッシ外観色", c["assort"], ""],
+            ["外壁 アクセント（約5%）", "玄関まわり 南面 x7,300〜10,900・庇・玄関扉・2FL見切り", "外装塗装／鋼製防犯扉 焼付／アルミ見切り", c["accent"], ""],
+            ["塀（RC＋外装塗装）", "H2.0m以上、区間2mごとに5段階の個体差", "微弾性・つや消し。指定範囲 " + c["fence_range"][0] + "〜" + c["fence_range"][1], c["fence"], ""],
+            ["Dotcon+", "駐車場・アプローチ・菜園まわり", "600角・目地10", c["dotcon"], ""],
+            ["コンクリート（指定のない面）", "門柱・目隠し壁・外部階段・ポーチ・基礎・見切り", "RC打放し（撥水クリア）／金ごて・刷毛引き", c["concrete"], ""],
+            ["透水性コンクリート（要施主確認）", "指定のない地面・門前の広場", "粗面・ダミー目地3m", c["porous_concrete"], ""],
+            ["門扉・忍び返し", "電動スライド／人用 H2,000", "アルミ形材 目隠しパネル（アソート色）／スチール黒", c["assort"], ""],
+            ["防草砂利", "外壁まわり 幅1,000", "砕石 5〜13号", c["gravel"], ""]]
+    cols = [46, 58, 76, 14, 10]
+    bottom = sh.table(12, y, cols, rows, row_h=4.0, h=1.5)
+    for ri, row in enumerate(rows):          # 色見本
+        if ri == 0:
+            continue
+        top, bot = sh.last_table_rows[ri]
+        x0 = 12 + sum(cols[:4]) + 2
+        sh.hatch_polys([sbox_(sh, x0, bot + 0.4, x0 + 6, min(top - 0.4, bot + 4.4))], layer="A-COLOR", solid=True, rgb=_hex_rgb(row[3]))
+    return bottom
 
 
 def wifi_sheet(h, number):

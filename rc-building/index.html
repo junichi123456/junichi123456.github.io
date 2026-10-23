@@ -102,7 +102,7 @@ new GLTFLoader().load("dist/model.glb", (g) => {
     if (!o.isMesh) return;
     const grp = (o.name || o.parent.name).split("|")[0].replace(/_\d+$/, "");
     o.castShadow = o.receiveShadow = true;
-    o.material.clippingPlanes = /地形|周辺|水路|塀|外構|カーポート/.test(grp) ? [] : [plane];
+    o.material.clippingPlanes = /地形|周辺|水路|塀|外構|カーポート|門扉|ボラード|忍び返し|道路|防犯カメラ/.test(grp) ? [] : [plane];
     o.material.clipShadows = true;
     (groups[grp] ||= []).push(o);
   });

@@ -205,6 +205,113 @@ exterior:
   garbage_screen: {x_end: 12200, y: -30200, h: 1800, t: 150, wing: 600}   # ボックス南の目隠し壁（西の塀から x_end まで、南面 y）＋東端の袖壁（北へ wing）
 
 finish:
-  exterior: 外断熱100 + 外装仕上げ（腰壁 GL〜+1,500 はタイル張り）
+  exterior: "外断熱100＋外装塗装（ベース #F5EFE3、頂部帯 #4F5B2A）、腰壁 FGL〜1FL（GL+1,500）は二丁掛タイル #4F5B2A、玄関まわり・2FL見切り #B8892D（色はいずれも仮定）"
   roof: 外断熱防水（シート防水）。太陽光は設けない（庭のソーラーパーゴラに設置）
   interior: 床 浮き床・フローリング／壁 化粧壁（直貼り）／天井 PB EP
+
+colors:            # 外装・外構の色（sRGB 16進。いずれも仮定 — 施主指定 2026-10-23）
+  base:   "#F5EFE3"    # 外壁ベース（一般部 約70%）
+  assort: "#4F5B2A"    # 外壁アソート（腰壁タイル・頂部帯・笠木・スクリーンボックス・窓枠 約25%）
+  accent: "#B8892D"    # 外壁アクセント（玄関扉・玄関まわり・庇・2FL見切り 約5%）
+  dotcon: "#D8C9A8"    # Dotcon+（施主指定）
+  fence_range: ["#FFF8F0", "#ECE7D1"]   # 塀の指定範囲（施主）
+  fence: "#F0EAD7"     # 塀の基準色（範囲の t=0.80）
+  fence_shades: ["#F2ECDA", "#F1EBD8", "#EFEAD7", "#EEE9D5", "#EDE8D3"]   # 区間ごとの個体差（t=0.70〜0.94）
+  concrete: "#A8A49B"          # コンクリート打放し（指定のない面）
+  porous_concrete: "#B3AFA6"   # 透水性コンクリート（指定のない地面・要施主確認）
+  tile_joint: "#8E8A7E"
+  roof_sheet: "#C9CBC8"
+  steel_frame: "#3C3B37"
+  pv: "#11151C"
+  pv_frame: "#2A2C30"
+  planter: "#8C8577"
+  soil: "#4A3B2C"
+  garbage_box: "#6E6A60"
+  fixture: "#3A332B"
+  camera: "#E8E8E4"
+  neighbor: "#E6E3DC"
+  asphalt: "#55565A"
+  gravel: "#B5B0A5"
+  water: "#2E3B33"
+  glass: "#8FA3A0"
+  stainless: "#B8B8B4"
+  bollard: "#C9C9C6"
+  ground_wild: "#7C7A72"
+  interior_door: "#73614D"
+  lamp: "#FFB45A"
+
+facade_zones:      # 外壁の割り付け（建物座標 mm）
+  tile: {z: [450, 1500], color: assort}
+  top_band: {z: [7600, 8550], color: assort}
+  floor_line: {z: [4640, 4760], projection: 10, color: accent}
+  entrance: {x: [7300, 10900], z: [1500, 4000], side: S, color: accent}
+  coping: {z: [8550, 8600], overhang: 20}
+  window_frame: {face: 60, depth: 70}
+
+materials:         # 材質（matkey: 色キー, 粗さ, 金属度, コート, テクスチャ, タイル寸法 m）
+  base:            {color: base, roughness: 0.85, texture: stucco, tile_m: 2.0}
+  assort:          {color: assort, roughness: 0.85, texture: stucco, tile_m: 2.0}
+  accent:          {color: accent, roughness: 0.85, texture: stucco, tile_m: 2.0}
+  tile:            {color: assort, roughness: 0.35}
+  assort_metal:    {color: assort, roughness: 0.35, coat: 0.2}
+  assort_frame:    {color: assort, roughness: 0.5}
+  gate_panel:      {color: assort, roughness: 0.35, coat: 0.2}
+  accent_door:     {color: accent, roughness: 0.4, coat: 0.3}
+  concrete:        {color: concrete, roughness: 0.8, texture: concrete, tile_m: 2.0}
+  concrete_broom:  {color: concrete, roughness: 0.9, texture: concrete, tile_m: 2.0}
+  porous_concrete: {color: porous_concrete, roughness: 0.95, texture: porous, tile_m: 1.0}
+  dotcon:          {color: dotcon, roughness: 0.92, texture: dotcon, tile_m: 0.6}
+  gravel:          {color: gravel, roughness: 1.0, texture: gravel, tile_m: 1.0}
+  fence_1:         {color: fence_1, roughness: 0.85, texture: stucco, tile_m: 2.0}
+  fence_2:         {color: fence_2, roughness: 0.85, texture: stucco, tile_m: 2.0}
+  fence_3:         {color: fence_3, roughness: 0.85, texture: stucco, tile_m: 2.0}
+  fence_4:         {color: fence_4, roughness: 0.85, texture: stucco, tile_m: 2.0}
+  fence_5:         {color: fence_5, roughness: 0.85, texture: stucco, tile_m: 2.0}
+  glass:           {color: glass, roughness: 0.02}
+  roof_sheet:      {color: roof_sheet, roughness: 0.6}
+  steel_frame:     {color: steel_frame, roughness: 0.45, coat: 0.1}
+  pv:              {color: pv, roughness: 0.08, coat: 1.0}
+  pv_frame:        {color: pv_frame, roughness: 0.35, metallic: 0.8}
+  planter:         {color: planter, roughness: 0.5}
+  soil:            {color: soil, roughness: 1.0, texture: soil, tile_m: 1.0}
+  garbage_box:     {color: garbage_box, roughness: 0.5}
+  stainless:       {color: stainless, roughness: 0.3, metallic: 1.0}
+  bollard:         {color: bollard, roughness: 0.3, metallic: 1.0}
+  fixture:         {color: fixture, roughness: 0.45}
+  lamp_2200k:      {color: lamp, roughness: 0.4, emissive: true}
+  camera:          {color: camera, roughness: 0.4}
+  neighbor:        {color: neighbor, roughness: 0.9}
+  asphalt:         {color: asphalt, roughness: 0.85, texture: asphalt, tile_m: 3.0}
+  ground_wild:     {color: ground_wild, roughness: 1.0, texture: grass, tile_m: 4.0}
+  water:           {color: water, roughness: 0.05}
+  interior_door:   {color: interior_door, roughness: 0.6}
+
+cg:                # 外観CG（src/render_cg.py。Blender の Python モジュール＋Cycles、CPU）
+  resolution: [1920, 1080]
+  samples: 128
+  time_limit: 420
+  eye_h: 1550
+  view_transform: Khronos PBR Neutral   # 色の再現を優先（AgX は淡い生成りが灰色に寄るため）
+  exposure: {day: 0.0, dusk: -2.0}
+  sky_strength: {day: 1.0, dusk: 1.0}
+  lamp_strength: 150
+  room_strength: 3.0
+  textures:        # Poly Haven（CC0・帰属表示不要）のアセットID。実行時に取得し .cache/cg/ に保存。取得できなければ手続き生成
+    stucco: white_stucco
+    concrete: concrete_wall_008
+    porous: gravel_concrete
+    dotcon: gravel_embedded_concrete
+    gravel: gravel_floor_02
+    asphalt: asphalt_02
+    grass: sparse_grass
+    soil: brown_mud_02
+  hdri: {day: kloofendal_48d_partly_cloudy_puresky, dusk: qwantani_dusk_2_puresky}
+  site: {lat: 35.667, lon: 139.36, tz: 9}
+  cuts:            # cam の z が "eye" のときは足元の地盤＋eye_h（敷地内は FGL）。単位 mm（建物座標）
+    C01:  {file: C01_south_gate,        title: 南側道路から門まわり,   cam: [14500, -36800, eye], target: [14500, -27000, 1700], lens: 22, when: "2026-10-24T11:30"}
+    C01b: {file: C01b_southeast_check,  title: 南東角からの確認,       cam: [23500, -36200, eye], target: [9400, -29100, 900],   lens: 35, when: "2026-10-24T11:30", res: [1600, 900]}
+    C02:  {file: C02_aerial,            title: 南東上空からの全景,     cam: [70000, -62000, 42000], target: [-3000, 0, 0],     lens: 35, when: "2026-10-24T14:00"}
+    C03:  {file: C03_approach,          title: アプローチから玄関,     cam: [13300, -5800, 2000], target: [9100, -1200, 3000],   lens: 22, when: "2026-10-24T10:30"}
+    C04:  {file: C04_pergola_garden,    title: 西の庭のパーゴラと菜園, cam: [-7000, 8000, 2000],  target: [-17500, 17500, 3200], lens: 20, when: "2026-05-15T12:00"}
+    C05:  {file: C05_east_road,         title: 東側道路から建物と塀,   cam: [34200, -9000, eye],  target: [12000, 6000, 2800],   lens: 24, when: "2026-10-24T09:30"}
+    C06:  {file: C06_dusk,              title: 夕景,                  cam: [24800, -13000, 2300], target: [9000, 0, 3000],       lens: 24, when: "2026-06-21T19:10", kind: dusk, samples: 192, time_limit: 480}

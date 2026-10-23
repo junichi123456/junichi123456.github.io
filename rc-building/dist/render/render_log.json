@@ -1,0 +1,164 @@
+{
+ "total_seconds": 1939.0,
+ "asset_fetch_seconds": 0.0,
+ "blender_setup_seconds": 1873.5,
+ "cuts": [
+  {
+   "id": "C01",
+   "file": "/home/user/junichi123456.github.io/rc-building/dist/render/C01_south_gate.png",
+   "seconds": 211.4,
+   "render_seconds": 210.9,
+   "samples": 128,
+   "res": [
+    1920,
+    1080
+   ],
+   "exposure": 0.0,
+   "hdri_sun": [
+    145.8,
+    47.9,
+    -91.1
+   ],
+   "sky_fallback": false,
+   "texture_fallbacks": []
+  },
+  {
+   "id": "C01b",
+   "file": "/home/user/junichi123456.github.io/rc-building/dist/render/C01b_southeast_check.png",
+   "seconds": 145.8,
+   "render_seconds": 145.6,
+   "samples": 128,
+   "res": [
+    1600,
+    900
+   ],
+   "exposure": 0.0,
+   "hdri_sun": [
+    145.8,
+    47.9,
+    -91.1
+   ],
+   "sky_fallback": false,
+   "texture_fallbacks": []
+  },
+  {
+   "id": "C02",
+   "file": "/home/user/junichi123456.github.io/rc-building/dist/render/C02_aerial.png",
+   "seconds": 272.5,
+   "render_seconds": 272.4,
+   "samples": 128,
+   "res": [
+    1920,
+    1080
+   ],
+   "exposure": 0.0,
+   "hdri_sun": [
+    145.8,
+    47.9,
+    -134.9
+   ],
+   "sky_fallback": false,
+   "texture_fallbacks": []
+  },
+  {
+   "id": "C03",
+   "file": "/home/user/junichi123456.github.io/rc-building/dist/render/C03_approach.png",
+   "seconds": 316.2,
+   "render_seconds": 316.1,
+   "samples": 128,
+   "res": [
+    1920,
+    1080
+   ],
+   "exposure": 0.0,
+   "hdri_sun": [
+    145.8,
+    47.9,
+    -71.5
+   ],
+   "sky_fallback": false,
+   "texture_fallbacks": []
+  },
+  {
+   "id": "C04",
+   "file": "/home/user/junichi123456.github.io/rc-building/dist/render/C04_pergola_garden.png",
+   "seconds": 257.1,
+   "render_seconds": 256.9,
+   "samples": 128,
+   "res": [
+    1920,
+    1080
+   ],
+   "exposure": 0.0,
+   "hdri_sun": [
+    145.8,
+    47.9,
+    -106.9
+   ],
+   "sky_fallback": false,
+   "texture_fallbacks": []
+  },
+  {
+   "id": "C05",
+   "file": "/home/user/junichi123456.github.io/rc-building/dist/render/C05_east_road.png",
+   "seconds": 182.2,
+   "render_seconds": 182.1,
+   "samples": 128,
+   "res": [
+    1920,
+    1080
+   ],
+   "exposure": 0.0,
+   "hdri_sun": [
+    145.8,
+    47.9,
+    -54.1
+   ],
+   "sky_fallback": false,
+   "texture_fallbacks": []
+  },
+  {
+   "id": "C06",
+   "file": "/home/user/junichi123456.github.io/rc-building/dist/render/C06_dusk.png",
+   "seconds": 486.8,
+   "render_seconds": 486.6,
+   "samples": 192,
+   "res": [
+    1920,
+    1080
+   ],
+   "exposure": -2.0,
+   "hdri_sun": [
+    140.9,
+    10.5,
+    148.7
+   ],
+   "sky_fallback": false,
+   "texture_fallbacks": []
+  }
+ ],
+ "textures": {
+  "stucco": "ok",
+  "concrete": "ok",
+  "porous": "ok",
+  "dotcon": "ok",
+  "gravel": "ok",
+  "asphalt": "ok",
+  "grass": "ok",
+  "soil": "ok"
+ },
+ "hdri": {
+  "day": "ok",
+  "dusk": "ok"
+ },
+ "source": "Poly Haven (CC0)",
+ "camera_neighbor_distance_m": {
+  "C01": 10.09,
+  "C01b": 14.98,
+  "C02": 8.53,
+  "C03": 14.51,
+  "C04": 12.31,
+  "C05": 5.03,
+  "C06": 14.76
+ }
+}

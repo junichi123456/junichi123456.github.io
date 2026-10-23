@@ -63,6 +63,7 @@ def main():
     (dist / "index.json").write_text(json.dumps(dict(sheets=index, summary={k: round(v, 3) for k, v in sm.items()},
                                                      checks=rows), ensure_ascii=False, indent=1), encoding="utf-8")
     ng = [r for r in rows if r["result"] == house_legal.NG]
+    print("外観CG: python3 src/render_cg.py（bpy が必要。README 参照）")
     print(f"checks: {len(rows)} rows, NG={len(ng)}, 要確認={sum(r['result'] == house_legal.CHK for r in rows)}")
     for r in ng:
         print("  NG:", r["item"], r["planned"])

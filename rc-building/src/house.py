@@ -498,6 +498,10 @@ class House:
                  ("門扉（人）", (ex["gate_person_x"][0], y_g), (ex["gate_person_x"][1], y_g))]
         # 勝手口は設けない（v4.10、防犯性能を下げるため廃止）
         self.gates = gates
+        # 門扉の葉と門柱（3D・CG 用の属性。Box には入れない＝図面・視線判定は変わらない）
+        self.gate_leaves = [(n, p0[0], p1[0], y_g, 2000) for n, p0, p1 in gates]
+        self.gate_piers = [(x0, y_g + 75 - 150, x1, y_g + 75 + 150) for n, p0, p1 in gates
+                           for x0, x1 in ((p0[0] - 300, p0[0]), (p1[0], p1[0] + 300))]
         self.forecourt = Polygon([p for p in site.exterior.coords]).intersection(
             Polygon([(-1e6, -1e6), (1e6, -1e6), (1e6, y_g), (-1e6, y_g)]))
         # 塀（敷地境界の内側に厚さ 150）: 南側道路沿いは塀を設けず、門の線に塀と門扉を設ける
