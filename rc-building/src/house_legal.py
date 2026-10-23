@@ -167,7 +167,8 @@ def checks(h):
     add("ブリーフ", "蓄電池", "ブリーフv3 7章", "排煙機30分＋排水ポンプ6時間＋最低限の生活24時間", f"必要 約{en['battery']:.1f}kWh → 16kWh 級", judge(en["battery"] <= 16.5))
     add("ブリーフ", "駐車台数", "ブリーフv3 2章", f"{req['parking']}台", f"{len(h.stalls)}台（屋根なし・Dotcon+）", judge(len(h.stalls) >= req["parking"]))
     add("ブリーフ", "RC塀", "ブリーフv3 4章", f"H{req['fence_height']:,}（防犯）", "全周 H2.0m 以上（東側坂道沿いは道路面+1.2m以上）", OK)
-    add("ブリーフ", "透水性舗装", "ブリーフv3 3.1・施主指示（v4.9）", "駐車場に Dotcon+、菜園まわりの透水設備も全て Dotcon+", f"駐車場・門前 約{h.ext_storage['dotcon_area_parking']:.0f}m²＋菜園まわり 約{h.ext_storage['dotcon_area_garden']:.0f}m² = 約{h.ext_storage['dotcon_area']:.0f}m²（一時貯留 約{h.ext_storage['dotcon_l'] / 1000:.1f}m³）", OK)
+    add("ブリーフ", "透水性舗装", "ブリーフv3 3.1・施主指示（v4.9・v4.14）", "Dotcon+ を施主の再配置図の位置に",
+        f"駐車場・アプローチ 約{h.ext_storage['dotcon_area_parking']:.0f}m²＋パーゴラ下・北・西・東の帯・日なたの菜園 約{h.ext_storage['dotcon_area_garden']:.0f}m² = 約{h.ext_storage['dotcon_area']:.0f}m²（一時貯留 約{h.ext_storage['dotcon_l'] / 1000:.1f}m³）", OK)
 
     # ---------------- 集団規定
     add("ブリーフ", "建物の向き", "施主指示（v4.4）", "南側道路に対して平行・直交", f"建物・外構を道路境界線に合わせて {abs(h.facade_az):.1f}° 回転（南面は真南から{'西' if h.facade_az > 0 else '東'}向き）", OK)
@@ -193,6 +194,8 @@ def checks(h):
     ex_ = s["exterior"]
     gv = SS_.garbage_visibility(h)
     gs_ = ex_["garbage_screen"]
+    add("ブリーフ", "敷地境界・塀の再配置", "施主指示（v4.14）", "北（水路の溝）と東（東側道路）から塀を内側へ寄せ、北東の角を除外",
+        f"敷地 約{h.site.area / 1e6:,.0f}m²（再配置前 2,772m²）。塀は新しい境界の内側に沿わせる", CHK)
     add("ブリーフ", "門の後退・ゴミ収集ボックス", "施主指示（v4.8・v4.10）", "南側の門を約4m 後退。門の外にゴミ収集ボックス（西の角）、道路から見えない",
         f"門の線を道路境界から{ex_['gate_setback'] / 1000:.1f}m 後退。ボックス W{ex_['garbage_box']['w']:,}×D{ex_['garbage_box']['d']:,}×H{ex_['garbage_box']['h']:,} を門の外・西の角に置き、"
         f"南に自立壁（X{gs_['x_end'] / 1000:.1f}m まで）＋袖壁{gs_['wing'] / 1000:.1f}m（H{gs_['h']:,}）。"

@@ -328,7 +328,7 @@ def exterior_plan(h, number):
     sh.text(f"目隠し壁（自立・独立基礎）L{(sw_[2] - sw_[0]) / 1000:.1f}m H{(h.screen_top - h.fgl) / 1000:.1f}m", t(sw_[0] - 600, sw_[1] - 300), 1.5, "A-TEXT", "MIDDLE_RIGHT")
     sh.text("建物（壁式RC造 2階建て）", t(h.W / 2, h.D / 2), 2.0, "A-ROOM", "MIDDLE_CENTER")
     sh.text("Dotcon+ 透水舗装", t(cp[2] + 1500, cp[1] - 1500), 1.7, "A-TEXT", "MIDDLE_LEFT")
-    sh.text("アプローチ（透水性舗装）", t(14500, -10200), 1.6, "A-TEXT", "MIDDLE_LEFT")
+    sh.text("アプローチ（Dotcon+）", t(14500, -10200), 1.6, "A-TEXT", "MIDDLE_LEFT")
     sh.text("アプローチ → 玄関（ジム搬入も同じ）", t(14500, -8400), 1.6, "A-TEXT", "MIDDLE_LEFT")
     gbx = h.garbage_box
     sh.text(f"門を道路境界から{h.spec['exterior']['gate_setback'] / 1000:.1f}m 後退（門前スペース）", t(23500, h.y_gate - 1800), 1.5, "A-TEXT", "MIDDLE_LEFT")
@@ -339,7 +339,7 @@ def exterior_plan(h, number):
     sh.line(t(tk[0], tk[1]), t(tk[2], tk[3]), "A-DRAIN")
     sh.text(f"地下雨水貯留槽 {h.spec['exterior']['retention_tank_m3']}m³", t((tk[0] + tk[2]) / 2, tk[3] + 900), 1.7, "A-TEXT", "MIDDLE_CENTER")
     st_ = h.ext_storage
-    sh.text(f"菜園まわり Dotcon+ 約{st_['dotcon_area_garden']:.0f}m²（通路・北と西の帯）", t(-20000, 31500), 1.7, "A-TEXT", "MIDDLE_CENTER")
+    sh.text(f"菜園・北・東 Dotcon+ 約{st_['dotcon_area_garden']:.0f}m²", t(-20000, 31000), 1.7, "A-TEXT", "MIDDLE_CENTER")
     for p in h.infil_pits:
         sh.circle(t(*p), 0.9 * sh.S, "A-DRAIN")
     for p in h.flap:
@@ -378,7 +378,7 @@ def exterior_plan(h, number):
     st = h.ext_storage
     notes = [("h", "内水対策"),
              ("t", f"1. RC塀の基礎〜FGL+{h.spec['requirements']['fence_watertight']}を止水構造。門扉には着脱式止水板 H600"),
-             ("t", f"2. Dotcon+ 約{st['dotcon_area']:.0f}m²（駐車場・門前 {st['dotcon_area_parking']:.0f}m²＋菜園まわり {st['dotcon_area_garden']:.0f}m²）× 13L/m² ≒ {st['dotcon_l'] / 1000:.1f}m³ の一時貯留"),
+             ("t", f"2. Dotcon+ 約{st['dotcon_area']:.0f}m²（駐車場・アプローチ {st['dotcon_area_parking']:.0f}m²＋菜園・北・東の帯 {st['dotcon_area_garden']:.0f}m²）× 13L/m² ≒ {st['dotcon_l'] / 1000:.1f}m³ の一時貯留"),
              ("t", f"3. 地下貯留槽 {st['tank_m3']}m³（菜園の散水に利用）。菜園まわりの透水設備は浸透トレンチに代えて全て Dotcon+（透水係数は地盤調査で確認）"),
              ("t", "4. 塀の低い位置にフラップ弁付き排水口（道路側溝からの逆流防止）"),
              ("t", "5. 建物: 1FL=GL+1,500、床下は設備ピット、逆流防止弁・排水ポンプ（非常電源）"),

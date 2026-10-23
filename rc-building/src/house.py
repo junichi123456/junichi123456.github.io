@@ -524,10 +524,7 @@ class House:
         self.stalls = [(cx0 + 300 + i * 2800, cy0 + 300, cx0 + 300 + i * 2800 + 2600, cy0 + 300 + 5500) for i in range(3)]
         pave = Polygon([(cx0 - 1200, y_g + self.fence_t), (cx0 + cp["w"] + 1500, y_g + self.fence_t), (cx0 + cp["w"] + 1500, cy0 + cp["d"] + 900),
                         (cx0 - 1200, cy0 + cp["d"] + 900)]).intersection(site.buffer(-self.fence_t))
-        self.dotcon = pave.union(self.forecourt.intersection(site.buffer(-self.fence_t).union(
-            Polygon([(-1e6, -1e6), (1e6, -1e6), (1e6, y_road + 1), (-1e6, y_road + 1)]))))
-        if self.dotcon.geom_type != "Polygon":
-            self.dotcon = max(getattr(self.dotcon, "geoms", [self.dotcon]), key=lambda g: g.area)
+        self.dotcon = pave                    # 駐車場（v4.14: 門前の広場は Dotcon+ に含めない＝施主の再配置図）
         # ゴミ収集ボックス（門の外・西の角、v4.10）: 西の塀と門の塀に沿わせ、扉は東向き。南に目隠し壁＋東端の袖壁
         gb, gs = ex["garbage_box"], ex["garbage_screen"]
         west = LineString([(-1e6, y_g - gb["d"] / 2), (1e6, y_g - gb["d"] / 2)]).intersection(site)
@@ -571,19 +568,15 @@ class House:
         self._exterior_lights(gates)
         # 雨水貯留槽（西側の庭、地下・菜園の散水に利用）
         self.tank = (-23500, 22000, -18500, 27000)
-        # 菜園まわりの透水設備は全て Dotcon+（v4.9）: パーゴラの周囲・畝の間の通路と、北・西の帯（旧 浸透トレンチの位置）
+        # Dotcon+ の配置（v4.14 施主の再配置図）: パーゴラの下全体と北・西の帯、北東〜東の帯。パーゴラの下もプランター（脚付き）
         px0, py0, px1, py1 = self.pergola
         self.garden_beds = [(px0 + 1000, py0 + 800 + k * (py1 - py0 - 1600) / 3.6, px1 - 1000, py0 + 800 + k * (py1 - py0 - 1600) / 3.6 + 900)
                             for k in range(4)]
-        gd = ex["garden_dotcon"]
-        strips = [LineString([(-29500, 28000), (-15000, 28100), (-1000, 27800)]),
-                  LineString([(-30500, 26500), (-31500, 13000), (-32300, 1000)])]
-        garden = Polygon([(px0, py0), (px1, py0), (px1, py1), (px0, py1)]).buffer(gd["ring"], join_style=2)
-        for ln in strips:
-            garden = garden.union(ln.buffer(gd["strip"] / 2, cap_style=2, join_style=2))
-        for b in self.garden_beds:
-            garden = garden.difference(Polygon([(b[0], b[1]), (b[2], b[1]), (b[2], b[3]), (b[0], b[3])]))
-        self.dotcon_garden = garden.intersection(site.buffer(-self.fence_t))
+        inner = site.buffer(-self.fence_t)
+        zones = [Polygon(z).intersection(inner) for z in ex["dotcon_zones"].values()]
+        self.dotcon_garden = zones[0]
+        for z in zones[1:]:
+            self.dotcon_garden = self.dotcon_garden.union(z)
         self.trench = []
         # 日なたのプランター菜園（v4.13）: 脚付きプランターを Dotcon+ の上に
         fm = self.spec["farm"]
@@ -595,9 +588,10 @@ class House:
         self.infil_pits = [(11000, -16000)]
         # 塀の排水口（フラップ弁）＝ 低い位置
         self.flap = [(-33200, -600), (23800, y_g)]
-        area = (self.dotcon.area + self.dotcon_garden.area + self.dotcon_farm.area) / 1e6
+        self.dotcon_approach = self.approach.intersection(inner).difference(self.dotcon)
+        area = (self.dotcon.area + self.dotcon_approach.area + self.dotcon_garden.area + self.dotcon_farm.area) / 1e6
         self.ext_storage = dict(
-            dotcon_area=area, dotcon_area_parking=self.dotcon.area / 1e6,
+            dotcon_area=area, dotcon_area_parking=(self.dotcon.area + self.dotcon_approach.area) / 1e6,
             dotcon_area_garden=(self.dotcon_garden.area + self.dotcon_farm.area) / 1e6,
             dotcon_l=area * ex["dotcon_storage_l_per_m2"],
             tank_m3=ex["retention_tank_m3"])

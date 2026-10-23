@@ -73,7 +73,7 @@ def export_glb(h, path):
     ap = h.approach.intersection(h.site.buffer(-h.fence_t))
     for p in getattr(ap, "geoms", [ap]):
         if p.geom_type == "Polygon":
-            parts[("外構（Dotcon+舗装）", "-", (0.78, 0.75, 0.68, 1.0))].append(_prism(poly_m(p.exterior.coords), (h.fgl - 100) * S, (h.fgl + 25) * S))
+            parts[("外構（Dotcon+舗装）", "-", (0.62, 0.66, 0.60, 1.0))].append(_prism(poly_m(p.exterior.coords), (h.fgl - 100) * S, (h.fgl + 25) * S))
     # ソーラーパーゴラ（日よけ付き菜園）: 柱＋梁＋すき間をあけたパネル列（南向き傾斜）
     pg = h.spec["exterior"]["solar_pergola"]
     x0, y0, x1, y1 = h.pergola
@@ -99,9 +99,10 @@ def export_glb(h, path):
         m.apply_translation([(x0 + x1) / 2 * S, yc * S, z * S])
         parts[("ソーラーパーゴラ", "-", (0.12, 0.18, 0.32, 1.0))].append(m)
     # 菜園の畝
-    for b in h.garden_beds:
-        m = trimesh.creation.box(extents=[(b[2] - b[0]) * S, (b[3] - b[1]) * S, 0.25])
-        m.apply_translation([(b[0] + b[2]) / 2 * S, (b[1] + b[3]) / 2 * S, (zb + 125) * S])
+    fm_ = h.spec["farm"]
+    for b in h.garden_beds:                       # パーゴラの下も脚付きプランター（v4.14）
+        m = trimesh.creation.box(extents=[(b[2] - b[0]) * S, (b[3] - b[1]) * S, fm_["planter_h"] * S])
+        m.apply_translation([(b[0] + b[2]) / 2 * S, (b[1] + b[3]) / 2 * S, (zb + fm_["leg"] + fm_["planter_h"] / 2) * S])
         parts[("菜園", "-", (0.45, 0.33, 0.20, 1.0))].append(m)
     fm = h.spec["farm"]                                                  # 日なたのプランター菜園
     parts[("外構（Dotcon+舗装）", "-", (0.62, 0.66, 0.60, 1.0))].append(_prism(poly_m(h.dotcon_farm.exterior.coords), (h.fgl - 150) * S, (h.fgl + 20) * S))
