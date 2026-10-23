@@ -2476,6 +2476,453 @@ def cmd_adapt(a):
     {'plan': cmd_adapt_plan, 'run': cmd_adapt_run, 'report': cmd_adapt_report, 'selftest': cmd_adapt_selftest}[a.what](a)
 
 
+# ======================================================================
+# counter: 苦手構築への対策選出（SPEC_COUNTER.md）
+# ======================================================================
+CT_VERSION = 'ct1'
+CT_DEFAULT_OPPS = ['e74e068449bec8e6', 'bab22dcc629688e8', 'yakkun_n8943', '047f48a2b51a88d1',
+                   '856f9d20f6a9b5a9', '1813f454535e22eb', '45330f7ff4d912c7', '598640a00e16d952']
+CT_K1, CT_K2 = 4, 16          # 第1段 k=0..3、第2段 k=4..15
+DEF_CTMD = os.path.join(HERE, '..', 'logs', 'COUNTER.md')
+_CT_PLAY = R.blind_play
+
+
+def ct_paths(out_dir=None):
+    d = out_dir or DEF_OUT
+    return {'dir': d, 'plan': os.path.join(d, 'ct_plan.json'), 'games': os.path.join(d, 'ct_games.json'),
+            'md': os.path.join(d, 'COUNTER.md') if out_dir else DEF_CTMD}
+
+
+def ct_seed(X, sel, k):
+    return zlib.crc32(f'ct{X}{"/".join(sel)}{k}'.encode())
+
+
+def ct_key(X, sel, k):
+    return f'ct:{X}|{"/".join(sel)}|{k}'
+
+
+def ct_fixed_sel(adg, X):
+    c, first = collections.Counter(), {}
+    for k in range(10):
+        g = adg['games'][f'ad:{X}|{k}']
+        s = g['sel0'] if g['side0'] == X else g['sel1']
+        if not s:
+            continue
+        s = tuple(s)
+        c[s] += 1
+        first.setdefault(s, k)
+    return list(max(c.items(), key=lambda kv: (kv[1], -first[kv[0]]))[0])
+
+
+def ct_job(plan, X, sel, k, stage):
+    L = plan['main']
+    s0, s1 = (L, X) if k % 2 == 0 else (X, L)
+    fx = plan['fixed'][X]
+    o0, o1 = (list(sel), list(fx)) if s0 == L else (list(fx), list(sel))
+    return (ct_key(X, sel, k), X, list(sel), k, s0, s1, o0, o1, stage)
+
+
+def _job_ct(a):
+    key, X, sel, k, s0, s1, o0, o1, stage = a
+    t0 = time.time()
+    try:
+        rr_apply(_TEAMS[s0])
+        r = _CT_PLAY((None, s1, o0, o1, ct_seed(X, sel, k), DEPTH[0], DEPTH[1], False, None, False, (s0,), (True, True)))
+    except Exception:
+        r = {'res': None, 'error': traceback.format_exc()[-800:]}
+    r['key'] = key
+    r['sec'] = round(time.time() - t0, 2)
+    return r
+
+
+def ct_record(job, r, L):
+    key, X, sel, k, s0, s1, o0, o1, stage = job
+    res = r.get('res')
+    w = None if res is None else (s0 if res == 1 else (s1 if res == -1 else None))
+    rec = {'side0': s0, 'side1': s1, 'sel0': o0, 'sel1': o1, 'seed': ct_seed(X, sel, k), 'res': res, 'winner': w,
+           'judged': r.get('judged'), 'turns': r.get('turns'), 'left': r.get('left'), 'faints': r.get('faints'),
+           'sec': r.get('sec'), 'error': r.get('error'), 'opp': X, 'sel': list(sel), 'k': k, 'stage': stage,
+           'main_side': 0 if s0 == L else 1}
+    if r.get('deny_stats') is not None:
+        rec['deny_stats'] = r['deny_stats']
+    if r.get('echo') is not None:
+        rec['echo'] = r['echo']
+    return rec
+
+
+def ct_load_plan(P):
+    if not os.path.exists(P['plan']):
+        raise SystemExit(f"{P['plan']} がありません。先に counter plan を実行してください")
+    return json.load(open(P['plan'], encoding='utf-8'))
+
+
+def ct_load_games(P, sig):
+    if os.path.exists(P['games']):
+        g = json.load(open(P['games'], encoding='utf-8'))
+        if g.get('plan_sig') != sig:
+            raise SystemExit('ct_games.json の plan_sig が ct_plan.json と違います')
+        return g
+    return {'version': CT_VERSION, 'plan_sig': sig, 'games': {}}
+
+
+def cmd_counter_plan(a):
+    P = ct_paths(a.out_dir)
+    os.makedirs(P['dir'], exist_ok=True)
+    AP = ad_paths(None)
+    if not (os.path.exists(AP['plan']) and os.path.exists(AP['games'])):
+        raise SystemExit('ad_plan.json / ad_games.json がありません')
+    ap = json.load(open(AP['plan'], encoding='utf-8'))
+    adg = json.load(open(AP['games'], encoding='utf-8'))
+    rp = load_plan(paths(None))
+    T = rp['teams']
+    L = ap['main']
+    opps = [x for x in a.opps.split(',') if x] if getattr(a, 'opps', None) else list(CT_DEFAULT_OPPS)
+    fixed = {}
+    for X in opps:
+        if X not in ap['opponents']:
+            raise SystemExit(f'{X} は ad_plan の opponents にありません')
+        n = sum(1 for k in range(10) if f'ad:{X}|{k}' in adg['games'] and adg['games'][f'ad:{X}|{k}']['res'] is not None)
+        if n < 10:
+            raise SystemExit(f'{X} の適応戦が {n}/10 です')
+        fixed[X] = ct_fixed_sel(adg, X)
+    _worker_init(T)
+    try:
+        for i in [L] + opps:
+            rr_apply(T[i])
+    except Exception as e:
+        raise SystemExit(f'構築が適用できません: {e}')
+    cands = [list(c) for c in T[L]['candidates']]
+    sig = hashlib.sha256((ap['sig'] + L + ','.join(opps) + json.dumps(fixed, ensure_ascii=False, sort_keys=True) + CT_VERSION).encode()).hexdigest()
+    if os.path.exists(P['plan']):
+        old = json.load(open(P['plan'], encoding='utf-8'))
+        if old.get('sig') == sig:
+            print(f"変更なし: {P['plan']}（sig {sig[:12]}）")
+            return old
+        if not a.force:
+            raise SystemExit('ct_plan.json の sig が違います（--force で退避して作り直し）')
+        os.replace(P['plan'], P['plan'][:-5] + time.strftime('.%Y%m%d_%H%M%S.json'))
+    plan = {'version': CT_VERSION, 'created': time.strftime('%Y-%m-%d %H:%M:%S'), 'sig': sig, 'ad_sig': ap['sig'], 'main': L,
+            'opps': opps, 'titles': {i: T[i].get('title') for i in [L] + opps}, 'fixed': fixed, 'candidates': cands,
+            'depth': list(DEPTH), 'deny': [True, True], 'top3': {}}
+    safeio.write_json(P['plan'], plan)
+    print(f"書きました: {P['plan']}（sig {sig[:12]}）")
+    for X in opps:
+        print(f"  {X} {'/'.join(fixed[X])}")
+    return plan
+
+
+def _ct_score(g):
+    res = g['res']
+    if res is None:
+        return None
+    return 0.5 if res == 0 else (1.0 if (res == 1) == (g['main_side'] == 0) else 0.0)
+
+
+def _ct_hp(g):
+    lf = g.get('left')
+    if not lf:
+        return 0
+    m = g['main_side']
+    return sum(h for _, h in lf[m]) - sum(h for _, h in lf[1 - m])
+
+
+def ct_stats(gm, X, sel, ks):
+    """(勝点, 有効戦数, HP差リスト)"""
+    w, n, hp = 0.0, 0, []
+    for k in ks:
+        g = gm.get(ct_key(X, sel, k))
+        if g is None:
+            continue
+        s = _ct_score(g)
+        if s is None:
+            continue
+        w += s
+        n += 1
+        hp.append(_ct_hp(g))
+    return w, n, hp
+
+
+def ct_rank1(plan, gm, X):
+    rows = []
+    for i, sel in enumerate(plan['candidates']):
+        w, n, hp = ct_stats(gm, X, sel, range(CT_K1))
+        rows.append((-(w / n if n else 0.0), -(sum(hp) / len(hp) if hp else 0.0), i))
+    return [plan['candidates'][i] for _, _, i in sorted(rows)]
+
+
+def cmd_counter_run(a):
+    P = ct_paths(a.out_dir)
+    plan = ct_load_plan(P)
+    rp = load_plan(paths(None))
+    L, opps = plan['main'], plan['opps']
+    G = ct_load_games(P, plan['sig'])
+    gm = G['games']
+    cands = plan['candidates']
+    active, n_disp, n_done = {}, 0, 0
+
+    def todo(key):
+        g = gm.get(key)
+        return key not in active and (g is None or (a.retry_errors and g['res'] is None))
+
+    def pending(X):
+        out = [ct_job(plan, X, s, k, 1) for s in cands for k in range(CT_K1) if todo(ct_key(X, s, k))]
+        if out:
+            return out
+        if any(ct_key(X, s, k) in active for s in cands for k in range(CT_K1)):
+            return []
+        if X not in plan['top3']:
+            plan['top3'][X] = ct_rank1(plan, gm, X)[:3]
+            safeio.write_json(P['plan'], plan)
+        return [ct_job(plan, X, s, k, 2) for s in plan['top3'][X] for k in range(CT_K1, CT_K2) if todo(ct_key(X, s, k))]
+
+    per = len(cands) * CT_K1 + 3 * (CT_K2 - CT_K1)
+    tot = len(opps) * per
+    base = sum(1 for g in gm.values() if g['res'] is not None)
+    print(f'全体 {tot}戦、済み {base}、今回 最大 {a.max_games or "全部"}', flush=True)
+    t0 = time.time()
+    with make_pool(a.procs, rp['teams']) as pool:
+        while True:
+            for X in opps:
+                if len(active) >= a.procs or (a.max_games and n_disp >= a.max_games):
+                    break
+                for job in pending(X):
+                    if len(active) >= a.procs or (a.max_games and n_disp >= a.max_games):
+                        break
+                    active[job[0]] = (pool.apply_async(_job_ct, (job,)), job)
+                    n_disp += 1
+            if not active:
+                break
+            got = False
+            for key, (ar, job) in list(active.items()):
+                if not ar.ready():
+                    continue
+                got = True
+                r = ar.get()
+                del active[key]
+                n_done += 1
+                gm[key] = ct_record(job, r, L)
+                safeio.write_json(P['games'], G)
+                s = _ct_score(gm[key])
+                mark = '例外' if s is None else ('勝' if s == 1 else ('分' if s == 0.5 else '負'))
+                el = (time.time() - t0) / 60
+                rem = el / n_done * max(0, (min(a.max_games, tot - base) if a.max_games else tot - base) - n_done)
+                print(f"[{base + n_done}/{tot}] {key} L{mark} {r.get('turns')}手 {r['sec']:.0f}秒 経過{el:.1f}分 残り約{rem:.1f}分", flush=True)
+            if not got:
+                time.sleep(0.05)
+    return n_done
+
+
+def _ct_wl(w, n):
+    lo, hi = wilson(w, n)
+    return f'{lo * 100:.1f}%-{hi * 100:.1f}%'
+
+
+def _ct_pct(w, n):
+    return f'{w:g}/{n} = {(w / n * 100 if n else 0):.1f}%'
+
+
+def ct_faints(gl):
+    first, kill = collections.Counter(), collections.Counter()
+    for g in gl:
+        ms = g['main_side']
+        fs = [f for f in (g.get('faints') or []) if f[1] == ms]
+        if fs:
+            first[min(fs, key=lambda f: f[0])[2]] += 1
+        for f in fs:
+            if f[3]:
+                kill[f[3]] += 1
+    return first, kill
+
+
+def _ct_cnt(c, n=4):
+    return '、'.join(f'{k}{v}' for k, v in c.most_common(n)) or 'なし'
+
+
+def cmd_counter_report(a):
+    P = ct_paths(a.out_dir)
+    plan = ct_load_plan(P)
+    G = ct_load_games(P, plan['sig'])
+    gm = G['games']
+    adg = json.load(open(ad_paths(None)['games'], encoding='utf-8'))
+    L, cands = plan['main'], plan['candidates']
+    tt = plan['titles']
+    body, summ = [], []
+    for X in plan['opps']:
+        fx = plan['fixed'][X]
+        ad = [g for k in range(10) for g in [adg['games'][f'ad:{X}|{k}']] if g['res'] is not None]
+        adw = sum(_ct_score({**g, 'main_side': 0 if g['side0'] == L else 1}) for g in ad)
+        adc = collections.Counter('/'.join(g['sel0'] if g['side0'] == L else g['sel1']) for g in ad)
+        s1 = {}
+        for i, sel in enumerate(cands):
+            w, n, hp = ct_stats(gm, X, sel, range(CT_K1))
+            w2, n2, _ = ct_stats(gm, X, sel, range(CT_K1, CT_K2))
+            s1[i] = (w, n, (sum(hp) / len(hp) if hp else 0.0), w2, n2)
+        top3 = plan['top3'].get(X) or ct_rank1(plan, gm, X)[:3]
+        idx = {tuple(s): i for i, s in enumerate(cands)}
+        t3 = [idx[tuple(s)] for s in top3]
+        done2 = any(s1[i][4] for i in t3)
+        pool = [i for i in t3 if s1[i][4]] or t3
+        best = max(pool, key=lambda i: ((s1[i][3] / s1[i][4]) if s1[i][4] else 0, (s1[i][0] + s1[i][3]) / max(1, s1[i][1] + s1[i][4]), -t3.index(i)))
+        bw, bn = s1[best][3], s1[best][4]
+        t16w, t16n = s1[best][0] + bw, s1[best][1] + bn
+        adr = adw / len(ad) if ad else 0
+        diff = ((bw / bn if bn else 0) - adr) * 100
+        rank = sorted(range(len(cands)), key=lambda i: (-(s1[i][0] / s1[i][1] if s1[i][1] else 0), -s1[i][2], i))
+        worst = sorted(range(len(cands)), key=lambda i: ((s1[i][0] / s1[i][1] if s1[i][1] else 0), s1[i][2], i))[:3]
+        bsel = '/'.join(cands[best])
+        summ.append(f"| {tt.get(X) or X} | {bsel} | {_ct_pct(bw, bn)} | {_ct_pct(adw, len(ad))} | {diff:+.1f}pt |")
+        o = [f'## {tt.get(X) or X}（{X}）', '',
+             f"### 1. 相手の固定選出と適応10戦", f"- 固定選出: {'/'.join(fx)}", f"- 適応10戦のLの実績: {_ct_pct(adw, len(ad))}",
+             f"- Lが使った選出の上位: {'、'.join(f'{k}×{v}' for k, v in adc.most_common(3))}", '',
+             '### 2. 最良選出' + ('' if done2 else '（確認未実施: 第1段の1位）'),
+             f"- {bsel}", f"- 確認{bn}戦: {_ct_pct(bw, bn)}、Wilson95% [{_ct_wl(bw, bn)}]", f"- 16戦合計: {_ct_pct(t16w, t16n)}",
+             f"- 適応10戦との差: {diff:+.1f}pt", '', '### 3. 上位3と悪い選出トップ3（第1段）']
+        o += [f"- 上位{r + 1}: {'/'.join(cands[i])}  {_ct_pct(s1[i][0], s1[i][1])} HP差{s1[i][2]:+.0f}" for r, i in enumerate(t3)]
+        o += [f"- 悪い{r + 1}: {'/'.join(cands[i])}  {_ct_pct(s1[i][0], s1[i][1])} HP差{s1[i][2]:+.0f}" for r, i in enumerate(worst)]
+        o += ['', '### 4. 24通りの表', '', '| 選出 | 第1段 | 確認 |', '|---|---|---|']
+        for i in rank:
+            o.append(f"| {'/'.join(cands[i])} | {_ct_pct(s1[i][0], s1[i][1])} | {_ct_pct(s1[i][3], s1[i][4]) if s1[i][4] else '-'} |")
+        gb = [g for k in range(CT_K2) for g in [gm.get(ct_key(X, cands[best], k))] if g]
+        ga = [g for g in gm.values() if g['opp'] == X]
+        o += ['', '### 5. 倒され方']
+        for nm, gl in (('最良選出', gb), ('全体', ga)):
+            f1, kl = ct_faints(gl)
+            o.append(f"- {nm}（{len(gl)}戦）: 最初に倒れたL側 {_ct_cnt(f1)} / Lを倒した相手個体 {_ct_cnt(kl)}")
+        main_k = ct_faints(ga)[1].most_common(1)
+        o.append(f"- 相手の主力: {main_k[0][0] if main_k else 'なし'}")
+        mons = sorted({m for c in cands for m in c})
+        bad = []
+        s1g = [g for g in ga if g['stage'] == 1 and _ct_score(g) is not None]
+        for m in mons:
+            gi = [_ct_score(g) for g in s1g if m in g['sel']]
+            go = [_ct_score(g) for g in s1g if m not in g['sel']]
+            if gi and go and sum(go) / len(go) - sum(gi) / len(gi) >= 0.15:
+                bad.append(f"{m}（含む {sum(gi) / len(gi) * 100:.0f}% / 含まない {sum(go) / len(go) * 100:.0f}%）")
+        o += ['', '### 6. 結論', f"- この相手には: {bsel}", f"- 出してはいけない個体（含む選出の第1段勝率が15pt以上低い）: {'、'.join(bad) or 'なし'}", '']
+        body.append('\n'.join(o))
+    head = ['# COUNTER 苦手構築への対策選出', '', f"主構築 {L}（{tt.get(L)}）", '',
+            '## 全体まとめ', '', '| 相手 | 最良選出 | 確認勝率 | 適応10戦 | 改善幅 |', '|---|---|---|---|---|'] + summ + ['']
+    tail = ['## 条件', f"- 種: crc32(f'ct{{X}}{{\"/\".join(sel)}}{{k}}')、深さ {list(DEPTH)}、deny [True, True]、ブラインド",
+            f"- 第1段 k=0..{CT_K1 - 1}、第2段 k={CT_K1}..{CT_K2 - 1}（上位3選出）", f"- plan sig {plan['sig']}", '']
+    os.makedirs(os.path.dirname(os.path.abspath(P['md'])), exist_ok=True)
+    txt = '\n'.join(head) + '\n' + '\n'.join(body) + '\n' + '\n'.join(tail)
+    open(P['md'], 'w', encoding='utf-8').write(txt)
+    print(f"書きました: {P['md']}")
+    return txt
+
+
+def cmd_counter_selftest(a):
+    import shutil, subprocess, tempfile
+    global _CT_PLAY
+    D = a.out_dir or tempfile.mkdtemp(prefix='cttest_')
+    results = []
+
+    def ok(n, cond, msg=''):
+        results.append((n, bool(cond)))
+        print(f"{'○' if cond else '×'} {n} {msg}", flush=True)
+
+    before = _sha_all()
+    p = subprocess.run([sys.executable, '-m', 'py_compile', 'roundrobin.py'], cwd=HERE, capture_output=True, text=True)
+    ok('1 py_compile', p.returncode == 0, p.stderr[-200:])
+    OPPS = ['e74e068449bec8e6', 'bab22dcc629688e8', 'yakkun_n8943', '047f48a2b51a88d1', '856f9d20f6a9b5a9']
+
+    class A_:
+        pass
+
+    def args(sub, **kw):
+        x = A_()
+        x.out_dir, x.opps, x.procs, x.max_games, x.force, x.retry_errors = os.path.join(D, sub), ','.join(OPPS[:2]), a.procs, 0, True, False
+        x.__dict__.update(kw)
+        return x
+
+    rp = load_plan(paths(None))
+    T = rp['teams']
+    # 2 候補
+    pl = cmd_counter_plan(args('p', opps=','.join(OPPS)))
+    L = pl['main']
+    cs = [tuple(c) for c in pl['candidates']]
+    mega = {m['base'] for m in T[L]['mons'] if m['mega']}
+    ok('2 候補', len(cs) == 24 and len(set(cs)) == 24 and set(cs) <= {tuple(c) for c in T[L]['candidates']} and
+       all(len(mega & set(c)) <= 1 for c in cs))
+    # 3 選出固定
+    exp = {OPPS[0]: ['セグレイブ', 'ギャラドス', 'キラフロル'], OPPS[1]: ['ブリジュラス', 'イダイトウ', 'ドドゲザン'],
+           OPPS[2]: ['ミミッキュ', 'リザードン', 'カバルドン'], OPPS[3]: ['ボーマンダ', 'カバルドン', 'ブリジュラス'],
+           OPPS[4]: ['イダイトウ', 'リザードン', 'ミミッキュ']}
+    ok('3a 固定選出の期待値', all(pl['fixed'][x] == v for x, v in exp.items()))
+
+    def stub(args_):
+        h = zlib.crc32(repr((args_[2], args_[3], args_[4])).encode())
+        return {'res': (1, -1, 0)[h % 3], 'turns': 5 + h % 7, 'judged': False,
+                'left': [[[m, (h >> i) % 101] for i, m in enumerate(args_[2])], [[m, (h >> (i + 3)) % 101] for i, m in enumerate(args_[3])]],
+                'faints': [[3, 0, args_[2][0], args_[3][0]], [5, 1, args_[3][0], args_[2][1]]], 'echo': [list(args_[2]), list(args_[3]), args_[4], list(args_[10]), args_[1]]}
+    _CT_PLAY = stub
+    try:
+        a2 = args('s2')
+        cmd_counter_plan(a2)
+        cmd_counter_run(a2)
+        P2 = ct_paths(a2.out_dir)
+        pl2 = json.load(open(P2['plan'], encoding='utf-8'))
+        gm2 = json.load(open(P2['games'], encoding='utf-8'))['games']
+        good = bool(gm2)
+        for key, g in gm2.items():
+            X, sel, k = g['opp'], g['sel'], g['k']
+            e = g['echo']
+            lside = 0 if k % 2 == 0 else 1
+            xo, lo = (e[1], e[0]) if lside == 0 else (e[0], e[1])
+            good &= xo == pl2['fixed'][X] and lo == sel and g['main_side'] == lside and e[2] == zlib.crc32(f'ct{X}{"/".join(sel)}{k}'.encode()) \
+                and e[3] == [g['side0']] and key == ct_key(X, sel, k)
+        ok('3b 呼び出し引数（X固定・L候補・左右・種）', good, f'{len(gm2)}戦')
+        ok('3c 件数', len(gm2) == 2 * (96 + 36), f'{len(gm2)}')
+        # 4 再開
+        a3, a4 = args('s3', max_games=5), args('s4', max_games=100)
+        cmd_counter_plan(a3)
+        cmd_counter_run(a3)
+        cmd_counter_run(a3)
+        g3 = json.load(open(ct_paths(a3.out_dir)['games'], encoding='utf-8'))['games']
+        same = all((g3[k][f] == gm2[k][f]) for k in g3 for f in ('res', 'seed', 'left', 'faints', 'sel0', 'sel1'))
+        ok('4a 再開 5+5=10件・同一結果', len(g3) == 10 and same, f'{len(g3)}件')
+        cmd_counter_plan(a4)
+        cmd_counter_run(a4)
+        p4 = json.load(open(ct_paths(a4.out_dir)['plan'], encoding='utf-8'))
+        g4 = json.load(open(ct_paths(a4.out_dir)['games'], encoding='utf-8'))['games']
+        good = len(g4) == 100
+        for g in g4.values():
+            if g['stage'] == 2:
+                X = g['opp']
+                good &= all(ct_key(X, s, k) in g4 for s in p4['candidates'] for k in range(CT_K1)) and g['sel'] in p4['top3'][X]
+        ok('4b 第1段が終わったXだけ第2段', good, f"第2段 {sum(1 for g in g4.values() if g['stage'] == 2)}戦")
+        # 7 report
+        txt = cmd_counter_report(a2)
+        X = OPPS[0]
+        cands2 = pl2['candidates']
+        top = pl2['top3'][X]
+        bi = max(top, key=lambda s: (ct_stats(gm2, X, s, range(CT_K1, CT_K2))[0] / 12))
+        w, n, _ = ct_stats(gm2, X, bi, range(CT_K1, CT_K2))
+        has = all(f'### {i}.' in txt for i in range(1, 7)) and '## 全体まとめ' in txt and '## 条件' in txt
+        ok('7 report 全セクション・Wilson一致', has and _ct_wl(w, n) in txt, f'{len(txt)}字')
+    finally:
+        _CT_PLAY = R.blind_play
+    # 6 実エンジン1戦
+    _worker_init(T)
+    X = OPPS[0]
+    job = ct_job(pl, X, pl['candidates'][0], 0, 1)
+    t0 = time.time()
+    r = _job_ct(job)
+    sec = time.time() - t0
+    ok('6 実エンジン1戦', r.get('res') is not None and sec <= 30, f"{sec:.1f}秒 res={r.get('res')} {r.get('error') or ''}"[:200])
+    after = _sha_all()
+    ok('5 sha256不変・ct_*/COUNTER.mdなし', before == after and not os.path.exists(DEF_CTMD) and
+       not [f for f in os.listdir(DEF_OUT) if f.startswith('ct_')])
+    if not a.keep:
+        shutil.rmtree(D, ignore_errors=True)
+    print(f"結果: {sum(1 for _, c in results if c)}/{len(results)} 通過", flush=True)
+    return all(c for _, c in results)
+
+
+def cmd_counter(a):
+    {'plan': cmd_counter_plan, 'run': cmd_counter_run, 'report': cmd_counter_report, 'selftest': cmd_counter_selftest}[a.what](a)
+
+
 def main():
     ap = argparse.ArgumentParser()
     sp = ap.add_subparsers(dest='cmd', required=True)
@@ -2521,8 +2968,17 @@ def main():
     p.add_argument('--quick', action='store_true')
     p.add_argument('--keep', action='store_true')
     p.add_argument('--out-dir')
+    p = sp.add_parser('counter')
+    p.add_argument('what', choices=['plan', 'run', 'report', 'selftest'])
+    p.add_argument('--opps')
+    p.add_argument('--procs', type=int, default=4)
+    p.add_argument('--force', action='store_true')
+    p.add_argument('--max-games', type=int, default=0)
+    p.add_argument('--retry-errors', action='store_true')
+    p.add_argument('--keep', action='store_true')
+    p.add_argument('--out-dir')
     a = ap.parse_args()
-    {'adapt': cmd_adapt, 'deny': cmd_deny, 'plan': cmd_plan, 'run': cmd_run, 'report': cmd_report, 'selftest': cmd_selftest, 'show': cmd_show}[a.cmd](a)
+    {'counter': cmd_counter, 'adapt': cmd_adapt, 'deny': cmd_deny, 'plan': cmd_plan, 'run': cmd_run, 'report': cmd_report, 'selftest': cmd_selftest, 'show': cmd_show}[a.cmd](a)
 
 
 if __name__ == '__main__':
