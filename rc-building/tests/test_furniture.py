@@ -55,7 +55,7 @@ def test_table_in_ldk():
 def test_robot_clearance():
     """床置きの家具は、台輪・脚下250以上・浮かせ250以上・機器類のいずれか。脚の間の内法は250以上。"""
     h = house()
-    ok_base = {"plinth", "none", "pot", "unit", "stack", "frame", "ceiling"}
+    ok_base = {"plinth", "none", "pot", "unit", "stack", "frame", "ceiling", "wallfix"}
     for i in FU.items(h):
         if i.base in ok_base:
             continue
@@ -67,6 +67,9 @@ def test_robot_clearance():
             assert i.w - 2 * (p["leg_inset"] + p["leg_pipe"]) >= 250          # 左右の脚枠の内法
         elif i.base == "legs260":
             assert 260 >= 250
+        elif i.base == "legs25":
+            import kitchen_open as KO
+            assert KO.KB_SHELF_Z[0] >= 250              # 背面カウンターの底板は FL+300（掃除ロボットが入る）
         elif i.base == "float650":
             assert 650 >= 250
         else:
@@ -117,6 +120,29 @@ def test_interior_preview_render():
     r = subprocess.run([sys.executable, str(ROOT / "src" / "render_cg.py"), "--interior", "--preview", "--only", "I01"], capture_output=True, text=True)
     assert r.returncode == 0, r.stdout[-500:] + r.stderr[-500:]
     assert (ROOT / ".cache" / "cg" / "interior_preview" / "I01_ldk_south.png").exists()
+
+
+def test_kitchen_open():
+    """キッチン・パントリーの全露出（v4.17）。"""
+    import kitchen_open as KO
+    h = house()
+    its = FU.items(h)
+    ids = {i.id for i in its}
+    assert "K-B1" not in ids and "P-S1" not in ids
+    assert {"KB-W", "KB-C", "KB-R", "KB-K", "KB-S", "KB-F", "P-O1"} <= ids
+    by = {i.id: i for i in its}
+    assert by["KB-K"].z0 - h.fl["1F"] >= 1550                       # 包丁は子どもの手が届かない高さ
+    zs = [0] + [z for z in KO.KB_SHELF_Z] + [KO.KB_TOP_UNDER]       # 背面カウンター下部の段の間隔（棚板上面〜上の棚板下面）
+    gaps = [b - a - (KO.KB_SHELF_T if a else 0) for a, b in zip(zs, zs[1:])]
+    assert gaps[0] >= 250 and all(g > 230 for g in gaps[1:]), gaps   # 底板の下は掃除ロボットが入る（≧250）、段の間隔は 230 超
+    tiers = KO.KS_TIERS
+    assert all(b - a - KO.KB_SHELF_T > 230 for a, b in zip(tiers, tiers[1:]))
+    ps = KO.PANTRY_SHELF_Z
+    assert all(b - a - KO.KB_SHELF_T > 230 for a, b in zip(ps, ps[1:]))
+    assert FU.check(h, its) == []
+    assert not h.spec["kitchen_open"]["pot_rack"]
+    props = KO.props(h).meshes()
+    assert {"stainless", "ceramic", "glass_clear"} <= set(props)
 
 
 if __name__ == "__main__":

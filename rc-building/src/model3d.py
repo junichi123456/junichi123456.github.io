@@ -659,7 +659,7 @@ def build_parts(h, interior=False):
         if bx.mat == "glass":
             grp = STYLE["glass"][0]
         for q, mk in classify(h, bx):
-            if interior and mk == "interior_door":
+            if interior and (mk == "interior_door" or (bx.cat == "door" and bx.tag in ("GD-1", "GD-2"))):
                 continue
             P.add_box(grp, bx.level, mk, q)
     facade_extras(h, P)

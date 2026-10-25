@@ -287,6 +287,33 @@ def interior_parts(h, its):
         f = MBfor("照明器具", d["floor"], "lamp_face")
         f.cyl("lamp_face", x, y, 38, z - 4, z - 3, 20)
 
+    # ---------------- 直付ライン照明（主照明。幅 50×高 60 の乳白カバー、下面が発光面）と階段の足元灯（v4.17）
+    import lighting as LG
+    cfgl = h.spec["lighting"]["line"]
+    for l in LG.lines(h, its):
+        x0, y0, z = l["p0"]
+        x1, y1, _ = l["p1"]
+        wd, ht = cfgl["width"], cfgl["height"]
+        xa, xb = sorted((x0, x1))
+        ya, yb = sorted((y0, y1))
+        if l["axis"] == "x":
+            ya, yb = y0 - wd / 2, y0 + wd / 2
+            fa = (xa, ya + 4, xb, yb - 4)
+        else:
+            xa, xb = x0 - wd / 2, x0 + wd / 2
+            fa = (xa + 4, ya, xb - 4, yb)
+        zt = z - 2 if l["room"] == "ジム" else z
+        sb = single.setdefault(("照明器具", l["floor"], "line_body", l["id"]), FS.MB())
+        sb.box("line_body", xa, ya, zt - ht, xb, yb, zt)
+        sf = single.setdefault(("照明器具", l["floor"], "line_face", l["id"]), FS.MB())
+        sf.box("line_face", fa[0], fa[1], zt - ht - 1, fa[2], fa[3], zt - ht)
+    for f in LG.footlights(h):
+        x, y, z = f["p"]
+        nx = f["n"][0]
+        sp = single.setdefault(("照明器具", "1F", "foot_plate", f["id"]), FS.MB())
+        sp.box("foot_plate", min(x, x + nx * 2), y - 60, z - 35, max(x, x + nx * 2), y + 60, z + 35)
+        sf = single.setdefault(("照明器具", "1F", "foot_face", f["id"]), FS.MB())
+        sf.box("foot_face", min(x + nx * 2, x + nx * 2.6), y - 40, z - 24, max(x + nx * 2, x + nx * 2.6), y + 40, z - 6)
     # ---------------- ZIP スクリーンの生地（下ろした状態。昼のカットでは非表示）
     for key, mbx in screen_fabrics(h).items():
         single[key] = mbx

@@ -248,10 +248,16 @@ def island(mb, rect, z0, p):
     L = LF(mb, rect, "-y")                    # 背は北、正面は南（LDK 側）
     W, D = L.W, L.D
     L.box("plinth", 0, W, 0, D - 40, z0, z0 + 61)
-    L.box("olive_case", 0, W, 0, D, z0 + 60, z0 + 880)
+    import kitchen_open as KO
+    bu0, bu1 = KO.ISLAND_BAY
+    L.box("olive_case", 0, bu0, 0, D, z0 + 60, z0 + 880)
+    L.box("olive_case", bu1, W, 0, D, z0 + 60, z0 + 880)
+    KO.island_bay(L, z0, D)                                  # 調理側（北面）の約 600 は扉なしのオープン棚（全露出、v4.17）
     n = max(1, round(W / 600))
     for k in range(1, n):
         u = W * k / n
+        if bu0 - 5 <= u <= bu1 + 5:
+            continue
         L.box("joint", u - 2, u + 2, D, D + 1, z0 + 65, z0 + 875)
     # 天板: シンクの開口と IH の面一ガラス
     su0, su1, sv0, sv1 = 450, 1250, 330, 780                      # シンク（u, 奥からの v）
