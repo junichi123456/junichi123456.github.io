@@ -284,3 +284,44 @@ def illuminance_table(h, its):
                          lm_per_m=max(l["lm_per_m"] for l in rl), lm=lm, E=lm * u * _cfg(h)["maintenance_factor"] / A,
                          dl=sum(1 for d in dl if d["floor"] == r.floor and d["code"] == room_code(h, r))))
     return rows
+
+
+# ------------------------------------------------------------------ DALI 系統・グループ（E-06）
+def device_count(l):
+    """ライン器具 1 列を 1,200〜2,400 の器具に分けた台数（1 台ずつドライバー内蔵）。"""
+    return max(1, math.ceil(l["L"] / 2400))
+
+
+def dali_groups(h, its):
+    """階ごとに、室×チャネル（L・D・F）をグループにして DALI-2 の系統（64 台・16 グループ）へ順に割り付ける。
+    戻り値: [dict(floor, system, group, name, ch, devices)]。"""
+    lns = lines(h, its)
+    dl = downlights(h, its, lns)
+    ft = footlights(h)
+    out = []
+    for fl in ("1F", "2F"):
+        groups = []
+        for r in h.rooms:
+            if r.floor != fl:
+                continue
+            code = room_code(h, r)
+            n_l = sum(device_count(l) for l in lns if l["floor"] == fl and l["code"] == code and l["kind"] == "line")
+            n_s = sum(device_count(l) for l in lns if l["floor"] == fl and l["code"] == code and l["kind"] == "shelf")
+            n_d = sum(1 for d in dl if d["floor"] == fl and d["code"] == code)
+            if n_l:
+                groups.append((f"{code}-L", "L", n_l))
+            if n_s:
+                groups.append((f"{code}-棚下", "L", n_s))
+            if n_d:
+                groups.append((f"{code}-D", "D", n_d))
+        if fl == "1F":
+            for s in h.stairs:
+                groups.append((f"{s.name}-F", "F", sum(1 for f in ft if f["stair"] == s.name)))
+        sysn, gi, dev = 1, 0, 0
+        for name, ch, n in groups:
+            if gi >= _cfg(h)["dali"]["groups_per_system"] or dev + n > _cfg(h)["dali"]["devices_per_system"]:
+                sysn, gi, dev = sysn + 1, 0, 0
+            out.append(dict(floor=fl, system=f"{fl}-{sysn}", group=f"G{gi}", name=name, ch=ch, devices=n))
+            gi += 1
+            dev += n
+    return out

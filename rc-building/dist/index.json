@@ -216,6 +216,27 @@
    "scale": "1:500",
    "dxf": "dist/dxf/E-03.dxf",
    "png": "dist/png/E-03.png"
+  },
+  {
+   "number": "E-04",
+   "title": "照明配置図（1階）",
+   "scale": "1:100",
+   "dxf": "dist/dxf/E-04.dxf",
+   "png": "dist/png/E-04.png"
+  },
+  {
+   "number": "E-05",
+   "title": "照明配置図（2階）",
+   "scale": "1:100",
+   "dxf": "dist/dxf/E-05.dxf",
+   "png": "dist/png/E-05.png"
+  },
+  {
+   "number": "E-06",
+   "title": "照明器具表・照度計算・制御",
+   "scale": "—",
+   "dxf": "dist/dxf/E-06.dxf",
+   "png": "dist/png/E-06.png"
   }
  ],
  "summary": {

@@ -374,27 +374,9 @@ def meshes(h, its):
 
 # ------------------------------------------------------------------ ダウンライト
 def downlights(h, its):
-    """埋込ダウンライト（φ100）の位置。室の矩形を 1,800（ジム 2,000）の格子に分け、各セルの中心に 1 台。"""
-    holes = [s.hole for s in h.stairs]
-    tall = {fl: [sbox(*i.rect) for i in its if i.floor == fl and i.z0 + i.h >= h.fl[fl] + h.ch[fl] - 100 and not i.stack] for fl in ("1F", "2F")}
-    out = []
-    pitch0 = h.spec.get("interior_cg", {}).get("pitch_mm", 1800)
-    wt = h.spec.get("interior_cg", {}).get("room_lamp_weight", {})
-    for r in h.rooms:
-        x0, y0, x1, y1 = r.rect
-        w, d = x1 - x0, y1 - y0
-        pitch = pitch0 if r.name != "ジム" else pitch0 + 200
-        nx, ny = max(1, round(w / pitch)), max(1, round(d / pitch))
-        z = h.fl[r.floor] + (h.ch[r.floor] if r.name != "ジム" else 2980)
-        for i in range(nx):
-            for j in range(ny):
-                x, y = x0 + w * (i + 0.5) / nx, y0 + d * (j + 0.5) / ny
-                if r.floor == "1F" and any(a <= x <= c and b <= y <= e for a, b, c, e in holes):
-                    continue
-                if any(t.buffer(60).contains(Polygon([(x - 50, y - 50), (x + 50, y - 50), (x + 50, y + 50), (x - 50, y + 50)])) for t in tall[r.floor]):
-                    continue
-                out.append(dict(p=[x, y, z], floor=r.floor, room=r.name, w=next((v for k, v in wt.items() if k in r.name), 1.0)))
-    return out
+    """埋込ダウンライト（弱い補助灯 φ100）の位置。v4.17 から lighting.downlights（ライン照明の中間線上・ライン軸から 450 以上・壁から 400 以上）。"""
+    import lighting
+    return lighting.downlights(h, its)
 
 
 # ------------------------------------------------------------------ 家具表

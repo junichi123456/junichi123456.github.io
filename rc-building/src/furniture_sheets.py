@@ -152,6 +152,14 @@ def furniture_plan(h, floor, number):
     for d in FU.downlights(h, FU.items(h)):
         if d["floor"] == floor:
             sh.circle(t(d["p"][0], d["p"][1]), 0.75 * sh.S, "E-LITE")
+    import lighting as LG
+    for l in LG.lines(h, FU.items(h)):
+        if l["floor"] == floor:
+            sh.pline([t(l["p0"][0], l["p0"][1]), t(l["p1"][0], l["p1"][1])], "E-LINE", lineweight=50)
+    if floor == "1F":
+        for f in LG.footlights(h):
+            c = t(f["p"][0], f["p"][1])
+            sh.pline([(c[0] - 0.8 * sh.S, c[1] + 0.8 * sh.S), (c[0] + 0.8 * sh.S, c[1] + 0.8 * sh.S), (c[0], c[1] - 0.8 * sh.S)], "E-FOOT", closed=True)
     # 家具
     for it in its:
         draw_item(sh, t, it, h)
@@ -183,11 +191,11 @@ def furniture_plan(h, floor, number):
         sh.text("主寝室 北窓 AW-5: 遮光 ZIP スクリーンを追加する提案（要施主確認・CG のみ描画）", t(14800, h.D + 700), 1.5, "A-TEXT", "MIDDLE_CENTER")
     sh.north_arrow(sh.P(395, 268), 7, rot=h.facade_az)
     sh.view_title(names[floor], "1:100", (24, 22))
-    sh.text(f"{floor[:-1]}FL = 設計GL+{fl:,}（TP+{tp(h, fl):.2f}）／天井高 CH={h.ch[floor]:,}／○ = 埋込ダウンライト φ100", (24, 15), 2.4, "A-TEXT", paper=True)
+    sh.text(f"{floor[:-1]}FL = 設計GL+{fl:,}（TP+{tp(h, fl):.2f}）／天井高 CH={h.ch[floor]:,}／○ = 埋込ダウンライト（弱）、太線 = 直付ライン LED", (24, 15), 2.4, "A-TEXT", paper=True)
     cy = side_panel(sh, 284, 282, [("h", "凡例・注記")])
     # 凡例
     from house_sheets import legend
-    cy = legend(sh, 285, cy - 1, [("A-FURN", "家具（外形・細線）", "line"), ("A-FURN", "チェア（外形を塗り）", "line"), ("E-LITE", "埋込ダウンライト φ100", "line"),
+    cy = legend(sh, 285, cy - 1, [("A-FURN", "家具（外形・細線）", "line"), ("A-FURN", "チェア（外形を塗り）", "line"), ("E-LITE", "埋込ダウンライト（弱）φ100", "line"), ("E-LINE", "直付ライン LED（主照明）", "line"), ("E-FOOT", "階段の足元灯（踏面+300）", "line"),
                                    ("A-HIDDEN", "テーブルの脚位置・物干しパイプ", "line"), ("A-DOOR", "開き戸の軌跡", "line")])
     notes = [("h", "仮置きの前提"),
              ("t", NOTE),
@@ -208,7 +216,7 @@ def furniture_plan(h, floor, number):
 
 # ===================================================================== I-05 家具表・内装色彩計画
 PALETTE_ROWS = [
-    ("wall_paint", "壁", "PB＋耐汚染塗装（拭き取り可）"), ("ceiling_paint", "天井", "PB＋EP（フラット・埋込LED）"),
+    ("wall_paint", "壁", "PB＋耐汚染塗装（拭き取り可）"), ("ceiling_paint", "天井", "PB＋EP（フラット・溝なし）＋直付ライン LED（主）・埋込 LED（弱）"),
     ("floor_oak", "床 居室・LDK・キッチン・図書室・階段", "複合フローリング（ノンワックス・ややつや）"), ("floor_sheet", "床 トイレ・洗面・ランドリー・浴室", "塩ビシームレスシート（石目調）"),
     ("floor_tile_genkan", "床 玄関土間", "大判磁器タイル 600角・細目地"), ("floor_rubber", "床 ジム", "ゴムシート t15（灰色。黒にしない）"),
     ("floor_carpet", "床 シアター・前室", "タイルカーペット（暗すぎない）"), ("wall_theater", "壁 シアター・前室", "PET 吸音ボード"),
