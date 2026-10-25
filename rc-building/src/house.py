@@ -724,7 +724,8 @@ class House:
         bh, bd = us["box"]["h"], us["box"]["d"]
         e = self.t / 2 + self.ins
         for op in self.openings(exterior=True):
-            if op.kind != "window" or op.side not in us["sides"]:
+            extra = any(k in op.name for k in us.get("extra_windows", []))
+            if op.kind != "window" or (op.side not in us["sides"] and not extra):
                 continue
             a, b, z0, z1 = op.u0 - 50, op.u1 + 50, op.z1, op.z1 + bh
             if op.side == "S":

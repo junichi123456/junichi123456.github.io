@@ -34,6 +34,8 @@ LAYERS = {
     "A-FLOW": (6, "DASHED", 35, "動線（回遊・家事・搬入）"),
     "A-COLOR": (8, "Continuous", 9, "仕上げ色の塗り（立面・色見本）"),
     "A-VIS": (7, "Continuous", 18, "見え掛り（細線）"),
+    "A-FURN": (7, "Continuous", 18, "家具（仮置き・外形の細線）"),
+    "E-LITE": (7, "Continuous", 18, "埋込ダウンライト（○ φ1.5mm）"),
     "A-HIDDEN": (8, "HIDDEN", 13, "隠れ線（破線）"),
     "A-GLAZ": (5, "Continuous", 18, "建具・ガラス"),
     "A-DOOR": (5, "Continuous", 18, "扉・開き勝手"),

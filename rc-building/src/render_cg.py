@@ -7,6 +7,7 @@
     python3 src/render_cg.py                       # 全カットを本番の品質で
     python3 src/render_cg.py --preview             # 960×540・16spp・テクスチャなし（構図の確認）
     python3 src/render_cg.py --only C03 --samples 64
+    python3 src/render_cg.py --interior [--preview] [--only I01,I02]   # 内装CG（render_interior.py）
 
 bpy は .venv-bpy にインストールする（README の手順）。環境変数 BPY_PYTHON でインタプリタを指定してもよい。
 """
@@ -261,8 +262,13 @@ def main(argv=None):
     ap.add_argument("--samples", type=int, default=0)
     ap.add_argument("--scene-only", action="store_true", help="scene.json だけ書いて終わる")
     ap.add_argument("--no-glb", action="store_true")
+    ap.add_argument("--size", default="", help="--interior --preview の解像度（例 960x540）")
+    ap.add_argument("--interior", action="store_true", help="内装CG（11カット。dist/render/interior/）。--preview・--only・--samples も使える")
     args = ap.parse_args(argv)
     args.only = set(args.only.split(",")) if args.only else None
+    if args.interior:
+        import render_interior
+        return render_interior.main(args)
     t_start = time.time()
     h = House(ROOT)
     spec = h.spec

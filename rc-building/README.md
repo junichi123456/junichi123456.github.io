@@ -34,12 +34,17 @@ v4.12: 強盗（闇バイト型）対策を強化（S-04）: 門のインター�
 v4.13: Blueprint 型の暮らしに対応（M-04）: 寝室1部屋1人・CO2 800ppm 以下の需要制御換気、完全遮光・室ごとの温度設定、浄水、日なたのプランター菜園（脚付きで床を傷めない）。
 v4.14: 施主の再配置図で敷地境界・塀を北と東で内側へ寄せ、北東の角を除外（約2,630m²）。Dotcon+ を再配置図の位置に（約838m²）。
 v4.15: 外装色（ベース `#F5EFE3`・アソート `#4F5B2A`・アクセント `#B8892D`、いずれも仮定）、塀（`#FFF8F0`〜`#ECE7D1` の範囲で5段階）・Dotcon+ `#D8C9A8` の色、指定のない面はコンクリート（地面は透水性コンクリート・要施主確認）。外観CG 7カット（`dist/render/`）と、仕上表 I-02・立面図 A-06 への反映。ブリーフ25章。
+v4.16: 内装の仮置きと内装CG。リビングのチェアは「ペッパー スクールチェア チャコールブラウン」1脚だけ、テーブルは「マテリア ダイニングテーブル OSB 177.5cm ロの字脚」を仮置き（寸法・色は仮定、要施主確認）。ほかの家具・照明・仕上げの色は仕様者が決めた。家具配置図 I-03（1階）・I-04（2階）、家具表・内装色彩計画 I-05、内装CG 11カット（`dist/render/interior/`、代表: `docs/cg_I01_ldk_south.jpg`・`docs/cg_I02_ldk_dusk.jpg`）。ブリーフ26章。家具は仮置き（後日差し替え）。
+
+![内装CG（LDK）](docs/cg_I01_ldk_south.jpg)
 
 ## 生成物（`dist/`）
 - `drawings.pdf`：A3 全17枚、`dxf/*.dxf`：CAD 用、`png/`：画像
   - A-00 表紙／A-01 配置図・求積図（座標求積）／A-02 外構・雨水排水計画図／A-03・04 平面図／A-05 屋根伏図／A-06 立面図／A-07 断面図（建物）／A-08 敷地断面図（地形・浸水）／A-09 建具表／A-10・11 法規チェックリスト／S-01 基礎伏図・耐力壁配置図（壁量）／S-02 RC塀・止水・透水舗装 詳細図
 - `model.glb`：3Dモデル。建物、RC塀、Dotcon+ 舗装、カーポート、周辺建物、地形を含む
 - `render/*.png`：外観CG 7カット（C01 門まわり／C01b 南東角／C02 南東上空／C03 玄関／C04 パーゴラ／C05 東側道路／C06 夕景）。1920×1080（C01b は 1600×900）
+- `model_interior.glb`：内装CG 用の3Dモデル（家具・天井・床仕上げ・内壁仕上げ・扉・照明器具を加えたもの。ビューアは従来どおり `model.glb`）
+- `render/interior/*.png`：内装CG 11カット（I01 LDK／I02 LDK夕景／I03 キッチン／I04 玄関／I05 階段／I06 ジム／I07 シアター／I08 図書室／I09 主寝室／I10 洗面・浴室／I11 ランドリー）。1600×900＋注記の帯
 - `LEGAL_CHECK.md`：法規チェック 59項目。不適合0、要確認12（用途地域・防火指定・採光補正係数・2階の排煙・構造計算など）
 - ビューア: [`index.html`](index.html)。3D表示、断面表示、図面一覧、法規チェック表を見られます
 
@@ -53,6 +58,8 @@ python3 src/build.py
 python3 -m venv .venv-bpy && .venv-bpy/bin/pip install bpy==5.0.1   # 初回のみ
 python3 src/render_cg.py            # 全カット（--preview で構図確認、--only C03 で1カット）
 python3 tests/test_colors.py        # 色・材質・外壁比率の試験
+python3 src/render_cg.py --interior # 内装CG 11カット（約1時間。--preview で構図確認、--only I01,I02 で一部）
+python3 tests/test_furniture.py     # 家具の干渉・チェアの総数・すき間・GLB の試験
 ```
 
 ## ソース構成
@@ -61,6 +68,7 @@ python3 tests/test_colors.py        # 色・材質・外壁比率の試験
 - `src/views.py`：3D の部材を切断・投影して、隠れる線を消しながら平面・立面・断面を作図
 - `src/house_legal.py`：法規チェック（建築基準法・施行令・平13国交告1026号・東京都建築安全条例ほか）
 - `src/model3d.py`：glTF 出力（材質キーごとの色・外壁の割り付け・CG用の要素）
+- `src/furniture.py`（家具の定義・配置・干渉検査）・`src/furniture_shapes.py`（家具の形）・`src/interior_shell.py`（床・天井・内壁・扉・階段まわり）・`src/furniture_sheets.py`（I-03〜I-05）・`src/render_interior.py`・`src/cg_interior.py`：家具の仮置きと内装CG
 - `src/render_cg.py`・`src/cg_blender.py`：外観CG（段階1: 場面の定義とテクスチャ取得、段階2: Blender で描画）
 
 ## 注意

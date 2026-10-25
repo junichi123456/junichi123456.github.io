@@ -66,14 +66,19 @@ def fence_range_color(spec, t):
     return tuple(round(x + (y - x) * t) for x, y in zip(ca, cb))
 
 
-def material_table(spec):
-    """matkey → dict(rgba_linear, roughness, metallic, emissive)。"""
+def material_table(spec, interior=False):
+    """matkey → dict(rgba_linear, roughness, metallic, emissive)。interior=True で内装パレット（spec.interior_palette）を加える。"""
     out = {}
     for k, m in spec["materials"].items():
         out[k] = dict(color=color_hex(spec, m["color"]), roughness=m.get("roughness", 0.9), metallic=m.get("metallic", 0.0),
                       emissive=bool(m.get("emissive")))
     for k, (ck, r, me) in EXTRA_MATERIALS.items():
         out[k] = dict(color=color_hex(spec, ck), roughness=r, metallic=me, emissive=False)
+    if interior:
+        for k, m in spec.get("interior_palette", {}).items():
+            if k not in out:             # 外観と共用のキー（stainless など）は外観の値のまま
+                out[k] = dict(color=m["color"], roughness=m.get("roughness", 0.8), metallic=m.get("metallic", 0.0),
+                              emissive=bool(m.get("emissive")))
     for cat, (_, rgba) in STYLE.items():
         if cat not in out:
             hx = "#%02X%02X%02X" % tuple(round(v * 255) for v in rgba[:3])
@@ -645,8 +650,8 @@ def _mat(key, table):
         alphaMode="BLEND" if a < 1 else "OPAQUE", doubleSided=a < 1)
 
 
-def build_parts(h):
-    """GLB に出す要素を Parts に集める（建物座標 mm → m）。"""
+def build_parts(h, interior=False):
+    """GLB に出す要素を Parts に集める（建物座標 mm → m）。interior=True のときは、内装CG 用に扉（個別ノードで別に出す）とジム機器（形を作る）を除く。"""
     spec = h.spec
     P = Parts()
     for bx in h.boxes:
@@ -654,19 +659,24 @@ def build_parts(h):
         if bx.mat == "glass":
             grp = STYLE["glass"][0]
         for q, mk in classify(h, bx):
+            if interior and mk == "interior_door":
+                continue
             P.add_box(grp, bx.level, mk, q)
     facade_extras(h, P)
     exterior_parts(h, P, spec)
     # ジム機器（簡易ボリューム）
-    for name, r, hh, kg in getattr(h, "equipment", []):
-        P.add_box("ジム機器", "1F", "equipment", (r[0], r[1], h.fl["1F"], r[2], r[3], h.fl["1F"] + hh))
+    if not interior:
+        for name, r, hh, kg in getattr(h, "equipment", []):
+            P.add_box("ジム機器", "1F", "equipment", (r[0], r[1], h.fl["1F"], r[2], r[3], h.fl["1F"] + hh))
     return P
 
 
-def export_glb(h, path):
+def export_glb(h, path, interior=False):
+    """interior=True: 内装CG 用（家具・天井・床仕上げ・内壁仕上げ・扉・照明器具を加える。ノード名は「グループ|階|材質キー|ID」）。
+    既定は False（dist/model.glb とビューアは従来どおり）。"""
     spec = h.spec
-    table = material_table(spec)
-    P = build_parts(h)
+    table = material_table(spec, interior=interior)
+    P = build_parts(h, interior=interior)
     scene = trimesh.Scene()
     # 建物座標 → 真北基準（建物中心まわりに alpha 回転）→ Y-up
     rz = trimesh.transformations.rotation_matrix(h.alpha, [0, 0, 1], [h.W / 2000, h.D / 2000, 0])
@@ -680,6 +690,17 @@ def export_glb(h, path):
             continue
         mesh.visual = trimesh.visual.TextureVisuals(material=_mat(mk, table))
         scene.add_geometry(mesh, node_name=f"{grp}|{lvl}|{mk}", geom_name=f"{grp}|{lvl}|{mk}")
+    if interior:
+        import furniture
+        its = furniture.items(h)
+        for grp, lvl, mk, nid, mesh in furniture.meshes(h, its) + furniture.interior_meshes(h, its):
+            if mk not in table:
+                missing.add(mk)
+                continue
+            mesh.apply_transform(rot)
+            mesh.visual = trimesh.visual.TextureVisuals(material=_mat(mk, table))
+            nm = f"{grp}|{lvl}|{mk}" + (f"|{nid}" if nid else "")
+            scene.add_geometry(mesh, node_name=nm, geom_name=nm)
     assert not missing, f"材質キーが未定義: {missing}"
     # 隣接建物（高さ 6.5m の簡易ボリューム）— 建物ごとに別ノード（CG で明度を変えるため）
     k = 0

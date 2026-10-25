@@ -438,7 +438,11 @@ def build_scene(cfg):
         elif key.startswith("rev"):
             key = "concrete"
         if key not in lib.mats:
-            lib.make(key, mats[key])
+            if key not in mats and key in cfg.get("interior", {}).get("palette", {}):
+                import cg_interior                    # 内装CG: 内装パレットの材質
+                cg_interior.make_material(sys.modules[__name__], lib, key, cfg)
+            else:
+                lib.make(key, mats[key])
         o.data.materials.clear()
         o.data.materials.append(lib.mats[key])
         o.data.polygons.foreach_set("use_smooth", [False] * len(o.data.polygons))
@@ -702,11 +706,36 @@ def render_cut(sc, cut, cfg, lib, state, glow, ext_lights, preview):
                 sky_fallback=state.get("sky_fallback", False))
 
 
+def main_interior(cfg, only):
+    """内装CG（cfg["mode"] == "interior"）: GLB の内装・家具に材質を与え、カットごとに照明・扉・スクリーンを切り替えて描画する。"""
+    import cg_interior
+    me = sys.modules[__name__]
+    t0 = time.time()
+    sc, lib, meshes, M = build_scene(cfg)
+    st = cg_interior.prepare(me, sc, lib, meshes, M, cfg)
+    log("scene built", round(time.time() - t0, 1), "s;", len(meshes), "objects;", len(lib.mats), "materials; fallbacks:", lib.fallbacks)
+    log("MATERIAL_COLORS " + json.dumps(Lib.audit_log, sort_keys=True))
+    state, results = {}, []
+    for cut in cfg["cuts"]:
+        if only and cut["id"] not in only:
+            continue
+        log("render", cut["id"], cut["res"], cut["samples"], "spp, limit", cut["time_limit"], "s")
+        r = cg_interior.render_interior_cut(me, sc, cut, cfg, lib, st, state, M)
+        r["texture_fallbacks"] = lib.fallbacks
+        results.append(r)
+        log("done", r)
+        Path(cfg["raw_log"]).write_text(json.dumps(dict(setup_seconds=round(time.time() - t0, 1), cuts=results, material_colors=Lib.audit_log),
+                                                   ensure_ascii=False, indent=1), encoding="utf-8")
+    log("all done", round(time.time() - t0, 1), "s")
+
+
 def main():
     cfg = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
     only = None
     if "--only" in sys.argv:
         only = set(sys.argv[sys.argv.index("--only") + 1].split(","))
+    if cfg.get("mode") == "interior":
+        return main_interior(cfg, only)
     t0 = time.time()
     sc, lib, meshes, M = build_scene(cfg)
     add_plants(cfg, lib, M)

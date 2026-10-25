@@ -14,6 +14,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from matplotlib.backends.backend_pdf import PdfPages  # noqa: E402
 
 import house_legal  # noqa: E402
+import furniture_sheets as fs  # noqa: E402
 import house_sheets as hs  # noqa: E402
 from cadlib import render  # noqa: E402
 from house import House  # noqa: E402
@@ -46,7 +47,7 @@ def main():
         hs.openings_smoke_sheet(h, "A-10"),
     ]
     body += legal_sheets(h, 11, rows)
-    body += [hs.wall_plan(h, "S-01", wall_rows), hs.details(h, "S-02"), hs.seismic_sheet(h, "S-03"), hs.security_sheet(h, "S-04"), hs.energy_sheet(h, "M-01"), hs.orientation_sheet(h, "M-02"), hs.glazing_uv_sheet(h, "M-03"), hs.lifestyle_sheet(h, "M-04"), hs.interior_policy_sheet(h, "I-01"), hs.finish_sheet(h, "I-02"), hs.wifi_sheet(h, "E-01"), hs.control_sheet(h, "E-02"), hs.insect_sheet(h, "E-03")]
+    body += [hs.wall_plan(h, "S-01", wall_rows), hs.details(h, "S-02"), hs.seismic_sheet(h, "S-03"), hs.security_sheet(h, "S-04"), hs.energy_sheet(h, "M-01"), hs.orientation_sheet(h, "M-02"), hs.glazing_uv_sheet(h, "M-03"), hs.lifestyle_sheet(h, "M-04"), hs.interior_policy_sheet(h, "I-01"), hs.finish_sheet(h, "I-02"), fs.furniture_plan(h, "1F", "I-03"), fs.furniture_plan(h, "2F", "I-04"), fs.furniture_schedule_sheet(h, "I-05"), hs.wifi_sheet(h, "E-01"), hs.control_sheet(h, "E-02"), hs.insect_sheet(h, "E-03")]
     dl = [(s.number, s.title, s.scale_label) for s in body]
     cover = hs.cover(h, [("A-00", "表紙・図面リスト・計画概要", "—")] + dl, sm)
     sheets = [cover] + body
@@ -59,11 +60,12 @@ def main():
                               dxf=f"dist/dxf/{s.number}.dxf", png=f"dist/png/{s.number}.png"))
             print("sheet", s.number, s.title)
     export_glb(h, dist / "model.glb")
+    export_glb(h, dist / "model_interior.glb", interior=True)         # 内装CG 用（家具・天井・床仕上げ・内壁仕上げ・扉・照明器具）。ビューアは model.glb のまま
     write_report(rows, sm, dist)
     (dist / "index.json").write_text(json.dumps(dict(sheets=index, summary={k: round(v, 3) for k, v in sm.items()},
                                                      checks=rows), ensure_ascii=False, indent=1), encoding="utf-8")
     ng = [r for r in rows if r["result"] == house_legal.NG]
-    print("外観CG: python3 src/render_cg.py（bpy が必要。README 参照）")
+    print("外観CG: python3 src/render_cg.py／内装CG: python3 src/render_cg.py --interior（bpy が必要。README 参照）")
     print(f"checks: {len(rows)} rows, NG={len(ng)}, 要確認={sum(r['result'] == house_legal.CHK for r in rows)}")
     for r in ng:
         print("  NG:", r["item"], r["planned"])

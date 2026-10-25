@@ -91,6 +91,7 @@ uv_shading:   # 日照の紫外線・日射を外で止める設備（v4.6: 羽�
   months: [5, 6, 7, 8, 9]  # 日射の強い時期に自動で下ろす（冬は上げて日射を取り込む）
   fc: 0.15                 # 下ろしたときの日射遮蔽係数（ガラスの g に乗じる・開口率5%の濃色生地）
   box: {h: 200, d: 150}    # スクリーンボックス（外断熱層に埋め込み、外装から30mm出す）
+  extra_windows: []        # 提案（要施主確認）: ["主寝室"] を入れると北面の主寝室の窓（AW-5）にも遮光スクリーンを付ける。M-03 の台数が増える。内装CG は interior_cg.propose_north_blackout でこの提案を描く
 uv_fraction: 0.05          # 日射に含まれる紫外線（UV-A・B）の割合（エネルギー比の目安）
 
 interior:     # インテリアの一貫方針（施主指示 v4.6）: 「すばらしいデザインは安全であるべき」「清掃とメンテナンスが簡易であるべき」
@@ -315,3 +316,108 @@ cg:                # 外観CG（src/render_cg.py。Blender の Python モジュ�
     C04:  {file: C04_pergola_garden,    title: 西の庭のパーゴラと菜園, cam: [-7000, 8000, 2000],  target: [-17500, 17500, 3200], lens: 20, when: "2026-05-15T12:00"}
     C05:  {file: C05_east_road,         title: 東側道路から建物と塀,   cam: [34200, -9000, eye],  target: [12000, 6000, 2800],   lens: 24, when: "2026-10-24T09:30"}
     C06:  {file: C06_dusk,              title: 夕景,                  cam: [24800, -13000, 2300], target: [9000, 0, 3000],       lens: 24, when: "2026-06-21T19:10", kind: dusk, samples: 192, time_limit: 480}
+
+furniture:         # 家具の仮置き（後日差し替え）。座標・寸法は src/furniture.py。ここは商品と切替だけ（v4.16）
+  provisional: true
+  note: 家具は仮置き（後日差し替え）。指定商品の寸法・色は仮定（商品ページ未確認）。チェアは LDK の1脚のみ。色はいずれも仮定
+  chair_limit: 1                  # チェアは LDK の1脚だけ（施主指示）
+  optional_seating: true          # 座る家具（シアターのソファ・図書室のベンチ・玄関のベンチ）。false でまとめて外す（要施主確認）
+  products:
+    table_osb:   {name: "マテリア ダイニングテーブル OSB 177.5cm ロの字脚 ブラック(スチール) カラー:ステンレス", w: 1775, d: 850, h: 720, top_t: 30, leg_pipe: 40, leg_inset: 100,
+                  stainless_part: edge,    # edge: 天板の木口に巻いたステンレス縁（採用）／ legs: 脚がステンレス／ top: 天板の色名がステンレス
+                  assumed: true}
+    school_chair: {name: "ペッパー スクールチェア チャコールブラウン", w: 420, d: 480, h: 780, seat_h: 450, pipe: 22, wood: "#4A3F38", frame: "#2B2622", assumed: true}
+
+interior_palette:  # 内装の色（sRGB 16進。いずれも仮定）。tex は interior_cg.textures のキー、tile_m はテクスチャ1枚の実寸（m）
+  wall_paint:        {color: "#F1EDE4", roughness: 0.90}
+  ceiling_paint:     {color: "#F4F2EC", roughness: 0.95}
+  floor_oak:         {color: "#BFA383", roughness: 0.45, coat: 0.15, tex: floor, tile_m: 1.70, bump: 0.15}
+  floor_sheet:       {color: "#D6D0C3", roughness: 0.50, tex: marble, tile_m: 1.50, var: 0.03}
+  floor_tile_genkan: {color: "#B9B2A4", roughness: 0.70}
+  floor_rubber:      {color: "#7C7970", roughness: 0.85, tex: rubber, tile_m: 2.00, var: 0.06}
+  floor_carpet:      {color: "#77705F", roughness: 1.00}
+  floor_machine:     {color: "#9A9890", roughness: 0.60}
+  wall_theater:      {color: "#5A554D", roughness: 1.00}
+  ceiling_theater:   {color: "#45423D", roughness: 1.00}
+  wainscot_gym:      {color: "#DAD4C6", roughness: 0.60}
+  wainscot:          {color: "#E3DCCD", roughness: 0.50}
+  wet_panel:         {color: "#F3F0EA", roughness: 0.35}
+  door_oak:          {color: "#C8B394", roughness: 0.55, tex: oak, tile_m: 1.83}
+  kamachi:           {color: "#E9E3D6", roughness: 0.35}
+  nosing:            {color: "#7A6650", roughness: 0.50}
+  handrail:          {color: "#B08A5E", roughness: 0.50, tex: oak, tile_m: 1.83}
+  case_ash:          {color: "#DCCFB9", roughness: 0.55, tex: ash, tile_m: 1.00}
+  case_oak:          {color: "#C2A07A", roughness: 0.50, tex: oak, tile_m: 1.83}
+  plinth:            {color: "#6E665A", roughness: 0.70}
+  olive_case:        {color: "#5E6A3C", roughness: 0.60}
+  countertop:        {color: "#ECE7DD", roughness: 0.30}
+  solid_surface:     {color: "#EEEAE2", roughness: 0.30}
+  osb:               {color: "#C9A878", roughness: 0.45, coat: 0.30, tex: osb, tile_m: 2.51, bump: 0.25}
+  stainless_paint:   {color: "#B8B8B4", roughness: 0.35, metallic: 0.6}
+  steel_black:       {color: "#1F1E1C", roughness: 0.45, coat: 0.20}
+  chair_frame:       {color: "#2B2622", roughness: 0.40, coat: 0.20}
+  chair_wood:        {color: "#4A3F38", roughness: 0.50, coat: 0.20, tex: plywood, tile_m: 0.50, bump: 0.10}
+  glide:             {color: "#2A2A2A", roughness: 0.60}
+  sofa_olive:        {color: "#56603A", roughness: 0.95, tex: wool, tile_m: 0.27, sheen: 0.3}
+  cushion:           {color: "#C29A3E", roughness: 0.95, tex: linen, tile_m: 0.27, sheen: 0.3}
+  throw:             {color: "#B8892D", roughness: 0.95, tex: linen, tile_m: 0.27, sheen: 0.3}
+  duvet:             {color: "#E7E0D2", roughness: 0.95, tex: linen, tile_m: 0.27}
+  mattress:          {color: "#F2EFE8", roughness: 0.95, tex: linen, tile_m: 0.27}
+  pillow:            {color: "#F4F1EA", roughness: 0.95, tex: linen, tile_m: 0.27}
+  ceramic:           {color: "#F5F4F0", roughness: 0.15}
+  seat:              {color: "#F1F0EC", roughness: 0.30}
+  tub:               {color: "#F1EFEA", roughness: 0.25}
+  appliance_white:   {color: "#EDEDEA", roughness: 0.40}
+  machine:           {color: "#C9C8C2", roughness: 0.60}
+  ih_glass:          {color: "#16171A", roughness: 0.08, coat: 1.0}
+  glass_dark:        {color: "#1A1C1F", roughness: 0.10, coat: 0.5}
+  mirror:            {color: "#E8ECEC", roughness: 0.02, metallic: 1.0}
+  backpanel:         {color: "#EFEBE3", roughness: 0.40}
+  leaf:              {color: "#5D6B3A", roughness: 0.60, sss: 0.1}
+  pot:               {color: "#C8BFAE", roughness: 0.80}
+  trunk:             {color: "#6B5A45", roughness: 0.90}
+  book_a:            {color: "#E3D9C3", roughness: 0.80}
+  book_b:            {color: "#4F5B2A", roughness: 0.80}
+  book_c:            {color: "#B8892D", roughness: 0.80}
+  book_d:            {color: "#8C3B2E", roughness: 0.80}
+  book_e:            {color: "#3E4A5A", roughness: 0.80}
+  gym_frame:         {color: "#7D828A", roughness: 0.45, metallic: 0.15}
+  gym_pad:           {color: "#56603A", roughness: 0.70}
+  zip_fabric:        {color: "#4A4F3E", roughness: 0.95, open_ratio: 0.05}
+  zip_blackout:      {color: "#3E423A", roughness: 0.95}
+  skirt:             {color: "#E6E0D4", roughness: 0.80}
+  skirt_theater:     {color: "#5A554D", roughness: 1.00}
+  joint:             {color: "#8A7F70", roughness: 0.80}
+  theater_case:      {color: "#4E4A44", roughness: 0.60}
+  screen:            {color: "#F4F4F2", roughness: 1.00}
+  art:               {color: "#B8892D", roughness: 0.90}
+  art_olive:         {color: "#4F5B2A", roughness: 0.90}
+  art_bg:            {color: "#E7E0D2", roughness: 0.90}
+  lamp_trim:         {color: "#F2F2EE", roughness: 0.40}
+  lamp_face:         {color: "#FFFFFF", roughness: 0.30, emissive: true}
+
+interior_cg:       # 内装CG（src/render_cg.py --interior）。11カット。1600×900・64spp は、1カット約 285 秒の実測にもとづく
+  resolution: [1600, 900]
+  samples: 64
+  adaptive_threshold: 0.05
+  time_limit: 270
+  lamp_w: 30            # ダウンライト1台あたり（100% のとき、Blender の W。目視で決めた値で、実際の光束との換算はしていない）
+  pitch_mm: 1800
+  room_lamp_weight: {ジム: 1.6, シアター: 2.0, 前室: 1.0}   # 室の種類ごとの係数（直天井で高いジム、暗色仕上げのシアターは強める）
+  view_transform: Khronos PBR Neutral
+  propose_north_blackout: true   # 提案: 主寝室の北窓（AW-5）にも遮光スクリーンを足す（要施主確認。図面・法規チェックは変えない）
+  annotation_band: 36            # 画像の下端に足す帯の高さ（px）。仮置きの注記を画素として入れる
+  textures: {osb: oriented_strand_board, floor: laminate_floor_02, oak: oak_veneer_01, ash: ash_veneer, plywood: plywood, linen: rough_linen, wool: poly_wool_herringbone, rubber: rubber_tiles, marble: marble_01}
+  cuts:            # cam/target は建物座標 mm（z は絶対高さ）。screens: up（昼・上げた）/ down（日没後・下ろした）。open_doors は扉の位置タグ（x…y…）と開け方
+    I01: {file: I01_ldk_south,    title: LDK 南窓側から,           cam: [5300, 1100, 3000],  target: [2300, 5600, 3000],  lens: 22, when: "2026-10-24T10:30", exposure: 1.5, wb: 5000, shift_y: -0.14, pitch: 0,    screens: up}
+    I02: {file: I02_ldk_dusk,     title: LDK キッチン側から（夕景）, cam: [4400, 6750, 2850],  target: [2300, 1200, 2400],  lens: 22, when: "2026-10-24T18:30", exposure: 2.0, wb: 4000, shift_y: -0.08, pitch: 0,    screens: down}
+    I03: {file: I03_kitchen,      title: キッチン・パントリー,       cam: [5750, 6450, 2950],  target: [1600, 11300, 2600], lens: 18, when: "2026-10-24T11:00", exposure: 1.5, wb: 5000, shift_y: 0,     pitch: 0,    screens: up,   open_doors: {x1550y11200: 1.0}}
+    I04: {file: I04_genkan,       title: 玄関土間・式台・ホール,     cam: [9300, 300, 2590],   target: [8800, 5500, 2600],  lens: 16, when: "2026-10-24T11:00", exposure: 1.5, wb: 5000, shift_y: -0.12, pitch: 0,    screens: up}
+    I05: {file: I05_stair,        title: 階段1（1階ホールから見上げ）, cam: [6850, 6700, 2800],  target: [6850, 12000, 3800], lens: 18, when: "2026-10-24T13:00", exposure: 1.5, wb: 5000, shift_y: 0,     screens: up}
+    I06: {file: I06_gym,          title: ジム,                     cam: [12450, 3600, 3000],  target: [18125, 3200, 3000], lens: 16, when: "2026-10-24T09:30", exposure: 1.5, wb: 5000, shift_y: 0.10,  pitch: 0,    screens: up}
+    I07: {file: I07_theater,      title: シアター,                 cam: [15200, 5800, 6150],  target: [15200, 125, 5700],  lens: 18, when: "2026-10-24T20:00", exposure: 2.0, wb: 3500, shift_y: 0,     pitch: -6,   screens: down, screen_video: true}
+    I08: {file: I08_library,      title: 図書室,                   cam: [5400, 6650, 6150],  target: [300, 10500, 5900],  lens: 18, when: "2026-10-24T15:00", exposure: 1.5, wb: 5000, shift_y: 0,     pitch: 0,    screens: up}
+    I09: {file: I09_master_bedroom, title: 主寝室（完全遮光）,       cam: [16900, 13000, 6000], target: [13300, 15800, 5400], lens: 20, when: "2026-10-24T21:30", exposure: 2.5, wb: 2900, shift_y: 0,     pitch: 0,    screens: down}
+    I10: {file: I10_washroom_bath, title: 洗面脱衣・浴室,           cam: [6450, 12950, 2950], target: [9300, 15600, 2600], lens: 16, when: "2026-10-24T10:00", exposure: 1.0, wb: 5000, shift_y: 0,     pitch: 0,    screens: up,   open_doors: {x7400y14850: 1.0}}
+    I11: {file: I11_laundry,      title: ランドリー,               cam: [5700, 14750, 2950], target: [700, 12800, 2600],  lens: 16, when: "2026-10-24T10:00", exposure: 1.0, wb: 5000, shift_y: 0,     pitch: 0,    screens: up}
+

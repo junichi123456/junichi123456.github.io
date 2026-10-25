@@ -1,0 +1,343 @@
+{
+ "total_seconds": 3151.3,
+ "glb_export_seconds": 2.5,
+ "asset_fetch_seconds": 0.0,
+ "blender_setup_seconds": 3024.7,
+ "cuts": [
+  {
+   "id": "I01",
+   "file": "/home/user/junichi123456.github.io/rc-building/dist/render/interior/I01_ldk_south.png",
+   "seconds": 291.5,
+   "render_seconds": 291.4,
+   "samples": 64,
+   "time_limit": 270,
+   "res": [
+    1600,
+    900
+   ],
+   "exposure": 1.5,
+   "wb": 5000,
+   "lamp_k": 4844,
+   "lamp_pct": 100.0,
+   "hdri_sun": [
+    145.8,
+    47.9,
+    -71.5
+   ],
+   "texture_fallbacks": [],
+   "time_limit_hit": true
+  },
+  {
+   "id": "I02",
+   "file": "/home/user/junichi123456.github.io/rc-building/dist/render/interior/I02_ldk_dusk.png",
+   "seconds": 295.3,
+   "render_seconds": 295.3,
+   "samples": 64,
+   "time_limit": 270,
+   "res": [
+    1600,
+    900
+   ],
+   "exposure": 2.0,
+   "wb": 4000,
+   "lamp_k": 2925,
+   "lamp_pct": 62.5,
+   "hdri_sun": [
+    145.8,
+    47.9,
+    -71.5
+   ],
+   "texture_fallbacks": [],
+   "time_limit_hit": true
+  },
+  {
+   "id": "I03",
+   "file": "/home/user/junichi123456.github.io/rc-building/dist/render/interior/I03_kitchen.png",
+   "seconds": 280.1,
+   "render_seconds": 280.0,
+   "samples": 64,
+   "time_limit": 270,
+   "res": [
+    1600,
+    900
+   ],
+   "exposure": 1.5,
+   "wb": 5000,
+   "lamp_k": 4812,
+   "lamp_pct": 100.0,
+   "hdri_sun": [
+    145.8,
+    47.9,
+    -81.1
+   ],
+   "texture_fallbacks": [],
+   "time_limit_hit": true
+  },
+  {
+   "id": "I04",
+   "file": "/home/user/junichi123456.github.io/rc-building/dist/render/interior/I04_genkan.png",
+   "seconds": 277.6,
+   "render_seconds": 277.5,
+   "samples": 64,
+   "time_limit": 270,
+   "res": [
+    1600,
+    900
+   ],
+   "exposure": 1.5,
+   "wb": 5000,
+   "lamp_k": 4812,
+   "lamp_pct": 100.0,
+   "hdri_sun": [
+    145.8,
+    47.9,
+    -81.1
+   ],
+   "texture_fallbacks": [],
+   "time_limit_hit": true
+  },
+  {
+   "id": "I05",
+   "file": "/home/user/junichi123456.github.io/rc-building/dist/render/interior/I05_stair.png",
+   "seconds": 283.7,
+   "render_seconds": 283.6,
+   "samples": 64,
+   "time_limit": 270,
+   "res": [
+    1600,
+    900
+   ],
+   "exposure": 1.5,
+   "wb": 5000,
+   "lamp_k": 4688,
+   "lamp_pct": 100.0,
+   "hdri_sun": [
+    145.8,
+    47.9,
+    -119.5
+   ],
+   "texture_fallbacks": [],
+   "time_limit_hit": true
+  },
+  {
+   "id": "I06",
+   "file": "/home/user/junichi123456.github.io/rc-building/dist/render/interior/I06_gym.png",
+   "seconds": 277.4,
+   "render_seconds": 277.3,
+   "samples": 64,
+   "time_limit": 270,
+   "res": [
+    1600,
+    900
+   ],
+   "exposure": 1.5,
+   "wb": 5000,
+   "lamp_k": 4906,
+   "lamp_pct": 100.0,
+   "hdri_sun": [
+    145.8,
+    47.9,
+    -54.1
+   ],
+   "texture_fallbacks": [],
+   "time_limit_hit": true
+  },
+  {
+   "id": "I07",
+   "file": "/home/user/junichi123456.github.io/rc-building/dist/render/interior/I07_theater.png",
+   "seconds": 194.9,
+   "render_seconds": 194.8,
+   "samples": 64,
+   "time_limit": 270,
+   "res": [
+    1600,
+    900
+   ],
+   "exposure": 2.0,
+   "wb": 3500,
+   "lamp_k": 2700,
+   "lamp_pct": 40.0,
+   "hdri_sun": [
+    145.8,
+    47.9,
+    -54.1
+   ],
+   "texture_fallbacks": [],
+   "time_limit_hit": false
+  },
+  {
+   "id": "I08",
+   "file": "/home/user/junichi123456.github.io/rc-building/dist/render/interior/I08_library.png",
+   "seconds": 277.2,
+   "render_seconds": 277.1,
+   "samples": 64,
+   "time_limit": 270,
+   "res": [
+    1600,
+    900
+   ],
+   "exposure": 1.5,
+   "wb": 5000,
+   "lamp_k": 4562,
+   "lamp_pct": 100.0,
+   "hdri_sun": [
+    145.8,
+    47.9,
+    -147.4
+   ],
+   "texture_fallbacks": [],
+   "time_limit_hit": true
+  },
+  {
+   "id": "I09",
+   "file": "/home/user/junichi123456.github.io/rc-building/dist/render/interior/I09_master_bedroom.png",
+   "seconds": 283.8,
+   "render_seconds": 283.8,
+   "samples": 64,
+   "time_limit": 270,
+   "res": [
+    1600,
+    900
+   ],
+   "exposure": 2.5,
+   "wb": 2900,
+   "lamp_k": 2325,
+   "lamp_pct": 21.2,
+   "hdri_sun": [
+    145.8,
+    47.9,
+    -147.4
+   ],
+   "texture_fallbacks": [],
+   "time_limit_hit": true
+  },
+  {
+   "id": "I10",
+   "file": "/home/user/junichi123456.github.io/rc-building/dist/render/interior/I10_washroom_bath.png",
+   "seconds": 283.4,
+   "render_seconds": 283.3,
+   "samples": 64,
+   "time_limit": 270,
+   "res": [
+    1600,
+    900
+   ],
+   "exposure": 1.0,
+   "wb": 5000,
+   "lamp_k": 4875,
+   "lamp_pct": 100.0,
+   "hdri_sun": [
+    145.8,
+    47.9,
+    -62.4
+   ],
+   "texture_fallbacks": [],
+   "time_limit_hit": true
+  },
+  {
+   "id": "I11",
+   "file": "/home/user/junichi123456.github.io/rc-building/dist/render/interior/I11_laundry.png",
+   "seconds": 277.5,
+   "render_seconds": 277.4,
+   "samples": 64,
+   "time_limit": 270,
+   "res": [
+    1600,
+    900
+   ],
+   "exposure": 1.0,
+   "wb": 5000,
+   "lamp_k": 4875,
+   "lamp_pct": 100.0,
+   "hdri_sun": [
+    145.8,
+    47.9,
+    -62.4
+   ],
+   "texture_fallbacks": [],
+   "time_limit_hit": true
+  }
+ ],
+ "textures": {
+  "stucco": "ok",
+  "concrete": "ok",
+  "porous": "ok",
+  "dotcon": "ok",
+  "gravel": "ok",
+  "asphalt": "ok",
+  "grass": "ok",
+  "soil": "ok",
+  "osb": "ok",
+  "floor": "ok",
+  "oak": "ok",
+  "ash": "ok",
+  "plywood": "ok",
+  "linen": "ok",
+  "wool": "ok",
+  "rubber": "ok",
+  "marble": "ok"
+ },
+ "hdri": {
+  "day": "ok",
+  "dusk": "ok"
+ },
+ "source": "Poly Haven (CC0)",
+ "camera_clearance_mm": {
+  "I01": {
+   "mm": 592,
+   "nearest": "L-A1"
+  },
+  "I02": {
+   "mm": 986,
+   "nearest": "wall"
+  },
+  "I03": {
+   "mm": 206,
+   "nearest": "wall"
+  },
+  "I04": {
+   "mm": 275,
+   "nearest": "door"
+  },
+  "I05": {
+   "mm": 450,
+   "nearest": "wall"
+  },
+  "I06": {
+   "mm": 300,
+   "nearest": "door"
+  },
+  "I07": {
+   "mm": 300,
+   "nearest": "door"
+  },
+  "I08": {
+   "mm": 400,
+   "nearest": "wall"
+  },
+  "I09": {
+   "mm": 850,
+   "nearest": "wall"
+  },
+  "I10": {
+   "mm": 300,
+   "nearest": "door"
+  },
+  "I11": {
+   "mm": 300,
+   "nearest": "wall"
+  }
+ },
+ "palette_checked": 64,
+ "palette_mismatch": [],
+ "settings": {
+  "resolution": [
+   1600,
+   900
+  ],
+  "samples": 64,
+  "adaptive_threshold": 0.05,
+  "time_limit": 270,
+  "view_transform": "Khronos PBR Neutral"
+ }
+}

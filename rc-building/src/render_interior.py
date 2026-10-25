@@ -1,0 +1,201 @@
+"""内装CG 段階1（システムの python3）: 内装用 GLB の書き出し、scene.json（カット・照明・扉・パレット）、テクスチャ取得、
+Blender 段階（cg_blender.py → cg_interior.py）の起動、後処理（メタデータ除去と仮置きの注記の帯）。
+
+    python3 src/render_cg.py --interior                      # 全11カットを本番の品質で
+    python3 src/render_cg.py --interior --preview            # 480×270・16spp（構図の確認）
+    python3 src/render_cg.py --interior --only I01,I02
+"""
+from __future__ import annotations
+
+import json
+import math
+import os
+import subprocess
+import sys
+import time
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+
+import furniture  # noqa: E402
+import render_cg as RC  # noqa: E402
+from house import House  # noqa: E402
+from model3d import export_glb, material_table, srgb_to_lin  # noqa: E402
+
+FONT_CANDIDATES = ["/usr/share/fonts/opentype/ipafont-gothic/ipag.ttf", "/usr/share/fonts/truetype/fonts-japanese-gothic.ttf"]
+
+
+def interior_cfg(h, spec, args, assets, out_dir, glb_path):
+    ic = spec["interior_cg"]
+    fr = RC.Frame(h)
+    lat, lon, tz = spec["cg"]["site"]["lat"], spec["cg"]["site"]["lon"], spec["cg"]["site"]["tz"]
+    its = furniture.items(h)
+    table = material_table(spec)
+    mats = {k: dict(rgb=t["rgb"], roughness=t["roughness"], metallic=t["metallic"], coat=spec["materials"].get(k, {}).get("coat", 0.0))
+            for k, t in table.items()}
+    colors_lin = dict(tile_joint=srgb_to_lin(spec["colors"]["tile_joint"]), dotcon_joint=srgb_to_lin("#8F8572"),
+                      pv_joint=srgb_to_lin("#3A3F48"), plant_a=srgb_to_lin("#4E6B2E"), plant_b=srgb_to_lin("#6E8B3D"))
+    pal = {}
+    for k, m in spec["interior_palette"].items():
+        pal[k] = dict(m)
+        pal[k]["rgb"] = srgb_to_lin(m["color"])
+    # カット
+    cuts = []
+    for cid, c in ic["cuts"].items():
+        if args.only and cid not in args.only:
+            continue
+        el, az = RC.sun_position(c["when"], lat, lon, tz)
+        hour = int(c["when"][11:13]) + int(c["when"][14:16]) / 60.0
+        K, pct = RC.lamp_schedule(spec, hour)
+        kind = "day" if el > 3 else "dusk"
+        cam_floor = "2F" if c["cam"][2] > h.fl["2F"] else "1F"
+        res = list(ic["resolution"])
+        samples, tl = ic["samples"], ic["time_limit"]
+        if args.preview:
+            res, samples, tl = ([int(v) for v in args.size.split('x')] if args.size else [480, 270]), args.samples or 16, 90
+        elif args.samples:
+            samples = args.samples
+        cut = dict(id=cid, file=c["file"], title=c["title"], kind=kind, lens=c["lens"], res=res, samples=samples, time_limit=tl,
+                   cam=fr.to_bl(*c["cam"]), target=fr.to_bl(*c["target"]), cam_mm=c["cam"], target_mm=c["target"],
+                   exposure=c["exposure"], wb=c["wb"], when=c["when"], pitch=c.get("pitch"), shift_y=c.get("shift_y", 0.0), shift_x=c.get("shift_x", 0.0),
+                   sun=dict(el=round(el, 2), az=round(az, 2)) if kind == "day" else None, sun_strength=3.0,
+                   sky_strength=1.0 if kind == "day" else (0.4 if hour < 19 else 0.05),
+                   lamp_k=round(K), lamp_pct=round(pct, 1), lamp_w=ic["lamp_w"], floors_lit=[cam_floor] + (["1F"] if c.get("also_1f") else []),
+                   screens=c["screens"], open_doors=c.get("open_doors", {}), screen_video=bool(c.get("screen_video")),
+                   out=str(out_dir / (c["file"] + ".png")))
+        cuts.append(cut)
+    scr = next(i for i in its if i.id == "TH-S")
+    cfg = dict(
+        mode="interior", glb=str(glb_path), alpha=h.alpha, pivot=[h.W / 2000.0, h.D / 2000.0], materials=mats, colors_lin=colors_lin,
+        textures=assets["textures"], hdri={k: v["path"] for k, v in assets["hdri"].items()}, planters=[], window_lights=[], ext_lights=[],
+        lamp_color=list(RC.LAMP_LIN), lamp_strength=0.0, room_light=dict(kelvin=3000, strength=0.0), sky_clamp=spec["cg"].get("sky_clamp", 30.0),
+        adaptive_threshold=ic["adaptive_threshold"], max_bounces=8, cuts=cuts, preview=bool(args.preview), raw_log=str(out_dir / "render_log_raw.json"),
+        look="None", view_transform=ic.get("view_transform", "Khronos PBR Neutral"),
+        interior=dict(palette=pal, downlights=furniture.downlights(h, its), doors=furniture.door_info(h),
+                      inside_m=[h.W / 1000.0, h.D / 1000.0, (h.fl["RF"] - h.slab_t) / 1000.0],
+                      screen_rect=[scr.rect[0] / 1000.0, scr.z0 / 1000.0, scr.rect[2] / 1000.0, (scr.z0 + scr.h) / 1000.0]))
+    return cfg, its
+
+
+def camera_clearance(h, its, cuts):
+    """カメラから壁・床・家具の箱までの最短距離（mm）。150mm 以上であること（H6）。"""
+    boxes = [(b.x0, b.y0, b.z0, b.x1, b.y1, b.z1, b.cat) for b in h.boxes if b.cat in ("wall", "partition", "parapet", "stair", "slab", "door", "glass", "footing")]
+    for it in its:
+        boxes.append((it.rect[0], it.rect[1], it.z0, it.rect[2], it.rect[3], it.z0 + it.h, it.id))
+    for name, r, hh, kg in h.equipment:
+        boxes.append((r[0], r[1], h.fl["1F"], r[2], r[3], h.fl["1F"] + hh, name))
+    out = {}
+    for c in cuts:
+        x, y, z = c["cam_mm"]
+        best = (1e9, "")
+        for (x0, y0, z0, x1, y1, z1, nm) in boxes:
+            dx = max(x0 - x, 0, x - x1)
+            dy = max(y0 - y, 0, y - y1)
+            dz = max(z0 - z, 0, z - z1)
+            d = math.sqrt(dx * dx + dy * dy + dz * dz)
+            if d < best[0]:
+                best = (d, nm)
+        out[c["id"]] = dict(mm=round(best[0]), nearest=best[1])
+    return out
+
+
+def _font(size):
+    from PIL import ImageFont
+    for f in FONT_CANDIDATES:
+        if Path(f).exists():
+            return ImageFont.truetype(f, size)
+    raise FileNotFoundError("IPA ゴシックが見つかりません")
+
+
+def annotate(path, cut, spec, band=36):
+    """メタデータを残さず保存し直し、下端に仮置きの注記の帯を足す（画素として入れる）。"""
+    from PIL import Image, ImageDraw
+    im = Image.open(path)
+    im.load()
+    rgb = im.convert("RGB")
+    W, H = rgb.size
+    out = Image.new("RGB", (W, H + band), (241, 237, 228))
+    out.paste(rgb, (0, 0))
+    d = ImageDraw.Draw(out)
+    fs = max(10, int(band * 0.5))
+    f = _font(fs)
+    mo, da, hh, mm = int(cut["when"][5:7]), int(cut["when"][8:10]), cut["when"][11:13], cut["when"][14:16]
+    left = f"家具は仮置き（後日差し替え）・指定商品の寸法と色は仮定・色はいずれも仮定"
+    right = f"{cut['title']}　{mo}月{da}日 {hh}:{mm}　照明 {cut['lamp_k']:,}K・{cut['lamp_pct']:.0f}%"
+    ty = H + (band - fs) // 2 - 1
+    d.text((int(fs * 0.8), ty), left, font=f, fill=(60, 56, 50))
+    tw = d.textlength(right, font=f)
+    d.text((W - tw - int(fs * 0.8), ty), right, font=f, fill=(60, 56, 50))
+    out.save(path, "PNG", optimize=True)         # pnginfo なし
+
+
+def main(args):
+    t_start = time.time()
+    h = House(ROOT)
+    spec = h.spec
+    ic = spec["interior_cg"]
+    out_dir = (ROOT / ".cache" / "cg" / "interior_preview") if args.preview else (ROOT / "dist" / "render" / "interior")
+    out_dir.mkdir(parents=True, exist_ok=True)
+    glb = ROOT / "dist" / "model_interior.glb"
+    t = time.time()
+    if not args.no_glb or not glb.exists():
+        export_glb(h, glb, interior=True)
+    t_glb = time.time() - t
+    # 家具の干渉検査（適合しなければ描かない）
+    its = furniture.items(h)
+    errs = furniture.check(h, its)
+    if errs:
+        print("furniture.check のエラー:", errs)
+        return 3
+    t = time.time()
+    tex = {**spec["cg"]["textures"], **ic["textures"]}
+    assets = RC.fetch_assets({"cg": {"textures": tex, "hdri": spec["cg"]["hdri"]}}, ROOT / ".cache" / "cg", use_textures=True)
+    t_assets = time.time() - t
+    cfg, its = interior_cfg(h, spec, args, assets, out_dir, glb)
+    clear = camera_clearance(h, its, cfg["cuts"])
+    print("camera clearance (mm):", {k: v["mm"] for k, v in clear.items()})
+    bad = {k: v for k, v in clear.items() if v["mm"] < 150}
+    if bad:
+        print("カメラが壁・家具に近すぎます（150mm 未満）:", bad)
+        return 4
+    scene_path = out_dir / "scene.json"
+    scene_path.write_text(json.dumps(cfg, ensure_ascii=False, indent=1), encoding="utf-8")
+    if args.scene_only:
+        return 0
+    py = os.environ.get("BPY_PYTHON") or str(ROOT / ".venv-bpy" / "bin" / "python")
+    if not Path(py).exists():
+        print("bpy が見つかりません。README の手順で .venv-bpy を作るか、環境変数 BPY_PYTHON を指定してください")
+        return 2
+    cmd = [py, str(ROOT / "src" / "cg_blender.py"), str(scene_path)]
+    if args.only:
+        cmd += ["--only", ",".join(sorted(args.only))]
+    log_path = out_dir / "blender.log"
+    with open(log_path, "w", encoding="utf-8") as lf:
+        rc = subprocess.call(cmd, stdout=lf, stderr=subprocess.STDOUT)
+    if rc != 0:
+        print("Blender 段階が失敗しました（終了コード", rc, "）。ログ:", log_path)
+        return rc
+    raw = json.loads(Path(cfg["raw_log"]).read_text(encoding="utf-8"))
+    by_id = {c["id"]: c for c in cfg["cuts"]}
+    for r in raw["cuts"]:
+        RC.post_process(r["file"])
+        if not args.preview and ic.get("annotation_band", 0):
+            annotate(r["file"], by_id[r["id"]], spec, ic["annotation_band"])
+        r["time_limit_hit"] = r["render_seconds"] >= by_id[r["id"]]["time_limit"] - 3
+    # 材質の色の照合（H8: リニア値が interior_palette と ±0.002 で一致）
+    pal_mismatch = []
+    mc = raw.get("material_colors", {})
+    for k, v in cfg["interior"]["palette"].items():
+        if k in mc and any(abs(a - b) > 0.002 for a, b in zip(mc[k], v["rgb"])):
+            pal_mismatch.append(k)
+    total = round(time.time() - t_start, 1)
+    log = dict(total_seconds=total, glb_export_seconds=round(t_glb, 1), asset_fetch_seconds=round(t_assets, 1), blender_setup_seconds=raw.get("setup_seconds"),
+               cuts=raw["cuts"], textures={k: v["status"] for k, v in assets["textures"].items()},
+               hdri={k: v["status"] for k, v in assets["hdri"].items()}, source=assets["source"],
+               camera_clearance_mm=clear, palette_checked=len([k for k in cfg["interior"]["palette"] if k in mc]), palette_mismatch=pal_mismatch,
+               settings=dict(resolution=ic["resolution"], samples=ic["samples"], adaptive_threshold=ic["adaptive_threshold"], time_limit=ic["time_limit"],
+                             view_transform=cfg["view_transform"]))
+    (out_dir / "render_log.json").write_text(json.dumps(log, ensure_ascii=False, indent=1), encoding="utf-8")
+    print(f"done: {len(raw['cuts'])} cuts, total {total} s -> {out_dir}")
+    return 0
