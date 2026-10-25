@@ -421,7 +421,7 @@ interior_cg:       # 内装CG（src/render_cg.py --interior）。13カット（v
   textures: {osb: oriented_strand_board, floor: laminate_floor_02, oak: oak_veneer_01, ash: ash_veneer, plywood: plywood, linen: rough_linen, wool: poly_wool_herringbone, rubber: rubber_tiles, marble: marble_01}
   cuts:            # cam/target は建物座標 mm（z は絶対高さ）。screens: up（昼・上げた）/ down（日没後・下ろした）。open_doors は扉の位置タグ（x…y…）と開け方
     I01: {file: I01_ldk_south,    title: LDK 南窓側から,           cam: [5300, 1100, 3000],  target: [2300, 5600, 3000],  lens: 22, when: "2026-10-24T10:30", exposure: -0.5, wb: 5000, shift_y: -0.14, pitch: 0,    screens: up}
-    I02: {file: I02_ldk_dusk,     title: LDK キッチン側から（夕景）, cam: [4400, 6750, 2850],  target: [2300, 1200, 2400],  lens: 22, when: "2026-10-24T18:30", exposure: 0.5, wb: 4000, shift_y: -0.08, pitch: 0,    screens: down}
+    I02: {file: I02_ldk_dusk,     title: LDK キッチン側から（夕景）, cam: [4400, 6750, 2850],  target: [2300, 1200, 2400],  lens: 22, when: "2026-10-24T18:30", exposure: -0.5, wb: 4000, shift_y: -0.08, pitch: 0,    screens: down}
     I03: {file: I03_kitchen,      title: キッチン・パントリー,       cam: [5750, 6450, 2950],  target: [1600, 11300, 2600], lens: 18, when: "2026-10-24T11:00", exposure: -0.5, wb: 5000, shift_y: 0,     pitch: 0,    screens: up,   open_doors: {x1550y11200: 1.0}}
     I04: {file: I04_genkan,       title: 玄関土間・式台・ホール,     cam: [9300, 300, 2590],   target: [8800, 5500, 2600],  lens: 16, when: "2026-10-24T11:00", exposure: -0.5, wb: 5000, shift_y: -0.12, pitch: 0,    screens: up}
     I05: {file: I05_stair,        title: 階段1（1階ホールから見上げ）, cam: [6850, 6700, 2800],  target: [6850, 12000, 3800], lens: 18, when: "2026-10-24T13:00", exposure: -0.5, wb: 5000, shift_y: 0,     screens: up}

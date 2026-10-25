@@ -1,5 +1,5 @@
 {
- "total_seconds": 3197.6,
+ "total_seconds": 3253.9,
  "glb_export_seconds": 2.5,
  "asset_fetch_seconds": 0.0,
  "blender_setup_seconds": 1507.9,
@@ -18,15 +18,36 @@
   },
   {
    "id": "I02",
-   "file": "dist/render/interior/I02_ldk_dusk.png",
-   "seconds": 252.7,
-   "render_seconds": 252.7,
+   "file": "/home/user/junichi123456.github.io/rc-building/dist/render/interior/I02_ldk_dusk.png",
+   "seconds": 253.4,
+   "render_seconds": 253.3,
    "samples": 64,
    "time_limit": 240,
    "res": [
     1600,
     900
-   ]
+   ],
+   "exposure": -0.5,
+   "wb": 4000,
+   "lamp_k": 2925,
+   "lamp_pct": 62.5,
+   "channels": {
+    "L": [
+     2925,
+     62.5
+    ],
+    "D": [
+     2700,
+     70.0
+    ],
+    "F": [
+     2200,
+     0.0
+    ]
+   },
+   "hdri_sun": null,
+   "texture_fallbacks": [],
+   "time_limit_hit": true
   },
   {
    "id": "I03",
@@ -66,15 +87,40 @@
   },
   {
    "id": "I06",
-   "file": "dist/render/interior/I06_gym.png",
-   "seconds": 196.1,
-   "render_seconds": 195.9,
+   "file": "/home/user/junichi123456.github.io/rc-building/dist/render/interior/I06_gym.png",
+   "seconds": 251.7,
+   "render_seconds": 251.4,
    "samples": 64,
    "time_limit": 240,
    "res": [
     1600,
     900
-   ]
+   ],
+   "exposure": -0.5,
+   "wb": 5000,
+   "lamp_k": 4906,
+   "lamp_pct": 100.0,
+   "channels": {
+    "L": [
+     4906,
+     100.0
+    ],
+    "D": [
+     2200,
+     0.0
+    ],
+    "F": [
+     2200,
+     0.0
+    ]
+   },
+   "hdri_sun": [
+    145.8,
+    47.9,
+    -54.1
+   ],
+   "texture_fallbacks": [],
+   "time_limit_hit": true
   },
   {
    "id": "I07",

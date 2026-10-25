@@ -333,6 +333,8 @@ def prepare(CB, sc, lib, meshes, M, cfg):
         ang = 0.0 if l["axis"] == "x" else math.pi / 2
         cx, cy = (l["p0"][0] + l["p1"][0]) / 2000.0, (l["p0"][1] + l["p1"][1]) / 2000.0
         zz = (l["p0"][2] - cfg["interior"]["line_h_mm"]) / 1000.0 - 0.002
+        if l["room"] == "ジム":                       # 直天井は器具本体が 2mm 下がる（interior_shell と同じ）。面光源が発光面の箱に埋もれないように合わせる
+            zz -= 0.002
         ob.matrix_world = M @ Matrix.Translation((cx, cy, zz)) @ Matrix.Rotation(ang, 4, "Z")
         sc.collection.objects.link(ob)
         mat, sI, tI = cam_only_emission("line_" + l["id"], 1.0, 4000.0)
