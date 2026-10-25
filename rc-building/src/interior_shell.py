@@ -230,7 +230,7 @@ def interior_parts(h, its):
                             MBfor(G, fl, mat).box(mat, k if s > 0 else k - t, ua, za, k + t if s > 0 else k, ub, zb_)
                 if sk:
                     mat, hh = sk
-                    holes = [(a, b, e, f_) for (a, b, e, f_, op) in _holes_for_edge(faces[fl], ax, k, u0, u1) if e < zf + 150]
+                    holes = [(a, b, e, f_) for (a, b, e, f_, op) in _holes_for_edge(faces[fl], ax, k, u0, u1) if b < zf + 150]
                     for (ua, za, ub, zb_) in decompose((u0, zf + 2, u1, zf + hh), holes):
                         t = 8
                         d0 = 3 if lin else 0               # ライニングの前に出る

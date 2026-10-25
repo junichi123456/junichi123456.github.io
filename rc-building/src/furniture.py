@@ -85,9 +85,10 @@ def items(h):
     tx, ty = 3000.0, 3000.0
     add("L-T1", "1F", LDK, T["name"], "table_osb", (tx - T["w"] / 2, ty - T["d"] / 2, tx + T["w"] / 2, ty + T["d"] / 2), T["h"], "osb",
         base="legs690", product="table_osb")
-    cy0 = ty + T["d"] / 2 + 75
-    add("L-C1", "1F", LDK, C["name"], "school_chair", (tx - C["w"] / 2, cy0, tx + C["w"] / 2, cy0 + C["d"]), C["h"], "chair_wood",
-        base="legs", chair=True, rot=-8.0, product="school_chair")
+    # チェアはテーブルの東の短辺側に、西（テーブル）向きに置く（北側だと I01 でテーブルの陰に隠れる）。さらに −8° 振る
+    ccx = tx + T["w"] / 2 + 60 + C["d"] / 2
+    add("L-C1", "1F", LDK, C["name"], "school_chair", (ccx - C["w"] / 2, ty - C["d"] / 2, ccx + C["w"] / 2, ty + C["d"] / 2), C["h"], "chair_wood",
+        base="legs", chair=True, rot=-98.0, product="school_chair")
     add("L-S1", "1F", LDK, "サイドボード（台輪）", "cabinet", (5550, 125, 6000, 2475), 700, "case_ash")
     add("L-K1", "1F", LDK, "リビング収納（天井まで・扉付き）", "tall", (125, 5550, 1700, 6000), 2600, "case_ash")
     add("L-P1", "1F", LDK, "鉢植え（オリーブ）φ500・樹高1,900", "plant", (125, 125, 625, 625), 1900, "leaf", base="pot")
