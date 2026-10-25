@@ -110,9 +110,20 @@ def test_channels_schedule():
     assert sp["smart"]["lighting_schedule"][0] == [0, 2200, 10]       # 既存の全体スケジュールは変えない
 
 
-def test_hex_not_in_model():
-    import lighting as L
-    assert not any("hex" in str(k).lower() or "六角" in str(k) for k in L.CODE)
+def test_glb_nodes():
+    """内装 GLB（interior=True）に、ライン・足元灯・ガラス扉・台所小物のノードがあり、六角形の器具がない。"""
+    import tempfile
+    import model3d as M
+    h = house()
+    with tempfile.TemporaryDirectory() as d:
+        sc = M.export_glb(h, Path(d) / "mi.glb", interior=True)
+    names = list(sc.geometry.keys())
+    n_line = sum(n.startswith("照明器具|") and "|line_face|" in n for n in names)
+    n_foot = sum(n.startswith("照明器具|") and "|foot_face|" in n for n in names)
+    assert n_line >= 55 and n_foot == 18, (n_line, n_foot)
+    assert any(n.startswith("扉|1F|glass_door|GD-1@") for n in names) and any(n.startswith("扉|1F|glass_door|GD-2@") for n in names)
+    assert any(n.startswith("台所小物|1F|stainless") for n in names)
+    assert not any("hex" in n.lower() or "六角" in n for n in names)
 
 
 if __name__ == "__main__":

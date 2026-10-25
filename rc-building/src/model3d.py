@@ -86,6 +86,9 @@ def material_table(spec, interior=False):
     for k in out:
         out[k]["rgb"] = srgb_to_lin(out[k]["color"])
     out["glass"]["alpha"] = 0.55
+    for k_, a_ in (("glass_door", 0.25), ("glass_clear", 0.45)):
+        if k_ in out:
+            out[k_]["alpha"] = a_
     return out
 
 

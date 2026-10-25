@@ -19,6 +19,7 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import furniture  # noqa: E402
+import lighting as LG  # noqa: E402
 import render_cg as RC  # noqa: E402
 from house import House  # noqa: E402
 from model3d import export_glb, material_table, srgb_to_lin  # noqa: E402
@@ -47,7 +48,10 @@ def interior_cfg(h, spec, args, assets, out_dir, glb_path):
             continue
         el, az = RC.sun_position(c["when"], lat, lon, tz)
         hour = int(c["when"][11:13]) + int(c["when"][14:16]) / 60.0
-        K, pct = RC.lamp_schedule(spec, hour)
+        chs = LG.channels(spec, hour, c.get("room", ""))
+        for k_, v_ in c.get("lights", {}).items():            # カットごとの上書き（上映前・夜景など）
+            chs[k_] = (v_[0], float(v_[1]))
+        K, pct = (chs["L"] if chs["L"][1] > 0 else chs["D"])    # 主照明（L）。消灯のときは D を注記に出す
         kind = "day" if el > 3 else "dusk"
         cam_floor = "2F" if c["cam"][2] > h.fl["2F"] else "1F"
         res = list(ic["resolution"])
@@ -61,7 +65,8 @@ def interior_cfg(h, spec, args, assets, out_dir, glb_path):
                    exposure=c["exposure"], wb=c["wb"], when=c["when"], pitch=c.get("pitch"), shift_y=c.get("shift_y", 0.0), shift_x=c.get("shift_x", 0.0),
                    sun=dict(el=round(el, 2), az=round(az, 2)) if kind == "day" else None, sun_strength=3.0,
                    sky_strength=1.0 if kind == "day" else (0.4 if hour < 19 else 0.05),
-                   lamp_k=round(K), lamp_pct=round(pct, 1), lamp_w=ic["lamp_w"], floors_lit=[cam_floor] + (["1F"] if c.get("also_1f") else []),
+                   lamp_k=round(K), lamp_pct=round(pct, 1), lamp_w=ic["lamp_w"], ch={k_: [round(v_[0]), round(v_[1], 1)] for k_, v_ in chs.items()},
+                   close_doors=c.get("close_doors", []), floors_lit=[cam_floor] + (["1F"] if c.get("also_1f") else []),
                    screens=c["screens"], open_doors=c.get("open_doors", {}), screen_video=bool(c.get("screen_video")),
                    out=str(out_dir / (c["file"] + ".png")))
         cuts.append(cut)
@@ -73,6 +78,9 @@ def interior_cfg(h, spec, args, assets, out_dir, glb_path):
         adaptive_threshold=ic["adaptive_threshold"], max_bounces=8, cuts=cuts, preview=bool(args.preview), raw_log=str(out_dir / "render_log_raw.json"),
         look="None", view_transform=ic.get("view_transform", "Khronos PBR Neutral"),
         interior=dict(palette=pal, downlights=furniture.downlights(h, its), doors=furniture.door_info(h),
+                      lines=LG.lines(h, its), foots=LG.footlights(h), line_w_mm=spec["lighting"]["line"]["width"], line_h_mm=spec["lighting"]["line"]["height"],
+                      downlight_ratio=ic["downlight_ratio"], k_area_w_per_lm=ic["k_area_w_per_lm"], k_spot_w_per_lm=ic["k_spot_w_per_lm"],
+                      foot_lm=spec["lighting"]["foot"]["lm"],
                       inside_m=[h.W / 1000.0, h.D / 1000.0, (h.fl["RF"] - h.slab_t) / 1000.0],
                       screen_rect=[scr.rect[0] / 1000.0, scr.z0 / 1000.0, scr.rect[2] / 1000.0, (scr.z0 + scr.h) / 1000.0]))
     return cfg, its
@@ -122,7 +130,9 @@ def annotate(path, cut, spec, band=36):
     f = _font(fs)
     mo, da, hh, mm = int(cut["when"][5:7]), int(cut["when"][8:10]), cut["when"][11:13], cut["when"][14:16]
     left = f"家具は仮置き（後日差し替え）・指定商品の寸法と色は仮定・色はいずれも仮定"
-    right = f"{cut['title']}　{mo}月{da}日 {hh}:{mm}　照明 {cut['lamp_k']:,}K・{cut['lamp_pct']:.0f}%"
+    chn = cut["ch"]
+    lt = f"主照明 {chn['L'][0]:,}K・{chn['L'][1]:.0f}%" if chn["L"][1] > 0 else f"主照明 消灯・補助灯 {chn['D'][0]:,}K・{chn['D'][1]:.0f}%"
+    right = f"{cut['title']}　{mo}月{da}日 {hh}:{mm}　{lt}"
     ty = H + (band - fs) // 2 - 1
     d.text((int(fs * 0.8), ty), left, font=f, fill=(60, 56, 50))
     tw = d.textlength(right, font=f)

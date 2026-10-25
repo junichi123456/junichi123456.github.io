@@ -170,6 +170,47 @@ def p_lamp_face(CB, lib, b, pal, cfg):
     lib.int_lamp = (P, bb)
 
 
+def _glass(b, ior, rough):
+    P = b.bsdf
+    P.inputs["Transmission Weight"].default_value = 1.0
+    P.inputs["IOR"].default_value = ior
+    P.inputs["Roughness"].default_value = rough
+    P.inputs["Metallic"].default_value = 0.0
+
+
+def p_glass_door(CB, lib, b, pal, cfg):
+    """合わせ強化ガラス（厚 10.8 の箱）。試験で、薄板の Transparent＋Glossy は斜めから見ると黒い破綻が出たため Principled 透過を採る。"""
+    _glass(b, 1.52, 0.0)
+
+
+def p_glass_clear(CB, lib, b, pal, cfg):
+    _glass(b, 1.5, 0.02)
+
+
+def cam_only_emission(name, strength, kelvin):
+    """カメラ光線にだけ見える発光面（照明は別の面光源・Spot が行う。二重に数えない）。戻り値: (材質, 強さの入力, 色温度の入力)。"""
+    m = bpy.data.materials.new(name)
+    m.use_nodes = True
+    nt = m.node_tree
+    for n in list(nt.nodes):
+        nt.nodes.remove(n)
+    out = nt.nodes.new("ShaderNodeOutputMaterial")
+    em = nt.nodes.new("ShaderNodeEmission")
+    bb = nt.nodes.new("ShaderNodeBlackbody")
+    bb.inputs["Temperature"].default_value = kelvin
+    nt.links.new(bb.outputs[0], em.inputs["Color"])
+    em.inputs["Strength"].default_value = strength
+    df = nt.nodes.new("ShaderNodeBsdfDiffuse")
+    df.inputs["Color"].default_value = (0.9, 0.9, 0.9, 1)
+    lp = nt.nodes.new("ShaderNodeLightPath")
+    mx = nt.nodes.new("ShaderNodeMixShader")
+    nt.links.new(lp.outputs["Is Camera Ray"], mx.inputs[0])
+    nt.links.new(df.outputs[0], mx.inputs[1])
+    nt.links.new(em.outputs[0], mx.inputs[2])
+    nt.links.new(mx.outputs[0], out.inputs[0])
+    return m, em.inputs["Strength"], bb.inputs["Temperature"]
+
+
 def p_screen(CB, lib, b, pal, cfg):
     """スクリーン: 白い板。I07 では 16:9 の手続き画像（夕景の空と地平線のグラデーション。人物・ロゴなし）を Emission で映す。"""
     P = b.bsdf
@@ -254,7 +295,7 @@ def prepare(CB, sc, lib, meshes, M, cfg):
     bo = CB.NT(off)
     bo.bsdf.inputs["Base Color"].default_value = (0.9, 0.9, 0.9, 1)
     bo.bsdf.inputs["Roughness"].default_value = 0.4
-    st = dict(doors=defaultdict(list), fabrics=[], fixtures=[], screen_objs=[], lights=[], lamp_off=off)
+    st = dict(doors=defaultdict(list), fabrics=[], fixtures=[], screen_objs=[], lights=[], lamp_off=off, line_objs={}, foot_objs={}, lines=[], foots=[])
     for o in meshes:
         parts = re.sub(r"\.\d+$", "", o.name).split("|")
         grp = parts[0]
@@ -264,6 +305,10 @@ def prepare(CB, sc, lib, meshes, M, cfg):
             st["fabrics"].append(o)
         elif grp == "照明器具" and parts[2] == "lamp_face":
             st["fixtures"].append((o, parts[1]))
+        elif grp == "照明器具" and parts[2] == "line_face" and len(parts) > 3:
+            st["line_objs"][parts[3]] = o
+        elif grp == "照明器具" and parts[2] == "foot_face" and len(parts) > 3:
+            st["foot_objs"][parts[3]] = o
         elif grp == "家具" and parts[2] == "screen":
             st["screen_objs"].append(o)
     # ダウンライト（Spot、真下向き）
@@ -277,7 +322,42 @@ def prepare(CB, sc, lib, meshes, M, cfg):
         ob.rotation_euler = (0, 0, 0)
         sc.collection.objects.link(ob)
         st["lights"].append((ob, d))
-    log("lights", len(st["lights"]), "doors", len(st["doors"]), "fabrics", len(st["fabrics"]), "fixtures", len(st["fixtures"]))
+    # ライン照明（面光源 AREA。発光面は同じ換算の cam-only 発光）と階段の足元灯（Spot、壁から 12mm 前・45° 下向き）
+    for l in cfg["interior"].get("lines", []):
+        wd = cfg["interior"]["line_w_mm"] / 1000.0 - 0.008
+        L = bpy.data.lights.new("ln", "AREA")
+        L.shape = "RECTANGLE"
+        L.size = l["L"] / 1000.0
+        L.size_y = wd
+        ob = bpy.data.objects.new("ln", L)
+        ang = 0.0 if l["axis"] == "x" else math.pi / 2
+        cx, cy = (l["p0"][0] + l["p1"][0]) / 2000.0, (l["p0"][1] + l["p1"][1]) / 2000.0
+        zz = (l["p0"][2] - cfg["interior"]["line_h_mm"]) / 1000.0 - 0.002
+        ob.matrix_world = M @ Matrix.Translation((cx, cy, zz)) @ Matrix.Rotation(ang, 4, "Z")
+        sc.collection.objects.link(ob)
+        mat, sI, tI = cam_only_emission("line_" + l["id"], 1.0, 4000.0)
+        fo = st["line_objs"].get(l["id"])
+        if fo is not None:
+            fo.data.materials.clear()
+            fo.data.materials.append(mat)
+        st["lines"].append(dict(ob=ob, d=l, strength=sI, kelvin=tI, area=(l["L"] / 1000.0) * wd))
+    for f in cfg["interior"].get("foots", []):
+        x, y, z = (v / 1000.0 for v in f["p"])
+        nx = f["n"][0]
+        Lg = bpy.data.lights.new("ft", "SPOT")
+        Lg.spot_size = math.radians(120)
+        Lg.spot_blend = 0.5
+        Lg.shadow_soft_size = 0.02
+        ob = bpy.data.objects.new("ft", Lg)
+        ob.matrix_world = M @ Matrix.Translation((x + nx * 0.012, y, z)) @ Matrix.Rotation(math.radians(-45 * nx), 4, "Y")
+        sc.collection.objects.link(ob)
+        mat, sI, tI = cam_only_emission("foot_" + f["id"], 1.0, 2200.0)
+        fo = st["foot_objs"].get(f["id"])
+        if fo is not None:
+            fo.data.materials.clear()
+            fo.data.materials.append(mat)
+        st["foots"].append(dict(ob=ob, d=f, strength=sI, kelvin=tI))
+    log("lights", len(st["lights"]), "lines", len(st["lines"]), "foots", len(st["foots"]), "doors", len(st["doors"]), "fabrics", len(st["fabrics"]), "fixtures", len(st["fixtures"]))
     return st
 
 
@@ -309,19 +389,43 @@ def set_doors(st, cfg, cut, M):
 
 def configure_cut(CB, sc, lib, st, cfg, cut, M):
     lit = set(cut["floors_lit"])
-    w = cut["lamp_w"] * (cut["lamp_pct"] / 100.0)
+    ch = cut["ch"]                                      # {"L": [K, %], "D": [K, %], "F": [K, %]}
+    ic = cfg["interior"]
+    # D: 埋込ダウンライト（弱い補助灯。既存の Spot の 30%）
+    (kd, pd) = ch["D"]
+    w = cut["lamp_w"] * (pd / 100.0) * ic["downlight_ratio"]
     for ob, d in st["lights"]:
-        ob.hide_render = d["floor"] not in lit
+        ob.hide_render = d["floor"] not in lit or pd <= 0
         ob.data.energy = w * d.get("w", 1.0)
         ob.data.use_temperature = True
-        ob.data.temperature = cut["lamp_k"]
+        ob.data.temperature = kd
         ob.data.color = (1, 1, 1)
     P, bb = lib.int_lamp
-    bb.inputs["Temperature"].default_value = float(cut["lamp_k"])
-    P.inputs["Emission Strength"].default_value = cut["lamp_pct"] / 100.0 * 20.0
+    bb.inputs["Temperature"].default_value = float(kd)
+    P.inputs["Emission Strength"].default_value = pd / 100.0 * 20.0 * ic["downlight_ratio"]
     for o, lvl in st["fixtures"]:
         o.data.materials.clear()
         o.data.materials.append(lib.mats["lamp_face"] if lvl in lit else st["lamp_off"])
+    # L: 直付ライン（面光源。強さ = lm × 0.008 W/lm × 明るさ%、発光面は同じ換算 = W ÷ 面積）
+    (kl, pl) = ch["L"]
+    for e in st["lines"]:
+        d = e["d"]
+        lm = d["lm_per_m"] * d["L"] / 1000.0 * pl / 100.0
+        e["ob"].hide_render = d["floor"] not in lit or pl <= 0
+        e["ob"].data.energy = lm * ic["k_area_w_per_lm"]
+        e["ob"].data.use_temperature = True
+        e["ob"].data.temperature = kl
+        e["strength"].default_value = ic["k_area_w_per_lm"] * lm / e["area"] if pl > 0 else 0.0
+        e["kelvin"].default_value = float(kl)
+    # F: 階段の足元灯（Spot。40lm × 0.0375 W/lm × 明るさ%）
+    (kf, pf) = ch["F"]
+    for e in st["foots"]:
+        e["ob"].hide_render = e["d"]["floor"] not in lit or pf <= 0
+        e["ob"].data.energy = ic["foot_lm"] * ic["k_spot_w_per_lm"] * pf / 100.0
+        e["ob"].data.use_temperature = True
+        e["ob"].data.temperature = kf
+        e["strength"].default_value = ic["k_area_w_per_lm"] * ic["foot_lm"] / (0.1 * 0.03) * pf / 100.0 if pf > 0 else 0.0
+        e["kelvin"].default_value = float(kf)
     down = cut["screens"] == "down"
     for o in st["fabrics"]:
         o.hide_render = not down
@@ -401,4 +505,4 @@ def render_interior_cut(CB, sc, cut, cfg, lib, st, state, M):
     bpy.ops.render.render(write_still=True)
     return dict(id=cut["id"], file=cut["out"], seconds=round(time.time() - t0, 1), render_seconds=round(time.time() - t1, 1),
                 samples=cut["samples"], time_limit=cut["time_limit"], res=cut["res"], exposure=cut["exposure"], wb=cut["wb"],
-                lamp_k=cut["lamp_k"], lamp_pct=cut["lamp_pct"], hdri_sun=state.get("hdri_sun"))
+                lamp_k=cut["lamp_k"], lamp_pct=cut["lamp_pct"], channels=cut.get("ch"), hdri_sun=state.get("hdri_sun"))

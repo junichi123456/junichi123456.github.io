@@ -424,7 +424,7 @@ def doors(h):
             cx = int((op.u0 + op.u1) / 2) if w.axis == "x" else int(w.c)
             cy = int(w.c) if w.axis == "x" else int((op.u0 + op.u1) / 2)
             out.append(dict(tag=f"x{cx}y{cy}", label=op.label or "D", floor=op.floor, wall=w, op=op,
-                            type="slide" if op.operation == "sliding" else ("double" if op.width >= 1400 else "swing")))
+                            type=("glass_slide" if op.glass is True else "slide") if op.operation == "sliding" else ("double" if op.width >= 1400 else "swing")))
     return out
 
 
@@ -459,6 +459,9 @@ def door_parts(h):
                 return (p[0], c + p[1], p[2]) if ax == "x" else (c + p[1], p[0], p[2])
             mbb.tube(key, X(p0), X(p1), r, n)
 
+        if dd["type"] == "glass_slide":
+            _glass_slide(h, dd, did, MBfor, info, B)
+            continue
         mf = MBfor(fl, "door_oak", did)
         ms = MBfor(fl, "stainless", did)
         fw = 20
@@ -506,6 +509,61 @@ def door_parts(h):
             px, py = (hinge_u, c) if ax == "x" else (c, hinge_u)
             info[did] = dict(type="swing", floor=fl, tag=dd["tag"], axis=ax, pivot=[px, py], sign=_swing_sign(w, op, op.hinge))
     return single, info
+
+
+def _glass_slide(h, dd, did, MBfor, info, B):
+    """玄関ホールの透明扉（合わせ強化ガラス＋アルミ框の上吊り片引き戸、GD-2 は FIX を併設）。B は壁座標（u, v=壁芯からの距離）の箱。
+    動く戸は ID=did、FIX・欄間・レールカバーは静止の別 ID（did+'F'・did+'H'）。"""
+    w, op = dd["wall"], dd["op"]
+    g = h.spec["glass_doors"]
+    gl_t = g["thickness"]
+    fl = dd["floor"]
+    t = w.t
+    mount = op.mount
+    vc = mount * (t / 2 + 35)                 # 戸の厚さの中心（壁面から 35）
+    z0 = op.z0
+    leaf = g[op.label]["leaf"]
+    u0, u1 = leaf
+    zb, zt = z0 + 8, z0 + 2088                # 戸 H2,080（下端すき間 8）
+    fw, fd = 25, 24                           # 框の見付・見込
+    mg = MBfor(fl, "glass_door", did)
+    mf = MBfor(fl, "gd_frame", did)
+    mbn = MBfor(fl, "glass_band", did)
+    ms = MBfor(fl, "stainless", did)
+
+    def pane(mg_, mf_, mb_, a0, a1, v):
+        B(mg_, "glass_door", a0 + fw, a1 - fw, v - gl_t / 2, v + gl_t / 2, zb + fw, zt - fw)
+        B(mf_, "gd_frame", a0, a0 + fw, v - fd / 2, v + fd / 2, zb, zt)
+        B(mf_, "gd_frame", a1 - fw, a1, v - fd / 2, v + fd / 2, zb, zt)
+        B(mf_, "gd_frame", a0 + fw, a1 - fw, v - fd / 2, v + fd / 2, zb, zb + fw)
+        B(mf_, "gd_frame", a0 + fw, a1 - fw, v - fd / 2, v + fd / 2, zt - fw, zt)
+        for (b0, b1) in g["band_z"]:          # 中間膜の乳白の帯（衝突防止の表示）
+            B(mb_, "glass_band", a0 + fw, a1 - fw, v - gl_t / 2 - 0.3, v + gl_t / 2 + 0.3, z0 + b0, z0 + b1)
+
+    pane(mg, mf, mbn, u0, u1, vc)
+    # 引手: 室側の面のバーハンドル（φ25・L800、FL+800〜1,600）
+    hu = u1 - 70 if g[op.label]["dir"] > 0 else u0 + 70
+    sgn = mount
+    ax = w.axis
+    X = (lambda uu, vv, zz: (uu, w.c + vv, zz)) if ax == "x" else (lambda uu, vv, zz: (w.c + vv, uu, zz))
+    ms.tube("stainless", X(hu, vc + sgn * 56, z0 + 800), X(hu, vc + sgn * 56, z0 + 1600), 12.5, 10)
+    for dz in (800 + 60, 1600 - 60):
+        ms.tube("stainless", X(hu, vc + sgn * 56, z0 + dz), X(hu, vc + sgn * 14, z0 + dz), 6, 8)
+    sdir = g[op.label]["dir"]
+    info[did] = dict(type="slide", floor=fl, tag=dd["tag"], axis=ax, side=mount, width=(u1 - u0) - 60, c=w.c, u0=u0, u1=u1, dir=sdir)
+    # FIX（GD-2）
+    fx = g[op.label].get("fixed")
+    if fx:
+        did_f = did + "F"
+        pane(MBfor(fl, "glass_door", did_f), MBfor(fl, "gd_frame", did_f), MBfor(fl, "glass_band", did_f), fx[0], fx[1], mount * (t / 2 - 5))
+    # 欄間パネル（開口の上端 FL+2,100〜2,200）とレールカバー（FL+2,100〜天井、取付面に沿って開口＋戸袋の長さ）
+    did_h = did + "H"
+    mh = MBfor(fl, "wall_paint", did_h)
+    B(mh, "wall_paint", op.u0, op.u1, -t / 2, t / 2, z0 + g["head"], op.z1)
+    a0 = min(u0, op.u0) - 25 if sdir > 0 else min(u0, op.u0) - (u1 - u0)
+    a1 = max(u1, op.u1) + (u1 - u0) if sdir > 0 else max(u1, op.u1) + 25
+    cz = z0 + h.ch[fl]
+    B(mh, "wall_paint", a0, a1, mount * (t / 2), mount * (t / 2 + 60), z0 + g["head"], cz)
 
 
 def _swing_sign(w, op, hinge):
