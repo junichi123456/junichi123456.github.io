@@ -207,6 +207,10 @@ def fittings_sheet(b, number):
         sh.rect(x_, by, x_ + w, by + h, "A-GLAZ", lineweight=35)
         if f["name"] == "引違い窓" or "両引き" in f["name"]:
             sh.line((cx, by), (cx, by + h), "A-GLAZ")
+        if f["label"].startswith("GD"):
+            if f["w"] > 2000:                                     # GD-2: FIX（左）＋片引き（右）
+                sh.line((x_ + w * 0.5, by), (x_ + w * 0.5, by + h), "A-GLAZ")
+            sh.line((x_ + w * 0.5, by + h * 0.5), (x_ + w, by + h * 0.5), "A-DOOR")
         if "片開き" in f["name"]:
             sh.line((x_ + w, by + h / 2), (x_, by + h), "A-DOOR")
             sh.line((x_ + w, by + h / 2), (x_, by), "A-DOOR")
@@ -219,7 +223,7 @@ def fittings_sheet(b, number):
             sh.pline(tri, "A-ALT", closed=True)
         sh.dim((x_, by - 4 * S), (x_ + w, by - 4 * S), (x_, by - 4 * S), 0, text=f"{f['w']:,}")
         sh.dim((x_ - 3 * S, by), (x_ - 3 * S, by + h), (x_ - 3 * S, by), 90, text=f"{f['h']:,}")
-        mat = {"AW": "樹脂（アルミ樹脂複合）", "AD": "アルミ製 自動", "SD": "鋼製（断熱）", "WD": "木製", "SS": "鋼製 遮音"}[f["label"][:2]]
+        mat = {"AW": "樹脂（アルミ樹脂複合）", "AD": "アルミ製 自動", "SD": "鋼製（断熱）", "WD": "木製", "SS": "鋼製 遮音", "GD": "アルミ框・合わせ強化ガラス"}[f["label"][:2]]
         if f["name"].startswith("EV"):
             mat = "EV メーカー標準"
         glass = ""
@@ -228,6 +232,8 @@ def fittings_sheet(b, number):
         spec = [f"名称: {f['name']}", f"材質: {mat}", f"W{f['w']:,}×H{f['h']:,}", f"数量: {f['count']}か所（{'・'.join(f['floors'])}）"]
         if glass:
             spec.append(f"ガラス: {glass}")
+        if f["label"].startswith("GD"):
+            spec.append("ガラス: 合わせ強化（強化5＋5、衝突防止の乳白帯2本）")
         if f["fire"]:
             spec.append("防火設備（法2条9号の2ロ）" + ("・遮煙" if f["smoke"] else ""))
         if f["alt_entry"]:

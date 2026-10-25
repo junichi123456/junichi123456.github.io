@@ -395,14 +395,25 @@ interior_palette:  # 内装の色（sRGB 16進。いずれも仮定）。tex は
   art_bg:            {color: "#E7E0D2", roughness: 0.90}
   lamp_trim:         {color: "#F2F2EE", roughness: 0.40}
   lamp_face:         {color: "#FFFFFF", roughness: 0.30, emissive: true}
+  line_body:         {color: "#F4F3EF", roughness: 0.45}                    # 直付ライン照明の乳白カバー（v4.17）
+  line_face:         {color: "#FFFFFF", roughness: 0.30, emissive: true}
+  foot_face:         {color: "#FFF4E0", roughness: 0.30, emissive: true}    # 階段の足元灯の発光面
+  foot_plate:        {color: "#EFEBE2", roughness: 0.40}
+  glass_door:        {color: "#EBF2F0", roughness: 0.0, transmission: 1.0, ior: 1.52}   # 合わせ強化ガラス（厚 10.8）
+  glass_band:        {color: "#F2F2EE", roughness: 0.60}                    # 中間膜の乳白の帯（衝突防止の表示）
+  gd_frame:          {color: "#8E8D88", roughness: 0.45}                    # アルミ框の焼付塗装（仮定）
+  glass_clear:       {color: "#F2F5F4", roughness: 0.02, transmission: 1.0, ior: 1.5}   # 透明の保存容器・グラス
 
 interior_cg:       # 内装CG（src/render_cg.py --interior）。11カット。1600×900・64spp は、1カット約 285 秒の実測にもとづく
   resolution: [1600, 900]
   samples: 64
   adaptive_threshold: 0.05
-  time_limit: 270
+  time_limit: 240       # v4.17: 13 カット＋比較図で 3,600 秒以内にするため 270 → 240
   lamp_w: 30            # ダウンライト1台あたり（100% のとき、Blender の W。目視で決めた値で、実際の光束との換算はしていない）
   pitch_mm: 1800
+  k_area_w_per_lm: 0.008   # v4.17: ライン（面光源）の W/lm（既存の Spot 30W を 800lm 相当とした換算）
+  k_spot_w_per_lm: 0.0375  # 足元灯・ダウンライト（Spot）の W/lm
+  downlight_ratio: 0.30    # v4.17: 埋込ダウンライトは既存の 30%（弱い補助灯）
   room_lamp_weight: {ジム: 1.6, シアター: 2.0, 前室: 1.0}   # 室の種類ごとの係数（直天井で高いジム、暗色仕上げのシアターは強める）
   view_transform: Khronos PBR Neutral
   propose_north_blackout: true   # 提案: 主寝室の北窓（AW-5）にも遮光スクリーンを足す（要施主確認。図面・法規チェックは変えない）
@@ -420,4 +431,42 @@ interior_cg:       # 内装CG（src/render_cg.py --interior）。11カット。1
     I09: {file: I09_master_bedroom, title: 主寝室（完全遮光）,       cam: [16900, 13000, 6000], target: [13300, 15800, 5400], lens: 20, when: "2026-10-24T21:30", exposure: 2.5, wb: 2900, shift_y: 0,     pitch: 0,    screens: down}
     I10: {file: I10_washroom_bath, title: 洗面脱衣・浴室,           cam: [6450, 12950, 2950], target: [9300, 15600, 2600], lens: 16, when: "2026-10-24T10:00", exposure: 1.0, wb: 5000, shift_y: 0,     pitch: 0,    screens: up,   open_doors: {x7400y14850: 1.0}}
     I11: {file: I11_laundry,      title: ランドリー,               cam: [5700, 14750, 2950], target: [700, 12800, 2600],  lens: 16, when: "2026-10-24T10:00", exposure: 1.0, wb: 5000, shift_y: 0,     pitch: 0,    screens: up}
+    I12: {file: I12_genkan_glass, title: 玄関ホールから透明扉越しに（LDK・階段ホール）, cam: [9600, 1000, 2750], target: [6600, 3600, 2900], lens: 20, when: "2026-10-24T11:00", exposure: -0.5, wb: 5000, shift_y: 0, pitch: 0, screens: up, close_doors: [GD-1, GD-2]}
+    I13: {file: I13_stair_night,  title: 階段1 の足元灯（夜）,           cam: [7000, 6650, 3050], target: [7000, 12000, 3700], lens: 18, when: "2026-10-24T22:30", exposure: 2.5, wb: 3500, shift_y: 0, pitch: 0, screens: down, lights: {L: [2200, 0], D: [2200, 10], F: [2200, 30]}}
 
+# ---------------------------------------------------------------- v4.17: 照明の再構成・透明扉・キッチン全露出（施主指示 2026-10-25）
+lighting:       # 製品未確定・仮定値。目標照度は JIS Z 9110 を参考にした仮定の目標値（規格本文は未参照）
+  policy: 主照明は天井直付けの棒状（ライン）LED、埋込ダウンライトは弱い補助灯（溝・コーブ・吊りなし）
+  maintenance_factor: 0.8
+  efficacy_lm_per_w: 120
+  line: {width: 50, height: 60, drop: 60, classes_lm_per_m: [600, 800, 1000, 1200, 1600, 2000, 2500, 3000, 3500], kelvin: [2200, 5000], ra: 90, dimming: DALI-2 DT8（製品未確定）, row_pitch: 2000, end_clear: 500, hole_clear: 150, cut_unit: 300}
+  downlight: {max_lm: 250, kelvin: [2200, 3000], ra: 90, min_from_line: 450, min_from_wall: 400, pitch: 1800}
+  foot: {height_from_tread: 300, every_steps: 2, lm: 40, kelvin: 2200, battery_min: 30, plate: [70, 120], protrude: 2}
+  targets_lx: {リビング: 300, キッチン: 300, パントリー: 200, 玄関土間: 200, ホール・階段: 150, ホール: 200, ジム: 500, トイレ: 200, 機械室: 200, ランドリー: 300, クローゼット: 200, 洗面: 300, 浴室: 200, シャワー: 200, 廊下: 100, 居室: 200, WIC: 200, シアター: 200, 前室: 100, 図書室: 300, 主寝室: 200}
+  no_line_rooms: [収納, 式台]
+  channels:        # 時刻 → 各チャネルの (色温度 K, 明るさ %)。L=ライン（主）、D=ダウンライト（弱）、F=足元灯。全体の smart.lighting_schedule は変えない
+    L: [[0, 2200, 0], [6, 3000, 50], [8, 5000, 100], [16, 4500, 100], [18, 3000, 70], [20, 2700, 40], [22, 2200, 0], [24, 2200, 0]]
+    D: [[0, 2200, 10], [6, 2200, 0], [16, 2700, 50], [18, 2700, 70], [20, 2200, 70], [22, 2200, 30], [24, 2200, 10]]
+    F: [[0, 2200, 30], [6, 2200, 0], [20, 2200, 0], [22, 2200, 30], [24, 2200, 30]]
+  dali: {systems_per_floor: 3, devices_per_system: 64, groups_per_system: 16, gateway: KNX-DALI ゲートウェイ（型番未選定）}
+  product: {candidate: 遠藤照明 Linear series（直付・拡散・調光調色 Synca）, status: 製品未確定（型番・DALI 対応・防塵等級は要確認）, alt: Zumtobel SLOTLIGHT infinity II}
+  hex: {tested: true, adopted: false, product: Nanoleaf Shapes Hexagons, checked: "2026-10-25",
+        reason: 実在するが壁用・装飾用。天井へのテープ取付不可（落下は保証外）、1枚 100lm・Ra80 で LDK 300lx に 217〜270 枚、継ぎ目と段差が総延長約 150m 残り清掃性に反する}
+
+glass_doors:    # 玄関ホールの透明扉（施主指示 2）。RC の開口寸法は変えない
+  glass: 合わせ強化ガラス（強化5＋中間膜0.76＋強化5 ≒ 10.8）
+  thickness: 10.8
+  frame: アルミ押出四方框 見付25・焼付塗装
+  band_z: [[850, 1000], [1400, 1550]]      # 中間膜の乳白の帯（FL からの高さ）
+  head: 2100                               # 欄間パネルの下端（FL+）。垂れ壁 = CH − head = 500
+  gap_to_wall: 30
+  GD-1: {wall: X2, u: [2800, 4000], side: W, dir: 1,  leaf: [2775, 4025], fixed: null, note: LDK 側の壁面に上吊り片引き（閉 y2775〜4025、開 y4025〜5275）}
+  GD-2: {wall: Y2, u: [7500, 10500], side: N, dir: 1, leaf: [8950, 10500], fixed: [7500, 8975], note: ホール・階段1 側の壁面に FIX＋上吊り片引き（開 x10450〜12000）}
+
+kitchen_open:   # キッチン・パントリーの全露出化（施主指示 1）
+  knife: magnet           # magnet | locked_case（要施主確認）
+  pantry_door: keep       # keep | remove | glass（要施主確認）
+  pot_rack: false         # 天井吊りのポットラックは採用しない（地震時の落下・頭の衝突）
+  knife_z: 1600
+  shelf_gap_min: 230      # 棚の段の間隔はこの値を超える
+  under_clear_min: 250    # 背面カウンター下部の底板（掃除ロボットが入る高さ）

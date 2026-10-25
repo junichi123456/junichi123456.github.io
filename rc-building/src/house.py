@@ -362,6 +362,19 @@ class House:
         z0 = self.fl[lv]
         return w.add(Opening("door", u0, u1, z0, z0 + h, lv, "I", name, "opening"))
 
+    def _glass_door(self, key, lv, wname, u0, u1, name, mount):
+        """玄関ホールの透明扉（v4.17）。RC の開口寸法は変えず、扉だけを新設する。"""
+        g = self.spec["glass_doors"]
+        w = self.rc_walls[lv][wname]
+        z0 = self.fl[lv]
+        op = w.add(Opening("door", u0, u1, z0, z0 + 2200, lv, "I", name, "sliding"))
+        op.glass = True
+        op.head = g["head"]
+        op.fix_u = tuple(g[key]["fixed"]) if g[key].get("fixed") else None
+        op.dir = g[key]["dir"]
+        op.mount = mount
+        return op
+
     def _window(self, lv, side, u0, u1, sill, h, name="FIX窓", glass=None):
         z0 = self.fl[lv] + sill
         op = Opening("window", u0, u1, z0, z0 + h, lv, side, name, "fixed", exterior=True)
@@ -383,13 +396,13 @@ class House:
         # ---------------- 1F
         self.entrance = self._ext_door("1F", "S", 8600, 9600, 2300, "玄関ドア（断熱・防犯CP）")
         D("1F", "X3", 3000, 4000, "遮音ドア（Ts-35・搬入兼用）", swing=1, h=2300)
-        G("1F", "X2", 2800, 4000, name="開口（LDK↔ホール）")
+        self._glass_door("GD-1", "1F", "X2", 2800, 4000, "ガラス上吊り引戸（合わせ強化）", -1)      # 左（西）: LDK 側の面に取付
         G("1F", "X2", 6400, 7300, name="開口（キッチン↔ホール）")
         D("1F", "X2", 12500, 13400, op="sliding", name="木製引戸")
         D("1F", "X3", 9300, 10100, swing=1, hinge=0)
         D("1F", "X3", 13000, 13800, swing=1, hinge=1)
         G("1F", "Y2", 1800, 5800, name="開口（ダイニング↔キッチン）")
-        G("1F", "Y2", 7500, 10500, name="開口（ホール）")
+        self._glass_door("GD-2", "1F", "Y2", 7500, 10500, "ガラスFIX＋上吊り引戸（合わせ強化）", +1)  # 正面（北）: ホール・階段1 側の面に取付
         self.rc_walls["1F"]["Y2"].add(Opening("door", 12600, 17800, self.fl["1F"], self.fl["1F"] + 2600, "1F", "I", "開口（ジム）", "opening"))
         D("1F", "Y3", 300, 1300, op="sliding", name="木製引戸")
         G("1F", "Y3", 10900, 11800, name="開口（ホール↔廊下）")
@@ -645,6 +658,8 @@ class House:
                     continue
                 if op.kind == "window":
                     prefix = "AW"
+                elif "ガラス" in op.name and op.glass is True:
+                    prefix = "GD"
                 elif "玄関" in op.name or "点検" in op.name:
                     prefix = "SD"
                 elif "遮音" in op.name:
@@ -655,7 +670,7 @@ class House:
                 groups.setdefault(key, []).append(op)
         counters = {}
         self.fittings = []
-        for key in sorted(groups, key=lambda k: (k[0], -k[2] * k[3])):
+        for key in sorted(groups, key=lambda k: (k[0], (1 if k[0] == "GD" else -1) * k[2] * k[3])):      # GD は狭い方（左・LDK）が GD-1
             prefix = key[0]
             counters[prefix] = counters.get(prefix, 0) + 1
             label = f"{prefix}-{counters[prefix]}"
@@ -751,6 +766,8 @@ class House:
             if op.operation == "opening":
                 continue
             th, cat, mat = (30, "glass", "glass") if op.kind == "window" else (50, "door", "door")
+            if op.glass is True:
+                th, mat = 11, "glass"          # 透明扉（合わせ強化 10.8）
             h = th / 2
             if w.axis == "x":
                 out.append(Box(op.u0, w.c - h, op.z0, op.u1, w.c + h, op.z1, cat, mat, level=w.floor, tag=op.label))

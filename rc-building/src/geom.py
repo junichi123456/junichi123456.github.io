@@ -47,6 +47,11 @@ class Opening:
     hinge: int = 0               # 吊元（0: u0 側, 1: u1 側）
     label: str = ""              # 建具記号（AW-1 等、自動採番）
     wall: "Wall" = None
+    glass: object = False        # 窓: ガラス面積 m²。透明扉: True（v4.17）
+    fix_u: tuple = None          # 透明扉: FIX 部分の範囲 (u0, u1)
+    head: float = None           # 透明扉: 欄間パネルの下端（FL からの高さ）
+    dir: int = 1                 # 透明扉: 引き込む向き（+1 / -1）
+    mount: int = 1               # 透明扉: 取付面（壁法線の +1/-1 側）
 
     @property
     def width(self):

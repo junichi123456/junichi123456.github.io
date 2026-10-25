@@ -11,7 +11,11 @@ import math
 from shapely.geometry import LineString, Point, box
 from shapely.strtree import STRtree
 
-LOSS = {"wall": 25.0, "partition": 4.0, "door": 4.0, "stair": 6.0}   # dB（5GHz、RC250・LGS間仕切・木製/遮音扉）
+LOSS = {"wall": 25.0, "partition": 4.0, "door": 4.0, "stair": 6.0, "glass_door": 3.0}   # dB（5GHz、RC250・LGS間仕切・木製/遮音扉・合わせガラス扉）
+
+
+def _kind(b):
+    return "glass_door" if (b.cat == "door" and b.mat == "glass") else b.cat
 
 
 def _pl(d_m, f_mhz):
@@ -24,7 +28,7 @@ class Floor:
         w = h.spec["wifi"]
         self.h, self.floor, self.w = h, floor, w
         z = h.fl[floor] + 1200
-        self.items = [(box(b.x0, b.y0, b.x1, b.y1), LOSS[b.cat]) for b in h.boxes
+        self.items = [(box(b.x0, b.y0, b.x1, b.y1), LOSS[_kind(b)]) for b in h.boxes
                       if b.cat in LOSS and b.z0 < z < b.z1 and b.level != "EXT"]
         self.tree = STRtree([p for p, _ in self.items])
         step = w["grid"]
