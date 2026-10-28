@@ -382,6 +382,28 @@
 "teams": [
 "6278dde67b242ca8"
 ]
+},
+{
+"nature": "ようき",
+"ap": {
+"hp": 12,
+"atk": 32,
+"def": 1,
+"spe": 21
+},
+"item": "リザードナイトX",
+"moves": [
+"フレアドライブ",
+"げきりん",
+"ニトロチャージ",
+"つるぎのまい"
+],
+"ability": "もうか",
+"mega": "メガリザードンＸ",
+"mega_ability": "かたいツメ",
+"teams": [
+"c9bacfce5e2fcb92"
+]
 }
 ],
 "セグレイブ": [
@@ -966,6 +988,27 @@
 "mega_ability": null,
 "teams": [
 "361c30c027a9d54f"
+]
+},
+{
+"nature": "わんぱく",
+"ap": {
+"hp": 32,
+"def": 32,
+"spd": 2
+},
+"item": "ゴツゴツメット",
+"moves": [
+"アイアンヘッド",
+"ボディプレス",
+"てっぺき",
+"はねやすめ"
+],
+"ability": "プレッシャー",
+"mega": null,
+"mega_ability": null,
+"teams": [
+"c9bacfce5e2fcb92"
 ]
 }
 ],
@@ -5125,6 +5168,27 @@
 "teams": [
 "11ccf2f783b6a8e7"
 ]
+},
+{
+"nature": "いじっぱり",
+"ap": {
+"hp": 2,
+"atk": 32,
+"spe": 32
+},
+"item": "きあいのタスキ",
+"moves": [
+"じしん",
+"スケイルショット",
+"ほのおのキバ",
+"つるぎのまい"
+],
+"ability": "さめはだ",
+"mega": null,
+"mega_ability": null,
+"teams": [
+"c9bacfce5e2fcb92"
+]
 }
 ],
 "グソクムシャ": [
@@ -6142,6 +6206,27 @@
 "teams": [
 "11ccf2f783b6a8e7"
 ]
+},
+{
+"nature": "ひかえめ",
+"ap": {
+"hp": 32,
+"spa": 24,
+"spe": 10
+},
+"item": "オボンのみ",
+"moves": [
+"うたかたのアリア",
+"ムーンフォース",
+"アクアジェット",
+"めいそう"
+],
+"ability": "げきりゅう",
+"mega": null,
+"mega_ability": null,
+"teams": [
+"c9bacfce5e2fcb92"
+]
 }
 ],
 "ドヒドイデ": [
@@ -6883,6 +6968,28 @@
 "teams": [
 "4f020f6b61d7f8ea"
 ]
+},
+{
+"nature": "いじっぱり",
+"ap": {
+"hp": 1,
+"atk": 32,
+"def": 1,
+"spe": 32
+},
+"item": "いのちのたま",
+"moves": [
+"かげうち",
+"じゃれつく",
+"ウッドハンマー",
+"つるぎのまい"
+],
+"ability": "ばけのかわ",
+"mega": null,
+"mega_ability": null,
+"teams": [
+"c9bacfce5e2fcb92"
+]
 }
 ],
 "エンペルト": [
@@ -7186,6 +7293,27 @@
 "mega_ability": "フェアリーオーラ",
 "teams": [
 "2ab0e9d6c4021c97"
+]
+},
+{
+"nature": "おくびょう",
+"ap": {
+"hp": 2,
+"spa": 32,
+"spe": 32
+},
+"item": "フラエッテナイト",
+"moves": [
+"ムーンフォース",
+"めいそう",
+"あまえる",
+"こうごうせい"
+],
+"ability": "フラワーベール",
+"mega": "メガフラエッテ",
+"mega_ability": "フェアリーオーラ",
+"teams": [
+"c9bacfce5e2fcb92"
 ]
 }
 ],
