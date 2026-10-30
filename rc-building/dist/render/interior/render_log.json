@@ -1,26 +1,51 @@
 {
- "total_seconds": 3253.9,
- "glb_export_seconds": 2.5,
+ "total_seconds": 1042.3,
+ "glb_export_seconds": 1.9,
  "asset_fetch_seconds": 0.0,
- "blender_setup_seconds": 1507.9,
+ "blender_setup_seconds": 1006.1,
  "cuts": [
   {
    "id": "I01",
-   "file": "dist/render/interior/I01_ldk_south.png",
-   "seconds": 254.2,
-   "render_seconds": 253.8,
+   "file": "/home/user/junichi123456.github.io/rc-building/dist/render/interior/I01_ldk_south.png",
+   "seconds": 251.2,
+   "render_seconds": 251.1,
    "samples": 64,
    "time_limit": 240,
    "res": [
     1600,
     900
-   ]
+   ],
+   "exposure": -0.8,
+   "wb": 5000,
+   "lamp_k": 4844,
+   "lamp_pct": 100.0,
+   "channels": {
+    "L": [
+     4844,
+     100.0
+    ],
+    "D": [
+     2200,
+     0.0
+    ],
+    "F": [
+     2200,
+     0.0
+    ]
+   },
+   "hdri_sun": [
+    145.8,
+    47.9,
+    -71.5
+   ],
+   "texture_fallbacks": [],
+   "time_limit_hit": true
   },
   {
    "id": "I02",
    "file": "/home/user/junichi123456.github.io/rc-building/dist/render/interior/I02_ldk_dusk.png",
-   "seconds": 253.4,
-   "render_seconds": 253.3,
+   "seconds": 252.5,
+   "render_seconds": 252.4,
    "samples": 64,
    "time_limit": 240,
    "res": [
@@ -45,248 +70,19 @@
      0.0
     ]
    },
-   "hdri_sun": null,
+   "hdri_sun": [
+    145.8,
+    47.9,
+    -71.5
+   ],
    "texture_fallbacks": [],
    "time_limit_hit": true
   },
   {
    "id": "I03",
-   "file": "dist/render/interior/I03_kitchen.png",
-   "seconds": 251.7,
-   "render_seconds": 251.5,
-   "samples": 64,
-   "time_limit": 240,
-   "res": [
-    1600,
-    900
-   ]
-  },
-  {
-   "id": "I04",
-   "file": "dist/render/interior/I04_genkan.png",
-   "seconds": 252.4,
-   "render_seconds": 252.2,
-   "samples": 64,
-   "time_limit": 240,
-   "res": [
-    1600,
-    900
-   ]
-  },
-  {
-   "id": "I05",
-   "file": "dist/render/interior/I05_stair.png",
-   "seconds": 252.0,
-   "render_seconds": 251.9,
-   "samples": 64,
-   "time_limit": 240,
-   "res": [
-    1600,
-    900
-   ]
-  },
-  {
-   "id": "I06",
-   "file": "/home/user/junichi123456.github.io/rc-building/dist/render/interior/I06_gym.png",
-   "seconds": 251.7,
-   "render_seconds": 251.4,
-   "samples": 64,
-   "time_limit": 240,
-   "res": [
-    1600,
-    900
-   ],
-   "exposure": -0.5,
-   "wb": 5000,
-   "lamp_k": 4906,
-   "lamp_pct": 100.0,
-   "channels": {
-    "L": [
-     4906,
-     100.0
-    ],
-    "D": [
-     2200,
-     0.0
-    ],
-    "F": [
-     2200,
-     0.0
-    ]
-   },
-   "hdri_sun": [
-    145.8,
-    47.9,
-    -54.1
-   ],
-   "texture_fallbacks": [],
-   "time_limit_hit": true
-  },
-  {
-   "id": "I07",
-   "file": "dist/render/interior/I07_theater.png",
-   "seconds": 167.1,
-   "render_seconds": 167.1,
-   "samples": 64,
-   "time_limit": 240,
-   "res": [
-    1600,
-    900
-   ]
-  },
-  {
-   "id": "I08",
-   "file": "/home/user/junichi123456.github.io/rc-building/dist/render/interior/I08_library.png",
-   "seconds": 256.5,
-   "render_seconds": 255.8,
-   "samples": 64,
-   "time_limit": 240,
-   "res": [
-    1600,
-    900
-   ],
-   "exposure": -0.5,
-   "wb": 5000,
-   "lamp_k": 4562,
-   "lamp_pct": 100.0,
-   "channels": {
-    "L": [
-     4562,
-     100.0
-    ],
-    "D": [
-     2200,
-     0.0
-    ],
-    "F": [
-     2200,
-     0.0
-    ]
-   },
-   "hdri_sun": [
-    145.8,
-    47.9,
-    -147.4
-   ],
-   "texture_fallbacks": [],
-   "time_limit_hit": true
-  },
-  {
-   "id": "I09",
-   "file": "/home/user/junichi123456.github.io/rc-building/dist/render/interior/I09_master_bedroom.png",
-   "seconds": 246.6,
-   "render_seconds": 246.6,
-   "samples": 64,
-   "time_limit": 240,
-   "res": [
-    1600,
-    900
-   ],
-   "exposure": 1.5,
-   "wb": 2900,
-   "lamp_k": 2200,
-   "lamp_pct": 20.0,
-   "channels": {
-    "L": [
-     2325,
-     0.0
-    ],
-    "D": [
-     2200,
-     20.0
-    ],
-    "F": [
-     2200,
-     30.0
-    ]
-   },
-   "hdri_sun": [
-    145.8,
-    47.9,
-    -147.4
-   ],
-   "texture_fallbacks": [],
-   "time_limit_hit": true
-  },
-  {
-   "id": "I10",
-   "file": "/home/user/junichi123456.github.io/rc-building/dist/render/interior/I10_washroom_bath.png",
-   "seconds": 250.0,
-   "render_seconds": 249.8,
-   "samples": 64,
-   "time_limit": 240,
-   "res": [
-    1600,
-    900
-   ],
-   "exposure": -1,
-   "wb": 5000,
-   "lamp_k": 4875,
-   "lamp_pct": 100.0,
-   "channels": {
-    "L": [
-     4875,
-     100.0
-    ],
-    "D": [
-     2200,
-     0.0
-    ],
-    "F": [
-     2200,
-     0.0
-    ]
-   },
-   "hdri_sun": [
-    145.8,
-    47.9,
-    -62.4
-   ],
-   "texture_fallbacks": [],
-   "time_limit_hit": true
-  },
-  {
-   "id": "I11",
-   "file": "/home/user/junichi123456.github.io/rc-building/dist/render/interior/I11_laundry.png",
-   "seconds": 250.2,
-   "render_seconds": 250.1,
-   "samples": 64,
-   "time_limit": 240,
-   "res": [
-    1600,
-    900
-   ],
-   "exposure": -1,
-   "wb": 5000,
-   "lamp_k": 4875,
-   "lamp_pct": 100.0,
-   "channels": {
-    "L": [
-     4875,
-     100.0
-    ],
-    "D": [
-     2200,
-     0.0
-    ],
-    "F": [
-     2200,
-     0.0
-    ]
-   },
-   "hdri_sun": [
-    145.8,
-    47.9,
-    -62.4
-   ],
-   "texture_fallbacks": [],
-   "time_limit_hit": true
-  },
-  {
-   "id": "I12",
-   "file": "/home/user/junichi123456.github.io/rc-building/dist/render/interior/I12_genkan_glass.png",
-   "seconds": 249.9,
-   "render_seconds": 249.7,
+   "file": "/home/user/junichi123456.github.io/rc-building/dist/render/interior/I03_kitchen.png",
+   "seconds": 248.4,
+   "render_seconds": 248.3,
    "samples": 64,
    "time_limit": 240,
    "res": [
@@ -320,38 +116,38 @@
    "time_limit_hit": true
   },
   {
-   "id": "I13",
-   "file": "/home/user/junichi123456.github.io/rc-building/dist/render/interior/I13_stair_night.png",
-   "seconds": 251.2,
-   "render_seconds": 251.2,
+   "id": "I14",
+   "file": "/home/user/junichi123456.github.io/rc-building/dist/render/interior/I14_ldk_corner.png",
+   "seconds": 251.7,
+   "render_seconds": 251.5,
    "samples": 64,
    "time_limit": 240,
    "res": [
     1600,
     900
    ],
-   "exposure": 2.5,
-   "wb": 3500,
-   "lamp_k": 2200,
-   "lamp_pct": 10.0,
+   "exposure": -0.8,
+   "wb": 5000,
+   "lamp_k": 4594,
+   "lamp_pct": 100.0,
    "channels": {
     "L": [
-     2200,
-     0.0
+     4594,
+     100.0
     ],
     "D": [
      2200,
-     10.0
+     0.0
     ],
     "F": [
      2200,
-     30.0
+     0.0
     ]
    },
    "hdri_sun": [
     145.8,
     47.9,
-    -81.1
+    -141.4
    ],
    "texture_fallbacks": [],
    "time_limit_hit": true
@@ -382,28 +178,20 @@
  },
  "source": "Poly Haven (CC0)",
  "camera_clearance_mm": {
-  "I08": {
-   "mm": 400,
+  "I01": {
+   "mm": 592,
+   "nearest": "L-A1"
+  },
+  "I02": {
+   "mm": 986,
    "nearest": "wall"
   },
-  "I09": {
-   "mm": 850,
+  "I03": {
+   "mm": 206,
    "nearest": "wall"
   },
-  "I10": {
-   "mm": 300,
-   "nearest": "door"
-  },
-  "I11": {
-   "mm": 300,
-   "nearest": "wall"
-  },
-  "I12": {
-   "mm": 875,
-   "nearest": "wall"
-  },
-  "I13": {
-   "mm": 400,
+  "I14": {
+   "mm": 1200,
    "nearest": "wall"
   }
  },
@@ -419,5 +207,75 @@
   "time_limit": 240,
   "view_transform": "Khronos PBR Neutral"
  },
- "note": "I01-I07 と I08-I13 を 2 回に分けて描画（合計時間は両者の和）"
+ "version": "v4.18",
+ "rerendered_cuts": [
+  "I01",
+  "I02",
+  "I03",
+  "I14"
+ ],
+ "not_rerendered_notice": "I04〜I13 と外観 C01〜C06 は v4.17 時点（階高 3,200・天井高 2,600・旧キッチン・旧 LDK 窓・旧庇）の画像のまま。v4.18 では描き直していない（施主指示: リビングとキッチンだけ）。次回以降に描き直す。",
+ "not_rerendered": [
+  {
+   "id": "I04",
+   "file": "dist/render/interior/I04_genkan.png",
+   "state": "v4.17 時点（階高 3,200）の画像のまま",
+   "previous_seconds": 252.4
+  },
+  {
+   "id": "I05",
+   "file": "dist/render/interior/I05_stair.png",
+   "state": "v4.17 時点（階高 3,200）の画像のまま",
+   "previous_seconds": 252.0
+  },
+  {
+   "id": "I06",
+   "file": "dist/render/interior/I06_gym.png",
+   "state": "v4.17 時点（階高 3,200）の画像のまま",
+   "previous_seconds": 251.7
+  },
+  {
+   "id": "I07",
+   "file": "dist/render/interior/I07_theater.png",
+   "state": "v4.17 時点（階高 3,200）の画像のまま",
+   "previous_seconds": 167.1
+  },
+  {
+   "id": "I08",
+   "file": "dist/render/interior/I08_library.png",
+   "state": "v4.17 時点（階高 3,200）の画像のまま",
+   "previous_seconds": 256.5
+  },
+  {
+   "id": "I09",
+   "file": "dist/render/interior/I09_master_bedroom.png",
+   "state": "v4.17 時点（階高 3,200）の画像のまま",
+   "previous_seconds": 246.6
+  },
+  {
+   "id": "I10",
+   "file": "dist/render/interior/I10_washroom_bath.png",
+   "state": "v4.17 時点（階高 3,200）の画像のまま",
+   "previous_seconds": 250.0
+  },
+  {
+   "id": "I11",
+   "file": "dist/render/interior/I11_laundry.png",
+   "state": "v4.17 時点（階高 3,200）の画像のまま",
+   "previous_seconds": 250.2
+  },
+  {
+   "id": "I12",
+   "file": "dist/render/interior/I12_genkan_glass.png",
+   "state": "v4.17 時点（階高 3,200）の画像のまま",
+   "previous_seconds": 249.9
+  },
+  {
+   "id": "I13",
+   "file": "dist/render/interior/I13_stair_night.png",
+   "state": "v4.17 時点（階高 3,200）の画像のまま",
+   "previous_seconds": 251.2
+  }
+ ],
+ "previous_run_total_seconds": 3253.9
 }
