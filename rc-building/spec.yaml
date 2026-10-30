@@ -434,10 +434,10 @@ interior_cg:       # 内装CG（src/render_cg.py --interior）。14カット（v
   annotation_band: 36            # 画像の下端に足す帯の高さ（px）。仮置きの注記を画素として入れる
   textures: {osb: oriented_strand_board, floor: laminate_floor_02, oak: oak_veneer_01, ash: ash_veneer, plywood: plywood, linen: rough_linen, wool: poly_wool_herringbone, rubber: rubber_tiles, marble: marble_01}
   cuts:            # cam/target は建物座標 mm（z は絶対高さ）。screens: up（昼・上げた）/ down（日没後・下ろした）。open_doors は扉の位置タグ（x…y…）と開け方
-    I01: {file: I01_ldk_south,    title: LDK 南窓側から,           cam: [5300, 1100, 3000],  target: [2300, 5600, 3000],  lens: 22, when: "2026-10-24T10:30", exposure: -0.8, wb: 5000, shift_y: -0.14, pitch: 0,    screens: up}
-    I02: {file: I02_ldk_dusk,     title: LDK キッチン側から（夕景・スクリーン上げ）, cam: [4400, 6750, 2850],  target: [2300, 1200, 2400],  lens: 22, when: "2026-10-24T18:30", exposure: -0.5, wb: 4000, shift_y: -0.08, pitch: 0,    screens: up}
-    I03: {file: I03_kitchen,      title: キッチン,       cam: [5750, 6450, 2950],  target: [1600, 11300, 2600], lens: 18, when: "2026-10-24T11:00", exposure: -0.5, wb: 5000, shift_y: 0,     pitch: 0,    screens: up}
-    I04: {file: I04_genkan,       title: 玄関土間・式台・ホール,     cam: [9300, 300, 2590],   target: [8800, 5500, 2600],  lens: 16, when: "2026-10-24T11:00", exposure: -0.5, wb: 5000, shift_y: -0.12, pitch: 0,    screens: up}
+    I01: {file: I01_ldk_south,    title: LDK 南窓側から,           cam: [5300, 1100, 3000],  target: [2300, 5600, 3000],  lens: 22, when: "2026-03-21T14:00", exposure: -1.0, wb: 5000, shift_y: -0.14, pitch: 0,    screens: up}
+    I02: {file: I02_ldk_kitchen_side, title: LDK キッチン側から, cam: [4400, 6750, 2850],  target: [2300, 1200, 2400],  lens: 22, when: "2026-03-21T14:00", exposure: -1.0, wb: 5000, shift_y: -0.08, pitch: 0,    screens: up}
+    I03: {file: I03_kitchen,      title: キッチン,       cam: [5750, 6450, 2950],  target: [1600, 11300, 2600], lens: 18, when: "2026-03-21T14:00", exposure: -0.7, wb: 5000, shift_y: 0,     pitch: 0,    screens: up}
+    I04: {file: I04_genkan,       title: 玄関土間・式台・ホール,     cam: [9300, 300, 2590],   target: [8800, 5500, 2600],  lens: 16, when: "2026-03-21T14:00", exposure: -0.7, wb: 5000, shift_y: -0.12, pitch: 0,    screens: up}
     I05: {file: I05_stair,        title: 階段1（1階ホールから見上げ）, cam: [6850, 6700, 2800],  target: [6850, 12000, 3800], lens: 18, when: "2026-10-24T13:00", exposure: -0.5, wb: 5000, shift_y: 0,     screens: up}
     I06: {file: I06_gym,          title: ジム,                     cam: [12450, 3600, 3000],  target: [18125, 3200, 3000], lens: 16, when: "2026-10-24T09:30", exposure: -0.5, wb: 5000, shift_y: 0.10,  pitch: 0,    screens: up}
     I07: {file: I07_theater,      title: シアター,                 cam: [15200, 5800, 6150],  target: [15200, 125, 5700],  lens: 18, when: "2026-10-24T20:00", exposure: 1, wb: 3500, shift_y: 0,     pitch: -6,   screens: down, screen_video: true, lights: {L: [3000, 10], D: [2700, 30], F: [2200, 30]}}
@@ -445,8 +445,8 @@ interior_cg:       # 内装CG（src/render_cg.py --interior）。14カット（v
     I09: {file: I09_master_bedroom, title: 主寝室（完全遮光）,       cam: [16900, 13000, 6000], target: [13300, 15800, 5400], lens: 20, when: "2026-10-24T21:30", exposure: 1.5, wb: 2900, shift_y: 0,     pitch: 0,    screens: down, room: 主寝室, lights: {F: [2200, 30]}}
     I10: {file: I10_washroom_bath, title: 洗面脱衣・浴室,           cam: [6450, 12950, 2950], target: [9300, 15600, 2600], lens: 16, when: "2026-10-24T10:00", exposure: -1, wb: 5000, shift_y: 0,     pitch: 0,    screens: up,   open_doors: {x7400y14850: 1.0}}
     I11: {file: I11_laundry,      title: ランドリー,               cam: [5700, 14750, 2950], target: [700, 12800, 2600],  lens: 16, when: "2026-10-24T10:00", exposure: -1, wb: 5000, shift_y: 0,     pitch: 0,    screens: up}
-    I12: {file: I12_genkan_glass, title: 玄関ホールから透明扉越しに（LDK・階段ホール）, cam: [9600, 1000, 2750], target: [6600, 3600, 2900], lens: 20, when: "2026-10-24T11:00", exposure: -0.5, wb: 5000, shift_y: 0, pitch: 0, screens: up, close_doors: [GD-1, GD-2]}
-    I14: {file: I14_ldk_corner,   title: LDK の角窓（南西の L 字コーナー）, cam: [4800, 4600, 3000], target: [300, 300, 3100], lens: 20, when: "2026-10-24T14:30", exposure: -0.8, wb: 5000, shift_y: 0, pitch: 0, screens: up}
+    I12: {file: I12_genkan_glass, title: 玄関ホールから透明扉越しに（LDK・階段ホール）, cam: [9600, 1000, 2750], target: [6600, 3600, 2900], lens: 20, when: "2026-03-21T14:00", exposure: -0.7, wb: 5000, shift_y: 0, pitch: 0, screens: up, close_doors: [GD-1, GD-2]}
+    I14: {file: I14_ldk_corner,   title: LDK の角窓（南西の L 字コーナー）, cam: [4800, 4600, 3000], target: [300, 300, 3100], lens: 20, when: "2026-03-21T14:00", exposure: -1.3, wb: 5000, shift_y: 0, pitch: 0, screens: up}
     I13: {file: I13_stair_night,  title: 階段1 の足元灯（夜）,           cam: [7000, 6650, 3050], target: [7000, 12000, 3700], lens: 18, when: "2026-10-24T22:30", exposure: 2.5, wb: 3500, shift_y: 0, pitch: 0, screens: down, lights: {L: [2200, 0], D: [2200, 10], F: [2200, 30]}}
 
 # ---------------------------------------------------------------- v4.17: 照明の再構成・透明扉・キッチン全露出（施主指示 2026-10-25）

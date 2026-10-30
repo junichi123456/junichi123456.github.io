@@ -65,6 +65,45 @@ def test_local_thickness_geometry():
     assert abs(h.ldk.area - 33.639375) < 1e-6
 
 
+def test_cg_1400_shading():
+    """内装CG 3/21 14:00: 南面は庇で全面が日陰、西面は下端だけ日なた。sightshade の真太陽時 14:00 と ±1.5° 以内。"""
+    import math
+    import yaml
+    import render_cg as RC
+    import sightshade as SS
+
+    h = house()
+    spec = yaml.safe_load((ROOT / "spec.yaml").read_text(encoding="utf-8"))
+    cuts = spec["interior_cg"]["cuts"]
+    for k in ("I01", "I02", "I03", "I14"):
+        assert cuts[k]["when"] == "2026-03-21T14:00", k
+    assert cuts["I02"]["file"] == "I02_ldk_kitchen_side"
+    site = spec["smart"]["site"] if "smart" in spec and "site" in spec["smart"] else None
+    lat, lon, tz = (site["lat"], site["lon"], site["tz"]) if site else (35.667, 139.36, 9)
+    alt, az = RC.sun_position("2026-03-21T14:00", lat, lon, tz)
+    ops = _ops(h)
+    gam = h.facade_az
+
+    def shade(a, z, side):
+        n = 180 + gam if side == "S" else 270 + gam           # 面の法線方位（真北から時計回り）
+        c = math.cos(math.radians(z - n))
+        P = {"S": 2120, "W": 1120}[side]
+        return P * math.tan(math.radians(a)) / c - 200
+
+    Hw = 2000
+    assert shade(alt, az, "S") >= Hw
+    assert shade(alt, az, "W") < Hw
+    # sightshade（3/22・真太陽時 14:00）との照合
+    phi = math.radians(SS.LAT)
+    n = 21 + int(30.4 * 2)
+    d = math.radians(23.45 * math.sin(math.radians(360 * (284 + n) / 365)))
+    H = math.radians(15 * 2)
+    a2 = math.degrees(math.asin(math.sin(phi) * math.sin(d) + math.cos(phi) * math.cos(d) * math.cos(H)))
+    z2 = (math.degrees(math.atan2(math.sin(H), math.cos(H) * math.sin(phi) - math.tan(d) * math.cos(phi))) + 180) % 360
+    assert abs(alt - a2) <= 1.5, (alt, a2)
+    assert abs(az - z2) <= 3.0, (az, z2)   # 14:00 JST は真太陽時 14:10 ごろ（方位は 2.5° 動く）
+
+
 if __name__ == "__main__":
     for k, v in list(globals().items()):
         if k.startswith("test_"):
