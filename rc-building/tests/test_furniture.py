@@ -129,16 +129,16 @@ def test_kitchen_open():
     its = FU.items(h)
     ids = {i.id for i in its}
     assert "K-B1" not in ids and "P-S1" not in ids
-    assert {"KB-W", "KB-C", "KB-R", "KB-K", "KB-S", "KB-F", "P-O1"} <= ids
+    assert {"KB-W", "KB-C", "KB-R", "KB-N", "KB-S", "KB-F", "KS-W"} <= ids and not ({"KB-K", "P-O1"} & ids)
     by = {i.id: i for i in its}
-    assert by["KB-K"].z0 - h.fl["1F"] >= 1550                       # 包丁は子どもの手が届かない高さ
+    assert by["KB-N"].z0 - h.fl["1F"] + by["KB-N"].h <= 1550         # 施錠式ナイフケース（上端 1,550 以下）
     zs = [0] + [z for z in KO.KB_SHELF_Z] + [KO.KB_TOP_UNDER]       # 背面カウンター下部の段の間隔（棚板上面〜上の棚板下面）
     gaps = [b - a - (KO.KB_SHELF_T if a else 0) for a, b in zip(zs, zs[1:])]
     assert gaps[0] >= 250 and all(g > 230 for g in gaps[1:]), gaps   # 底板の下は掃除ロボットが入る（≧250）、段の間隔は 230 超
     tiers = KO.KS_TIERS
     assert all(b - a - KO.KB_SHELF_T > 230 for a, b in zip(tiers, tiers[1:]))
-    ps = KO.PANTRY_SHELF_Z
-    assert all(b - a - KO.KB_SHELF_T > 230 for a, b in zip(ps, ps[1:]))
+    ks = KO.KSW_SHELF_Z
+    assert all(b - a - 18 > 230 for a, b in zip(ks, ks[1:])) and KO.KSW_Z - ks[-1] - 18 > 230
     assert FU.check(h, its) == []
     assert not h.spec["kitchen_open"]["pot_rack"]
     props = KO.props(h).meshes()

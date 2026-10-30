@@ -187,6 +187,15 @@ def checks(h):
     hg, fg = sp["head_gap"], sp["finger_gap"]
     gg = IN.guard_gaps(h)
     bad = [v for g in gg for v in g["gaps"] if hg[0] <= v <= hg[1] or fg[0] <= v <= fg[1]]
+    import kitchen_open as KO
+    ai = KO.aisles(h)
+    amin = h.spec["kitchen_open"]["aisle_min"]
+    add("安全", "キッチンの通路 ≧1,300", "施主指示（v4.18）", f"固定物の仕上げ面どうしの内法 {amin:,} 以上（出入口の戸は数えない・要施主確認）",
+        "最小 " + f"{min(v for _, v in ai):,.0f}（" + "／".join(f"{v:,.0f}" for _, v in ai) + "）", judge(min(v for _, v in ai) >= amin))
+    smax = h.spec["kitchen_open"]["shelf_max_z"]
+    st = KO.support_tops(h)
+    add("安全", "キッチンの棚の高さ ≦1,550", "施主指示（v4.18）", f"物を載せる・掛ける面の上端 FL+{smax:,} 以下（庫内・扉内は対象外）",
+        f"最大 FL+{max(v for *_, v in st):,}（吊り棚の落下防止バーは棚の縁の部材で天端+60）", judge(max(v for *_, v in st) <= smax))
     add("安全", "階段開口の手すり壁（頭部・指の挟み込み）", "施主指示（v4.6）",
         f"H{sp['guard_height']:,}以上、{hg[0]}〜{hg[1]}mm・{fg[0]}〜{fg[1]}mm のすき間なし",
         f"手すり壁{len(gg)}か所 H{sp['guard_height']:,}（パネル・手すり子なし）、端部は壁に接する。階段の間の壁は 2FL+{sp['guard_height']:,} まで連続", judge(not bad))

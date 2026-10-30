@@ -15,7 +15,7 @@ import math
 from shapely.geometry import LineString, Point, box as sbox
 from shapely.ops import unary_union
 
-CODE = {"リビング・ダイニング": "LDK", "キッチン": "KIT", "パントリー": "PAN", "玄関土間": "GEN", "ホール・階段1": "HS1", "ホール・階段2": "HS2", "ホール": "HAL",
+CODE = {"リビング・ダイニング": "LDK", "キッチン": "KIT", "玄関土間": "GEN", "ホール・階段1": "HS1", "ホール・階段2": "HS2", "ホール": "HAL",
         "ジム": "GYM", "ランドリー・室内干し": "LDY", "ファミリークローゼット": "FCL", "洗面・脱衣": "WSH", "浴室": "BTH", "シャワー": "SHW", "居室": "RM",
         "WIC（主寝室）": "MWC", "WIC": "WIC", "シアター": "THR", "前室（音響ロック）": "ANT", "図書室": "LIB", "主寝室": "MBR", "廊下": "COR", "トイレ（手洗い付）": "TLH",
         "トイレ": "TLT", "機械室（西系統）": "MCW", "機械室（東系統）": "MCE"}
@@ -75,7 +75,7 @@ def _blockers(h, its, r):
 # 室ごとの上書き（C-1.3 の表）: (向き, [(中心線, 端a, 端b)], lm/m)
 def _override(h, r):
     if r.floor == "1F" and r.name == "キッチン":
-        return [("x", y, 2000, 5600) for y in (7600, 9900)], 3000
+        return [("x", y, 700, 5500) for y in (7550, 9550, 11300)], 3000
     if r.floor == "1F" and r.name.startswith("ランドリー"):
         return [("x", y, 600, 5400) for y in (13000, 14000)], 2000
     if r.floor == "2F" and r.name == "主寝室":
@@ -151,10 +151,6 @@ def lines(h, its):
         if "洗面" in r.name:                              # 鏡の上（カウンター W1-C の上の壁際）にも 1 本（鏡前 300lx 以上）
             out.append(dict(id=f"{r.floor}-{code}-L{len(segs) + 1}", code=code, floor=r.floor, room=r.name, p0=[9250, 13675, z], p1=[9250, 14575, z], L=900,
                             lm_per_m=1500, kind="line", axis="y", group="L"))
-        if r.floor == "1F" and r.name == "キッチン":      # 背面の吊り棚（KB-S）の最下段の下面
-            zs = h.fl["1F"] + 1700 - 20
-            out.append(dict(id=f"1F-{code}-S1", code=code, floor="1F", room=r.name, p0=[2600, 11800, zs], p1=[5200, 11800, zs], L=2600, lm_per_m=1000,
-                            kind="shelf", axis="x", group="L"))
     return out
 
 

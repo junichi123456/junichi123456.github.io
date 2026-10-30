@@ -10,7 +10,7 @@ from furniture_sheets import _plan_base
 from house_sheets import frame, legend, room_labels, tp
 from sheetlib import T, side_panel
 
-SENSOR_PIR = ("廊下", "トイレ", "WIC", "クローゼット", "パントリー", "洗面", "ランドリー", "機械室", "玄関土間", "ホール", "階段", "浴室", "シャワー", "収納")
+SENSOR_PIR = ("廊下", "トイレ", "WIC", "クローゼット", "洗面", "ランドリー", "機械室", "玄関土間", "ホール", "階段", "浴室", "シャワー", "収納")
 SENSOR_PRES = ("リビング", "図書室", "ジム", "居室", "主寝室", "シアター", "キッチン")
 
 

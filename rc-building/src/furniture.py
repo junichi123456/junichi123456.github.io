@@ -97,17 +97,17 @@ def items(h):
     add("L-P1", "1F", LDK, "鉢植え（オリーブ）φ500・樹高1,900", "plant", (125, 125, 625, 625), 1900, "leaf", base="pot")
     add("L-A1", "1F", LDK, "アートパネル（サイドボードの上に立て掛け）", "art", (5870, 700, 5900, 1600), 640, "art", z0=FL["1F"] + 700, base="stack", stack=True)
     # ---- キッチン・パントリー
-    add("K-I1", "1F", "キッチン", "アイランドキッチン（IH 3口・一体成形シンク・ダウンドラフト換気、南＝LDK を向いて調理）", "island", (2300, 9400, 5300, 10400), 900, "olive_case")
+    add("K-I1", "1F", "キッチン", "アイランドキッチン（IH 3口・一体成形シンク・ダウンドラフト換気、南＝LDK を向いて調理）", "island", (1875, 9050, 4675, 10050), 900, "olive_case")
     # 全露出（施主指示 v4.17）: 背面収納 K-B1・パントリー収納 P-S1 を撤去し、オープン棚・レール・ナイフバーに置き換える
     add("KB-W", "1F", "キッチン", "背面のふかし壁（ステンレス）", "kb_wall", (2500, 11950, 6000, 12000), h.ch["1F"], "stainless", base="none")
     add("KB-C", "1F", "キッチン", "背面カウンター（下部オープン棚）", "kb_counter", (2500, 11350, 5300, 11950), 900, "stainless", base="legs25")
     add("KB-R", "1F", "キッチン", "壁付けレール φ12（台所用具）", "kb_rail", (3300, 11900, 5200, 11950), 12, "stainless", z0=FL["1F"] + KO.RAIL_Z, base="wallfix", stack=True)
-    add("KB-K", "1F", "キッチン", "磁石ナイフバー（FL+1,600）", "kb_knife", (2650, 11930, 3100, 11950), 40, "stainless", z0=FL["1F"] + KO.KNIFE_Z[0], base="wallfix", stack=True,
-        note="包丁の扱い（磁石バー／施錠ケース）は要施主確認")
-    add("KB-S", "1F", "キッチン", "吊り棚 3 段（落下防止バー）", "kb_shelves", (2500, 11650, 5300, 11950), 612, "stainless", z0=FL["1F"] + KO.KS_TIERS[0],
+    add("KB-N", "1F", "キッチン", "施錠式ナイフケース W450×H300×D80（FL+1,250〜1,550）", "kb_knife_case", (2650, 11870, 3100, 11950), 300, "steel_black", z0=FL["1F"] + KO.KNIFE_Z[0],
+        base="wallfix", stack=True, note="包丁の扱い（施錠ケース／磁石バー／引出し）は要施主確認")
+    add("KB-S", "1F", "キッチン", "吊り棚 1 段（天端 FL+1,550・落下防止バー）", "kb_shelves", (3200, 11650, 5300, 11950), 72, "stainless", z0=FL["1F"] + KO.KS_TIERS[0],
         base="wallfix", stack=True)
     add("KB-F", "1F", "キッチン", "冷蔵庫＋上部ふさぎ板", "kb_fridge", (5300, 11350, 6000, 11950), h.ch["1F"], "stainless", base="none")
-    add("P-O1", "1F", "パントリー", "パントリーのオープン棚（全露出）", "pantry_open", (125, 6250, 575, 10900), h.ch["1F"], "stainless", base="frame")
+    add("KS-W", "1F", "キッチン", "西の目隠し収納（奥行 450・H1,550・引違い戸、上は突っ張りパネル）", "ks_wall", (125, 6250, 575, 10600), h.ch["1F"], "case_ash", base="none")
     # ---- 玄関・ホール
     add("G-S1", "1F", "玄関土間", "下足入れ（造作・天井まで・扉付き）", "tall", h.shoe, FL["1F"] + h.ch["1F"] - DOMA, "case_ash", z0=DOMA, front="+x")
     add("G-B1", "1F", "玄関土間", "腰掛けベンチ（造作、座 H420＋クッション）", "bench", h.bench, 420, "case_ash", z0=DOMA, seat=True, front="+y", note="座る家具。要施主確認")
@@ -322,8 +322,8 @@ def build_item(h, it, prod=None):
         FS.bookcase(mb, rect, z0, H, it.front, it.mat if it.mat in ("case_oak", "case_ash") else "case_oak")
     elif k == "tall_kitchen":
         FS.tall_kitchen(mb, rect, z0, it.front, P)
-    elif k in ("kb_wall", "kb_counter", "kb_rail", "kb_knife", "kb_shelves", "kb_fridge", "pantry_open"):
-        getattr(KO, k)(mb, rect, z0 if k not in ("kb_wall", "kb_counter", "kb_fridge", "pantry_open") else h.fl[it.floor])
+    elif k in ("kb_wall", "kb_counter", "kb_rail", "kb_knife_case", "kb_shelves", "kb_fridge", "ks_wall"):
+        getattr(KO, k)(mb, rect, z0 if k not in ("kb_wall", "kb_counter", "kb_fridge", "ks_wall") else h.fl[it.floor])
     elif k == "island":
         FS.island(mb, rect, z0, P)
     elif k in ("tall", "cabinet", "bench"):
