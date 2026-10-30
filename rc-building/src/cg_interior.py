@@ -187,6 +187,59 @@ def p_glass_clear(CB, lib, b, pal, cfg):
     _glass(b, 1.5, 0.02)
 
 
+def window_glass_material(CB, tv_ns, tv_ew):
+    """窓ガラス（内装CG用）。Transparent と Glossy（GGX・白）の混合で、屈折は使わない。
+    反射は室内側の 1 面だけ: 係数 = Fresnel(IOR 1.52) × (1 − Backfacing) × 0.6。透過色は 1 面あたり √tv（2 面を通るため）。
+    面の向きは Object の Normal で判定: |nx| > |ny| なら東西（shield 型）、それ以外は南北（gain 型）。"""
+    mat = bpy.data.materials.new("window_glass")
+    b = CB.NT(mat)
+    nt = b.nt
+    nt.nodes.remove(b.bsdf)
+    tr = b.node("ShaderNodeBsdfTransparent")
+    gl = b.node("ShaderNodeBsdfGlossy")
+    gl.distribution = "GGX"
+    gl.inputs["Roughness"].default_value = 0.01
+    gl.inputs["Color"].default_value = (1, 1, 1, 1)
+    fr = b.node("ShaderNodeFresnel")
+    fr.inputs["IOR"].default_value = 1.52
+    lp = b.node("ShaderNodeNewGeometry")
+    bf = b.node("ShaderNodeMath", operation="SUBTRACT")
+    bf.inputs[0].default_value = 1.0
+    nt.links.new(lp.outputs["Backfacing"], bf.inputs[1])
+    m1 = b.node("ShaderNodeMath", operation="MULTIPLY")
+    nt.links.new(fr.outputs["Fac"], m1.inputs[0])
+    nt.links.new(bf.outputs[0], m1.inputs[1])
+    m2 = b.node("ShaderNodeMath", operation="MULTIPLY")
+    nt.links.new(m1.outputs[0], m2.inputs[0])
+    m2.inputs[1].default_value = 0.6
+    mix = b.node("ShaderNodeMixShader")
+    nt.links.new(m2.outputs[0], mix.inputs[0])
+    nt.links.new(tr.outputs["BSDF"], mix.inputs[1])
+    nt.links.new(gl.outputs["BSDF"], mix.inputs[2])
+    # 透過色: 向きで切り替え
+    tc = b.tc()
+    sep = b.node("ShaderNodeSeparateXYZ")
+    nt.links.new(tc.outputs["Normal"], sep.inputs[0])
+    ax = b.node("ShaderNodeMath", operation="ABSOLUTE")
+    nt.links.new(sep.outputs["X"], ax.inputs[0])
+    ay = b.node("ShaderNodeMath", operation="ABSOLUTE")
+    nt.links.new(sep.outputs["Y"], ay.inputs[0])
+    gt = b.node("ShaderNodeMath", operation="GREATER_THAN")
+    nt.links.new(ax.outputs[0], gt.inputs[0])
+    nt.links.new(ay.outputs[0], gt.inputs[1])
+    cm = b.node("ShaderNodeMix", data_type="RGBA")
+    nt.links.new(gt.outputs[0], cm.inputs["Factor"])
+
+    def col(tv):
+        v = math.sqrt(tv)
+        return (v * 0.99, v, v, 1.0)
+    cm.inputs["A"].default_value = col(tv_ns)
+    cm.inputs["B"].default_value = col(tv_ew)
+    nt.links.new(cm.outputs["Result"], tr.inputs["Color"])
+    nt.links.new(mix.outputs["Shader"], b.out.inputs["Surface"])
+    return mat
+
+
 def cam_only_emission(name, strength, kelvin):
     """カメラ光線にだけ見える発光面（照明は別の面光源・Spot が行う。二重に数えない）。戻り値: (材質, 強さの入力, 色温度の入力)。"""
     m = bpy.data.materials.new(name)
@@ -290,6 +343,16 @@ def prepare(CB, sc, lib, meshes, M, cfg):
         elif key == "stair" and "floor_oak" in lib.mats:
             o.data.materials.clear()
             o.data.materials.append(lib.mats["floor_oak"])
+    # 窓ガラスは透過のみの材質に差し替える（外観の m_glass は変えない）
+    gt = cfg["interior"].get("glass_tv", {"gain": 0.62, "shield": 0.50})
+    wg = window_glass_material(CB, gt["gain"], gt["shield"])
+    n_glass = 0
+    for o in meshes:
+        if re.sub(r"\.\d+$", "", o.name).split("|")[2] == "glass":
+            o.data.materials.clear()
+            o.data.materials.append(wg)
+            n_glass += 1
+    log("window glass", n_glass, "meshes", gt)
     # 照明器具の発光面は階ごとに点灯／消灯できるよう、消灯用の材質を作る
     off = bpy.data.materials.new("lamp_face_off")
     bo = CB.NT(off)

@@ -77,7 +77,7 @@ def interior_cfg(h, spec, args, assets, out_dir, glb_path):
         lamp_color=list(RC.LAMP_LIN), lamp_strength=0.0, room_light=dict(kelvin=3000, strength=0.0), sky_clamp=spec["cg"].get("sky_clamp", 30.0),
         adaptive_threshold=ic["adaptive_threshold"], max_bounces=8, cuts=cuts, preview=bool(args.preview), raw_log=str(out_dir / "render_log_raw.json"),
         look="None", view_transform=ic.get("view_transform", "Khronos PBR Neutral"),
-        interior=dict(palette=pal, downlights=furniture.downlights(h, its), doors=furniture.door_info(h),
+        interior=dict(palette=pal, glass_tv={k_: spec["glazing"]["types"][k_]["tv"] for k_ in ("gain", "shield")}, downlights=furniture.downlights(h, its), doors=furniture.door_info(h),
                       lines=LG.lines(h, its), foots=LG.footlights(h), line_w_mm=spec["lighting"]["line"]["width"], line_h_mm=spec["lighting"]["line"]["height"],
                       downlight_ratio=ic["downlight_ratio"], k_area_w_per_lm=ic["k_area_w_per_lm"], k_spot_w_per_lm=ic["k_spot_w_per_lm"],
                       foot_lm=spec["lighting"]["foot"]["lm"],
