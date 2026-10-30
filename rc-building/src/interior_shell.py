@@ -118,6 +118,8 @@ def wall_faces(h, fl):
             continue
         ops = [(op.u0, op.u1, op.z0, op.z1, op) for op in w.openings]
         out.append((w.axis, w.c, w.t, w.a, w.b, ops))
+        for (e0, e1, te, sg) in w.extra:         # 増し打ちした面（室内側）。同じ開口を持つ仮想の厚い壁として扱う
+            out.append((w.axis, w.c, w.t + 2 * te, e0, e1, ops))
     return out
 
 
@@ -270,7 +272,8 @@ def interior_parts(h, its):
             if op.kind != "window" or not op.exterior:
                 continue
             s = _inward(h, w)
-            cin = w.c + s * (w.t / 2 + 15)
+            te = sum(t_ for (e0, e1, t_, sg_) in w.extra if e0 <= (op.u0 + op.u1) / 2 <= e1)      # 増し打ちの厚さ（v4.18）
+            cin = w.c + s * (w.t / 2 + te + 15)
             cmid = w.c
             a, b = sorted((cmid, cin))
             q = (op.u0 - 15, a, op.u1 + 15, b) if w.axis == "x" else (a, op.u0 - 15, b, op.u1 + 15)

@@ -184,6 +184,32 @@ def _wall_length(h, floor, axis):
     return out
 
 
+def _wall_stiff(h, floor, axis):
+    """剛性の層 [(長さ m × 厚さ mm = K, 位置 m（直交方向の座標）)]（v4.18: 剛性 = 長さ × 厚さ。局所の増し打ちは、増し分を別の層として加える）。"""
+    out = []
+    for w in h.walls:
+        if w.floor != floor or w.cat != "wall" or w.axis != axis:
+            continue
+        cuts = sorted((op.u0, op.u1, op.height) for op in w.openings)
+        segs, u, prev_h = [], w.a, 0
+        for (a, b, hh) in cuts:
+            if a > u:
+                segs.append((u, a, max(prev_h, hh)))
+            u = max(u, b)
+            prev_h = hh
+        if w.b > u:
+            segs.append((u, w.b, prev_h))
+        for a, b, hh in segs:
+            if b - a < max(450.0, 0.3 * hh):
+                continue
+            out.append(((b - a) / 1000.0 * w.t, w.c / 1000.0))
+            for (e0, e1, te, sg) in w.extra:
+                lo, hi = max(a, e0), min(b, e1)
+                if hi > lo:
+                    out.append(((hi - lo) / 1000.0 * te, (w.c + sg * (w.t / 2 + te / 2)) / 1000.0))
+    return out
+
+
 def seismic(h):
     A = (h.W / 1000) ** 2
     vol = {"1F": 0.0, "2F": 0.0, "RF": 0.0, "PAR": 0.0, "STAIR": 0.0}
@@ -222,7 +248,8 @@ def seismic(h):
         for axis, name in (("x", "X方向"), ("y", "Y方向")):
             segs = _wall_length(h, floor, axis)
             Lw = sum(s[0] for s in segs)
-            Aw = Lw * 1000 * h.t                          # mm²
+            st_x = _wall_stiff(h, floor, axis)
+            Aw = sum(k for k, _ in st_x) * 1000          # mm²（Σ 長さ × 厚さ）
             out = {}
             for co, lab in ((0.2, "建築基準法（Co=0.2）"), (0.3, "耐震等級3（Co=0.3）")):
                 Q = Z * Rt * Ai * co * Wsum              # kN
@@ -233,14 +260,15 @@ def seismic(h):
             # 偏心率（壁の長さを剛性とみなす簡易法）
             other = "y" if axis == "x" else "x"
             segs_o = _wall_length(h, floor, other)
-            pos = [s[1] for s in segs]
-            Kd = [s[0] for s in segs]
+            pos = [p for _, p in st_x]
+            Kd = [k for k, _ in st_x]
+            st_o = _wall_stiff(h, floor, other)
             r_c = sum(k * p for k, p in zip(Kd, pos)) / sum(Kd)
-            Ko = [s[0] for s in segs_o]
-            r_o = sum(k * s[1] for k, s in zip(Ko, segs_o)) / sum(Ko)
+            Ko = [k for k, _ in st_o]
+            r_o = sum(k * p for k, p in st_o) / sum(Ko)
             g = h.W / 2000
             e = abs(r_c - g)
-            Kr = sum(k * (p - r_c) ** 2 for k, p in zip(Kd, pos)) + sum(k * (s[1] - r_o) ** 2 for k, s in zip(Ko, segs_o))
+            Kr = sum(k * (p - r_c) ** 2 for k, p in zip(Kd, pos)) + sum(k * (p - r_o) ** 2 for k, p in st_o)
             re = math.sqrt(Kr / sum(Kd))
             out.update(Lw=Lw, wall_rate=Lw * 100 / A, Aw=Aw / 1e6, Qu=Qu, Qun=Qun, qu_ratio=Qu / Qun,
                        ecc=e / re, e=e, re=re)
@@ -271,3 +299,33 @@ def seismic(h):
                               t_req=t_req, gym=gym, area=(a2 - a1) * (b2 - b1) / 1e6))
     res["slabs"] = slabs
     return res
+
+
+def condensation(h):
+    """LDK のコーナー窓まわりの結露判定（v4.18）。室内側表面温度 = t_out + f_Rsi × (t_in − t_out) が、露点 + margin 以上であること。
+    f_Rsi は spec.condensation.parts の仮定値（メーカーの 2 次元熱解析に置き換える）。[(部位, 対策なし ℃, 対策後 ℃, 下限 ℃, 適合)] と露点を返す。"""
+    c = h.spec["condensation"]
+    td = dew_point(c["t_in"], c["rh"])
+    lim = td + c["margin_k"]
+    rows = []
+    for name, (f0, f1) in c["parts"].items():
+        t0 = c["t_out"] + f0 * (c["t_in"] - c["t_out"])
+        t1 = c["t_out"] + f1 * (c["t_in"] - c["t_out"])
+        rows.append((name, t0, t1, lim, t1 >= lim - 0.05))      # 0.05K の丸め許容（下限ケースは 14.9℃）
+    return dict(dew=td, limit=lim, rows=rows, ok=all(r[4] for r in rows))
+
+
+def corner_post(h):
+    """角の鋼製丸柱（ピン、鉛直荷重のみ）の長期許容圧縮力（日本建築学会 鋼構造設計規準 の長期許容圧縮応力度、F=235）。"""
+    cp = h.spec["structure"]["corner_post"]
+    d, L = cp["d"], cp["z"][1] - cp["z"][0]
+    A = math.pi * d * d / 4
+    i = d / 4
+    F, E = cp.get("fy", 235.0), 205000.0
+    lam = L / i
+    Lam = math.sqrt(math.pi ** 2 * E / (0.6 * F))
+    r = lam / Lam
+    nu = 1.5 + 2.0 / 3.0 * r * r
+    fc = (1 - 0.4 * r * r) / nu * F / 1.5
+    cap = fc * A / 1000
+    return dict(lam=lam, Lam=Lam, fc=fc, cap_kN=cap, N_kN=cp["N_long_kN"], ratio=cp["N_long_kN"] / cap)

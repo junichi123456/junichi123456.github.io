@@ -331,11 +331,14 @@ def checks(h):
     for (f, d), (L, q) in sorted(wq.items()):
         add("構造", f"壁量 {f} {d}", "平13国交告1026号 第5", "12cm/m²以上（地上2階建て）",
             f"耐力壁 {L:.1f}m / 床 {h.floor_area(f):.1f}m² = {q:.1f}cm/m²", judge(q >= 12))
-    add("構造", "耐力壁の厚さ", "平13国交告1026号 第5", "2階建て 15cm以上", f"{h.t / 10:.0f}cm", judge(h.t >= 150))
+    tmax = max([h.t] + [h.t + te for w in h.walls for (_, _, te, _) in w.extra])
+    t_req = max(150, max(h.H.values()) / 22)
+    add("構造", "耐力壁の厚さ", "平13国交告1026号 第5", f"2階建て 15cm以上かつ 階高/22 = {t_req:.0f}mm 以上",
+        f"{h.t / 10:.0f}cm（1階 LDK の南・西の壁は室内側へ増し打ち 最大 {tmax / 10:.0f}cm）", judge(h.t >= t_req))
     cells = [(a2 - a1) * (b2 - b1) / 1e6 for a1, a2 in zip(h.gx, h.gx[1:]) for b1, b2 in zip(h.gy, h.gy[1:])]
     add("構造", "耐力壁で囲まれた面積", "平13国交告1026号 第5", "60m²以下", f"最大 {max(cells):.1f}m²", judge(max(cells) <= 60))
     add("構造", "階高・軒高・階数", "平13国交告1026号 第1", "階高3.5m以下・軒高20m以下・階数5以下",
-        f"階高{h.H['1F'] / 1000:.1f}m・軒高{h.fl['RF'] / 1000:.1f}m・2階", judge(h.H["1F"] <= 3500))
+        f"階高{h.H['1F'] / 1000:.1f}m（上限まで余裕 {3500 - h.H['1F']}mm。構造スラブ天端の間隔 {h.H['1F']:,} 固定）・軒高{h.fl['RF'] / 1000:.1f}m・2階", judge(h.H["1F"] <= 3500 and h.H["2F"] <= 3500))
     add("構造", "コンクリート強度", "平13国交告1026号 第2・令74条", "Fc18以上", f"Fc{s['structure']['concrete']['Fc']}", judge(s["structure"]["concrete"]["Fc"] >= 18))
     lx_max = max(min(a2 - a1, b2 - b1) for a1, a2 in zip(h.gx, h.gx[1:]) for b1, b2 in zip(h.gy, h.gy[1:])) - h.t
     add("構造", "床版の厚さ", "令77条の2・告示1026号", f"8cm以上かつ短辺内法/40 = {lx_max / 40:.0f}mm", f"t={h.slab_t}（短辺 内法 {lx_max / 1000:.2f}m）", judge(h.slab_t >= lx_max / 40))
@@ -349,7 +352,17 @@ def checks(h):
         f"Co=0.2（等級3: 0.3）、短期許容せん断 {se['fs']:.2f}N/mm²",
         f"最小余裕 {wf} {wd}: τ={wv['耐震等級3（Co=0.3）']['tau']:.2f}N/mm²（等級3）→ {wv['耐震等級3（Co=0.3）']['ratio']:.1f}倍", judge(wv["耐震等級3（Co=0.3）"]["ratio"] >= 1.0))
     ecc = max(v["ecc"] for v in se["stories"].values())
-    add("構造", "偏心率", "令82条の6（参考）", "0.15以下", f"最大 {ecc:.3f}（1階 ジムの開口による）", judge(ecc <= 0.15))
+    add("構造", "偏心率", "令82条の6（参考）", "0.15以下", f"最大 {ecc:.3f}（1階 LDK のコーナー開口と増し打ち、ジムの開口による）", judge(ecc <= 0.15))
+    cd = PF.condensation(h)
+    wc = min(cd["rows"], key=lambda r: r[2] - r[3])
+    add("構造", "LDK 窓の結露（表面温度 ≧ 露点+2K）", "施主指示（v4.18）・仮定値（f_Rsi）",
+        f"外気 {h.spec['condensation']['t_out']:.0f}℃・室内 {h.spec['condensation']['t_in']:.0f}℃/{h.spec['condensation']['rh']}% の露点 {cd['dew']:.1f}℃ + {h.spec['condensation']['margin_k']:.0f}K = {cd['limit']:.1f}℃ 以上",
+        f"最低 {wc[2]:.1f}℃（{wc[0]}、対策後）。メーカーの 2 次元熱解析で確認", CHK if cd["ok"] else NG)
+    cp = s["structure"]["corner_post"]
+    pc = PF.corner_post(h)
+    add("構造", "角の鋼製柱（鉛直荷重のみ・耐火被覆）", "令70条・令107条（要構造確認）",
+        "長期軸力に対し座屈検討。主要構造部の柱として 1 時間耐火（要確認）",
+        f"丸鋼 φ{cp['d']}、長 {cp['z'][1] - cp['z'][0]:,}、λ={pc['lam']:.0f}、長期軸力 約 {pc['N_kN']}kN / 長期許容圧縮力 約 {pc['cap_kN']:.0f}kN = {pc['ratio']:.2f}。耐火塗料 1h。要構造設計者の確認", CHK if pc["ratio"] <= 1 else NG)
     qmin = min(v["qu_ratio"] for v in se["stories"].values())
     add("構造", "保有水平耐力（目安）", "令82条の3（参考）", f"Qu ≧ Qun（Ds={se['Ds']}）", f"最小 Qu/Qun = {qmin:.1f}", judge(qmin >= 1.0))
     add("構造", "地盤の接地圧（長期）", "令93条", "長期許容支持力度 150kN/m²（要地盤調査）", f"{se['bearing']:.1f}kN/m²", judge(se["bearing"] <= 150))

@@ -183,6 +183,12 @@ def classify(h, bx):
         return [(q, "interior_door")]
     if bx.cat == "blind":
         return [(q, "assort_metal")]
+    if bx.cat == "column":                     # 角の鋼製柱（耐火塗料・白）
+        return [(q, "assort_metal")]
+    if bx.cat == "mullion":                    # 樹脂の方立
+        return [(q, "assort_frame")]
+    if bx.tag == "増し打ち":                   # 室内側の増し打ち（内装で隠れる）
+        return [(q, "concrete")]
     if bx.cat == "insul":
         return classify_insul(h, bx)
     if bx.cat in ("wall", "parapet") and bx.level == "EXT":

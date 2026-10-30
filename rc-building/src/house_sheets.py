@@ -713,6 +713,10 @@ def wall_plan(h, number, wall_rows):
             continue
         x0, y0, _, x1, y1, _ = w.rect(w.a, w.b, 0, 1)
         polys.append(sbox(*t(x0, y0), *t(x1, y1)))
+        for (e0, e1, te, sg) in w.extra:             # 局所の増し打ち（LDK の南・西）
+            lo, hi = sorted((w.c + sg * w.t / 2, w.c + sg * (w.t / 2 + te)))
+            ex = (e0, lo, e1, hi) if w.axis == "x" else (lo, e0, hi, e1)
+            polys.append(sbox(*t(ex[0], ex[1]), *t(ex[2], ex[3])))
         for op in w.openings:
             ox0, oy0, _, ox1, oy1, _ = w.rect(op.u0, op.u1, 0, 1)
             sh.rect(*t(ox0, oy0), *t(ox1, oy1), "A-HIDDEN")
@@ -728,7 +732,11 @@ def wall_plan(h, number, wall_rows):
     vdim(sh, t, h.gy, -1450)
     sh.text("べた基礎 t=350（外周 500 張出し）", t(h.W / 2, -1000), 1.8, "S-TEXT", "MIDDLE_CENTER")
     sh.view_title("基礎伏図・耐力壁配置図（1階）", "1:100", (24, 22))
-    sh.text("網掛け=RC耐力壁 t=250（1・2階 同位置）、破線=開口", (24, 15), 2.2, "A-TEXT", paper=True)
+    cpx, cpy = t(0, 0)
+    sh.circle((cpx, cpy), abs(t(45, 0)[0] - t(0, 0)[0]), "S-COLS")
+    sh.text("角柱 φ90（鋼製・耐火塗料1h・鉛直荷重のみ）", t(300, -300), 1.6, "S-TEXT", "MIDDLE_LEFT")
+    sh.text("網掛け=RC耐力壁 t=250（1・2階 同位置。1階 LDK の南 350・西 300 は室内側へ増し打ち）、破線=開口", (24, 15), 2.2, "A-TEXT", paper=True)
+    sh.text(f"階高 {h.H['1F']:,}（構造スラブ天端の間隔 {h.H['1F']:,} 固定。令78条の2・告示1026号の上限 3,500）。壁厚 250 ≧ max(150, {h.H['1F'] / 22:.0f})", (24, 10), 2.0, "A-TEXT", paper=True)
     sh.text("壁量・壁式構造の規定（平13国交告1026号）", (250, 280), 2.6, "A-TEXT", paper=True)
     sh.table(250, 276, [26, 26, 34, 36, 36], wall_rows, row_h=5.4, h=1.9)
     return sh

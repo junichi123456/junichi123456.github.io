@@ -76,6 +76,7 @@ class Wall:
     floor: str = ""
     side: str = "I"
     openings: list = field(default_factory=list)
+    extra: list = field(default_factory=list)   # 局所の増し打ち [(u0, u1, 増し厚 mm, 向き ±1（壁座標の法線側）)]（v4.18）
 
     def add(self, op: Opening):
         op.wall = self

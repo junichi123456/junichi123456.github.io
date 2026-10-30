@@ -92,9 +92,12 @@ def items(h):
     ccx = tx + T["w"] / 2 + 60 + C["d"] / 2
     add("L-C1", "1F", LDK, C["name"], "school_chair", (ccx - C["w"] / 2, ty - C["d"] / 2, ccx + C["w"] / 2, ty + C["d"] / 2), C["h"], "chair_wood",
         base="legs", chair=True, rot=-98.0, product="school_chair")
-    add("L-S1", "1F", LDK, "サイドボード（台輪）", "cabinet", (5550, 125, 6000, 2475), 700, "case_ash")
-    add("L-K1", "1F", LDK, "リビング収納（天井まで・扉付き）", "tall", (125, 5550, 1700, 6000), h.ch["1F"], "case_ash")
-    add("L-P1", "1F", LDK, "鉢植え（オリーブ）φ500・樹高1,900", "plant", (125, 125, 625, 625), 1900, "leaf", base="pot")
+    add("L-S1", "1F", LDK, "サイドボード（台輪）", "cabinet", (5550, 225, 6000, 2475), 700, "case_ash")
+    add("L-K1", "1F", LDK, "リビング収納（天井まで・扉付き）", "tall", (175, 5550, 1700, 6000), h.ch["1F"], "case_ash")
+    add("LDK-C1", "1F", LDK, "窓辺の造作台 南（FL+700・奥行 1,000・人工大理石・内部は温風チャンバー）", "sill_counter", (175, 225, 4000, 1225), 700, "solid_surface", base="none", front="+y",
+        note="「床から70cmに1m幅の台」の解釈。要施主確認")
+    add("LDK-C2", "1F", LDK, "窓辺の造作台 西（同上・L 字でつながる）", "sill_counter", (175, 1225, 1175, 4000), 700, "solid_surface", base="none", front="+x")
+    add("L-P1", "1F", LDK, "鉢植え（オリーブ）φ500・樹高1,900", "plant", (175, 4300, 675, 4800), 1900, "leaf", base="pot")
     add("L-A1", "1F", LDK, "アートパネル（サイドボードの上に立て掛け）", "art", (5870, 700, 5900, 1600), 640, "art", z0=FL["1F"] + 700, base="stack", stack=True)
     # ---- キッチン・パントリー
     add("K-I1", "1F", "キッチン", "アイランドキッチン（IH 3口・一体成形シンク・ダウンドラフト換気、南＝LDK を向いて調理）", "island", (1875, 9050, 4675, 10050), 900, "olive_case")
@@ -189,6 +192,9 @@ def wall_rects(h, fl):
             continue
         t2 = w.t / 2
         out.append(sbox(w.a, w.c - t2, w.b, w.c + t2) if w.axis == "x" else sbox(w.c - t2, w.a, w.c + t2, w.b))
+        for (e0, e1, te, sg) in w.extra:                 # 局所の増し打ち（v4.18）
+            lo, hi = sorted((w.c + sg * t2, w.c + sg * (t2 + te)))
+            out.append(sbox(e0, lo, e1, hi) if w.axis == "x" else sbox(lo, e0, hi, e1))
     return out
 
 
@@ -337,6 +343,8 @@ def build_item(h, it, prod=None):
             L = FS.LF(mb, rect, it.front)
             ck = "cushion" if it.id == "LB-B1" else "throw"
             L.box(ck, 15, L.W - 15, 15, L.D - 15, z0 + H, z0 + H + 45)
+    elif k == "sill_counter":
+        FS.sill_counter(mb, rect, z0, H, it.front)
     elif k == "counter_float":
         FS.counter_float(mb, rect, z0, H, it.front)
     elif k == "toilet":

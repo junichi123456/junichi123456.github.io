@@ -285,6 +285,13 @@ def island(mb, rect, z0, p):
     mb.tube("stainless", (gx, gy, zt + 260), (gx, gy, zt + 215), 10, 12)
 
 
+def sill_counter(mb, rect, z0, H, front):
+    """窓辺の造作台（v4.18）: 人造大理石の一体成形（天板 t30、前面は同材のパネルを床まで・台輪なし、出隅 R10）。窓側の縁にステンレスの吹出しスリット（幅 40、パンチング φ5）。"""
+    L = LF(mb, rect, front)
+    L.box("solid_surface", 0, L.W, 0, L.D, z0, z0 + H)
+    L.box("stainless", 0, L.W, 0, 40, z0 + H, z0 + H + 2)
+
+
 def counter_float(mb, rect, z0, H, front, key="solid_surface"):
     """浮かせた洗面・手洗いカウンター（下端 FL+650）。ボウルは一体成形の凹み。"""
     L = LF(mb, rect, front)
