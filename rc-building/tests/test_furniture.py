@@ -35,6 +35,24 @@ def test_check_no_errors():
     assert FU.check(h, FU.items(h)) == []
 
 
+def test_sill_counter():
+    """窓辺の台（v4.19）: 天端 700、天板 t40〜60（オーク）、前面は床まで（base=none）、furniture.check のエラー 0。"""
+    h = house()
+    its = FU.items(h)
+    for i in (x for x in its if x.id in ("LDK-C1", "LDK-C2")):
+        assert i.base == "none" and i.h == 700
+        mb = FU.build_item(h, i)
+        top = [(V, F) for V, F in mb.parts["sill_oak"]]
+        zt = max(V[:, 2].max() for V, F in top)
+        assert abs(zt - (i.z0 + 700)) < 1e-6
+        t = max(V[:, 2].max() - V[:, 2].min() for V, F in top)
+        assert 40 <= t <= 60, t
+        panel = mb.parts["sill_panel"]
+        assert abs(min(V[:, 2].min() for V, F in panel) - i.z0) < 1e-6      # 前面の下端 = 床
+        assert i.z0 == h.fl["1F"]
+    assert FU.check(h, its) == []
+
+
 def test_single_chair_in_ldk():
     h = house()
     its = FU.items(h)

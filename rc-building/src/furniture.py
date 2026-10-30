@@ -94,9 +94,9 @@ def items(h):
         base="legs", chair=True, rot=-98.0, product="school_chair")
     add("L-S1", "1F", LDK, "サイドボード（台輪）", "cabinet", (5550, 225, 6000, 2475), 700, "case_ash")
     add("L-K1", "1F", LDK, "リビング収納（天井まで・扉付き）", "tall", (175, 5550, 1700, 6000), h.ch["1F"], "case_ash")
-    add("LDK-C1", "1F", LDK, "窓辺の造作台 南（FL+700・奥行 1,000・人工大理石・内部は温風チャンバー）", "sill_counter", (175, 225, 4000, 1225), 700, "solid_surface", base="none", front="+y",
+    add("LDK-C1", "1F", LDK, "窓辺の造作台 南（FL+700・奥行 1,000・オーク天板 t40・前面は人造大理石の艶消しパネルで床まで・内部は温風チャンバー）", "sill_counter", (175, 225, 4000, 1225), 700, "sill_panel", base="none", front="+y",
         note="「床から70cmに1m幅の台」の解釈。要施主確認")
-    add("LDK-C2", "1F", LDK, "窓辺の造作台 西（同上・L 字でつながる）", "sill_counter", (175, 1225, 1175, 4000), 700, "solid_surface", base="none", front="+x")
+    add("LDK-C2", "1F", LDK, "窓辺の造作台 西（同上・L 字でつながる）", "sill_counter", (175, 1225, 1175, 4000), 700, "sill_panel", base="none", front="+x")
     add("L-P1", "1F", LDK, "鉢植え（オリーブ）φ500・樹高1,900", "plant", (175, 4300, 675, 4800), 1900, "leaf", base="pot")
     add("L-A1", "1F", LDK, "アートパネル（サイドボードの上に立て掛け）", "art", (5870, 700, 5900, 1600), 640, "art", z0=FL["1F"] + 700, base="stack", stack=True)
     # ---- キッチン・パントリー
@@ -413,7 +413,7 @@ def schedule_rows(h, its, short=False):
         m = pal.get(it.mat, {})
         hx = m.get("color", "")
         label = {"osb": "OSB t30（クリア塗装）＋ステンレス縁", "chair_wood": "座・背 合板（チャコールブラウン）／フレーム 鋼管（黒に近い暗褐色）",
-                 "case_ash": "アッシュ突板", "case_oak": "オーク突板", "olive_case": "オリーブ色の扉", "solid_surface": "人造大理石（一体成形）",
+                 "case_ash": "アッシュ突板", "case_oak": "オーク突板", "olive_case": "オリーブ色の扉", "solid_surface": "人造大理石（一体成形）", "sill_panel": "前面 人造大理石（艶消し・巾木と同色）／天板 オーク無垢積層 t40",
                  "leaf": "植物（鉢は生成り）", "art": "アート（からし・オリーブ）", "ceramic": "陶器", "tub": "ユニットバス", "mirror": "鏡",
                  "screen": "スクリーン（白）", "stainless": "ステンレス", "sofa_olive": "布張り（オリーブ）", "appliance_white": "家電（白）",
                  "theater_case": "AV 台（暗褐色）", "machine": "機器（灰）"}.get(it.mat, it.mat)

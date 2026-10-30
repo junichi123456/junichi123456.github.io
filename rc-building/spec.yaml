@@ -366,6 +366,8 @@ interior_palette:  # 内装の色（sRGB 16進。いずれも仮定）。tex は
   olive_case:        {color: "#5E6A3C", roughness: 0.60}
   countertop:        {color: "#ECE7DD", roughness: 0.30}
   solid_surface:     {color: "#EEEAE2", roughness: 0.30}
+  sill_oak:          {color: "#B89670", roughness: 0.45, coat: 0.25, tex: oak, tile_m: 1.83, bump: 0.1}   # v4.19 窓辺の台の天板（オーク無垢積層 t40）
+  sill_panel:        {color: "#E6E0D4", roughness: 0.85}                                              # v4.19 窓辺の台の前面（巾木 skirt と同色・艶消し）
   osb:               {color: "#C9A878", roughness: 0.45, coat: 0.30, tex: osb, tile_m: 2.51, bump: 0.25}
   stainless_paint:   {color: "#B8B8B4", roughness: 0.35, metallic: 0.6}
   steel_black:       {color: "#1F1E1C", roughness: 0.45, coat: 0.20}
@@ -491,7 +493,7 @@ ldk_corner_window:   # v4.18: LDK 南西の L 字コーナー大開口（全 FIX
   mullion: {w: 70, at: 1950}
   mullion_corner: 樹脂（断熱充填）
   slot: {w: 40, perf: 5}     # 台の天板の吹出しスリット（パンチングプレート φ5）
-ldk_sill_counter: {depth: 1000, z: 700, top: solid_surface, t: 30, edge_r: 10}
+ldk_sill_counter: {depth: 1000, z: 700, top: sill_oak, t: 40, panel: sill_panel, edge_r: 10}   # v4.19: 天板オーク t40、前面は巾木色の艶消しパネルを床まで（チャンバーは変えない）
 condensation:        # v4.18: 結露の判定（f_Rsi は仮定。メーカーの 2 次元熱解析に置き換える）
   t_out: -4.0
   t_in: 21.0

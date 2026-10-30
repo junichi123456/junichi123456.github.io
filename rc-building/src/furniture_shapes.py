@@ -285,11 +285,15 @@ def island(mb, rect, z0, p):
     mb.tube("stainless", (gx, gy, zt + 260), (gx, gy, zt + 215), 10, 12)
 
 
-def sill_counter(mb, rect, z0, H, front):
-    """窓辺の造作台（v4.18）: 人造大理石の一体成形（天板 t30、前面は同材のパネルを床まで・台輪なし、出隅 R10）。窓側の縁にステンレスの吹出しスリット（幅 40、パンチング φ5）。"""
+def sill_counter(mb, rect, z0, H, front, top_t=40):
+    """窓辺の造作台（v4.19）: 天板はオーク無垢積層 t40（張り出しなし・面一）、前面・側面は艶消しの人造大理石パネルを床まで（巾木と同色・床と面一）。
+    窓側の縁にステンレスの吹出しスリット（幅 40）を天板と面一に置く。"""
     L = LF(mb, rect, front)
-    L.box("solid_surface", 0, L.W, 0, L.D, z0, z0 + H)
-    L.box("stainless", 0, L.W, 0, 40, z0 + H, z0 + H + 2)
+    zt = z0 + H
+    L.box("sill_panel", 0, L.W, 0, L.D, z0, zt - top_t)                 # 前面・側面（壁の延長の腰壁）
+    L.box("sill_oak", 0, L.W, 40, L.D, zt - top_t, zt)                  # 天板（前面の木口 40 が細い線に見える）
+    L.box("sill_oak", 0, L.W, 0, 40, zt - top_t, zt - 2)               # スリット部の下地
+    L.box("stainless", 0, L.W, 0, 40, zt - 2, zt)                       # 吹出しスリット（天板と面一）
 
 
 def counter_float(mb, rect, z0, H, front, key="solid_surface"):
