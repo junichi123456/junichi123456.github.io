@@ -278,7 +278,7 @@ def site_plan(h, number, legal_summary):
     sm = legal_summary
     rows2 = [["項目", "面積・比率"],
              ["敷地面積（推定）", f"{sm['site_area']:,.2f} m²（{sm['site_area'] / 3.305785:,.1f}坪）"],
-             ["建築面積（壁芯）", f"{sm['building_area']:.2f} m²"],
+             ["建築面積（壁芯＋庇の先端から1m後退）", f"{sm['building_area']:.2f} m²"],
              ["延べ面積", f"{sm['total']:.2f} m²"],
              ["建ぺい率", f"{sm['coverage'] * 100:.2f}%（≦60%）"],
              ["容積率", f"{sm['far'] * 100:.2f}%（≦200%）"]]
@@ -368,6 +368,11 @@ def exterior_plan(h, number):
     for (x, y, s) in [(8600, -1500 - 1800, f"1FL GL+{h.fl['1F']:,}"), (-12000, 4000, f"FGL GL+{h.fgl}（現況維持）"),
                       (6000, -31800, "設計GL±0（南側道路 TP+109.0）")]:
         sh.text(s, t(x, y), 1.6, "A-SYMB", "MIDDLE_CENTER")
+    for cn in h.canopies:                               # 連続庇（v4.18）
+        sh.rect(*t(cn[0], cn[1]), *t(cn[2], cn[3]), "A-HIDDEN")
+    for (px, py) in h.spec["exterior"]["canopy"]["downpipes"]:
+        sh.circle(t(px, py), abs(t(500, 0)[0] - t(0, 0)[0]), "A-DRAIN")
+    sh.text("連続庇 縦樋（西→雨水貯留槽、東→浸透桝）", t(-9000, 5500), 1.5, "A-TEXT", "MIDDLE_CENTER")
     sh.north_arrow(sh.P(282, 60), 6, rot=h.facade_az)
     sh.view_title("外構・雨水排水計画図", "1:400", (18, 22))
     legend(sh, 300, 280, [("A-FENCE", "RC塀 t=150（数値=FGLからの天端高 m）", "fence"),
@@ -439,9 +444,12 @@ def floor_plan(h, floor, number):
     flows(h, sh, t, floor)
     if floor == "1F":
         sh.text(f"玄関ポーチ・外部階段 {h.ext_stair['n']}段", t(7600, -3600), 1.4, "A-TEXT", "MIDDLE_RIGHT")
-        cn = h.canopy
-        sh.rect(*t(cn[0], cn[1]), *t(cn[2], cn[3]), "A-HIDDEN")
-        sh.text("玄関庇 出2,000（破線）", t(cn[2] + 300, cn[1] + 300), 1.4, "A-TEXT", "MIDDLE_LEFT")
+        for cn in h.canopies:
+            sh.rect(*t(cn[0], cn[1]), *t(cn[2], cn[3]), "A-HIDDEN")
+        cs = h.canopies[0]
+        sh.text("連続庇 南の出2,000・西の出1,000（破線、下端 FL+2,900）", t(cs[2] + 300, cs[1] + 300), 1.4, "A-TEXT", "MIDDLE_LEFT")
+        for (lx, ly, _) in h.canopy_lights:
+            sh.circle(t(lx, ly), abs(t(60, 0)[0] - t(0, 0)[0]), "A-SYMB")
         sw = h.screen[0]
         sh.text(f"玄関南 約{(h.porch[1] - sw[3]) / 1000:.1f}mに目隠し壁（自立・独立基礎 L{(sw[2] - sw[0]):,.0f}×H{h.spec['exterior']['screen_wall']['height']:,}、A-02参照）", t(11000, -3600), 1.3, "A-TEXT", "MIDDLE_LEFT")
         # 二重框・下足入れ
@@ -803,6 +811,19 @@ def details(h, number):
     sh.text("着脱式止水板", (x, y + 300), 2.0, "A-TEXT", "MIDDLE_CENTER")
     sh.text("(4) 車両門扉部 着脱式止水板 H600（立面）S=1:30", P(25, 278), 3.0, "A-TEXT")
     sh.text("車両門扉 W5,000・人用 W1,200（勝手口なし）。止水板は門扉の近くに保管", P(25, 272), 1.9, "A-TEXT")
+    # (5) 連続庇のブラケット（南の断面。外断熱の外側へ鋼製片持ち。熱橋を断熱パッドで切る）
+    x, y = P(385, 130)
+    hatch_rect(x - 125, y - 900, x + 125, y + 600)                         # RC 壁 t250
+    sh.rect(x - 245, y - 900, x - 125, y + 600, "A-CUT")                    # 外断熱 120
+    cn = h.spec["exterior"]["canopy"]
+    sh.line((x - 245 - 2000, y + 150), (x - 245, y + 150), "A-CUT", lineweight=50)                          # 屋根鋼板（下端）
+    sh.line((x - 245 - 2000, y + 150 + cn["t"]), (x - 245, y + 150 + cn["t"]), "A-CUT", lineweight=50)    # 屋根鋼板（上端・勾配 1/100）
+    sh.pline([(x - 245, y + 150), (x - 245, y + 150 - 220), (x - 245 - 2000, y + 150)], "A-CUT", closed=True)  # テーパー H 形鋼（根元せい 150→先端 100 の目安）
+    sh.rect(x - 245, y + 20, x - 215, y + 280, "A-HIDDEN")                  # 断熱パッド
+    sh.text("(5) 連続庇ブラケット断面（南）S=1:30", P(300, 185), 3.0, "A-TEXT")
+    sh.text("テーパー H 形鋼 @1,500＋鋼板屋根 1/100", P(300, 179), 1.6, "A-TEXT")
+    sh.text("RC へはステンレスボルト＋断熱パッド（熱橋を切る）", P(300, 175), 1.6, "A-TEXT")
+    sh.text("先端に内樋（立上り 50）。軒天は LDK 側ベース色", P(300, 171), 1.6, "A-TEXT")
     side_panel(sh, 250, 270, [("h", "特記"),
                               ("t", "RC塀は令62条の8（補強コンクリートブロック造の塀）の対象外。風圧力・地震力に対する構造計算で安全を確認する"),
                               ("t", "東側の坂道沿いで塀が道路との高低差（2m超）を受ける区間は、擁壁として工作物確認申請の対象（令138条）"),

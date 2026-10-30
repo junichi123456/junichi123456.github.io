@@ -493,7 +493,7 @@ $SKPOLY
   9
 $TDCREATE
  40
-2461344.6098726853
+2461344.6153819445
   9
 $TDUCREATE
  40
@@ -501,7 +501,7 @@ $TDUCREATE
   9
 $TDUPDATE
  40
-2461344.610532407
+2461344.616030093
   9
 $TDUUPDATE
  40
@@ -553,7 +553,7 @@ $SPLINESEGS
   9
 $HANDSEED
   5
-4A5
+4A7
   9
 $SURFTAB1
  70
@@ -933,11 +933,11 @@ $PSTYLEMODE
   9
 $FINGERPRINTGUID
   2
-{A62193AE-8305-4B69-A606-4CA1656402EE}
+{08C89D0C-A42B-4DB0-852B-EDEBC7CE089E}
   9
 $VERSIONGUID
   2
-{CC4C5233-38A4-48C4-B74E-A146454DD505}
+{251778E4-DC4A-45E8-ABAC-76A0CB80F284}
   9
 $EXTNAMES
 290
@@ -1327,9 +1327,9 @@ ISM
   0
 CLASS
   1
-LAYOUT
+ACDBPLACEHOLDER
   2
-AcDbLayout
+AcDbPlaceHolder
   3
 ObjectDBX Classes
  90
@@ -1343,9 +1343,9 @@ ObjectDBX Classes
   0
 CLASS
   1
-ACDBPLACEHOLDER
+LAYOUT
   2
-AcDbPlaceHolder
+AcDbLayout
   3
 ObjectDBX Classes
  90
@@ -4511,7 +4511,7 @@ AcAecLayerStandard
   0
 APPID
   5
-4A2
+4A4
 330
 3
 100
@@ -4525,7 +4525,7 @@ HATCHBACKGROUNDCOLOR
   0
 APPID
   5
-4A3
+4A5
 330
 3
 100
@@ -6349,7 +6349,7 @@ JIS
 340
 8A
 342
-141
+143
 371
 13
 372
@@ -6471,7 +6471,7 @@ _CLOSEDBLANK
   0
 BLOCK_RECORD
   5
-13C
+13E
 330
 9
 100
@@ -6491,7 +6491,7 @@ AcDbBlockTableRecord
   0
 BLOCK_RECORD
   5
-141
+143
 330
 9
 100
@@ -6511,7 +6511,7 @@ _DOT
   0
 BLOCK_RECORD
   5
-152
+154
 330
 9
 100
@@ -6531,7 +6531,7 @@ AcDbBlockTableRecord
   0
 BLOCK_RECORD
   5
-161
+163
 330
 9
 100
@@ -6551,7 +6551,7 @@ AcDbBlockTableRecord
   0
 BLOCK_RECORD
   5
-170
+172
 330
 9
 100
@@ -6571,7 +6571,7 @@ AcDbBlockTableRecord
   0
 BLOCK_RECORD
   5
-17F
+181
 330
 9
 100
@@ -6591,7 +6591,7 @@ AcDbBlockTableRecord
   0
 BLOCK_RECORD
   5
-18E
+190
 330
 9
 100
@@ -6611,7 +6611,7 @@ AcDbBlockTableRecord
   0
 BLOCK_RECORD
   5
-19D
+19F
 330
 9
 100
@@ -6631,7 +6631,7 @@ AcDbBlockTableRecord
   0
 BLOCK_RECORD
   5
-1AC
+1AE
 330
 9
 100
@@ -6651,7 +6651,7 @@ AcDbBlockTableRecord
   0
 BLOCK_RECORD
   5
-1BB
+1BD
 330
 9
 100
@@ -6671,7 +6671,7 @@ AcDbBlockTableRecord
   0
 BLOCK_RECORD
   5
-1CA
+1CC
 330
 9
 100
@@ -6691,7 +6691,7 @@ AcDbBlockTableRecord
   0
 BLOCK_RECORD
   5
-1D9
+1DB
 330
 9
 100
@@ -6711,7 +6711,7 @@ AcDbBlockTableRecord
   0
 BLOCK_RECORD
   5
-1E8
+1EA
 330
 9
 100
@@ -6731,7 +6731,7 @@ AcDbBlockTableRecord
   0
 BLOCK_RECORD
   5
-1F9
+1FB
 330
 9
 100
@@ -6751,7 +6751,7 @@ AcDbBlockTableRecord
   0
 BLOCK_RECORD
   5
-208
+20A
 330
 9
 100
@@ -6771,7 +6771,7 @@ AcDbBlockTableRecord
   0
 BLOCK_RECORD
   5
-217
+219
 330
 9
 100
@@ -6791,7 +6791,7 @@ AcDbBlockTableRecord
   0
 BLOCK_RECORD
   5
-226
+228
 330
 9
 100
@@ -6811,7 +6811,7 @@ AcDbBlockTableRecord
   0
 BLOCK_RECORD
   5
-235
+237
 330
 9
 100
@@ -6831,7 +6831,7 @@ AcDbBlockTableRecord
   0
 BLOCK_RECORD
   5
-244
+246
 330
 9
 100
@@ -6851,7 +6851,7 @@ AcDbBlockTableRecord
   0
 BLOCK_RECORD
   5
-253
+255
 330
 9
 100
@@ -6871,7 +6871,7 @@ AcDbBlockTableRecord
   0
 BLOCK_RECORD
   5
-262
+264
 330
 9
 100
@@ -6891,7 +6891,7 @@ AcDbBlockTableRecord
   0
 BLOCK_RECORD
   5
-271
+273
 330
 9
 100
@@ -6911,7 +6911,7 @@ AcDbBlockTableRecord
   0
 BLOCK_RECORD
   5
-280
+282
 330
 9
 100
@@ -6931,7 +6931,7 @@ AcDbBlockTableRecord
   0
 BLOCK_RECORD
   5
-28F
+291
 330
 9
 100
@@ -6951,7 +6951,7 @@ AcDbBlockTableRecord
   0
 BLOCK_RECORD
   5
-29E
+2A0
 330
 9
 100
@@ -6971,7 +6971,7 @@ AcDbBlockTableRecord
   0
 BLOCK_RECORD
   5
-2AD
+2AF
 330
 9
 100
@@ -6991,7 +6991,7 @@ AcDbBlockTableRecord
   0
 BLOCK_RECORD
   5
-2BC
+2BE
 330
 9
 100
@@ -7311,9 +7311,9 @@ AcDbBlockEnd
   0
 BLOCK
   5
-13D
+13F
 330
-13C
+13E
 100
 AcDbEntity
   8
@@ -7337,9 +7337,9 @@ AcDbBlockBegin
   0
 LINE
   5
-13F
+141
 330
-13C
+13E
 100
 AcDbEntity
   8
@@ -7365,9 +7365,9 @@ AcDbLine
   0
 LINE
   5
-140
+142
 330
-13C
+13E
 100
 AcDbEntity
   8
@@ -7393,9 +7393,9 @@ AcDbLine
   0
 INSERT
   5
-146
+148
 330
-13C
+13E
 100
 AcDbEntity
   8
@@ -7419,9 +7419,9 @@ _DOT
   0
 INSERT
   5
-148
+14A
 330
-13C
+13E
 100
 AcDbEntity
   8
@@ -7447,9 +7447,9 @@ _DOT
   0
 LINE
   5
-14A
+14C
 330
-13C
+13E
 100
 AcDbEntity
   8
@@ -7475,9 +7475,9 @@ AcDbLine
   0
 LINE
   5
-14B
+14D
 330
-13C
+13E
 100
 AcDbEntity
   8
@@ -7503,9 +7503,9 @@ AcDbLine
   0
 LINE
   5
-14C
+14E
 330
-13C
+13E
 100
 AcDbEntity
   8
@@ -7531,9 +7531,9 @@ AcDbLine
   0
 MTEXT
   5
-14D
+14F
 330
-13C
+13E
 100
 AcDbEntity
   8
@@ -7559,45 +7559,45 @@ JP
   0
 POINT
   5
-14E
-330
-13C
-100
-AcDbEntity
-  8
-Defpoints
-100
-AcDbPoint
- 10
-5075.0
- 20
-6400.0
- 30
-0.0
-  0
-POINT
-  5
-14F
-330
-13C
-100
-AcDbEntity
-  8
-Defpoints
-100
-AcDbPoint
- 10
-5075.0
- 20
-6400.0
- 30
-0.0
-  0
-POINT
-  5
 150
 330
-13C
+13E
+100
+AcDbEntity
+  8
+Defpoints
+100
+AcDbPoint
+ 10
+5075.0
+ 20
+6400.0
+ 30
+0.0
+  0
+POINT
+  5
+151
+330
+13E
+100
+AcDbEntity
+  8
+Defpoints
+100
+AcDbPoint
+ 10
+5075.0
+ 20
+6400.0
+ 30
+0.0
+  0
+POINT
+  5
+152
+330
+13E
 100
 AcDbEntity
   8
@@ -7613,9 +7613,9 @@ AcDbPoint
   0
 ENDBLK
   5
-13E
+140
 330
-13C
+13E
 100
 AcDbEntity
   8
@@ -7625,9 +7625,9 @@ AcDbBlockEnd
   0
 BLOCK
   5
-142
+144
 330
-141
+143
 100
 AcDbEntity
   8
@@ -7651,9 +7651,9 @@ _DOT
   0
 LINE
   5
-144
+146
 330
-141
+143
 100
 AcDbEntity
   8
@@ -7679,9 +7679,9 @@ AcDbLine
   0
 LWPOLYLINE
   5
-145
+147
 330
-141
+143
 100
 AcDbEntity
   8
@@ -7713,9 +7713,9 @@ AcDbPolyline
   0
 ENDBLK
   5
-143
+145
 330
-141
+143
 100
 AcDbEntity
   8
@@ -7725,9 +7725,9 @@ AcDbBlockEnd
   0
 BLOCK
   5
-153
+155
 330
-152
+154
 100
 AcDbEntity
   8
@@ -7751,9 +7751,9 @@ AcDbBlockBegin
   0
 LINE
   5
-155
+157
 330
-152
+154
 100
 AcDbEntity
   8
@@ -7779,9 +7779,9 @@ AcDbLine
   0
 LINE
   5
-156
+158
 330
-152
+154
 100
 AcDbEntity
   8
@@ -7807,9 +7807,9 @@ AcDbLine
   0
 INSERT
   5
-157
+159
 330
-152
+154
 100
 AcDbEntity
   8
@@ -7835,9 +7835,9 @@ _DOT
   0
 INSERT
   5
-159
+15B
 330
-152
+154
 100
 AcDbEntity
   8
@@ -7861,9 +7861,9 @@ _DOT
   0
 LINE
   5
-15B
+15D
 330
-152
+154
 100
 AcDbEntity
   8
@@ -7889,9 +7889,9 @@ AcDbLine
   0
 MTEXT
   5
-15C
+15E
 330
-152
+154
 100
 AcDbEntity
   8
@@ -7917,45 +7917,45 @@ JP
   0
 POINT
   5
-15D
-330
-152
-100
-AcDbEntity
-  8
-Defpoints
-100
-AcDbPoint
- 10
-5200.0
- 20
-6400.0
- 30
-0.0
-  0
-POINT
-  5
-15E
-330
-152
-100
-AcDbEntity
-  8
-Defpoints
-100
-AcDbPoint
- 10
-5200.0
- 20
-6400.0
- 30
-0.0
-  0
-POINT
-  5
 15F
 330
-152
+154
+100
+AcDbEntity
+  8
+Defpoints
+100
+AcDbPoint
+ 10
+5200.0
+ 20
+6400.0
+ 30
+0.0
+  0
+POINT
+  5
+160
+330
+154
+100
+AcDbEntity
+  8
+Defpoints
+100
+AcDbPoint
+ 10
+5200.0
+ 20
+6400.0
+ 30
+0.0
+  0
+POINT
+  5
+161
+330
+154
 100
 AcDbEntity
   8
@@ -7971,9 +7971,9 @@ AcDbPoint
   0
 ENDBLK
   5
-154
+156
 330
-152
+154
 100
 AcDbEntity
   8
@@ -7983,9 +7983,9 @@ AcDbBlockEnd
   0
 BLOCK
   5
-162
+164
 330
-161
+163
 100
 AcDbEntity
   8
@@ -8009,9 +8009,9 @@ AcDbBlockBegin
   0
 LINE
   5
-164
+166
 330
-161
+163
 100
 AcDbEntity
   8
@@ -8037,9 +8037,9 @@ AcDbLine
   0
 LINE
   5
-165
+167
 330
-161
+163
 100
 AcDbEntity
   8
@@ -8065,9 +8065,9 @@ AcDbLine
   0
 INSERT
   5
-166
+168
 330
-161
+163
 100
 AcDbEntity
   8
@@ -8093,9 +8093,9 @@ _DOT
   0
 INSERT
   5
-168
+16A
 330
-161
+163
 100
 AcDbEntity
   8
@@ -8119,9 +8119,9 @@ _DOT
   0
 LINE
   5
-16A
+16C
 330
-161
+163
 100
 AcDbEntity
   8
@@ -8147,9 +8147,9 @@ AcDbLine
   0
 MTEXT
   5
-16B
+16D
 330
-161
+163
 100
 AcDbEntity
   8
@@ -8175,45 +8175,45 @@ JP
   0
 POINT
   5
-16C
-330
-161
-100
-AcDbEntity
-  8
-Defpoints
-100
-AcDbPoint
- 10
-9200.0
- 20
-6400.0
- 30
-0.0
-  0
-POINT
-  5
-16D
-330
-161
-100
-AcDbEntity
-  8
-Defpoints
-100
-AcDbPoint
- 10
-9200.0
- 20
-6400.0
- 30
-0.0
-  0
-POINT
-  5
 16E
 330
-161
+163
+100
+AcDbEntity
+  8
+Defpoints
+100
+AcDbPoint
+ 10
+9200.0
+ 20
+6400.0
+ 30
+0.0
+  0
+POINT
+  5
+16F
+330
+163
+100
+AcDbEntity
+  8
+Defpoints
+100
+AcDbPoint
+ 10
+9200.0
+ 20
+6400.0
+ 30
+0.0
+  0
+POINT
+  5
+170
+330
+163
 100
 AcDbEntity
   8
@@ -8229,9 +8229,9 @@ AcDbPoint
   0
 ENDBLK
   5
-163
+165
 330
-161
+163
 100
 AcDbEntity
   8
@@ -8241,9 +8241,9 @@ AcDbBlockEnd
   0
 BLOCK
   5
-171
+173
 330
-170
+172
 100
 AcDbEntity
   8
@@ -8267,9 +8267,9 @@ AcDbBlockBegin
   0
 LINE
   5
-173
+175
 330
-170
+172
 100
 AcDbEntity
   8
@@ -8295,9 +8295,9 @@ AcDbLine
   0
 LINE
   5
-174
+176
 330
-170
+172
 100
 AcDbEntity
   8
@@ -8323,9 +8323,9 @@ AcDbLine
   0
 INSERT
   5
-175
+177
 330
-170
+172
 100
 AcDbEntity
   8
@@ -8351,9 +8351,9 @@ _DOT
   0
 INSERT
   5
-177
+179
 330
-170
+172
 100
 AcDbEntity
   8
@@ -8377,9 +8377,9 @@ _DOT
   0
 LINE
   5
-179
+17B
 330
-170
+172
 100
 AcDbEntity
   8
@@ -8405,9 +8405,9 @@ AcDbLine
   0
 MTEXT
   5
-17A
+17C
 330
-170
+172
 100
 AcDbEntity
   8
@@ -8433,45 +8433,45 @@ JP
   0
 POINT
   5
-17B
-330
-170
-100
-AcDbEntity
-  8
-Defpoints
-100
-AcDbPoint
- 10
-11325.0
- 20
-6400.0
- 30
-0.0
-  0
-POINT
-  5
-17C
-330
-170
-100
-AcDbEntity
-  8
-Defpoints
-100
-AcDbPoint
- 10
-11325.0
- 20
-6400.0
- 30
-0.0
-  0
-POINT
-  5
 17D
 330
-170
+172
+100
+AcDbEntity
+  8
+Defpoints
+100
+AcDbPoint
+ 10
+11325.0
+ 20
+6400.0
+ 30
+0.0
+  0
+POINT
+  5
+17E
+330
+172
+100
+AcDbEntity
+  8
+Defpoints
+100
+AcDbPoint
+ 10
+11325.0
+ 20
+6400.0
+ 30
+0.0
+  0
+POINT
+  5
+17F
+330
+172
 100
 AcDbEntity
   8
@@ -8487,9 +8487,9 @@ AcDbPoint
   0
 ENDBLK
   5
-172
+174
 330
-170
+172
 100
 AcDbEntity
   8
@@ -8499,9 +8499,9 @@ AcDbBlockEnd
   0
 BLOCK
   5
-180
+182
 330
-17F
+181
 100
 AcDbEntity
   8
@@ -8525,9 +8525,9 @@ AcDbBlockBegin
   0
 LINE
   5
-182
+184
 330
-17F
+181
 100
 AcDbEntity
   8
@@ -8553,9 +8553,9 @@ AcDbLine
   0
 LINE
   5
-183
+185
 330
-17F
+181
 100
 AcDbEntity
   8
@@ -8581,9 +8581,9 @@ AcDbLine
   0
 INSERT
   5
-184
+186
 330
-17F
+181
 100
 AcDbEntity
   8
@@ -8609,9 +8609,9 @@ _DOT
   0
 INSERT
   5
-186
+188
 330
-17F
+181
 100
 AcDbEntity
   8
@@ -8635,9 +8635,9 @@ _DOT
   0
 LINE
   5
-188
+18A
 330
-17F
+181
 100
 AcDbEntity
   8
@@ -8663,9 +8663,9 @@ AcDbLine
   0
 MTEXT
   5
-189
+18B
 330
-17F
+181
 100
 AcDbEntity
   8
@@ -8691,45 +8691,45 @@ JP
   0
 POINT
   5
-18A
-330
-17F
-100
-AcDbEntity
-  8
-Defpoints
-100
-AcDbPoint
- 10
-13800.0
- 20
-6400.0
- 30
-0.0
-  0
-POINT
-  5
-18B
-330
-17F
-100
-AcDbEntity
-  8
-Defpoints
-100
-AcDbPoint
- 10
-13800.0
- 20
-6400.0
- 30
-0.0
-  0
-POINT
-  5
 18C
 330
-17F
+181
+100
+AcDbEntity
+  8
+Defpoints
+100
+AcDbPoint
+ 10
+13800.0
+ 20
+6400.0
+ 30
+0.0
+  0
+POINT
+  5
+18D
+330
+181
+100
+AcDbEntity
+  8
+Defpoints
+100
+AcDbPoint
+ 10
+13800.0
+ 20
+6400.0
+ 30
+0.0
+  0
+POINT
+  5
+18E
+330
+181
 100
 AcDbEntity
   8
@@ -8745,9 +8745,9 @@ AcDbPoint
   0
 ENDBLK
   5
-181
+183
 330
-17F
+181
 100
 AcDbEntity
   8
@@ -8757,9 +8757,9 @@ AcDbBlockEnd
   0
 BLOCK
   5
-18F
+191
 330
-18E
+190
 100
 AcDbEntity
   8
@@ -8783,9 +8783,9 @@ AcDbBlockBegin
   0
 LINE
   5
-191
+193
 330
-18E
+190
 100
 AcDbEntity
   8
@@ -8811,9 +8811,9 @@ AcDbLine
   0
 LINE
   5
-192
+194
 330
-18E
+190
 100
 AcDbEntity
   8
@@ -8839,9 +8839,9 @@ AcDbLine
   0
 INSERT
   5
-193
+195
 330
-18E
+190
 100
 AcDbEntity
   8
@@ -8867,9 +8867,9 @@ _DOT
   0
 INSERT
   5
-195
+197
 330
-18E
+190
 100
 AcDbEntity
   8
@@ -8893,9 +8893,9 @@ _DOT
   0
 LINE
   5
-197
+199
 330
-18E
+190
 100
 AcDbEntity
   8
@@ -8921,9 +8921,9 @@ AcDbLine
   0
 MTEXT
   5
-198
+19A
 330
-18E
+190
 100
 AcDbEntity
   8
@@ -8949,45 +8949,45 @@ JP
   0
 POINT
   5
-199
-330
-18E
-100
-AcDbEntity
-  8
-Defpoints
-100
-AcDbPoint
- 10
-14800.0
- 20
-6400.0
- 30
-0.0
-  0
-POINT
-  5
-19A
-330
-18E
-100
-AcDbEntity
-  8
-Defpoints
-100
-AcDbPoint
- 10
-14800.0
- 20
-6400.0
- 30
-0.0
-  0
-POINT
-  5
 19B
 330
-18E
+190
+100
+AcDbEntity
+  8
+Defpoints
+100
+AcDbPoint
+ 10
+14800.0
+ 20
+6400.0
+ 30
+0.0
+  0
+POINT
+  5
+19C
+330
+190
+100
+AcDbEntity
+  8
+Defpoints
+100
+AcDbPoint
+ 10
+14800.0
+ 20
+6400.0
+ 30
+0.0
+  0
+POINT
+  5
+19D
+330
+190
 100
 AcDbEntity
   8
@@ -9003,9 +9003,9 @@ AcDbPoint
   0
 ENDBLK
   5
-190
+192
 330
-18E
+190
 100
 AcDbEntity
   8
@@ -9015,9 +9015,9 @@ AcDbBlockEnd
   0
 BLOCK
   5
-19E
+1A0
 330
-19D
+19F
 100
 AcDbEntity
   8
@@ -9041,9 +9041,9 @@ AcDbBlockBegin
   0
 LINE
   5
-1A0
+1A2
 330
-19D
+19F
 100
 AcDbEntity
   8
@@ -9069,9 +9069,9 @@ AcDbLine
   0
 LINE
   5
-1A1
+1A3
 330
-19D
+19F
 100
 AcDbEntity
   8
@@ -9097,9 +9097,9 @@ AcDbLine
   0
 INSERT
   5
-1A2
+1A4
 330
-19D
+19F
 100
 AcDbEntity
   8
@@ -9125,9 +9125,9 @@ _DOT
   0
 INSERT
   5
-1A4
+1A6
 330
-19D
+19F
 100
 AcDbEntity
   8
@@ -9151,9 +9151,9 @@ _DOT
   0
 LINE
   5
-1A6
+1A8
 330
-19D
+19F
 100
 AcDbEntity
   8
@@ -9179,9 +9179,9 @@ AcDbLine
   0
 MTEXT
   5
-1A7
+1A9
 330
-19D
+19F
 100
 AcDbEntity
   8
@@ -9207,45 +9207,45 @@ JP
   0
 POINT
   5
-1A8
-330
-19D
-100
-AcDbEntity
-  8
-Defpoints
-100
-AcDbPoint
- 10
-17325.0
- 20
-6400.0
- 30
-0.0
-  0
-POINT
-  5
-1A9
-330
-19D
-100
-AcDbEntity
-  8
-Defpoints
-100
-AcDbPoint
- 10
-17325.0
- 20
-6400.0
- 30
-0.0
-  0
-POINT
-  5
 1AA
 330
-19D
+19F
+100
+AcDbEntity
+  8
+Defpoints
+100
+AcDbPoint
+ 10
+17325.0
+ 20
+6400.0
+ 30
+0.0
+  0
+POINT
+  5
+1AB
+330
+19F
+100
+AcDbEntity
+  8
+Defpoints
+100
+AcDbPoint
+ 10
+17325.0
+ 20
+6400.0
+ 30
+0.0
+  0
+POINT
+  5
+1AC
+330
+19F
 100
 AcDbEntity
   8
@@ -9261,9 +9261,9 @@ AcDbPoint
   0
 ENDBLK
   5
-19F
+1A1
 330
-19D
+19F
 100
 AcDbEntity
   8
@@ -9273,9 +9273,9 @@ AcDbBlockEnd
   0
 BLOCK
   5
-1AD
+1AF
 330
-1AC
+1AE
 100
 AcDbEntity
   8
@@ -9299,9 +9299,9 @@ AcDbBlockBegin
   0
 LINE
   5
-1AF
+1B1
 330
-1AC
+1AE
 100
 AcDbEntity
   8
@@ -9327,9 +9327,9 @@ AcDbLine
   0
 LINE
   5
-1B0
+1B2
 330
-1AC
+1AE
 100
 AcDbEntity
   8
@@ -9355,9 +9355,9 @@ AcDbLine
   0
 INSERT
   5
-1B1
+1B3
 330
-1AC
+1AE
 100
 AcDbEntity
   8
@@ -9383,9 +9383,9 @@ _DOT
   0
 INSERT
   5
-1B3
+1B5
 330
-1AC
+1AE
 100
 AcDbEntity
   8
@@ -9409,9 +9409,9 @@ _DOT
   0
 LINE
   5
-1B5
+1B7
 330
-1AC
+1AE
 100
 AcDbEntity
   8
@@ -9437,9 +9437,9 @@ AcDbLine
   0
 MTEXT
   5
-1B6
+1B8
 330
-1AC
+1AE
 100
 AcDbEntity
   8
@@ -9465,45 +9465,45 @@ JP
   0
 POINT
   5
-1B7
-330
-1AC
-100
-AcDbEntity
-  8
-Defpoints
-100
-AcDbPoint
- 10
-5200.0
- 20
-5850.0
- 30
-0.0
-  0
-POINT
-  5
-1B8
-330
-1AC
-100
-AcDbEntity
-  8
-Defpoints
-100
-AcDbPoint
- 10
-5200.0
- 20
-5850.0
- 30
-0.0
-  0
-POINT
-  5
 1B9
 330
-1AC
+1AE
+100
+AcDbEntity
+  8
+Defpoints
+100
+AcDbPoint
+ 10
+5200.0
+ 20
+5850.0
+ 30
+0.0
+  0
+POINT
+  5
+1BA
+330
+1AE
+100
+AcDbEntity
+  8
+Defpoints
+100
+AcDbPoint
+ 10
+5200.0
+ 20
+5850.0
+ 30
+0.0
+  0
+POINT
+  5
+1BB
+330
+1AE
 100
 AcDbEntity
   8
@@ -9519,9 +9519,9 @@ AcDbPoint
   0
 ENDBLK
   5
-1AE
+1B0
 330
-1AC
+1AE
 100
 AcDbEntity
   8
@@ -9531,9 +9531,9 @@ AcDbBlockEnd
   0
 BLOCK
   5
-1BC
+1BE
 330
-1BB
+1BD
 100
 AcDbEntity
   8
@@ -9557,9 +9557,9 @@ AcDbBlockBegin
   0
 LINE
   5
-1BE
+1C0
 330
-1BB
+1BD
 100
 AcDbEntity
   8
@@ -9585,9 +9585,9 @@ AcDbLine
   0
 LINE
   5
-1BF
+1C1
 330
-1BB
+1BD
 100
 AcDbEntity
   8
@@ -9613,9 +9613,9 @@ AcDbLine
   0
 INSERT
   5
-1C0
+1C2
 330
-1BB
+1BD
 100
 AcDbEntity
   8
@@ -9641,9 +9641,9 @@ _DOT
   0
 INSERT
   5
-1C2
+1C4
 330
-1BB
+1BD
 100
 AcDbEntity
   8
@@ -9667,9 +9667,9 @@ _DOT
   0
 LINE
   5
-1C4
+1C6
 330
-1BB
+1BD
 100
 AcDbEntity
   8
@@ -9695,9 +9695,9 @@ AcDbLine
   0
 MTEXT
   5
-1C5
+1C7
 330
-1BB
+1BD
 100
 AcDbEntity
   8
@@ -9723,45 +9723,45 @@ JP
   0
 POINT
   5
-1C6
-330
-1BB
-100
-AcDbEntity
-  8
-Defpoints
-100
-AcDbPoint
- 10
-11325.0
- 20
-5850.0
- 30
-0.0
-  0
-POINT
-  5
-1C7
-330
-1BB
-100
-AcDbEntity
-  8
-Defpoints
-100
-AcDbPoint
- 10
-11325.0
- 20
-5850.0
- 30
-0.0
-  0
-POINT
-  5
 1C8
 330
-1BB
+1BD
+100
+AcDbEntity
+  8
+Defpoints
+100
+AcDbPoint
+ 10
+11325.0
+ 20
+5850.0
+ 30
+0.0
+  0
+POINT
+  5
+1C9
+330
+1BD
+100
+AcDbEntity
+  8
+Defpoints
+100
+AcDbPoint
+ 10
+11325.0
+ 20
+5850.0
+ 30
+0.0
+  0
+POINT
+  5
+1CA
+330
+1BD
 100
 AcDbEntity
   8
@@ -9777,9 +9777,9 @@ AcDbPoint
   0
 ENDBLK
   5
-1BD
+1BF
 330
-1BB
+1BD
 100
 AcDbEntity
   8
@@ -9789,9 +9789,9 @@ AcDbBlockEnd
   0
 BLOCK
   5
-1CB
+1CD
 330
-1CA
+1CC
 100
 AcDbEntity
   8
@@ -9815,9 +9815,9 @@ AcDbBlockBegin
   0
 LINE
   5
-1CD
+1CF
 330
-1CA
+1CC
 100
 AcDbEntity
   8
@@ -9843,9 +9843,9 @@ AcDbLine
   0
 LINE
   5
-1CE
+1D0
 330
-1CA
+1CC
 100
 AcDbEntity
   8
@@ -9871,9 +9871,9 @@ AcDbLine
   0
 INSERT
   5
-1CF
+1D1
 330
-1CA
+1CC
 100
 AcDbEntity
   8
@@ -9899,9 +9899,9 @@ _DOT
   0
 INSERT
   5
-1D1
+1D3
 330
-1CA
+1CC
 100
 AcDbEntity
   8
@@ -9925,9 +9925,9 @@ _DOT
   0
 LINE
   5
-1D3
+1D5
 330
-1CA
+1CC
 100
 AcDbEntity
   8
@@ -9953,9 +9953,9 @@ AcDbLine
   0
 MTEXT
   5
-1D4
+1D6
 330
-1CA
+1CC
 100
 AcDbEntity
   8
@@ -9981,45 +9981,45 @@ JP
   0
 POINT
   5
-1D5
-330
-1CA
-100
-AcDbEntity
-  8
-Defpoints
-100
-AcDbPoint
- 10
-17325.0
- 20
-5850.0
- 30
-0.0
-  0
-POINT
-  5
-1D6
-330
-1CA
-100
-AcDbEntity
-  8
-Defpoints
-100
-AcDbPoint
- 10
-17325.0
- 20
-5850.0
- 30
-0.0
-  0
-POINT
-  5
 1D7
 330
-1CA
+1CC
+100
+AcDbEntity
+  8
+Defpoints
+100
+AcDbPoint
+ 10
+17325.0
+ 20
+5850.0
+ 30
+0.0
+  0
+POINT
+  5
+1D8
+330
+1CC
+100
+AcDbEntity
+  8
+Defpoints
+100
+AcDbPoint
+ 10
+17325.0
+ 20
+5850.0
+ 30
+0.0
+  0
+POINT
+  5
+1D9
+330
+1CC
 100
 AcDbEntity
   8
@@ -10035,9 +10035,9 @@ AcDbPoint
   0
 ENDBLK
   5
-1CC
+1CE
 330
-1CA
+1CC
 100
 AcDbEntity
   8
@@ -10047,9 +10047,9 @@ AcDbBlockEnd
   0
 BLOCK
   5
-1DA
+1DC
 330
-1D9
+1DB
 100
 AcDbEntity
   8
@@ -10073,9 +10073,9 @@ AcDbBlockBegin
   0
 LINE
   5
-1DC
+1DE
 330
-1D9
+1DB
 100
 AcDbEntity
   8
@@ -10101,9 +10101,9 @@ AcDbLine
   0
 LINE
   5
-1DD
+1DF
 330
-1D9
+1DB
 100
 AcDbEntity
   8
@@ -10129,9 +10129,9 @@ AcDbLine
   0
 INSERT
   5
-1DE
+1E0
 330
-1D9
+1DB
 100
 AcDbEntity
   8
@@ -10157,9 +10157,9 @@ _DOT
   0
 INSERT
   5
-1E0
+1E2
 330
-1D9
+1DB
 100
 AcDbEntity
   8
@@ -10183,9 +10183,9 @@ _DOT
   0
 LINE
   5
-1E2
+1E4
 330
-1D9
+1DB
 100
 AcDbEntity
   8
@@ -10211,9 +10211,9 @@ AcDbLine
   0
 MTEXT
   5
-1E3
+1E5
 330
-1D9
+1DB
 100
 AcDbEntity
   8
@@ -10239,45 +10239,45 @@ JP
   0
 POINT
   5
-1E4
-330
-1D9
-100
-AcDbEntity
-  8
-Defpoints
-100
-AcDbPoint
- 10
-4955.0
- 20
-5300.0
- 30
-0.0
-  0
-POINT
-  5
-1E5
-330
-1D9
-100
-AcDbEntity
-  8
-Defpoints
-100
-AcDbPoint
- 10
-4955.0
- 20
-5300.0
- 30
-0.0
-  0
-POINT
-  5
 1E6
 330
-1D9
+1DB
+100
+AcDbEntity
+  8
+Defpoints
+100
+AcDbPoint
+ 10
+4955.0
+ 20
+5300.0
+ 30
+0.0
+  0
+POINT
+  5
+1E7
+330
+1DB
+100
+AcDbEntity
+  8
+Defpoints
+100
+AcDbPoint
+ 10
+4955.0
+ 20
+5300.0
+ 30
+0.0
+  0
+POINT
+  5
+1E8
+330
+1DB
 100
 AcDbEntity
   8
@@ -10293,9 +10293,9 @@ AcDbPoint
   0
 ENDBLK
   5
-1DB
+1DD
 330
-1D9
+1DB
 100
 AcDbEntity
   8
@@ -10305,9 +10305,9 @@ AcDbBlockEnd
   0
 BLOCK
   5
-1E9
+1EB
 330
-1E8
+1EA
 100
 AcDbEntity
   8
@@ -10331,9 +10331,9 @@ AcDbBlockBegin
   0
 LINE
   5
-1EB
+1ED
 330
-1E8
+1EA
 100
 AcDbEntity
   8
@@ -10359,9 +10359,9 @@ AcDbLine
   0
 LINE
   5
-1EC
+1EE
 330
-1E8
+1EA
 100
 AcDbEntity
   8
@@ -10387,9 +10387,9 @@ AcDbLine
   0
 INSERT
   5
-1ED
+1EF
 330
-1E8
+1EA
 100
 AcDbEntity
   8
@@ -10415,9 +10415,9 @@ _DOT
   0
 INSERT
   5
-1EF
+1F1
 330
-1E8
+1EA
 100
 AcDbEntity
   8
@@ -10443,9 +10443,9 @@ _DOT
   0
 LINE
   5
-1F1
+1F3
 330
-1E8
+1EA
 100
 AcDbEntity
   8
@@ -10471,9 +10471,9 @@ AcDbLine
   0
 LINE
   5
-1F2
+1F4
 330
-1E8
+1EA
 100
 AcDbEntity
   8
@@ -10499,9 +10499,9 @@ AcDbLine
   0
 LINE
   5
-1F3
+1F5
 330
-1E8
+1EA
 100
 AcDbEntity
   8
@@ -10527,9 +10527,9 @@ AcDbLine
   0
 MTEXT
   5
-1F4
+1F6
 330
-1E8
+1EA
 100
 AcDbEntity
   8
@@ -10557,45 +10557,45 @@ JP
   0
 POINT
   5
-1F5
-330
-1E8
-100
-AcDbEntity
-  8
-Defpoints
-100
-AcDbPoint
- 10
-4300.0
- 20
-7300.0
- 30
-0.0
-  0
-POINT
-  5
-1F6
-330
-1E8
-100
-AcDbEntity
-  8
-Defpoints
-100
-AcDbPoint
- 10
-4300.0
- 20
-7300.0
- 30
-0.0
-  0
-POINT
-  5
 1F7
 330
-1E8
+1EA
+100
+AcDbEntity
+  8
+Defpoints
+100
+AcDbPoint
+ 10
+4300.0
+ 20
+7300.0
+ 30
+0.0
+  0
+POINT
+  5
+1F8
+330
+1EA
+100
+AcDbEntity
+  8
+Defpoints
+100
+AcDbPoint
+ 10
+4300.0
+ 20
+7300.0
+ 30
+0.0
+  0
+POINT
+  5
+1F9
+330
+1EA
 100
 AcDbEntity
   8
@@ -10611,9 +10611,9 @@ AcDbPoint
   0
 ENDBLK
   5
-1EA
+1EC
 330
-1E8
+1EA
 100
 AcDbEntity
   8
@@ -10623,9 +10623,9 @@ AcDbBlockEnd
   0
 BLOCK
   5
-1FA
+1FC
 330
-1F9
+1FB
 100
 AcDbEntity
   8
@@ -10649,9 +10649,9 @@ AcDbBlockBegin
   0
 LINE
   5
-1FC
+1FE
 330
-1F9
+1FB
 100
 AcDbEntity
   8
@@ -10677,9 +10677,9 @@ AcDbLine
   0
 LINE
   5
-1FD
+1FF
 330
-1F9
+1FB
 100
 AcDbEntity
   8
@@ -10705,9 +10705,9 @@ AcDbLine
   0
 INSERT
   5
-1FE
+200
 330
-1F9
+1FB
 100
 AcDbEntity
   8
@@ -10733,9 +10733,9 @@ _DOT
   0
 INSERT
   5
-200
+202
 330
-1F9
+1FB
 100
 AcDbEntity
   8
@@ -10761,9 +10761,9 @@ _DOT
   0
 LINE
   5
-202
+204
 330
-1F9
+1FB
 100
 AcDbEntity
   8
@@ -10789,9 +10789,9 @@ AcDbLine
   0
 MTEXT
   5
-203
+205
 330
-1F9
+1FB
 100
 AcDbEntity
   8
@@ -10819,45 +10819,45 @@ JP
   0
 POINT
   5
-204
-330
-1F9
-100
-AcDbEntity
-  8
-Defpoints
-100
-AcDbPoint
- 10
-4300.0
- 20
-7425.0
- 30
-0.0
-  0
-POINT
-  5
-205
-330
-1F9
-100
-AcDbEntity
-  8
-Defpoints
-100
-AcDbPoint
- 10
-4300.0
- 20
-7425.0
- 30
-0.0
-  0
-POINT
-  5
 206
 330
-1F9
+1FB
+100
+AcDbEntity
+  8
+Defpoints
+100
+AcDbPoint
+ 10
+4300.0
+ 20
+7425.0
+ 30
+0.0
+  0
+POINT
+  5
+207
+330
+1FB
+100
+AcDbEntity
+  8
+Defpoints
+100
+AcDbPoint
+ 10
+4300.0
+ 20
+7425.0
+ 30
+0.0
+  0
+POINT
+  5
+208
+330
+1FB
 100
 AcDbEntity
   8
@@ -10873,9 +10873,9 @@ AcDbPoint
   0
 ENDBLK
   5
-1FB
+1FD
 330
-1F9
+1FB
 100
 AcDbEntity
   8
@@ -10885,9 +10885,9 @@ AcDbBlockEnd
   0
 BLOCK
   5
-209
+20B
 330
-208
+20A
 100
 AcDbEntity
   8
@@ -10911,9 +10911,9 @@ AcDbBlockBegin
   0
 LINE
   5
-20B
+20D
 330
-208
+20A
 100
 AcDbEntity
   8
@@ -10939,9 +10939,9 @@ AcDbLine
   0
 LINE
   5
-20C
+20E
 330
-208
+20A
 100
 AcDbEntity
   8
@@ -10967,9 +10967,9 @@ AcDbLine
   0
 INSERT
   5
-20D
+20F
 330
-208
+20A
 100
 AcDbEntity
   8
@@ -10995,9 +10995,9 @@ _DOT
   0
 INSERT
   5
-20F
+211
 330
-208
+20A
 100
 AcDbEntity
   8
@@ -11023,9 +11023,9 @@ _DOT
   0
 LINE
   5
-211
+213
 330
-208
+20A
 100
 AcDbEntity
   8
@@ -11051,9 +11051,9 @@ AcDbLine
   0
 MTEXT
   5
-212
+214
 330
-208
+20A
 100
 AcDbEntity
   8
@@ -11081,45 +11081,45 @@ JP
   0
 POINT
   5
-213
-330
-208
-100
-AcDbEntity
-  8
-Defpoints
-100
-AcDbPoint
- 10
-4300.0
- 20
-11300.0
- 30
-0.0
-  0
-POINT
-  5
-214
-330
-208
-100
-AcDbEntity
-  8
-Defpoints
-100
-AcDbPoint
- 10
-4300.0
- 20
-11300.0
- 30
-0.0
-  0
-POINT
-  5
 215
 330
-208
+20A
+100
+AcDbEntity
+  8
+Defpoints
+100
+AcDbPoint
+ 10
+4300.0
+ 20
+11300.0
+ 30
+0.0
+  0
+POINT
+  5
+216
+330
+20A
+100
+AcDbEntity
+  8
+Defpoints
+100
+AcDbPoint
+ 10
+4300.0
+ 20
+11300.0
+ 30
+0.0
+  0
+POINT
+  5
+217
+330
+20A
 100
 AcDbEntity
   8
@@ -11135,9 +11135,9 @@ AcDbPoint
   0
 ENDBLK
   5
-20A
+20C
 330
-208
+20A
 100
 AcDbEntity
   8
@@ -11147,9 +11147,9 @@ AcDbBlockEnd
   0
 BLOCK
   5
-218
+21A
 330
-217
+219
 100
 AcDbEntity
   8
@@ -11173,9 +11173,9 @@ AcDbBlockBegin
   0
 LINE
   5
-21A
+21C
 330
-217
+219
 100
 AcDbEntity
   8
@@ -11201,9 +11201,9 @@ AcDbLine
   0
 LINE
   5
-21B
+21D
 330
-217
+219
 100
 AcDbEntity
   8
@@ -11229,9 +11229,9 @@ AcDbLine
   0
 INSERT
   5
-21C
+21E
 330
-217
+219
 100
 AcDbEntity
   8
@@ -11257,9 +11257,9 @@ _DOT
   0
 INSERT
   5
-21E
+220
 330
-217
+219
 100
 AcDbEntity
   8
@@ -11285,9 +11285,9 @@ _DOT
   0
 LINE
   5
-220
+222
 330
-217
+219
 100
 AcDbEntity
   8
@@ -11313,9 +11313,9 @@ AcDbLine
   0
 MTEXT
   5
-221
+223
 330
-217
+219
 100
 AcDbEntity
   8
@@ -11343,45 +11343,45 @@ JP
   0
 POINT
   5
-222
-330
-217
-100
-AcDbEntity
-  8
-Defpoints
-100
-AcDbPoint
- 10
-4300.0
- 20
-13425.0
- 30
-0.0
-  0
-POINT
-  5
-223
-330
-217
-100
-AcDbEntity
-  8
-Defpoints
-100
-AcDbPoint
- 10
-4300.0
- 20
-13425.0
- 30
-0.0
-  0
-POINT
-  5
 224
 330
-217
+219
+100
+AcDbEntity
+  8
+Defpoints
+100
+AcDbPoint
+ 10
+4300.0
+ 20
+13425.0
+ 30
+0.0
+  0
+POINT
+  5
+225
+330
+219
+100
+AcDbEntity
+  8
+Defpoints
+100
+AcDbPoint
+ 10
+4300.0
+ 20
+13425.0
+ 30
+0.0
+  0
+POINT
+  5
+226
+330
+219
 100
 AcDbEntity
   8
@@ -11397,9 +11397,9 @@ AcDbPoint
   0
 ENDBLK
   5
-219
+21B
 330
-217
+219
 100
 AcDbEntity
   8
@@ -11409,9 +11409,9 @@ AcDbBlockEnd
   0
 BLOCK
   5
-227
+229
 330
-226
+228
 100
 AcDbEntity
   8
@@ -11435,9 +11435,9 @@ AcDbBlockBegin
   0
 LINE
   5
-229
+22B
 330
-226
+228
 100
 AcDbEntity
   8
@@ -11463,9 +11463,9 @@ AcDbLine
   0
 LINE
   5
-22A
+22C
 330
-226
+228
 100
 AcDbEntity
   8
@@ -11491,9 +11491,9 @@ AcDbLine
   0
 INSERT
   5
-22B
+22D
 330
-226
+228
 100
 AcDbEntity
   8
@@ -11519,9 +11519,9 @@ _DOT
   0
 INSERT
   5
-22D
+22F
 330
-226
+228
 100
 AcDbEntity
   8
@@ -11547,9 +11547,9 @@ _DOT
   0
 LINE
   5
-22F
+231
 330
-226
+228
 100
 AcDbEntity
   8
@@ -11575,9 +11575,9 @@ AcDbLine
   0
 MTEXT
   5
-230
+232
 330
-226
+228
 100
 AcDbEntity
   8
@@ -11605,45 +11605,45 @@ JP
   0
 POINT
   5
-231
-330
-226
-100
-AcDbEntity
-  8
-Defpoints
-100
-AcDbPoint
- 10
-4300.0
- 20
-19425.0
- 30
-0.0
-  0
-POINT
-  5
-232
-330
-226
-100
-AcDbEntity
-  8
-Defpoints
-100
-AcDbPoint
- 10
-4300.0
- 20
-19425.0
- 30
-0.0
-  0
-POINT
-  5
 233
 330
-226
+228
+100
+AcDbEntity
+  8
+Defpoints
+100
+AcDbPoint
+ 10
+4300.0
+ 20
+19425.0
+ 30
+0.0
+  0
+POINT
+  5
+234
+330
+228
+100
+AcDbEntity
+  8
+Defpoints
+100
+AcDbPoint
+ 10
+4300.0
+ 20
+19425.0
+ 30
+0.0
+  0
+POINT
+  5
+235
+330
+228
 100
 AcDbEntity
   8
@@ -11659,9 +11659,9 @@ AcDbPoint
   0
 ENDBLK
   5
-228
+22A
 330
-226
+228
 100
 AcDbEntity
   8
@@ -11671,9 +11671,9 @@ AcDbBlockEnd
   0
 BLOCK
   5
-236
+238
 330
-235
+237
 100
 AcDbEntity
   8
@@ -11697,9 +11697,9 @@ AcDbBlockBegin
   0
 LINE
   5
-238
+23A
 330
-235
+237
 100
 AcDbEntity
   8
@@ -11725,9 +11725,9 @@ AcDbLine
   0
 LINE
   5
-239
+23B
 330
-235
+237
 100
 AcDbEntity
   8
@@ -11753,9 +11753,9 @@ AcDbLine
   0
 INSERT
   5
-23A
+23C
 330
-235
+237
 100
 AcDbEntity
   8
@@ -11781,9 +11781,9 @@ _DOT
   0
 INSERT
   5
-23C
+23E
 330
-235
+237
 100
 AcDbEntity
   8
@@ -11809,9 +11809,9 @@ _DOT
   0
 LINE
   5
-23E
+240
 330
-235
+237
 100
 AcDbEntity
   8
@@ -11837,9 +11837,9 @@ AcDbLine
   0
 MTEXT
   5
-23F
+241
 330
-235
+237
 100
 AcDbEntity
   8
@@ -11867,45 +11867,45 @@ JP
   0
 POINT
   5
-240
-330
-235
-100
-AcDbEntity
-  8
-Defpoints
-100
-AcDbPoint
- 10
-3750.0
- 20
-7300.0
- 30
-0.0
-  0
-POINT
-  5
-241
-330
-235
-100
-AcDbEntity
-  8
-Defpoints
-100
-AcDbPoint
- 10
-3750.0
- 20
-7300.0
- 30
-0.0
-  0
-POINT
-  5
 242
 330
-235
+237
+100
+AcDbEntity
+  8
+Defpoints
+100
+AcDbPoint
+ 10
+3750.0
+ 20
+7300.0
+ 30
+0.0
+  0
+POINT
+  5
+243
+330
+237
+100
+AcDbEntity
+  8
+Defpoints
+100
+AcDbPoint
+ 10
+3750.0
+ 20
+7300.0
+ 30
+0.0
+  0
+POINT
+  5
+244
+330
+237
 100
 AcDbEntity
   8
@@ -11921,9 +11921,9 @@ AcDbPoint
   0
 ENDBLK
   5
-237
+239
 330
-235
+237
 100
 AcDbEntity
   8
@@ -11933,9 +11933,9 @@ AcDbBlockEnd
   0
 BLOCK
   5
-245
+247
 330
-244
+246
 100
 AcDbEntity
   8
@@ -11959,9 +11959,9 @@ AcDbBlockBegin
   0
 LINE
   5
-247
+249
 330
-244
+246
 100
 AcDbEntity
   8
@@ -11987,9 +11987,9 @@ AcDbLine
   0
 LINE
   5
-248
+24A
 330
-244
+246
 100
 AcDbEntity
   8
@@ -12015,9 +12015,9 @@ AcDbLine
   0
 INSERT
   5
-249
+24B
 330
-244
+246
 100
 AcDbEntity
   8
@@ -12043,9 +12043,9 @@ _DOT
   0
 INSERT
   5
-24B
+24D
 330
-244
+246
 100
 AcDbEntity
   8
@@ -12071,9 +12071,9 @@ _DOT
   0
 LINE
   5
-24D
+24F
 330
-244
+246
 100
 AcDbEntity
   8
@@ -12099,9 +12099,9 @@ AcDbLine
   0
 MTEXT
   5
-24E
+250
 330
-244
+246
 100
 AcDbEntity
   8
@@ -12129,45 +12129,45 @@ JP
   0
 POINT
   5
-24F
-330
-244
-100
-AcDbEntity
-  8
-Defpoints
-100
-AcDbPoint
- 10
-3750.0
- 20
-13425.0
- 30
-0.0
-  0
-POINT
-  5
-250
-330
-244
-100
-AcDbEntity
-  8
-Defpoints
-100
-AcDbPoint
- 10
-3750.0
- 20
-13425.0
- 30
-0.0
-  0
-POINT
-  5
 251
 330
-244
+246
+100
+AcDbEntity
+  8
+Defpoints
+100
+AcDbPoint
+ 10
+3750.0
+ 20
+13425.0
+ 30
+0.0
+  0
+POINT
+  5
+252
+330
+246
+100
+AcDbEntity
+  8
+Defpoints
+100
+AcDbPoint
+ 10
+3750.0
+ 20
+13425.0
+ 30
+0.0
+  0
+POINT
+  5
+253
+330
+246
 100
 AcDbEntity
   8
@@ -12183,9 +12183,9 @@ AcDbPoint
   0
 ENDBLK
   5
-246
+248
 330
-244
+246
 100
 AcDbEntity
   8
@@ -12195,9 +12195,9 @@ AcDbBlockEnd
   0
 BLOCK
   5
-254
+256
 330
-253
+255
 100
 AcDbEntity
   8
@@ -12221,9 +12221,9 @@ AcDbBlockBegin
   0
 LINE
   5
-256
+258
 330
-253
+255
 100
 AcDbEntity
   8
@@ -12249,9 +12249,9 @@ AcDbLine
   0
 LINE
   5
-257
+259
 330
-253
+255
 100
 AcDbEntity
   8
@@ -12277,9 +12277,9 @@ AcDbLine
   0
 INSERT
   5
-258
+25A
 330
-253
+255
 100
 AcDbEntity
   8
@@ -12305,9 +12305,9 @@ _DOT
   0
 INSERT
   5
-25A
+25C
 330
-253
+255
 100
 AcDbEntity
   8
@@ -12333,9 +12333,9 @@ _DOT
   0
 LINE
   5
-25C
+25E
 330
-253
+255
 100
 AcDbEntity
   8
@@ -12361,9 +12361,9 @@ AcDbLine
   0
 MTEXT
   5
-25D
+25F
 330
-253
+255
 100
 AcDbEntity
   8
@@ -12391,45 +12391,45 @@ JP
   0
 POINT
   5
-25E
-330
-253
-100
-AcDbEntity
-  8
-Defpoints
-100
-AcDbPoint
- 10
-3750.0
- 20
-19425.0
- 30
-0.0
-  0
-POINT
-  5
-25F
-330
-253
-100
-AcDbEntity
-  8
-Defpoints
-100
-AcDbPoint
- 10
-3750.0
- 20
-19425.0
- 30
-0.0
-  0
-POINT
-  5
 260
 330
-253
+255
+100
+AcDbEntity
+  8
+Defpoints
+100
+AcDbPoint
+ 10
+3750.0
+ 20
+19425.0
+ 30
+0.0
+  0
+POINT
+  5
+261
+330
+255
+100
+AcDbEntity
+  8
+Defpoints
+100
+AcDbPoint
+ 10
+3750.0
+ 20
+19425.0
+ 30
+0.0
+  0
+POINT
+  5
+262
+330
+255
 100
 AcDbEntity
   8
@@ -12445,9 +12445,9 @@ AcDbPoint
   0
 ENDBLK
   5
-255
+257
 330
-253
+255
 100
 AcDbEntity
   8
@@ -12457,9 +12457,9 @@ AcDbBlockEnd
   0
 BLOCK
   5
-263
+265
 330
-262
+264
 100
 AcDbEntity
   8
@@ -12483,9 +12483,9 @@ AcDbBlockBegin
   0
 LINE
   5
-265
+267
 330
-262
+264
 100
 AcDbEntity
   8
@@ -12511,9 +12511,9 @@ AcDbLine
   0
 LINE
   5
-266
+268
 330
-262
+264
 100
 AcDbEntity
   8
@@ -12539,9 +12539,9 @@ AcDbLine
   0
 INSERT
   5
-267
+269
 330
-262
+264
 100
 AcDbEntity
   8
@@ -12567,9 +12567,9 @@ _DOT
   0
 INSERT
   5
-269
+26B
 330
-262
+264
 100
 AcDbEntity
   8
@@ -12595,9 +12595,9 @@ _DOT
   0
 LINE
   5
-26B
+26D
 330
-262
+264
 100
 AcDbEntity
   8
@@ -12623,9 +12623,9 @@ AcDbLine
   0
 MTEXT
   5
-26C
+26E
 330
-262
+264
 100
 AcDbEntity
   8
@@ -12653,45 +12653,45 @@ JP
   0
 POINT
   5
-26D
-330
-262
-100
-AcDbEntity
-  8
-Defpoints
-100
-AcDbPoint
- 10
-3200.0
- 20
-7055.0
- 30
-0.0
-  0
-POINT
-  5
-26E
-330
-262
-100
-AcDbEntity
-  8
-Defpoints
-100
-AcDbPoint
- 10
-3200.0
- 20
-7055.0
- 30
-0.0
-  0
-POINT
-  5
 26F
 330
-262
+264
+100
+AcDbEntity
+  8
+Defpoints
+100
+AcDbPoint
+ 10
+3200.0
+ 20
+7055.0
+ 30
+0.0
+  0
+POINT
+  5
+270
+330
+264
+100
+AcDbEntity
+  8
+Defpoints
+100
+AcDbPoint
+ 10
+3200.0
+ 20
+7055.0
+ 30
+0.0
+  0
+POINT
+  5
+271
+330
+264
 100
 AcDbEntity
   8
@@ -12707,9 +12707,9 @@ AcDbPoint
   0
 ENDBLK
   5
-264
+266
 330
-262
+264
 100
 AcDbEntity
   8
@@ -12719,9 +12719,9 @@ AcDbBlockEnd
   0
 BLOCK
   5
-272
+274
 330
-271
+273
 100
 AcDbEntity
   8
@@ -12745,9 +12745,9 @@ AcDbBlockBegin
   0
 LINE
   5
-274
+276
 330
-271
+273
 100
 AcDbEntity
   8
@@ -12773,9 +12773,9 @@ AcDbLine
   0
 LINE
   5
-275
+277
 330
-271
+273
 100
 AcDbEntity
   8
@@ -12801,9 +12801,9 @@ AcDbLine
   0
 INSERT
   5
-276
+278
 330
-271
+273
 100
 AcDbEntity
   8
@@ -12829,9 +12829,9 @@ _DOT
   0
 INSERT
   5
-278
+27A
 330
-271
+273
 100
 AcDbEntity
   8
@@ -12855,9 +12855,9 @@ _DOT
   0
 LINE
   5
-27A
+27C
 330
-271
+273
 100
 AcDbEntity
   8
@@ -12883,9 +12883,9 @@ AcDbLine
   0
 MTEXT
   5
-27B
+27D
 330
-271
+273
 100
 AcDbEntity
   8
@@ -12911,45 +12911,45 @@ JP
   0
 POINT
   5
-27C
-330
-271
-100
-AcDbEntity
-  8
-Defpoints
-100
-AcDbPoint
- 10
-5200.0
- 20
-26750.0
- 30
-0.0
-  0
-POINT
-  5
-27D
-330
-271
-100
-AcDbEntity
-  8
-Defpoints
-100
-AcDbPoint
- 10
-5200.0
- 20
-26750.0
- 30
-0.0
-  0
-POINT
-  5
 27E
 330
-271
+273
+100
+AcDbEntity
+  8
+Defpoints
+100
+AcDbPoint
+ 10
+5200.0
+ 20
+26750.0
+ 30
+0.0
+  0
+POINT
+  5
+27F
+330
+273
+100
+AcDbEntity
+  8
+Defpoints
+100
+AcDbPoint
+ 10
+5200.0
+ 20
+26750.0
+ 30
+0.0
+  0
+POINT
+  5
+280
+330
+273
 100
 AcDbEntity
   8
@@ -12965,9 +12965,9 @@ AcDbPoint
   0
 ENDBLK
   5
-273
+275
 330
-271
+273
 100
 AcDbEntity
   8
@@ -12977,9 +12977,9 @@ AcDbBlockEnd
   0
 BLOCK
   5
-281
+283
 330
-280
+282
 100
 AcDbEntity
   8
@@ -13003,9 +13003,9 @@ AcDbBlockBegin
   0
 LINE
   5
-283
+285
 330
-280
+282
 100
 AcDbEntity
   8
@@ -13031,9 +13031,9 @@ AcDbLine
   0
 LINE
   5
-284
+286
 330
-280
+282
 100
 AcDbEntity
   8
@@ -13059,9 +13059,9 @@ AcDbLine
   0
 INSERT
   5
-285
+287
 330
-280
+282
 100
 AcDbEntity
   8
@@ -13087,9 +13087,9 @@ _DOT
   0
 INSERT
   5
-287
+289
 330
-280
+282
 100
 AcDbEntity
   8
@@ -13113,9 +13113,9 @@ _DOT
   0
 LINE
   5
-289
+28B
 330
-280
+282
 100
 AcDbEntity
   8
@@ -13141,9 +13141,9 @@ AcDbLine
   0
 MTEXT
   5
-28A
+28C
 330
-280
+282
 100
 AcDbEntity
   8
@@ -13169,45 +13169,45 @@ JP
   0
 POINT
   5
-28B
-330
-280
-100
-AcDbEntity
-  8
-Defpoints
-100
-AcDbPoint
- 10
-11325.0
- 20
-26750.0
- 30
-0.0
-  0
-POINT
-  5
-28C
-330
-280
-100
-AcDbEntity
-  8
-Defpoints
-100
-AcDbPoint
- 10
-11325.0
- 20
-26750.0
- 30
-0.0
-  0
-POINT
-  5
 28D
 330
-280
+282
+100
+AcDbEntity
+  8
+Defpoints
+100
+AcDbPoint
+ 10
+11325.0
+ 20
+26750.0
+ 30
+0.0
+  0
+POINT
+  5
+28E
+330
+282
+100
+AcDbEntity
+  8
+Defpoints
+100
+AcDbPoint
+ 10
+11325.0
+ 20
+26750.0
+ 30
+0.0
+  0
+POINT
+  5
+28F
+330
+282
 100
 AcDbEntity
   8
@@ -13223,9 +13223,9 @@ AcDbPoint
   0
 ENDBLK
   5
-282
+284
 330
-280
+282
 100
 AcDbEntity
   8
@@ -13235,9 +13235,9 @@ AcDbBlockEnd
   0
 BLOCK
   5
-290
+292
 330
-28F
+291
 100
 AcDbEntity
   8
@@ -13261,9 +13261,9 @@ AcDbBlockBegin
   0
 LINE
   5
-292
+294
 330
-28F
+291
 100
 AcDbEntity
   8
@@ -13289,9 +13289,9 @@ AcDbLine
   0
 LINE
   5
-293
+295
 330
-28F
+291
 100
 AcDbEntity
   8
@@ -13317,9 +13317,9 @@ AcDbLine
   0
 INSERT
   5
-294
+296
 330
-28F
+291
 100
 AcDbEntity
   8
@@ -13345,9 +13345,9 @@ _DOT
   0
 INSERT
   5
-296
+298
 330
-28F
+291
 100
 AcDbEntity
   8
@@ -13371,9 +13371,9 @@ _DOT
   0
 LINE
   5
-298
+29A
 330
-28F
+291
 100
 AcDbEntity
   8
@@ -13399,9 +13399,9 @@ AcDbLine
   0
 MTEXT
   5
-299
+29B
 330
-28F
+291
 100
 AcDbEntity
   8
@@ -13427,45 +13427,45 @@ JP
   0
 POINT
   5
-29A
-330
-28F
-100
-AcDbEntity
-  8
-Defpoints
-100
-AcDbPoint
- 10
-17325.0
- 20
-26750.0
- 30
-0.0
-  0
-POINT
-  5
-29B
-330
-28F
-100
-AcDbEntity
-  8
-Defpoints
-100
-AcDbPoint
- 10
-17325.0
- 20
-26750.0
- 30
-0.0
-  0
-POINT
-  5
 29C
 330
-28F
+291
+100
+AcDbEntity
+  8
+Defpoints
+100
+AcDbPoint
+ 10
+17325.0
+ 20
+26750.0
+ 30
+0.0
+  0
+POINT
+  5
+29D
+330
+291
+100
+AcDbEntity
+  8
+Defpoints
+100
+AcDbPoint
+ 10
+17325.0
+ 20
+26750.0
+ 30
+0.0
+  0
+POINT
+  5
+29E
+330
+291
 100
 AcDbEntity
   8
@@ -13481,9 +13481,9 @@ AcDbPoint
   0
 ENDBLK
   5
-291
+293
 330
-28F
+291
 100
 AcDbEntity
   8
@@ -13493,9 +13493,9 @@ AcDbBlockEnd
   0
 BLOCK
   5
-29F
+2A1
 330
-29E
+2A0
 100
 AcDbEntity
   8
@@ -13519,9 +13519,9 @@ AcDbBlockBegin
   0
 LINE
   5
-2A1
+2A3
 330
-29E
+2A0
 100
 AcDbEntity
   8
@@ -13547,9 +13547,9 @@ AcDbLine
   0
 LINE
   5
-2A2
+2A4
 330
-29E
+2A0
 100
 AcDbEntity
   8
@@ -13575,9 +13575,9 @@ AcDbLine
   0
 INSERT
   5
-2A3
+2A5
 330
-29E
+2A0
 100
 AcDbEntity
   8
@@ -13603,9 +13603,9 @@ _DOT
   0
 INSERT
   5
-2A5
+2A7
 330
-29E
+2A0
 100
 AcDbEntity
   8
@@ -13631,9 +13631,9 @@ _DOT
   0
 LINE
   5
-2A7
+2A9
 330
-29E
+2A0
 100
 AcDbEntity
   8
@@ -13659,9 +13659,9 @@ AcDbLine
   0
 MTEXT
   5
-2A8
+2AA
 330
-29E
+2A0
 100
 AcDbEntity
   8
@@ -13689,45 +13689,45 @@ JP
   0
 POINT
   5
-2A9
-330
-29E
-100
-AcDbEntity
-  8
-Defpoints
-100
-AcDbPoint
- 10
-24650.0
- 20
-7300.0
- 30
-0.0
-  0
-POINT
-  5
-2AA
-330
-29E
-100
-AcDbEntity
-  8
-Defpoints
-100
-AcDbPoint
- 10
-24650.0
- 20
-7300.0
- 30
-0.0
-  0
-POINT
-  5
 2AB
 330
-29E
+2A0
+100
+AcDbEntity
+  8
+Defpoints
+100
+AcDbPoint
+ 10
+24650.0
+ 20
+7300.0
+ 30
+0.0
+  0
+POINT
+  5
+2AC
+330
+2A0
+100
+AcDbEntity
+  8
+Defpoints
+100
+AcDbPoint
+ 10
+24650.0
+ 20
+7300.0
+ 30
+0.0
+  0
+POINT
+  5
+2AD
+330
+2A0
 100
 AcDbEntity
   8
@@ -13743,9 +13743,9 @@ AcDbPoint
   0
 ENDBLK
   5
-2A0
+2A2
 330
-29E
+2A0
 100
 AcDbEntity
   8
@@ -13755,9 +13755,9 @@ AcDbBlockEnd
   0
 BLOCK
   5
-2AE
+2B0
 330
-2AD
+2AF
 100
 AcDbEntity
   8
@@ -13781,9 +13781,9 @@ AcDbBlockBegin
   0
 LINE
   5
-2B0
+2B2
 330
-2AD
+2AF
 100
 AcDbEntity
   8
@@ -13809,9 +13809,9 @@ AcDbLine
   0
 LINE
   5
-2B1
+2B3
 330
-2AD
+2AF
 100
 AcDbEntity
   8
@@ -13837,9 +13837,9 @@ AcDbLine
   0
 INSERT
   5
-2B2
+2B4
 330
-2AD
+2AF
 100
 AcDbEntity
   8
@@ -13865,9 +13865,9 @@ _DOT
   0
 INSERT
   5
-2B4
+2B6
 330
-2AD
+2AF
 100
 AcDbEntity
   8
@@ -13893,9 +13893,9 @@ _DOT
   0
 LINE
   5
-2B6
+2B8
 330
-2AD
+2AF
 100
 AcDbEntity
   8
@@ -13921,9 +13921,9 @@ AcDbLine
   0
 MTEXT
   5
-2B7
+2B9
 330
-2AD
+2AF
 100
 AcDbEntity
   8
@@ -13951,45 +13951,45 @@ JP
   0
 POINT
   5
-2B8
-330
-2AD
-100
-AcDbEntity
-  8
-Defpoints
-100
-AcDbPoint
- 10
-24650.0
- 20
-13425.0
- 30
-0.0
-  0
-POINT
-  5
-2B9
-330
-2AD
-100
-AcDbEntity
-  8
-Defpoints
-100
-AcDbPoint
- 10
-24650.0
- 20
-13425.0
- 30
-0.0
-  0
-POINT
-  5
 2BA
 330
-2AD
+2AF
+100
+AcDbEntity
+  8
+Defpoints
+100
+AcDbPoint
+ 10
+24650.0
+ 20
+13425.0
+ 30
+0.0
+  0
+POINT
+  5
+2BB
+330
+2AF
+100
+AcDbEntity
+  8
+Defpoints
+100
+AcDbPoint
+ 10
+24650.0
+ 20
+13425.0
+ 30
+0.0
+  0
+POINT
+  5
+2BC
+330
+2AF
 100
 AcDbEntity
   8
@@ -14005,9 +14005,9 @@ AcDbPoint
   0
 ENDBLK
   5
-2AF
+2B1
 330
-2AD
+2AF
 100
 AcDbEntity
   8
@@ -14017,9 +14017,9 @@ AcDbBlockEnd
   0
 BLOCK
   5
-2BD
+2BF
 330
-2BC
+2BE
 100
 AcDbEntity
   8
@@ -14043,9 +14043,9 @@ AcDbBlockBegin
   0
 LINE
   5
-2BF
+2C1
 330
-2BC
+2BE
 100
 AcDbEntity
   8
@@ -14071,9 +14071,9 @@ AcDbLine
   0
 LINE
   5
-2C0
+2C2
 330
-2BC
+2BE
 100
 AcDbEntity
   8
@@ -14099,9 +14099,9 @@ AcDbLine
   0
 INSERT
   5
-2C1
+2C3
 330
-2BC
+2BE
 100
 AcDbEntity
   8
@@ -14127,9 +14127,9 @@ _DOT
   0
 INSERT
   5
-2C3
+2C5
 330
-2BC
+2BE
 100
 AcDbEntity
   8
@@ -14155,9 +14155,9 @@ _DOT
   0
 LINE
   5
-2C5
+2C7
 330
-2BC
+2BE
 100
 AcDbEntity
   8
@@ -14183,9 +14183,9 @@ AcDbLine
   0
 MTEXT
   5
-2C6
+2C8
 330
-2BC
+2BE
 100
 AcDbEntity
   8
@@ -14213,45 +14213,45 @@ JP
   0
 POINT
   5
-2C7
-330
-2BC
-100
-AcDbEntity
-  8
-Defpoints
-100
-AcDbPoint
- 10
-24650.0
- 20
-19425.0
- 30
-0.0
-  0
-POINT
-  5
-2C8
-330
-2BC
-100
-AcDbEntity
-  8
-Defpoints
-100
-AcDbPoint
- 10
-24650.0
- 20
-19425.0
- 30
-0.0
-  0
-POINT
-  5
 2C9
 330
-2BC
+2BE
+100
+AcDbEntity
+  8
+Defpoints
+100
+AcDbPoint
+ 10
+24650.0
+ 20
+19425.0
+ 30
+0.0
+  0
+POINT
+  5
+2CA
+330
+2BE
+100
+AcDbEntity
+  8
+Defpoints
+100
+AcDbPoint
+ 10
+24650.0
+ 20
+19425.0
+ 30
+0.0
+  0
+POINT
+  5
+2CB
+330
+2BE
 100
 AcDbEntity
   8
@@ -14267,9 +14267,9 @@ AcDbPoint
   0
 ENDBLK
   5
-2BE
+2C0
 330
-2BC
+2BE
 100
 AcDbEntity
   8
@@ -17103,9 +17103,81 @@ AcDbPolyline
  20
 9215.0
   0
-HATCH
+LWPOLYLINE
   5
 EF
+330
+17
+100
+AcDbEntity
+  8
+A-DOOR
+100
+AcDbPolyline
+ 90
+5
+ 70
+0
+ 10
+16010.0
+ 20
+6960.0
+ 10
+16010.0
+ 20
+7040.0
+ 10
+16090.0
+ 20
+7040.0
+ 10
+16090.0
+ 20
+6960.0
+ 10
+16010.0
+ 20
+6960.0
+  0
+LWPOLYLINE
+  5
+F0
+330
+17
+100
+AcDbEntity
+  8
+A-DOOR
+100
+AcDbPolyline
+ 90
+5
+ 70
+0
+ 10
+4060.0
+ 20
+11710.0
+ 10
+4060.0
+ 20
+11790.0
+ 10
+4140.0
+ 20
+11790.0
+ 10
+4140.0
+ 20
+11710.0
+ 10
+4060.0
+ 20
+11710.0
+  0
+HATCH
+  5
+F1
 330
 17
 100
@@ -17357,7 +17429,7 @@ ANSI37
   0
 LWPOLYLINE
   5
-F0
+F2
 330
 17
 100
@@ -17419,7 +17491,7 @@ AcDbPolyline
   0
 LWPOLYLINE
   5
-F1
+F3
 330
 17
 100
@@ -17501,7 +17573,7 @@ AcDbPolyline
   0
 LWPOLYLINE
   5
-F2
+F4
 330
 17
 100
@@ -17539,7 +17611,7 @@ AcDbPolyline
   0
 LWPOLYLINE
   5
-F3
+F5
 330
 17
 100
@@ -17585,85 +17657,13 @@ AcDbPolyline
   0
 LWPOLYLINE
   5
-F4
-330
-17
-100
-AcDbEntity
-  8
-A-STRS
-100
-AcDbPolyline
- 90
-5
- 70
-0
- 10
-9200.0
- 20
-23780.0
- 10
-10150.0
- 20
-23780.0
- 10
-10150.0
- 20
-23550.0
- 10
-9200.0
- 20
-23550.0
- 10
-9200.0
- 20
-23780.0
-  0
-LWPOLYLINE
-  5
-F5
-330
-17
-100
-AcDbEntity
-  8
-A-STRS
-100
-AcDbPolyline
- 90
-5
- 70
-0
- 10
-11450.0
- 20
-17360.0
- 10
-12600.0
- 20
-17360.0
- 10
-12600.0
- 20
-17100.0
- 10
-11450.0
- 20
-17100.0
- 10
-11450.0
- 20
-17360.0
-  0
-LWPOLYLINE
-  5
 F6
 330
 17
 100
 AcDbEntity
   8
-A-VIS
+A-STRS
 100
 AcDbPolyline
  90
@@ -17671,25 +17671,25 @@ AcDbPolyline
  70
 0
  10
-23325.0
+9200.0
  20
-22800.0
+23780.0
  10
-23325.0
+10150.0
  20
-24000.0
+23780.0
  10
-23575.0
+10150.0
  20
-24000.0
+23550.0
  10
-23575.0
+9200.0
  20
-22800.0
+23550.0
  10
-23325.0
+9200.0
  20
-22800.0
+23780.0
   0
 LWPOLYLINE
   5
@@ -17699,6 +17699,78 @@ F7
 100
 AcDbEntity
   8
+A-STRS
+100
+AcDbPolyline
+ 90
+5
+ 70
+0
+ 10
+11450.0
+ 20
+17360.0
+ 10
+12600.0
+ 20
+17360.0
+ 10
+12600.0
+ 20
+17100.0
+ 10
+11450.0
+ 20
+17100.0
+ 10
+11450.0
+ 20
+17360.0
+  0
+LWPOLYLINE
+  5
+F8
+330
+17
+100
+AcDbEntity
+  8
+A-VIS
+100
+AcDbPolyline
+ 90
+5
+ 70
+0
+ 10
+23325.0
+ 20
+22800.0
+ 10
+23325.0
+ 20
+24000.0
+ 10
+23575.0
+ 20
+24000.0
+ 10
+23575.0
+ 20
+22800.0
+ 10
+23325.0
+ 20
+22800.0
+  0
+LWPOLYLINE
+  5
+F9
+330
+17
+100
+AcDbEntity
+  8
 A-VIS
 100
 AcDbPolyline
@@ -17729,79 +17801,79 @@ AcDbPolyline
   0
 LWPOLYLINE
   5
-F8
-330
-17
-100
-AcDbEntity
-  8
-A-STRS
-100
-AcDbPolyline
- 90
-5
- 70
-0
- 10
-9200.0
- 20
-23550.0
- 10
-10150.0
- 20
-23550.0
- 10
-10150.0
- 20
-23320.0
- 10
-9200.0
- 20
-23320.0
- 10
-9200.0
- 20
-23550.0
-  0
-LWPOLYLINE
-  5
-F9
-330
-17
-100
-AcDbEntity
-  8
-A-STRS
-100
-AcDbPolyline
- 90
-5
- 70
-0
- 10
-11450.0
- 20
-17100.0
- 10
-12600.0
- 20
-17100.0
- 10
-12600.0
- 20
-16840.0
- 10
-11450.0
- 20
-16840.0
- 10
-11450.0
- 20
-17100.0
-  0
-LWPOLYLINE
-  5
 FA
+330
+17
+100
+AcDbEntity
+  8
+A-STRS
+100
+AcDbPolyline
+ 90
+5
+ 70
+0
+ 10
+9200.0
+ 20
+23550.0
+ 10
+10150.0
+ 20
+23550.0
+ 10
+10150.0
+ 20
+23320.0
+ 10
+9200.0
+ 20
+23320.0
+ 10
+9200.0
+ 20
+23550.0
+  0
+LWPOLYLINE
+  5
+FB
+330
+17
+100
+AcDbEntity
+  8
+A-STRS
+100
+AcDbPolyline
+ 90
+5
+ 70
+0
+ 10
+11450.0
+ 20
+17100.0
+ 10
+12600.0
+ 20
+17100.0
+ 10
+12600.0
+ 20
+16840.0
+ 10
+11450.0
+ 20
+16840.0
+ 10
+11450.0
+ 20
+17100.0
+  0
+LWPOLYLINE
+  5
+FC
 330
 17
 100
@@ -17849,7 +17921,7 @@ AcDbPolyline
   0
 LWPOLYLINE
   5
-FB
+FD
 330
 17
 100
@@ -17909,7 +17981,7 @@ AcDbPolyline
   0
 LWPOLYLINE
   5
-FC
+FE
 330
 17
 100
@@ -17949,7 +18021,7 @@ AcDbPolyline
   0
 LWPOLYLINE
   5
-FD
+FF
 330
 17
 100
@@ -17985,7 +18057,7 @@ AcDbPolyline
   0
 LWPOLYLINE
   5
-FE
+100
 330
 17
 100
@@ -18018,78 +18090,6 @@ AcDbPolyline
 9200.0
  20
 23320.0
-  0
-LWPOLYLINE
-  5
-FF
-330
-17
-100
-AcDbEntity
-  8
-A-STRS
-100
-AcDbPolyline
- 90
-5
- 70
-0
- 10
-11450.0
- 20
-16840.0
- 10
-12600.0
- 20
-16840.0
- 10
-12600.0
- 20
-16580.0
- 10
-11450.0
- 20
-16580.0
- 10
-11450.0
- 20
-16840.0
-  0
-LWPOLYLINE
-  5
-100
-330
-17
-100
-AcDbEntity
-  8
-A-STRS
-100
-AcDbPolyline
- 90
-5
- 70
-0
- 10
-9200.0
- 20
-23090.0
- 10
-10150.0
- 20
-23090.0
- 10
-10150.0
- 20
-22860.0
- 10
-9200.0
- 20
-22860.0
- 10
-9200.0
- 20
-23090.0
   0
 LWPOLYLINE
   5
@@ -18109,23 +18109,23 @@ AcDbPolyline
  10
 11450.0
  20
-16580.0
+16840.0
+ 10
+12600.0
+ 20
+16840.0
  10
 12600.0
  20
 16580.0
  10
-12600.0
- 20
-16320.0
- 10
-11450.0
- 20
-16320.0
- 10
 11450.0
  20
 16580.0
+ 10
+11450.0
+ 20
+16840.0
   0
 LWPOLYLINE
   5
@@ -18145,23 +18145,23 @@ AcDbPolyline
  10
 9200.0
  20
-22860.0
+23090.0
+ 10
+10150.0
+ 20
+23090.0
  10
 10150.0
  20
 22860.0
  10
-10150.0
- 20
-22630.0
- 10
-9200.0
- 20
-22630.0
- 10
 9200.0
  20
 22860.0
+ 10
+9200.0
+ 20
+23090.0
   0
 LWPOLYLINE
   5
@@ -18181,23 +18181,23 @@ AcDbPolyline
  10
 11450.0
  20
-16320.0
+16580.0
+ 10
+12600.0
+ 20
+16580.0
  10
 12600.0
  20
 16320.0
  10
-12600.0
- 20
-16060.0
- 10
-11450.0
- 20
-16060.0
- 10
 11450.0
  20
 16320.0
+ 10
+11450.0
+ 20
+16580.0
   0
 LWPOLYLINE
   5
@@ -18207,7 +18207,7 @@ LWPOLYLINE
 100
 AcDbEntity
   8
-A-DOOR
+A-STRS
 100
 AcDbPolyline
  90
@@ -18215,25 +18215,25 @@ AcDbPolyline
  70
 0
  10
-19200.0
+9200.0
  20
--20513.55746098034
+22860.0
  10
-19200.0
+10150.0
  20
--19913.55746098034
+22860.0
  10
-19800.0
+10150.0
  20
--19913.55746098034
+22630.0
  10
-19800.0
+9200.0
  20
--20513.55746098034
+22630.0
  10
-19200.0
+9200.0
  20
--20513.55746098034
+22860.0
   0
 LWPOLYLINE
   5
@@ -18251,6 +18251,78 @@ AcDbPolyline
  70
 0
  10
+11450.0
+ 20
+16320.0
+ 10
+12600.0
+ 20
+16320.0
+ 10
+12600.0
+ 20
+16060.0
+ 10
+11450.0
+ 20
+16060.0
+ 10
+11450.0
+ 20
+16320.0
+  0
+LWPOLYLINE
+  5
+106
+330
+17
+100
+AcDbEntity
+  8
+A-DOOR
+100
+AcDbPolyline
+ 90
+5
+ 70
+0
+ 10
+19200.0
+ 20
+-20513.55746098034
+ 10
+19200.0
+ 20
+-19913.55746098034
+ 10
+19800.0
+ 20
+-19913.55746098034
+ 10
+19800.0
+ 20
+-20513.55746098034
+ 10
+19200.0
+ 20
+-20513.55746098034
+  0
+LWPOLYLINE
+  5
+107
+330
+17
+100
+AcDbEntity
+  8
+A-STRS
+100
+AcDbPolyline
+ 90
+5
+ 70
+0
+ 10
 9200.0
  20
 22630.0
@@ -18273,7 +18345,7 @@ AcDbPolyline
   0
 LWPOLYLINE
   5
-106
+108
 330
 17
 100
@@ -18309,7 +18381,7 @@ AcDbPolyline
   0
 LWPOLYLINE
   5
-107
+109
 330
 17
 100
@@ -18345,70 +18417,6 @@ AcDbPolyline
   0
 LWPOLYLINE
   5
-108
-330
-17
-100
-AcDbEntity
-  8
-A-VIS
-100
-AcDbPolyline
- 90
-4
- 70
-0
- 10
-17200.0
- 20
-9700.5
- 10
-17200.0
- 20
-9700.0
- 10
-11450.0
- 20
-9700.0
- 10
-11450.0
- 20
-9700.5
-  0
-LWPOLYLINE
-  5
-109
-330
-17
-100
-AcDbEntity
-  8
-A-VIS
-100
-AcDbPolyline
- 90
-4
- 70
-0
- 10
-14800.0
- 20
-7175.5
- 10
-14800.0
- 20
-7175.0
- 10
-13800.0
- 20
-7175.0
- 10
-13800.0
- 20
-7175.5
-  0
-LWPOLYLINE
-  5
 10A
 330
 17
@@ -18423,21 +18431,21 @@ AcDbPolyline
  70
 0
  10
-13800.0
+17200.0
  20
-7424.5
+9700.5
  10
-13800.0
+17200.0
  20
-7425.0
+9700.0
  10
-14800.0
+11450.0
  20
-7425.0
+9700.0
  10
-14800.0
+11450.0
  20
-7424.5
+9700.5
   0
 LWPOLYLINE
   5
@@ -18457,6 +18465,70 @@ AcDbPolyline
  10
 14800.0
  20
+7175.5
+ 10
+14800.0
+ 20
+7175.0
+ 10
+13800.0
+ 20
+7175.0
+ 10
+13800.0
+ 20
+7175.5
+  0
+LWPOLYLINE
+  5
+10C
+330
+17
+100
+AcDbEntity
+  8
+A-VIS
+100
+AcDbPolyline
+ 90
+4
+ 70
+0
+ 10
+13800.0
+ 20
+7424.5
+ 10
+13800.0
+ 20
+7425.0
+ 10
+14800.0
+ 20
+7425.0
+ 10
+14800.0
+ 20
+7424.5
+  0
+LWPOLYLINE
+  5
+10D
+330
+17
+100
+AcDbEntity
+  8
+A-VIS
+100
+AcDbPolyline
+ 90
+4
+ 70
+0
+ 10
+14800.0
+ 20
 7055.5
  10
 14800.0
@@ -18473,7 +18545,7 @@ AcDbPolyline
   0
 LWPOLYLINE
   5
-10C
+10E
 330
 17
 100
@@ -18505,7 +18577,7 @@ AcDbPolyline
   0
 LWPOLYLINE
   5
-10D
+10F
 330
 17
 100
@@ -18538,94 +18610,6 @@ AcDbPolyline
 11450.0
  20
 9300.0
-  0
-LWPOLYLINE
-  5
-10E
-330
-17
-100
-AcDbEntity
-  8
-A-VIS
-100
-AcDbPolyline
- 90
-7
- 70
-0
- 10
-14800.0
- 20
-7425.0
- 10
-13800.0
- 20
-7425.0
- 10
-11450.0
- 20
-7425.0
- 10
-11450.0
- 20
-9300.0
- 10
-17200.0
- 20
-9300.0
- 10
-17200.0
- 20
-7425.0
- 10
-14800.0
- 20
-7425.0
-  0
-LWPOLYLINE
-  5
-10F
-330
-17
-100
-AcDbEntity
-  8
-A-STRS
-100
-AcDbPolyline
- 90
-7
- 70
-0
- 10
-13000.0
- 20
-5055.0
- 10
-13000.0
- 20
-7055.0
- 10
-13800.0
- 20
-7055.0
- 10
-14800.0
- 20
-7055.0
- 10
-15600.0
- 20
-7055.0
- 10
-15600.0
- 20
-5055.0
- 10
-13000.0
- 20
-5055.0
   0
 LWPOLYLINE
   5
@@ -18635,33 +18619,41 @@ LWPOLYLINE
 100
 AcDbEntity
   8
-A-STRS
+A-VIS
 100
 AcDbPolyline
  90
-5
+7
  70
 0
  10
-13300.0
+14800.0
  20
-4755.0
+7425.0
  10
-13300.0
+13800.0
  20
-5055.0
+7425.0
  10
-15300.0
+11450.0
  20
-5055.0
+7425.0
  10
-15300.0
+11450.0
  20
-4755.0
+9300.0
  10
-13300.0
+17200.0
  20
-4755.0
+9300.0
+ 10
+17200.0
+ 20
+7425.0
+ 10
+14800.0
+ 20
+7425.0
   0
 LWPOLYLINE
   5
@@ -18675,29 +18667,37 @@ A-STRS
 100
 AcDbPolyline
  90
-5
+7
  70
 0
  10
-13300.0
+13000.0
  20
-4455.0
+5055.0
  10
-13300.0
+13000.0
  20
-4755.0
+7055.0
  10
-15300.0
+13800.0
  20
-4755.0
+7055.0
  10
-15300.0
+14800.0
  20
-4455.0
+7055.0
  10
-13300.0
+15600.0
  20
-4455.0
+7055.0
+ 10
+15600.0
+ 20
+5055.0
+ 10
+13000.0
+ 20
+5055.0
   0
 LWPOLYLINE
   5
@@ -18717,6 +18717,78 @@ AcDbPolyline
  10
 13300.0
  20
+4755.0
+ 10
+13300.0
+ 20
+5055.0
+ 10
+15300.0
+ 20
+5055.0
+ 10
+15300.0
+ 20
+4755.0
+ 10
+13300.0
+ 20
+4755.0
+  0
+LWPOLYLINE
+  5
+113
+330
+17
+100
+AcDbEntity
+  8
+A-STRS
+100
+AcDbPolyline
+ 90
+5
+ 70
+0
+ 10
+13300.0
+ 20
+4455.0
+ 10
+13300.0
+ 20
+4755.0
+ 10
+15300.0
+ 20
+4755.0
+ 10
+15300.0
+ 20
+4455.0
+ 10
+13300.0
+ 20
+4455.0
+  0
+LWPOLYLINE
+  5
+114
+330
+17
+100
+AcDbEntity
+  8
+A-STRS
+100
+AcDbPolyline
+ 90
+5
+ 70
+0
+ 10
+13300.0
+ 20
 4155.0
  10
 13300.0
@@ -18737,7 +18809,7 @@ AcDbPolyline
   0
 LINE
   5
-113
+115
 330
 17
 100
@@ -18761,62 +18833,6 @@ AcDbLine
   0
 CIRCLE
   5
-114
-330
-17
-100
-AcDbEntity
-  8
-A-GRID-SYMB
-100
-AcDbCircle
- 10
-5200.0
- 20
-5000.0
- 30
-0.0
- 40
-360.0
-  0
-TEXT
-  5
-115
-330
-17
-100
-AcDbEntity
-  8
-A-GRID-SYMB
-100
-AcDbText
- 10
-5200.0
- 20
-5000.0
- 30
-0.0
- 40
-300.0
-  1
-X1
-  7
-JP
- 72
-1
- 11
-5200.0
- 21
-5000.0
- 31
-0.0
-100
-AcDbText
- 73
-2
-  0
-CIRCLE
-  5
 116
 330
 17
@@ -18829,7 +18845,7 @@ AcDbCircle
  10
 5200.0
  20
-27850.0
+5000.0
  30
 0.0
  40
@@ -18849,6 +18865,62 @@ AcDbText
  10
 5200.0
  20
+5000.0
+ 30
+0.0
+ 40
+300.0
+  1
+X1
+  7
+JP
+ 72
+1
+ 11
+5200.0
+ 21
+5000.0
+ 31
+0.0
+100
+AcDbText
+ 73
+2
+  0
+CIRCLE
+  5
+118
+330
+17
+100
+AcDbEntity
+  8
+A-GRID-SYMB
+100
+AcDbCircle
+ 10
+5200.0
+ 20
+27850.0
+ 30
+0.0
+ 40
+360.0
+  0
+TEXT
+  5
+119
+330
+17
+100
+AcDbEntity
+  8
+A-GRID-SYMB
+100
+AcDbText
+ 10
+5200.0
+ 20
 27850.0
  30
 0.0
@@ -18873,7 +18945,7 @@ AcDbText
   0
 LINE
   5
-118
+11A
 330
 17
 100
@@ -18897,62 +18969,6 @@ AcDbLine
   0
 CIRCLE
   5
-119
-330
-17
-100
-AcDbEntity
-  8
-A-GRID-SYMB
-100
-AcDbCircle
- 10
-11325.0
- 20
-5000.0
- 30
-0.0
- 40
-360.0
-  0
-TEXT
-  5
-11A
-330
-17
-100
-AcDbEntity
-  8
-A-GRID-SYMB
-100
-AcDbText
- 10
-11325.0
- 20
-5000.0
- 30
-0.0
- 40
-300.0
-  1
-X2
-  7
-JP
- 72
-1
- 11
-11325.0
- 21
-5000.0
- 31
-0.0
-100
-AcDbText
- 73
-2
-  0
-CIRCLE
-  5
 11B
 330
 17
@@ -18965,7 +18981,7 @@ AcDbCircle
  10
 11325.0
  20
-27850.0
+5000.0
  30
 0.0
  40
@@ -18985,6 +19001,62 @@ AcDbText
  10
 11325.0
  20
+5000.0
+ 30
+0.0
+ 40
+300.0
+  1
+X2
+  7
+JP
+ 72
+1
+ 11
+11325.0
+ 21
+5000.0
+ 31
+0.0
+100
+AcDbText
+ 73
+2
+  0
+CIRCLE
+  5
+11D
+330
+17
+100
+AcDbEntity
+  8
+A-GRID-SYMB
+100
+AcDbCircle
+ 10
+11325.0
+ 20
+27850.0
+ 30
+0.0
+ 40
+360.0
+  0
+TEXT
+  5
+11E
+330
+17
+100
+AcDbEntity
+  8
+A-GRID-SYMB
+100
+AcDbText
+ 10
+11325.0
+ 20
 27850.0
  30
 0.0
@@ -19009,7 +19081,7 @@ AcDbText
   0
 LINE
   5
-11D
+11F
 330
 17
 100
@@ -19033,62 +19105,6 @@ AcDbLine
   0
 CIRCLE
   5
-11E
-330
-17
-100
-AcDbEntity
-  8
-A-GRID-SYMB
-100
-AcDbCircle
- 10
-17325.0
- 20
-5000.0
- 30
-0.0
- 40
-360.0
-  0
-TEXT
-  5
-11F
-330
-17
-100
-AcDbEntity
-  8
-A-GRID-SYMB
-100
-AcDbText
- 10
-17325.0
- 20
-5000.0
- 30
-0.0
- 40
-300.0
-  1
-X3
-  7
-JP
- 72
-1
- 11
-17325.0
- 21
-5000.0
- 31
-0.0
-100
-AcDbText
- 73
-2
-  0
-CIRCLE
-  5
 120
 330
 17
@@ -19101,7 +19117,7 @@ AcDbCircle
  10
 17325.0
  20
-27850.0
+5000.0
  30
 0.0
  40
@@ -19121,6 +19137,62 @@ AcDbText
  10
 17325.0
  20
+5000.0
+ 30
+0.0
+ 40
+300.0
+  1
+X3
+  7
+JP
+ 72
+1
+ 11
+17325.0
+ 21
+5000.0
+ 31
+0.0
+100
+AcDbText
+ 73
+2
+  0
+CIRCLE
+  5
+122
+330
+17
+100
+AcDbEntity
+  8
+A-GRID-SYMB
+100
+AcDbCircle
+ 10
+17325.0
+ 20
+27850.0
+ 30
+0.0
+ 40
+360.0
+  0
+TEXT
+  5
+123
+330
+17
+100
+AcDbEntity
+  8
+A-GRID-SYMB
+100
+AcDbText
+ 10
+17325.0
+ 20
 27850.0
  30
 0.0
@@ -19145,7 +19217,7 @@ AcDbText
   0
 LINE
   5
-122
+124
 330
 17
 100
@@ -19169,62 +19241,6 @@ AcDbLine
   0
 CIRCLE
   5
-123
-330
-17
-100
-AcDbEntity
-  8
-A-GRID-SYMB
-100
-AcDbCircle
- 10
-23450.0
- 20
-5000.0
- 30
-0.0
- 40
-360.0
-  0
-TEXT
-  5
-124
-330
-17
-100
-AcDbEntity
-  8
-A-GRID-SYMB
-100
-AcDbText
- 10
-23450.0
- 20
-5000.0
- 30
-0.0
- 40
-300.0
-  1
-X4
-  7
-JP
- 72
-1
- 11
-23450.0
- 21
-5000.0
- 31
-0.0
-100
-AcDbText
- 73
-2
-  0
-CIRCLE
-  5
 125
 330
 17
@@ -19237,7 +19253,7 @@ AcDbCircle
  10
 23450.0
  20
-27850.0
+5000.0
  30
 0.0
  40
@@ -19257,6 +19273,62 @@ AcDbText
  10
 23450.0
  20
+5000.0
+ 30
+0.0
+ 40
+300.0
+  1
+X4
+  7
+JP
+ 72
+1
+ 11
+23450.0
+ 21
+5000.0
+ 31
+0.0
+100
+AcDbText
+ 73
+2
+  0
+CIRCLE
+  5
+127
+330
+17
+100
+AcDbEntity
+  8
+A-GRID-SYMB
+100
+AcDbCircle
+ 10
+23450.0
+ 20
+27850.0
+ 30
+0.0
+ 40
+360.0
+  0
+TEXT
+  5
+128
+330
+17
+100
+AcDbEntity
+  8
+A-GRID-SYMB
+100
+AcDbText
+ 10
+23450.0
+ 20
 27850.0
  30
 0.0
@@ -19281,7 +19353,7 @@ AcDbText
   0
 LINE
   5
-127
+129
 330
 17
 100
@@ -19305,62 +19377,6 @@ AcDbLine
   0
 CIRCLE
   5
-128
-330
-17
-100
-AcDbEntity
-  8
-A-GRID-SYMB
-100
-AcDbCircle
- 10
-2900.0
- 20
-7300.0
- 30
-0.0
- 40
-360.0
-  0
-TEXT
-  5
-129
-330
-17
-100
-AcDbEntity
-  8
-A-GRID-SYMB
-100
-AcDbText
- 10
-2900.0
- 20
-7300.0
- 30
-0.0
- 40
-300.0
-  1
-Y1
-  7
-JP
- 72
-1
- 11
-2900.0
- 21
-7300.0
- 31
-0.0
-100
-AcDbText
- 73
-2
-  0
-CIRCLE
-  5
 12A
 330
 17
@@ -19371,7 +19387,7 @@ A-GRID-SYMB
 100
 AcDbCircle
  10
-25750.0
+2900.0
  20
 7300.0
  30
@@ -19391,6 +19407,62 @@ A-GRID-SYMB
 100
 AcDbText
  10
+2900.0
+ 20
+7300.0
+ 30
+0.0
+ 40
+300.0
+  1
+Y1
+  7
+JP
+ 72
+1
+ 11
+2900.0
+ 21
+7300.0
+ 31
+0.0
+100
+AcDbText
+ 73
+2
+  0
+CIRCLE
+  5
+12C
+330
+17
+100
+AcDbEntity
+  8
+A-GRID-SYMB
+100
+AcDbCircle
+ 10
+25750.0
+ 20
+7300.0
+ 30
+0.0
+ 40
+360.0
+  0
+TEXT
+  5
+12D
+330
+17
+100
+AcDbEntity
+  8
+A-GRID-SYMB
+100
+AcDbText
+ 10
 25750.0
  20
 7300.0
@@ -19417,7 +19489,7 @@ AcDbText
   0
 LINE
   5
-12C
+12E
 330
 17
 100
@@ -19441,62 +19513,6 @@ AcDbLine
   0
 CIRCLE
   5
-12D
-330
-17
-100
-AcDbEntity
-  8
-A-GRID-SYMB
-100
-AcDbCircle
- 10
-2900.0
- 20
-13425.0
- 30
-0.0
- 40
-360.0
-  0
-TEXT
-  5
-12E
-330
-17
-100
-AcDbEntity
-  8
-A-GRID-SYMB
-100
-AcDbText
- 10
-2900.0
- 20
-13425.0
- 30
-0.0
- 40
-300.0
-  1
-Y2
-  7
-JP
- 72
-1
- 11
-2900.0
- 21
-13425.0
- 31
-0.0
-100
-AcDbText
- 73
-2
-  0
-CIRCLE
-  5
 12F
 330
 17
@@ -19507,7 +19523,7 @@ A-GRID-SYMB
 100
 AcDbCircle
  10
-25750.0
+2900.0
  20
 13425.0
  30
@@ -19527,6 +19543,62 @@ A-GRID-SYMB
 100
 AcDbText
  10
+2900.0
+ 20
+13425.0
+ 30
+0.0
+ 40
+300.0
+  1
+Y2
+  7
+JP
+ 72
+1
+ 11
+2900.0
+ 21
+13425.0
+ 31
+0.0
+100
+AcDbText
+ 73
+2
+  0
+CIRCLE
+  5
+131
+330
+17
+100
+AcDbEntity
+  8
+A-GRID-SYMB
+100
+AcDbCircle
+ 10
+25750.0
+ 20
+13425.0
+ 30
+0.0
+ 40
+360.0
+  0
+TEXT
+  5
+132
+330
+17
+100
+AcDbEntity
+  8
+A-GRID-SYMB
+100
+AcDbText
+ 10
 25750.0
  20
 13425.0
@@ -19553,7 +19625,7 @@ AcDbText
   0
 LINE
   5
-131
+133
 330
 17
 100
@@ -19577,7 +19649,7 @@ AcDbLine
   0
 CIRCLE
   5
-132
+134
 330
 17
 100
@@ -19597,7 +19669,7 @@ AcDbCircle
   0
 TEXT
   5
-133
+135
 330
 17
 100
@@ -19633,7 +19705,7 @@ AcDbText
   0
 CIRCLE
   5
-134
+136
 330
 17
 100
@@ -19653,7 +19725,7 @@ AcDbCircle
   0
 TEXT
   5
-135
+137
 330
 17
 100
@@ -19689,7 +19761,7 @@ AcDbText
   0
 LINE
   5
-136
+138
 330
 17
 100
@@ -19713,7 +19785,7 @@ AcDbLine
   0
 CIRCLE
   5
-137
+139
 330
 17
 100
@@ -19733,7 +19805,7 @@ AcDbCircle
   0
 TEXT
   5
-138
+13A
 330
 17
 100
@@ -19769,7 +19841,7 @@ AcDbText
   0
 CIRCLE
   5
-139
+13B
 330
 17
 100
@@ -19789,7 +19861,7 @@ AcDbCircle
   0
 TEXT
   5
-13A
+13C
 330
 17
 100
@@ -19825,7 +19897,7 @@ AcDbText
   0
 DIMENSION
   5
-13B
+13D
 330
 17
 100
@@ -19879,7 +19951,7 @@ AcDbRotatedDimension
   0
 DIMENSION
   5
-151
+153
 330
 17
 100
@@ -19933,7 +20005,7 @@ AcDbRotatedDimension
   0
 DIMENSION
   5
-160
+162
 330
 17
 100
@@ -19987,7 +20059,7 @@ AcDbRotatedDimension
   0
 DIMENSION
   5
-16F
+171
 330
 17
 100
@@ -20041,7 +20113,7 @@ AcDbRotatedDimension
   0
 DIMENSION
   5
-17E
+180
 330
 17
 100
@@ -20095,7 +20167,7 @@ AcDbRotatedDimension
   0
 DIMENSION
   5
-18D
+18F
 330
 17
 100
@@ -20149,7 +20221,7 @@ AcDbRotatedDimension
   0
 DIMENSION
   5
-19C
+19E
 330
 17
 100
@@ -20203,7 +20275,7 @@ AcDbRotatedDimension
   0
 DIMENSION
   5
-1AB
+1AD
 330
 17
 100
@@ -20257,7 +20329,7 @@ AcDbRotatedDimension
   0
 DIMENSION
   5
-1BA
+1BC
 330
 17
 100
@@ -20311,7 +20383,7 @@ AcDbRotatedDimension
   0
 DIMENSION
   5
-1C9
+1CB
 330
 17
 100
@@ -20365,7 +20437,7 @@ AcDbRotatedDimension
   0
 DIMENSION
   5
-1D8
+1DA
 330
 17
 100
@@ -20419,7 +20491,7 @@ AcDbRotatedDimension
   0
 DIMENSION
   5
-1E7
+1E9
 330
 17
 100
@@ -20473,7 +20545,7 @@ AcDbRotatedDimension
   0
 DIMENSION
   5
-1F8
+1FA
 330
 17
 100
@@ -20527,7 +20599,7 @@ AcDbRotatedDimension
   0
 DIMENSION
   5
-207
+209
 330
 17
 100
@@ -20581,7 +20653,7 @@ AcDbRotatedDimension
   0
 DIMENSION
   5
-216
+218
 330
 17
 100
@@ -20635,7 +20707,7 @@ AcDbRotatedDimension
   0
 DIMENSION
   5
-225
+227
 330
 17
 100
@@ -20689,7 +20761,7 @@ AcDbRotatedDimension
   0
 DIMENSION
   5
-234
+236
 330
 17
 100
@@ -20743,7 +20815,7 @@ AcDbRotatedDimension
   0
 DIMENSION
   5
-243
+245
 330
 17
 100
@@ -20797,7 +20869,7 @@ AcDbRotatedDimension
   0
 DIMENSION
   5
-252
+254
 330
 17
 100
@@ -20851,7 +20923,7 @@ AcDbRotatedDimension
   0
 DIMENSION
   5
-261
+263
 330
 17
 100
@@ -20905,7 +20977,7 @@ AcDbRotatedDimension
   0
 DIMENSION
   5
-270
+272
 330
 17
 100
@@ -20959,7 +21031,7 @@ AcDbRotatedDimension
   0
 DIMENSION
   5
-27F
+281
 330
 17
 100
@@ -21013,7 +21085,7 @@ AcDbRotatedDimension
   0
 DIMENSION
   5
-28E
+290
 330
 17
 100
@@ -21067,7 +21139,7 @@ AcDbRotatedDimension
   0
 DIMENSION
   5
-29D
+29F
 330
 17
 100
@@ -21121,7 +21193,7 @@ AcDbRotatedDimension
   0
 DIMENSION
   5
-2AC
+2AE
 330
 17
 100
@@ -21175,7 +21247,7 @@ AcDbRotatedDimension
   0
 DIMENSION
   5
-2BB
+2BD
 330
 17
 100
@@ -21229,7 +21301,7 @@ AcDbRotatedDimension
   0
 LINE
   5
-2CA
+2CC
 330
 17
 100
@@ -21255,7 +21327,7 @@ AcDbLine
   0
 ARC
   5
-2CB
+2CD
 330
 17
 100
@@ -21281,7 +21353,7 @@ AcDbArc
   0
 LWPOLYLINE
   5
-2CC
+2CE
 330
 17
 100
@@ -21313,7 +21385,7 @@ AcDbPolyline
   0
 TEXT
   5
-2CD
+2CF
 330
 17
 100
@@ -21349,7 +21421,7 @@ AcDbText
   0
 LWPOLYLINE
   5
-2CE
+2D0
 330
 17
 100
@@ -21375,7 +21447,7 @@ AcDbPolyline
   0
 LWPOLYLINE
   5
-2CF
+2D1
 330
 17
 100
@@ -21407,7 +21479,7 @@ AcDbPolyline
   0
 TEXT
   5
-2D0
+2D2
 330
 17
 100
@@ -21443,7 +21515,7 @@ AcDbText
   0
 LWPOLYLINE
   5
-2D1
+2D3
 330
 17
 100
@@ -21469,7 +21541,7 @@ AcDbPolyline
   0
 LWPOLYLINE
   5
-2D2
+2D4
 330
 17
 100
@@ -21501,7 +21573,7 @@ AcDbPolyline
   0
 TEXT
   5
-2D3
+2D5
 330
 17
 100
@@ -21537,7 +21609,7 @@ AcDbText
   0
 LINE
   5
-2D4
+2D6
 330
 17
 100
@@ -21563,7 +21635,7 @@ AcDbLine
   0
 LWPOLYLINE
   5
-2D5
+2D7
 330
 17
 100
@@ -21595,7 +21667,7 @@ AcDbPolyline
   0
 TEXT
   5
-2D6
+2D8
 330
 17
 100
@@ -21631,7 +21703,7 @@ AcDbText
   0
 LINE
   5
-2D7
+2D9
 330
 17
 100
@@ -21657,7 +21729,7 @@ AcDbLine
   0
 LWPOLYLINE
   5
-2D8
+2DA
 330
 17
 100
@@ -21689,7 +21761,7 @@ AcDbPolyline
   0
 TEXT
   5
-2D9
+2DB
 330
 17
 100
@@ -21725,7 +21797,7 @@ AcDbText
   0
 LWPOLYLINE
   5
-2DA
+2DC
 330
 17
 100
@@ -21751,7 +21823,7 @@ AcDbPolyline
   0
 LWPOLYLINE
   5
-2DB
+2DD
 330
 17
 100
@@ -21783,7 +21855,7 @@ AcDbPolyline
   0
 TEXT
   5
-2DC
+2DE
 330
 17
 100
@@ -21819,7 +21891,7 @@ AcDbText
   0
 LWPOLYLINE
   5
-2DD
+2DF
 330
 17
 100
@@ -21845,7 +21917,7 @@ AcDbPolyline
   0
 LINE
   5
-2DE
+2E0
 330
 17
 100
@@ -21869,7 +21941,7 @@ AcDbLine
   0
 LWPOLYLINE
   5
-2DF
+2E1
 330
 17
 100
@@ -21901,7 +21973,7 @@ AcDbPolyline
   0
 TEXT
   5
-2E0
+2E2
 330
 17
 100
@@ -21937,7 +22009,7 @@ AcDbText
   0
 LWPOLYLINE
   5
-2E1
+2E3
 330
 17
 100
@@ -21963,7 +22035,7 @@ AcDbPolyline
   0
 LINE
   5
-2E2
+2E4
 330
 17
 100
@@ -21987,7 +22059,7 @@ AcDbLine
   0
 LWPOLYLINE
   5
-2E3
+2E5
 330
 17
 100
@@ -22019,7 +22091,7 @@ AcDbPolyline
   0
 TEXT
   5
-2E4
+2E6
 330
 17
 100
@@ -22055,7 +22127,7 @@ AcDbText
   0
 LINE
   5
-2E5
+2E7
 330
 17
 100
@@ -22081,7 +22153,7 @@ AcDbLine
   0
 ARC
   5
-2E6
+2E8
 330
 17
 100
@@ -22107,7 +22179,7 @@ AcDbArc
   0
 LWPOLYLINE
   5
-2E7
+2E9
 330
 17
 100
@@ -22139,7 +22211,7 @@ AcDbPolyline
   0
 TEXT
   5
-2E8
+2EA
 330
 17
 100
@@ -22175,7 +22247,7 @@ AcDbText
   0
 LINE
   5
-2E9
+2EB
 330
 17
 100
@@ -22201,7 +22273,7 @@ AcDbLine
   0
 ARC
   5
-2EA
+2EC
 330
 17
 100
@@ -22227,7 +22299,7 @@ AcDbArc
   0
 LWPOLYLINE
   5
-2EB
+2ED
 330
 17
 100
@@ -22259,7 +22331,7 @@ AcDbPolyline
   0
 TEXT
   5
-2EC
+2EE
 330
 17
 100
@@ -22295,7 +22367,7 @@ AcDbText
   0
 LINE
   5
-2ED
+2EF
 330
 17
 100
@@ -22321,7 +22393,7 @@ AcDbLine
   0
 ARC
   5
-2EE
+2F0
 330
 17
 100
@@ -22347,7 +22419,7 @@ AcDbArc
   0
 LWPOLYLINE
   5
-2EF
+2F1
 330
 17
 100
@@ -22379,7 +22451,7 @@ AcDbPolyline
   0
 TEXT
   5
-2F0
+2F2
 330
 17
 100
@@ -22415,7 +22487,7 @@ AcDbText
   0
 LWPOLYLINE
   5
-2F1
+2F3
 330
 17
 100
@@ -22441,7 +22513,7 @@ AcDbPolyline
   0
 LINE
   5
-2F2
+2F4
 330
 17
 100
@@ -22465,7 +22537,7 @@ AcDbLine
   0
 LWPOLYLINE
   5
-2F3
+2F5
 330
 17
 100
@@ -22497,7 +22569,7 @@ AcDbPolyline
   0
 TEXT
   5
-2F4
+2F6
 330
 17
 100
@@ -22533,7 +22605,7 @@ AcDbText
   0
 LWPOLYLINE
   5
-2F5
+2F7
 330
 17
 100
@@ -22559,7 +22631,7 @@ AcDbPolyline
   0
 LINE
   5
-2F6
+2F8
 330
 17
 100
@@ -22583,7 +22655,7 @@ AcDbLine
   0
 LWPOLYLINE
   5
-2F7
+2F9
 330
 17
 100
@@ -22615,7 +22687,7 @@ AcDbPolyline
   0
 TEXT
   5
-2F8
+2FA
 330
 17
 100
@@ -22651,7 +22723,7 @@ AcDbText
   0
 LINE
   5
-2F9
+2FB
 330
 17
 100
@@ -22677,7 +22749,7 @@ AcDbLine
   0
 ARC
   5
-2FA
+2FC
 330
 17
 100
@@ -22703,7 +22775,7 @@ AcDbArc
   0
 LWPOLYLINE
   5
-2FB
+2FD
 330
 17
 100
@@ -22735,7 +22807,7 @@ AcDbPolyline
   0
 TEXT
   5
-2FC
+2FE
 330
 17
 100
@@ -22771,7 +22843,7 @@ AcDbText
   0
 LINE
   5
-2FD
+2FF
 330
 17
 100
@@ -22797,7 +22869,7 @@ AcDbLine
   0
 ARC
   5
-2FE
+300
 330
 17
 100
@@ -22823,7 +22895,7 @@ AcDbArc
   0
 LWPOLYLINE
   5
-2FF
+301
 330
 17
 100
@@ -22855,7 +22927,7 @@ AcDbPolyline
   0
 TEXT
   5
-300
+302
 330
 17
 100
@@ -22891,7 +22963,7 @@ AcDbText
   0
 LWPOLYLINE
   5
-301
+303
 330
 17
 100
@@ -22917,7 +22989,7 @@ AcDbPolyline
   0
 LINE
   5
-302
+304
 330
 17
 100
@@ -22941,7 +23013,7 @@ AcDbLine
   0
 LWPOLYLINE
   5
-303
+305
 330
 17
 100
@@ -22973,7 +23045,7 @@ AcDbPolyline
   0
 TEXT
   5
-304
+306
 330
 17
 100
@@ -23009,7 +23081,7 @@ AcDbText
   0
 LWPOLYLINE
   5
-305
+307
 330
 17
 100
@@ -23035,7 +23107,7 @@ AcDbPolyline
   0
 LINE
   5
-306
+308
 330
 17
 100
@@ -23059,7 +23131,7 @@ AcDbLine
   0
 LWPOLYLINE
   5
-307
+309
 330
 17
 100
@@ -23091,7 +23163,7 @@ AcDbPolyline
   0
 TEXT
   5
-308
+30A
 330
 17
 100
@@ -23127,7 +23199,7 @@ AcDbText
   0
 LWPOLYLINE
   5
-309
+30B
 330
 17
 100
@@ -23153,7 +23225,7 @@ AcDbPolyline
   0
 LINE
   5
-30A
+30C
 330
 17
 100
@@ -23177,7 +23249,7 @@ AcDbLine
   0
 LWPOLYLINE
   5
-30B
+30D
 330
 17
 100
@@ -23209,7 +23281,7 @@ AcDbPolyline
   0
 TEXT
   5
-30C
+30E
 330
 17
 100
@@ -23245,7 +23317,7 @@ AcDbText
   0
 LINE
   5
-30D
+30F
 330
 17
 100
@@ -23271,7 +23343,7 @@ AcDbLine
   0
 ARC
   5
-30E
+310
 330
 17
 100
@@ -23297,7 +23369,7 @@ AcDbArc
   0
 LWPOLYLINE
   5
-30F
+311
 330
 17
 100
@@ -23329,7 +23401,7 @@ AcDbPolyline
   0
 TEXT
   5
-310
+312
 330
 17
 100
@@ -23365,7 +23437,7 @@ AcDbText
   0
 LINE
   5
-311
+313
 330
 17
 100
@@ -23391,7 +23463,7 @@ AcDbLine
   0
 ARC
   5
-312
+314
 330
 17
 100
@@ -23417,7 +23489,7 @@ AcDbArc
   0
 LWPOLYLINE
   5
-313
+315
 330
 17
 100
@@ -23449,7 +23521,7 @@ AcDbPolyline
   0
 TEXT
   5
-314
+316
 330
 17
 100
@@ -23485,7 +23557,7 @@ AcDbText
   0
 LWPOLYLINE
   5
-315
+317
 330
 17
 100
@@ -23511,7 +23583,7 @@ AcDbPolyline
   0
 LINE
   5
-316
+318
 330
 17
 100
@@ -23535,7 +23607,7 @@ AcDbLine
   0
 LWPOLYLINE
   5
-317
+319
 330
 17
 100
@@ -23567,7 +23639,7 @@ AcDbPolyline
   0
 TEXT
   5
-318
+31A
 330
 17
 100
@@ -23603,7 +23675,7 @@ AcDbText
   0
 CIRCLE
   5
-319
+31B
 330
 17
 100
@@ -23623,7 +23695,7 @@ AcDbCircle
   0
 LWPOLYLINE
   5
-31A
+31C
 330
 17
 100
@@ -23647,7 +23719,7 @@ AcDbPolyline
   0
 LWPOLYLINE
   5
-31B
+31D
 330
 17
 100
@@ -23675,7 +23747,7 @@ AcDbPolyline
   0
 LINE
   5
-31C
+31E
 330
 17
 100
@@ -23701,7 +23773,7 @@ AcDbLine
   0
 LINE
   5
-31D
+31F
 330
 17
 100
@@ -23727,7 +23799,7 @@ AcDbLine
   0
 TEXT
   5
-31E
+320
 330
 17
 100
@@ -23761,7 +23833,7 @@ AcDbText
   0
 CIRCLE
   5
-31F
+321
 330
 17
 100
@@ -23781,7 +23853,7 @@ AcDbCircle
   0
 LWPOLYLINE
   5
-320
+322
 330
 17
 100
@@ -23805,7 +23877,7 @@ AcDbPolyline
   0
 LWPOLYLINE
   5
-321
+323
 330
 17
 100
@@ -23833,7 +23905,7 @@ AcDbPolyline
   0
 LINE
   5
-322
+324
 330
 17
 100
@@ -23859,7 +23931,7 @@ AcDbLine
   0
 LINE
   5
-323
+325
 330
 17
 100
@@ -23885,7 +23957,7 @@ AcDbLine
   0
 TEXT
   5
-324
+326
 330
 17
 100
@@ -23919,7 +23991,7 @@ AcDbText
   0
 TEXT
   5
-325
+327
 330
 17
 100
@@ -23955,7 +24027,7 @@ AcDbText
   0
 TEXT
   5
-326
+328
 330
 17
 100
@@ -23991,7 +24063,7 @@ AcDbText
   0
 TEXT
   5
-327
+329
 330
 17
 100
@@ -24027,7 +24099,7 @@ AcDbText
   0
 TEXT
   5
-328
+32A
 330
 17
 100
@@ -24063,7 +24135,7 @@ AcDbText
   0
 TEXT
   5
-329
+32B
 330
 17
 100
@@ -24099,7 +24171,7 @@ AcDbText
   0
 TEXT
   5
-32A
+32C
 330
 17
 100
@@ -24135,7 +24207,7 @@ AcDbText
   0
 TEXT
   5
-32B
+32D
 330
 17
 100
@@ -24171,7 +24243,7 @@ AcDbText
   0
 TEXT
   5
-32C
+32E
 330
 17
 100
@@ -24207,7 +24279,7 @@ AcDbText
   0
 TEXT
   5
-32D
+32F
 330
 17
 100
@@ -24243,7 +24315,7 @@ AcDbText
   0
 TEXT
   5
-32E
+330
 330
 17
 100
@@ -24279,7 +24351,7 @@ AcDbText
   0
 TEXT
   5
-32F
+331
 330
 17
 100
@@ -24315,7 +24387,7 @@ AcDbText
   0
 TEXT
   5
-330
+332
 330
 17
 100
@@ -24351,7 +24423,7 @@ AcDbText
   0
 TEXT
   5
-331
+333
 330
 17
 100
@@ -24387,7 +24459,7 @@ AcDbText
   0
 TEXT
   5
-332
+334
 330
 17
 100
@@ -24423,7 +24495,7 @@ AcDbText
   0
 TEXT
   5
-333
+335
 330
 17
 100
@@ -24459,7 +24531,7 @@ AcDbText
   0
 TEXT
   5
-334
+336
 330
 17
 100
@@ -24495,7 +24567,7 @@ AcDbText
   0
 TEXT
   5
-335
+337
 330
 17
 100
@@ -24531,7 +24603,7 @@ AcDbText
   0
 TEXT
   5
-336
+338
 330
 17
 100
@@ -24567,7 +24639,7 @@ AcDbText
   0
 TEXT
   5
-337
+339
 330
 17
 100
@@ -24603,7 +24675,7 @@ AcDbText
   0
 TEXT
   5
-338
+33A
 330
 17
 100
@@ -24639,7 +24711,7 @@ AcDbText
   0
 TEXT
   5
-339
+33B
 330
 17
 100
@@ -24675,7 +24747,7 @@ AcDbText
   0
 TEXT
   5
-33A
+33C
 330
 17
 100
@@ -24711,7 +24783,7 @@ AcDbText
   0
 TEXT
   5
-33B
+33D
 330
 17
 100
@@ -24747,7 +24819,7 @@ AcDbText
   0
 TEXT
   5
-33C
+33E
 330
 17
 100
@@ -24783,7 +24855,7 @@ AcDbText
   0
 TEXT
   5
-33D
+33F
 330
 17
 100
@@ -24819,7 +24891,7 @@ AcDbText
   0
 TEXT
   5
-33E
+340
 330
 17
 100
@@ -24855,7 +24927,7 @@ AcDbText
   0
 TEXT
   5
-33F
+341
 330
 17
 100
@@ -24891,7 +24963,7 @@ AcDbText
   0
 TEXT
   5
-340
+342
 330
 17
 100
@@ -24927,7 +24999,7 @@ AcDbText
   0
 TEXT
   5
-341
+343
 330
 17
 100
@@ -24963,7 +25035,7 @@ AcDbText
   0
 TEXT
   5
-342
+344
 330
 17
 100
@@ -24999,7 +25071,7 @@ AcDbText
   0
 TEXT
   5
-343
+345
 330
 17
 100
@@ -25035,7 +25107,7 @@ AcDbText
   0
 TEXT
   5
-344
+346
 330
 17
 100
@@ -25071,7 +25143,7 @@ AcDbText
   0
 TEXT
   5
-345
+347
 330
 17
 100
@@ -25107,7 +25179,7 @@ AcDbText
   0
 TEXT
   5
-346
+348
 330
 17
 100
@@ -25143,7 +25215,7 @@ AcDbText
   0
 TEXT
   5
-347
+349
 330
 17
 100
@@ -25179,7 +25251,7 @@ AcDbText
   0
 TEXT
   5
-348
+34A
 330
 17
 100
@@ -25215,7 +25287,7 @@ AcDbText
   0
 TEXT
   5
-349
+34B
 330
 17
 100
@@ -25251,7 +25323,7 @@ AcDbText
   0
 TEXT
   5
-34A
+34C
 330
 17
 100
@@ -25287,46 +25359,6 @@ AcDbText
   0
 CIRCLE
   5
-34B
-330
-17
-100
-AcDbEntity
-  8
-E-LITE
-100
-AcDbCircle
- 10
-6345.833333333334
- 20
-9450.0
- 30
-0.0
- 40
-75.0
-  0
-CIRCLE
-  5
-34C
-330
-17
-100
-AcDbEntity
-  8
-E-LITE
-100
-AcDbCircle
- 10
-8287.5
- 20
-9450.0
- 30
-0.0
- 40
-75.0
-  0
-CIRCLE
-  5
 34D
 330
 17
@@ -25337,7 +25369,7 @@ E-LITE
 100
 AcDbCircle
  10
-10229.166666666668
+6345.833333333334
  20
 9450.0
  30
@@ -25357,9 +25389,9 @@ E-LITE
 100
 AcDbCircle
  10
-6345.833333333334
+8287.5
  20
-11375.0
+9450.0
  30
 0.0
  40
@@ -25377,9 +25409,9 @@ E-LITE
 100
 AcDbCircle
  10
-8287.5
+10229.166666666668
  20
-11375.0
+9450.0
  30
 0.0
  40
@@ -25397,7 +25429,7 @@ E-LITE
 100
 AcDbCircle
  10
-10229.166666666668
+6345.833333333334
  20
 11375.0
  30
@@ -25417,9 +25449,9 @@ E-LITE
 100
 AcDbCircle
  10
-6304.166666666666
+8287.5
  20
-15850.0
+11375.0
  30
 0.0
  40
@@ -25437,9 +25469,9 @@ E-LITE
 100
 AcDbCircle
  10
-8262.5
+10229.166666666668
  20
-15850.0
+11375.0
  30
 0.0
  40
@@ -25457,7 +25489,7 @@ E-LITE
 100
 AcDbCircle
  10
-10220.833333333332
+6304.166666666666
  20
 15850.0
  30
@@ -25477,9 +25509,9 @@ E-LITE
 100
 AcDbCircle
  10
-6304.166666666666
+8262.5
  20
-17725.0
+15850.0
  30
 0.0
  40
@@ -25497,9 +25529,9 @@ E-LITE
 100
 AcDbCircle
  10
-8262.5
+10220.833333333332
  20
-17725.0
+15850.0
  30
 0.0
  40
@@ -25517,7 +25549,7 @@ E-LITE
 100
 AcDbCircle
  10
-10220.833333333332
+6304.166666666666
  20
 17725.0
  30
@@ -25537,9 +25569,9 @@ E-LITE
 100
 AcDbCircle
  10
-12408.333333333332
+8262.5
  20
-8830.75
+17725.0
  30
 0.0
  40
@@ -25557,9 +25589,9 @@ E-LITE
 100
 AcDbCircle
  10
-14325.0
+10220.833333333332
  20
-8830.75
+17725.0
  30
 0.0
  40
@@ -25577,7 +25609,7 @@ E-LITE
 100
 AcDbCircle
  10
-16241.666666666668
+12408.333333333332
  20
 8830.75
  30
@@ -25597,9 +25629,9 @@ E-LITE
 100
 AcDbCircle
  10
-12408.333333333332
+14325.0
  20
-11500.0
+8830.75
  30
 0.0
  40
@@ -25617,9 +25649,9 @@ E-LITE
 100
 AcDbCircle
  10
-14325.0
+16241.666666666668
  20
-11500.0
+8830.75
  30
 0.0
  40
@@ -25637,7 +25669,7 @@ E-LITE
 100
 AcDbCircle
  10
-16241.666666666668
+12408.333333333332
  20
 11500.0
  30
@@ -25657,9 +25689,9 @@ E-LITE
 100
 AcDbCircle
  10
-19408.5
+14325.0
  20
-8521.875
+11500.0
  30
 0.0
  40
@@ -25677,9 +25709,9 @@ E-LITE
 100
 AcDbCircle
  10
-19408.5
+16241.666666666668
  20
-10715.625
+11500.0
  30
 0.0
  40
@@ -25699,7 +25731,7 @@ AcDbCircle
  10
 19408.5
  20
-12909.375
+8521.875
  30
 0.0
  40
@@ -25719,7 +25751,7 @@ AcDbCircle
  10
 19408.5
  20
-15103.125
+10715.625
  30
 0.0
  40
@@ -25737,9 +25769,9 @@ E-LITE
 100
 AcDbCircle
  10
-21367.0
+19408.5
  20
-8521.875
+12909.375
  30
 0.0
  40
@@ -25757,9 +25789,9 @@ E-LITE
 100
 AcDbCircle
  10
-21367.0
+19408.5
  20
-10715.625
+15103.125
  30
 0.0
  40
@@ -25779,7 +25811,7 @@ AcDbCircle
  10
 21367.0
  20
-12909.375
+8521.875
  30
 0.0
  40
@@ -25799,7 +25831,7 @@ AcDbCircle
  10
 21367.0
  20
-15103.125
+10715.625
  30
 0.0
  40
@@ -25808,6 +25840,46 @@ AcDbCircle
 CIRCLE
   5
 365
+330
+17
+100
+AcDbEntity
+  8
+E-LITE
+100
+AcDbCircle
+ 10
+21367.0
+ 20
+12909.375
+ 30
+0.0
+ 40
+75.0
+  0
+CIRCLE
+  5
+366
+330
+17
+100
+AcDbEntity
+  8
+E-LITE
+100
+AcDbCircle
+ 10
+21367.0
+ 20
+15103.125
+ 30
+0.0
+ 40
+75.0
+  0
+CIRCLE
+  5
+367
 330
 17
 100
@@ -25827,7 +25899,7 @@ AcDbCircle
   0
 CIRCLE
   5
-366
+368
 330
 17
 100
@@ -25847,7 +25919,7 @@ AcDbCircle
   0
 CIRCLE
   5
-367
+369
 330
 17
 100
@@ -25867,7 +25939,7 @@ AcDbCircle
   0
 CIRCLE
   5
-368
+36A
 330
 17
 100
@@ -25887,7 +25959,7 @@ AcDbCircle
   0
 CIRCLE
   5
-369
+36B
 330
 17
 100
@@ -25907,7 +25979,7 @@ AcDbCircle
   0
 CIRCLE
   5
-36A
+36C
 330
 17
 100
@@ -25927,7 +25999,7 @@ AcDbCircle
   0
 CIRCLE
   5
-36B
+36D
 330
 17
 100
@@ -25947,7 +26019,7 @@ AcDbCircle
   0
 CIRCLE
   5
-36C
+36E
 330
 17
 100
@@ -25967,7 +26039,7 @@ AcDbCircle
   0
 CIRCLE
   5
-36D
+36F
 330
 17
 100
@@ -25987,7 +26059,7 @@ AcDbCircle
   0
 CIRCLE
   5
-36E
+370
 330
 17
 100
@@ -26007,7 +26079,7 @@ AcDbCircle
   0
 CIRCLE
   5
-36F
+371
 330
 17
 100
@@ -26027,7 +26099,7 @@ AcDbCircle
   0
 CIRCLE
   5
-370
+372
 330
 17
 100
@@ -26047,7 +26119,7 @@ AcDbCircle
   0
 CIRCLE
   5
-371
+373
 330
 17
 100
@@ -26067,7 +26139,7 @@ AcDbCircle
   0
 CIRCLE
   5
-372
+374
 330
 17
 100
@@ -26087,46 +26159,6 @@ AcDbCircle
   0
 CIRCLE
   5
-373
-330
-17
-100
-AcDbEntity
-  8
-E-LITE
-100
-AcDbCircle
- 10
-15400.0
- 20
-21175.0
- 30
-0.0
- 40
-75.0
-  0
-CIRCLE
-  5
-374
-330
-17
-100
-AcDbEntity
-  8
-E-LITE
-100
-AcDbCircle
- 10
-16600.0
- 20
-21175.0
- 30
-0.0
- 40
-75.0
-  0
-CIRCLE
-  5
 375
 330
 17
@@ -26139,7 +26171,7 @@ AcDbCircle
  10
 15400.0
  20
-24162.5
+21175.0
  30
 0.0
  40
@@ -26159,7 +26191,7 @@ AcDbCircle
  10
 16600.0
  20
-24162.5
+21175.0
  30
 0.0
  40
@@ -26177,9 +26209,9 @@ E-LITE
 100
 AcDbCircle
  10
-19931.25
+15400.0
  20
-23512.5
+24162.5
  30
 0.0
  40
@@ -26197,9 +26229,9 @@ E-LITE
 100
 AcDbCircle
  10
-22193.75
+16600.0
  20
-23512.5
+24162.5
  30
 0.0
  40
@@ -26219,7 +26251,7 @@ AcDbCircle
  10
 19931.25
  20
-21012.5
+23512.5
  30
 0.0
  40
@@ -26239,6 +26271,46 @@ AcDbCircle
  10
 22193.75
  20
+23512.5
+ 30
+0.0
+ 40
+75.0
+  0
+CIRCLE
+  5
+37B
+330
+17
+100
+AcDbEntity
+  8
+E-LITE
+100
+AcDbCircle
+ 10
+19931.25
+ 20
+21012.5
+ 30
+0.0
+ 40
+75.0
+  0
+CIRCLE
+  5
+37C
+330
+17
+100
+AcDbEntity
+  8
+E-LITE
+100
+AcDbCircle
+ 10
+22193.75
+ 20
 21012.5
  30
 0.0
@@ -26247,7 +26319,7 @@ AcDbCircle
   0
 LWPOLYLINE
   5
-37B
+37D
 330
 17
 100
@@ -26273,7 +26345,7 @@ AcDbPolyline
   0
 TEXT
   5
-37C
+37E
 330
 17
 100
@@ -26309,7 +26381,7 @@ AcDbText
   0
 LWPOLYLINE
   5
-37D
+37F
 330
 17
 100
@@ -26335,7 +26407,7 @@ AcDbPolyline
   0
 TEXT
   5
-37E
+380
 330
 17
 100
@@ -26371,7 +26443,7 @@ AcDbText
   0
 LWPOLYLINE
   5
-37F
+381
 330
 17
 100
@@ -26397,7 +26469,7 @@ AcDbPolyline
   0
 TEXT
   5
-380
+382
 330
 17
 100
@@ -26433,7 +26505,7 @@ AcDbText
   0
 LWPOLYLINE
   5
-381
+383
 330
 17
 100
@@ -26459,7 +26531,7 @@ AcDbPolyline
   0
 TEXT
   5
-382
+384
 330
 17
 100
@@ -26495,7 +26567,7 @@ AcDbText
   0
 LWPOLYLINE
   5
-383
+385
 330
 17
 100
@@ -26521,7 +26593,7 @@ AcDbPolyline
   0
 TEXT
   5
-384
+386
 330
 17
 100
@@ -26557,7 +26629,7 @@ AcDbText
   0
 LWPOLYLINE
   5
-385
+387
 330
 17
 100
@@ -26583,7 +26655,7 @@ AcDbPolyline
   0
 TEXT
   5
-386
+388
 330
 17
 100
@@ -26619,7 +26691,7 @@ AcDbText
   0
 LWPOLYLINE
   5
-387
+389
 330
 17
 100
@@ -26645,7 +26717,7 @@ AcDbPolyline
   0
 TEXT
   5
-388
+38A
 330
 17
 100
@@ -26681,7 +26753,7 @@ AcDbText
   0
 LWPOLYLINE
   5
-389
+38B
 330
 17
 100
@@ -26707,7 +26779,7 @@ AcDbPolyline
   0
 TEXT
   5
-38A
+38C
 330
 17
 100
@@ -26743,7 +26815,7 @@ AcDbText
   0
 LWPOLYLINE
   5
-38B
+38D
 330
 17
 100
@@ -26769,7 +26841,7 @@ AcDbPolyline
   0
 TEXT
   5
-38C
+38E
 330
 17
 100
@@ -26805,7 +26877,7 @@ AcDbText
   0
 LWPOLYLINE
   5
-38D
+38F
 330
 17
 100
@@ -26831,7 +26903,7 @@ AcDbPolyline
   0
 TEXT
   5
-38E
+390
 330
 17
 100
@@ -26869,7 +26941,7 @@ AcDbText
   0
 LWPOLYLINE
   5
-38F
+391
 330
 17
 100
@@ -26895,7 +26967,7 @@ AcDbPolyline
   0
 TEXT
   5
-390
+392
 330
 17
 100
@@ -26933,7 +27005,7 @@ AcDbText
   0
 LWPOLYLINE
   5
-391
+393
 330
 17
 100
@@ -26959,7 +27031,7 @@ AcDbPolyline
   0
 TEXT
   5
-392
+394
 330
 17
 100
@@ -26997,7 +27069,7 @@ AcDbText
   0
 LWPOLYLINE
   5
-393
+395
 330
 17
 100
@@ -27023,7 +27095,7 @@ AcDbPolyline
   0
 TEXT
   5
-394
+396
 330
 17
 100
@@ -27059,7 +27131,7 @@ AcDbText
   0
 LWPOLYLINE
   5
-395
+397
 330
 17
 100
@@ -27085,7 +27157,7 @@ AcDbPolyline
   0
 TEXT
   5
-396
+398
 330
 17
 100
@@ -27121,7 +27193,7 @@ AcDbText
   0
 LWPOLYLINE
   5
-397
+399
 330
 17
 100
@@ -27147,7 +27219,7 @@ AcDbPolyline
   0
 TEXT
   5
-398
+39A
 330
 17
 100
@@ -27185,7 +27257,7 @@ AcDbText
   0
 LWPOLYLINE
   5
-399
+39B
 330
 17
 100
@@ -27211,7 +27283,7 @@ AcDbPolyline
   0
 TEXT
   5
-39A
+39C
 330
 17
 100
@@ -27249,7 +27321,7 @@ AcDbText
   0
 LWPOLYLINE
   5
-39B
+39D
 330
 17
 100
@@ -27275,7 +27347,7 @@ AcDbPolyline
   0
 TEXT
   5
-39C
+39E
 330
 17
 100
@@ -27313,7 +27385,7 @@ AcDbText
   0
 LWPOLYLINE
   5
-39D
+39F
 330
 17
 100
@@ -27339,7 +27411,7 @@ AcDbPolyline
   0
 TEXT
   5
-39E
+3A0
 330
 17
 100
@@ -27375,7 +27447,7 @@ AcDbText
   0
 LWPOLYLINE
   5
-39F
+3A1
 330
 17
 100
@@ -27401,7 +27473,7 @@ AcDbPolyline
   0
 TEXT
   5
-3A0
+3A2
 330
 17
 100
@@ -27437,7 +27509,7 @@ AcDbText
   0
 LWPOLYLINE
   5
-3A1
+3A3
 330
 17
 100
@@ -27463,7 +27535,7 @@ AcDbPolyline
   0
 TEXT
   5
-3A2
+3A4
 330
 17
 100
@@ -27499,7 +27571,7 @@ AcDbText
   0
 LWPOLYLINE
   5
-3A3
+3A5
 330
 17
 100
@@ -27525,7 +27597,7 @@ AcDbPolyline
   0
 TEXT
   5
-3A4
+3A6
 330
 17
 100
@@ -27561,7 +27633,7 @@ AcDbText
   0
 LWPOLYLINE
   5
-3A5
+3A7
 330
 17
 100
@@ -27587,7 +27659,7 @@ AcDbPolyline
   0
 TEXT
   5
-3A6
+3A8
 330
 17
 100
@@ -27623,7 +27695,7 @@ AcDbText
   0
 LWPOLYLINE
   5
-3A7
+3A9
 330
 17
 100
@@ -27649,7 +27721,7 @@ AcDbPolyline
   0
 TEXT
   5
-3A8
+3AA
 330
 17
 100
@@ -27687,7 +27759,7 @@ AcDbText
   0
 LWPOLYLINE
   5
-3A9
+3AB
 330
 17
 100
@@ -27713,7 +27785,7 @@ AcDbPolyline
   0
 TEXT
   5
-3AA
+3AC
 330
 17
 100
@@ -27749,7 +27821,7 @@ AcDbText
   0
 LWPOLYLINE
   5
-3AB
+3AD
 330
 17
 100
@@ -27775,7 +27847,7 @@ AcDbPolyline
   0
 TEXT
   5
-3AC
+3AE
 330
 17
 100
@@ -27811,7 +27883,7 @@ AcDbText
   0
 LWPOLYLINE
   5
-3AD
+3AF
 330
 17
 100
@@ -27837,7 +27909,7 @@ AcDbPolyline
   0
 TEXT
   5
-3AE
+3B0
 330
 17
 100
@@ -27875,7 +27947,7 @@ AcDbText
   0
 LWPOLYLINE
   5
-3AF
+3B1
 330
 17
 100
@@ -27901,7 +27973,7 @@ AcDbPolyline
   0
 TEXT
   5
-3B0
+3B2
 330
 17
 100
@@ -27939,7 +28011,7 @@ AcDbText
   0
 LWPOLYLINE
   5
-3B1
+3B3
 330
 17
 100
@@ -27965,7 +28037,7 @@ AcDbPolyline
   0
 TEXT
   5
-3B2
+3B4
 330
 17
 100
@@ -28001,7 +28073,7 @@ AcDbText
   0
 LWPOLYLINE
   5
-3B3
+3B5
 330
 17
 100
@@ -28027,7 +28099,7 @@ AcDbPolyline
   0
 TEXT
   5
-3B4
+3B6
 330
 17
 100
@@ -28063,7 +28135,7 @@ AcDbText
   0
 LWPOLYLINE
   5
-3B5
+3B7
 330
 17
 100
@@ -28089,7 +28161,7 @@ AcDbPolyline
   0
 TEXT
   5
-3B6
+3B8
 330
 17
 100
@@ -28125,7 +28197,7 @@ AcDbText
   0
 LWPOLYLINE
   5
-3B7
+3B9
 330
 17
 100
@@ -28151,7 +28223,7 @@ AcDbPolyline
   0
 TEXT
   5
-3B8
+3BA
 330
 17
 100
@@ -28189,7 +28261,7 @@ AcDbText
   0
 LWPOLYLINE
   5
-3B9
+3BB
 330
 17
 100
@@ -28217,7 +28289,7 @@ AcDbPolyline
   0
 LWPOLYLINE
   5
-3BA
+3BC
 330
 17
 100
@@ -28245,7 +28317,7 @@ AcDbPolyline
   0
 LWPOLYLINE
   5
-3BB
+3BD
 330
 17
 100
@@ -28273,7 +28345,7 @@ AcDbPolyline
   0
 LWPOLYLINE
   5
-3BC
+3BE
 330
 17
 100
@@ -28301,7 +28373,7 @@ AcDbPolyline
   0
 LWPOLYLINE
   5
-3BD
+3BF
 330
 17
 100
@@ -28329,7 +28401,7 @@ AcDbPolyline
   0
 LWPOLYLINE
   5
-3BE
+3C0
 330
 17
 100
@@ -28357,7 +28429,7 @@ AcDbPolyline
   0
 LWPOLYLINE
   5
-3BF
+3C1
 330
 17
 100
@@ -28385,7 +28457,7 @@ AcDbPolyline
   0
 LWPOLYLINE
   5
-3C0
+3C2
 330
 17
 100
@@ -28413,7 +28485,7 @@ AcDbPolyline
   0
 LWPOLYLINE
   5
-3C1
+3C3
 330
 17
 100
@@ -28441,7 +28513,7 @@ AcDbPolyline
   0
 LWPOLYLINE
   5
-3C2
+3C4
 330
 17
 100
@@ -28469,7 +28541,7 @@ AcDbPolyline
   0
 LWPOLYLINE
   5
-3C3
+3C5
 330
 17
 100
@@ -28497,7 +28569,7 @@ AcDbPolyline
   0
 LWPOLYLINE
   5
-3C4
+3C6
 330
 17
 100
@@ -28525,7 +28597,7 @@ AcDbPolyline
   0
 LWPOLYLINE
   5
-3C5
+3C7
 330
 17
 100
@@ -28553,7 +28625,7 @@ AcDbPolyline
   0
 LWPOLYLINE
   5
-3C6
+3C8
 330
 17
 100
@@ -28581,7 +28653,7 @@ AcDbPolyline
   0
 LWPOLYLINE
   5
-3C7
+3C9
 330
 17
 100
@@ -28609,7 +28681,7 @@ AcDbPolyline
   0
 LWPOLYLINE
   5
-3C8
+3CA
 330
 17
 100
@@ -28637,7 +28709,7 @@ AcDbPolyline
   0
 LWPOLYLINE
   5
-3C9
+3CB
 330
 17
 100
@@ -28665,7 +28737,7 @@ AcDbPolyline
   0
 LWPOLYLINE
   5
-3CA
+3CC
 330
 17
 100
@@ -28693,7 +28765,7 @@ AcDbPolyline
   0
 TEXT
   5
-3CB
+3CD
 330
 17
 100
@@ -28729,7 +28801,7 @@ AcDbText
   0
 TEXT
   5
-3CC
+3CE
 330
 17
 100
@@ -28765,7 +28837,7 @@ AcDbText
   0
 LWPOLYLINE
   5
-3CD
+3CF
 330
 17
 100
@@ -28797,7 +28869,7 @@ AcDbPolyline
   0
 LWPOLYLINE
   5
-3CE
+3D0
 330
 17
 100
@@ -28829,7 +28901,7 @@ AcDbPolyline
   0
 LWPOLYLINE
   5
-3CF
+3D1
 330
 17
 100
@@ -28861,7 +28933,7 @@ AcDbPolyline
   0
 LWPOLYLINE
   5
-3D0
+3D2
 330
 17
 100
@@ -28893,7 +28965,7 @@ AcDbPolyline
   0
 LWPOLYLINE
   5
-3D1
+3D3
 330
 17
 100
@@ -28925,7 +28997,7 @@ AcDbPolyline
   0
 LWPOLYLINE
   5
-3D2
+3D4
 330
 17
 100
@@ -28957,7 +29029,7 @@ AcDbPolyline
   0
 LWPOLYLINE
   5
-3D3
+3D5
 330
 17
 100
@@ -28989,7 +29061,7 @@ AcDbPolyline
   0
 LWPOLYLINE
   5
-3D4
+3D6
 330
 17
 100
@@ -29021,7 +29093,7 @@ AcDbPolyline
   0
 LWPOLYLINE
   5
-3D5
+3D7
 330
 17
 100
@@ -29053,7 +29125,7 @@ AcDbPolyline
   0
 LWPOLYLINE
   5
-3D6
+3D8
 330
 17
 100
@@ -29085,7 +29157,7 @@ AcDbPolyline
   0
 LWPOLYLINE
   5
-3D7
+3D9
 330
 17
 100
@@ -29117,7 +29189,7 @@ AcDbPolyline
   0
 LWPOLYLINE
   5
-3D8
+3DA
 330
 17
 100
@@ -29149,7 +29221,7 @@ AcDbPolyline
   0
 LWPOLYLINE
   5
-3D9
+3DB
 330
 17
 100
@@ -29181,7 +29253,7 @@ AcDbPolyline
   0
 LWPOLYLINE
   5
-3DA
+3DC
 330
 17
 100
@@ -29213,7 +29285,7 @@ AcDbPolyline
   0
 LWPOLYLINE
   5
-3DB
+3DD
 330
 17
 100
@@ -29245,7 +29317,7 @@ AcDbPolyline
   0
 LWPOLYLINE
   5
-3DC
+3DE
 330
 17
 100
@@ -29277,7 +29349,7 @@ AcDbPolyline
   0
 LWPOLYLINE
   5
-3DD
+3DF
 330
 17
 100
@@ -29309,7 +29381,7 @@ AcDbPolyline
   0
 LWPOLYLINE
   5
-3DE
+3E0
 330
 17
 100
@@ -29341,7 +29413,7 @@ AcDbPolyline
   0
 CIRCLE
   5
-3DF
+3E1
 330
 17
 100
@@ -29361,7 +29433,7 @@ AcDbCircle
   0
 LWPOLYLINE
   5
-3E0
+3E2
 330
 17
 100
@@ -29393,7 +29465,7 @@ AcDbPolyline
   0
 HATCH
   5
-3E1
+3E3
 330
 17
 100
@@ -29455,7 +29527,7 @@ SOLID
   0
 TEXT
   5
-3E2
+3E4
 330
 17
 100
@@ -29493,7 +29565,7 @@ AcDbText
   0
 TEXT
   5
-3E3
+3E5
 330
 17
 100
@@ -29529,7 +29601,7 @@ AcDbText
   0
 TEXT
   5
-3E4
+3E6
 330
 17
 100
@@ -29563,7 +29635,7 @@ AcDbText
   0
 LINE
   5
-3E5
+3E7
 330
 17
 100
@@ -29589,7 +29661,7 @@ AcDbLine
   0
 TEXT
   5
-3E6
+3E8
 330
 17
 100
@@ -29623,7 +29695,7 @@ AcDbText
   0
 TEXT
   5
-3E7
+3E9
 330
 17
 100
@@ -29655,7 +29727,7 @@ AcDbText
   0
 TEXT
   5
-3E8
+3EA
 330
 17
 100
@@ -29687,7 +29759,7 @@ AcDbText
   0
 LINE
   5
-3E9
+3EB
 330
 17
 100
@@ -29711,7 +29783,7 @@ AcDbLine
   0
 TEXT
   5
-3EA
+3EC
 330
 17
 100
@@ -29743,7 +29815,7 @@ AcDbText
   0
 LINE
   5
-3EB
+3ED
 330
 17
 100
@@ -29767,7 +29839,7 @@ AcDbLine
   0
 TEXT
   5
-3EC
+3EE
 330
 17
 100
@@ -29799,7 +29871,7 @@ AcDbText
   0
 LINE
   5
-3ED
+3EF
 330
 17
 100
@@ -29823,7 +29895,7 @@ AcDbLine
   0
 TEXT
   5
-3EE
+3F0
 330
 17
 100
@@ -29855,7 +29927,7 @@ AcDbText
   0
 LINE
   5
-3EF
+3F1
 330
 17
 100
@@ -29879,7 +29951,7 @@ AcDbLine
   0
 TEXT
   5
-3F0
+3F2
 330
 17
 100
@@ -29911,7 +29983,7 @@ AcDbText
   0
 TEXT
   5
-3F1
+3F3
 330
 17
 100
@@ -29943,7 +30015,7 @@ AcDbText
   0
 TEXT
   5
-3F2
+3F4
 330
 17
 100
@@ -29975,7 +30047,7 @@ AcDbText
   0
 TEXT
   5
-3F3
+3F5
 330
 17
 100
@@ -30007,7 +30079,7 @@ AcDbText
   0
 TEXT
   5
-3F4
+3F6
 330
 17
 100
@@ -30039,7 +30111,7 @@ AcDbText
   0
 TEXT
   5
-3F5
+3F7
 330
 17
 100
@@ -30071,7 +30143,7 @@ AcDbText
   0
 TEXT
   5
-3F6
+3F8
 330
 17
 100
@@ -30103,7 +30175,7 @@ AcDbText
   0
 TEXT
   5
-3F7
+3F9
 330
 17
 100
@@ -30135,7 +30207,7 @@ AcDbText
   0
 TEXT
   5
-3F8
+3FA
 330
 17
 100
@@ -30167,7 +30239,7 @@ AcDbText
   0
 TEXT
   5
-3F9
+3FB
 330
 17
 100
@@ -30199,7 +30271,7 @@ AcDbText
   0
 TEXT
   5
-3FA
+3FC
 330
 17
 100
@@ -30231,7 +30303,7 @@ AcDbText
   0
 TEXT
   5
-3FB
+3FD
 330
 17
 100
@@ -30263,7 +30335,7 @@ AcDbText
   0
 LWPOLYLINE
   5
-3FC
+3FE
 330
 17
 100
@@ -30289,7 +30361,7 @@ AcDbPolyline
   0
 TEXT
   5
-3FD
+3FF
 330
 17
 100
@@ -30321,7 +30393,7 @@ AcDbText
   0
 TEXT
   5
-3FE
+400
 330
 17
 100
@@ -30353,7 +30425,7 @@ AcDbText
   0
 TEXT
   5
-3FF
+401
 330
 17
 100
@@ -30385,7 +30457,7 @@ AcDbText
   0
 TEXT
   5
-400
+402
 330
 17
 100
@@ -30417,7 +30489,7 @@ AcDbText
   0
 LWPOLYLINE
   5
-401
+403
 330
 17
 100
@@ -30443,7 +30515,7 @@ AcDbPolyline
   0
 TEXT
   5
-402
+404
 330
 17
 100
@@ -30475,7 +30547,7 @@ AcDbText
   0
 TEXT
   5
-403
+405
 330
 17
 100
@@ -30507,7 +30579,7 @@ AcDbText
   0
 TEXT
   5
-404
+406
 330
 17
 100
@@ -30539,7 +30611,7 @@ AcDbText
   0
 TEXT
   5
-405
+407
 330
 17
 100
@@ -30571,7 +30643,7 @@ AcDbText
   0
 LWPOLYLINE
   5
-406
+408
 330
 17
 100
@@ -30597,7 +30669,7 @@ AcDbPolyline
   0
 TEXT
   5
-407
+409
 330
 17
 100
@@ -30629,7 +30701,7 @@ AcDbText
   0
 TEXT
   5
-408
+40A
 330
 17
 100
@@ -30661,7 +30733,7 @@ AcDbText
   0
 TEXT
   5
-409
+40B
 330
 17
 100
@@ -30693,7 +30765,7 @@ AcDbText
   0
 TEXT
   5
-40A
+40C
 330
 17
 100
@@ -30725,7 +30797,7 @@ AcDbText
   0
 LWPOLYLINE
   5
-40B
+40D
 330
 17
 100
@@ -30751,7 +30823,7 @@ AcDbPolyline
   0
 TEXT
   5
-40C
+40E
 330
 17
 100
@@ -30783,7 +30855,7 @@ AcDbText
   0
 TEXT
   5
-40D
+40F
 330
 17
 100
@@ -30815,7 +30887,7 @@ AcDbText
   0
 TEXT
   5
-40E
+410
 330
 17
 100
@@ -30847,7 +30919,7 @@ AcDbText
   0
 TEXT
   5
-40F
+411
 330
 17
 100
@@ -30879,7 +30951,7 @@ AcDbText
   0
 LWPOLYLINE
   5
-410
+412
 330
 17
 100
@@ -30905,7 +30977,7 @@ AcDbPolyline
   0
 TEXT
   5
-411
+413
 330
 17
 100
@@ -30937,7 +31009,7 @@ AcDbText
   0
 TEXT
   5
-412
+414
 330
 17
 100
@@ -30969,7 +31041,7 @@ AcDbText
   0
 TEXT
   5
-413
+415
 330
 17
 100
@@ -31001,7 +31073,7 @@ AcDbText
   0
 TEXT
   5
-414
+416
 330
 17
 100
@@ -31033,7 +31105,7 @@ AcDbText
   0
 LWPOLYLINE
   5
-415
+417
 330
 17
 100
@@ -31059,7 +31131,7 @@ AcDbPolyline
   0
 TEXT
   5
-416
+418
 330
 17
 100
@@ -31091,7 +31163,7 @@ AcDbText
   0
 TEXT
   5
-417
+419
 330
 17
 100
@@ -31123,7 +31195,7 @@ AcDbText
   0
 TEXT
   5
-418
+41A
 330
 17
 100
@@ -31155,7 +31227,7 @@ AcDbText
   0
 TEXT
   5
-419
+41B
 330
 17
 100
@@ -31187,7 +31259,7 @@ AcDbText
   0
 LWPOLYLINE
   5
-41A
+41C
 330
 17
 100
@@ -31213,7 +31285,7 @@ AcDbPolyline
   0
 TEXT
   5
-41B
+41D
 330
 17
 100
@@ -31245,7 +31317,7 @@ AcDbText
   0
 TEXT
   5
-41C
+41E
 330
 17
 100
@@ -31277,7 +31349,7 @@ AcDbText
   0
 TEXT
   5
-41D
+41F
 330
 17
 100
@@ -31309,7 +31381,7 @@ AcDbText
   0
 TEXT
   5
-41E
+420
 330
 17
 100
@@ -31341,7 +31413,7 @@ AcDbText
   0
 LWPOLYLINE
   5
-41F
+421
 330
 17
 100
@@ -31367,7 +31439,7 @@ AcDbPolyline
   0
 TEXT
   5
-420
+422
 330
 17
 100
@@ -31399,7 +31471,7 @@ AcDbText
   0
 TEXT
   5
-421
+423
 330
 17
 100
@@ -31431,7 +31503,7 @@ AcDbText
   0
 TEXT
   5
-422
+424
 330
 17
 100
@@ -31463,7 +31535,7 @@ AcDbText
   0
 TEXT
   5
-423
+425
 330
 17
 100
@@ -31495,7 +31567,7 @@ AcDbText
   0
 LWPOLYLINE
   5
-424
+426
 330
 17
 100
@@ -31521,7 +31593,7 @@ AcDbPolyline
   0
 TEXT
   5
-425
+427
 330
 17
 100
@@ -31553,7 +31625,7 @@ AcDbText
   0
 TEXT
   5
-426
+428
 330
 17
 100
@@ -31585,7 +31657,7 @@ AcDbText
   0
 TEXT
   5
-427
+429
 330
 17
 100
@@ -31617,7 +31689,7 @@ AcDbText
   0
 TEXT
   5
-428
+42A
 330
 17
 100
@@ -31649,7 +31721,7 @@ AcDbText
   0
 LWPOLYLINE
   5
-429
+42B
 330
 17
 100
@@ -31675,7 +31747,7 @@ AcDbPolyline
   0
 TEXT
   5
-42A
+42C
 330
 17
 100
@@ -31707,7 +31779,7 @@ AcDbText
   0
 TEXT
   5
-42B
+42D
 330
 17
 100
@@ -31739,7 +31811,7 @@ AcDbText
   0
 TEXT
   5
-42C
+42E
 330
 17
 100
@@ -31771,7 +31843,7 @@ AcDbText
   0
 TEXT
   5
-42D
+42F
 330
 17
 100
@@ -31803,7 +31875,7 @@ AcDbText
   0
 LWPOLYLINE
   5
-42E
+430
 330
 17
 100
@@ -31829,7 +31901,7 @@ AcDbPolyline
   0
 TEXT
   5
-42F
+431
 330
 17
 100
@@ -31861,7 +31933,7 @@ AcDbText
   0
 TEXT
   5
-430
+432
 330
 17
 100
@@ -31893,7 +31965,7 @@ AcDbText
   0
 TEXT
   5
-431
+433
 330
 17
 100
@@ -31925,7 +31997,7 @@ AcDbText
   0
 TEXT
   5
-432
+434
 330
 17
 100
@@ -31957,7 +32029,7 @@ AcDbText
   0
 LWPOLYLINE
   5
-433
+435
 330
 17
 100
@@ -31983,7 +32055,7 @@ AcDbPolyline
   0
 TEXT
   5
-434
+436
 330
 17
 100
@@ -32015,7 +32087,7 @@ AcDbText
   0
 TEXT
   5
-435
+437
 330
 17
 100
@@ -32047,7 +32119,7 @@ AcDbText
   0
 TEXT
   5
-436
+438
 330
 17
 100
@@ -32079,7 +32151,7 @@ AcDbText
   0
 TEXT
   5
-437
+439
 330
 17
 100
@@ -32111,7 +32183,7 @@ AcDbText
   0
 LWPOLYLINE
   5
-438
+43A
 330
 17
 100
@@ -32137,7 +32209,7 @@ AcDbPolyline
   0
 TEXT
   5
-439
+43B
 330
 17
 100
@@ -32169,7 +32241,7 @@ AcDbText
   0
 TEXT
   5
-43A
+43C
 330
 17
 100
@@ -32201,7 +32273,7 @@ AcDbText
   0
 TEXT
   5
-43B
+43D
 330
 17
 100
@@ -32233,7 +32305,7 @@ AcDbText
   0
 TEXT
   5
-43C
+43E
 330
 17
 100
@@ -32265,7 +32337,7 @@ AcDbText
   0
 LWPOLYLINE
   5
-43D
+43F
 330
 17
 100
@@ -32291,7 +32363,7 @@ AcDbPolyline
   0
 TEXT
   5
-43E
+440
 330
 17
 100
@@ -32323,7 +32395,7 @@ AcDbText
   0
 TEXT
   5
-43F
+441
 330
 17
 100
@@ -32355,7 +32427,7 @@ AcDbText
   0
 TEXT
   5
-440
+442
 330
 17
 100
@@ -32387,7 +32459,7 @@ AcDbText
   0
 TEXT
   5
-441
+443
 330
 17
 100
@@ -32419,7 +32491,7 @@ AcDbText
   0
 LWPOLYLINE
   5
-442
+444
 330
 17
 100
@@ -32445,7 +32517,7 @@ AcDbPolyline
   0
 TEXT
   5
-443
+445
 330
 17
 100
@@ -32477,7 +32549,7 @@ AcDbText
   0
 TEXT
   5
-444
+446
 330
 17
 100
@@ -32509,7 +32581,7 @@ AcDbText
   0
 TEXT
   5
-445
+447
 330
 17
 100
@@ -32541,7 +32613,7 @@ AcDbText
   0
 TEXT
   5
-446
+448
 330
 17
 100
@@ -32573,7 +32645,7 @@ AcDbText
   0
 LWPOLYLINE
   5
-447
+449
 330
 17
 100
@@ -32599,7 +32671,7 @@ AcDbPolyline
   0
 TEXT
   5
-448
+44A
 330
 17
 100
@@ -32631,7 +32703,7 @@ AcDbText
   0
 TEXT
   5
-449
+44B
 330
 17
 100
@@ -32663,7 +32735,7 @@ AcDbText
   0
 TEXT
   5
-44A
+44C
 330
 17
 100
@@ -32695,7 +32767,7 @@ AcDbText
   0
 TEXT
   5
-44B
+44D
 330
 17
 100
@@ -32727,7 +32799,7 @@ AcDbText
   0
 LWPOLYLINE
   5
-44C
+44E
 330
 17
 100
@@ -32753,7 +32825,7 @@ AcDbPolyline
   0
 TEXT
   5
-44D
+44F
 330
 17
 100
@@ -32785,7 +32857,7 @@ AcDbText
   0
 TEXT
   5
-44E
+450
 330
 17
 100
@@ -32817,7 +32889,7 @@ AcDbText
   0
 TEXT
   5
-44F
+451
 330
 17
 100
@@ -32849,7 +32921,7 @@ AcDbText
   0
 TEXT
   5
-450
+452
 330
 17
 100
@@ -32881,7 +32953,7 @@ AcDbText
   0
 LWPOLYLINE
   5
-451
+453
 330
 17
 100
@@ -32907,7 +32979,7 @@ AcDbPolyline
   0
 TEXT
   5
-452
+454
 330
 17
 100
@@ -32939,7 +33011,7 @@ AcDbText
   0
 TEXT
   5
-453
+455
 330
 17
 100
@@ -32971,7 +33043,7 @@ AcDbText
   0
 TEXT
   5
-454
+456
 330
 17
 100
@@ -33003,7 +33075,7 @@ AcDbText
   0
 TEXT
   5
-455
+457
 330
 17
 100
@@ -33035,7 +33107,7 @@ AcDbText
   0
 LWPOLYLINE
   5
-456
+458
 330
 17
 100
@@ -33061,7 +33133,7 @@ AcDbPolyline
   0
 TEXT
   5
-457
+459
 330
 17
 100
@@ -33093,7 +33165,7 @@ AcDbText
   0
 TEXT
   5
-458
+45A
 330
 17
 100
@@ -33125,7 +33197,7 @@ AcDbText
   0
 TEXT
   5
-459
+45B
 330
 17
 100
@@ -33157,7 +33229,7 @@ AcDbText
   0
 TEXT
   5
-45A
+45C
 330
 17
 100
@@ -33189,7 +33261,7 @@ AcDbText
   0
 LWPOLYLINE
   5
-45B
+45D
 330
 17
 100
@@ -33215,7 +33287,7 @@ AcDbPolyline
   0
 TEXT
   5
-45C
+45E
 330
 17
 100
@@ -33247,7 +33319,7 @@ AcDbText
   0
 TEXT
   5
-45D
+45F
 330
 17
 100
@@ -33279,7 +33351,7 @@ AcDbText
   0
 TEXT
   5
-45E
+460
 330
 17
 100
@@ -33311,7 +33383,7 @@ AcDbText
   0
 TEXT
   5
-45F
+461
 330
 17
 100
@@ -33343,7 +33415,7 @@ AcDbText
   0
 LWPOLYLINE
   5
-460
+462
 330
 17
 100
@@ -33369,7 +33441,7 @@ AcDbPolyline
   0
 TEXT
   5
-461
+463
 330
 17
 100
@@ -33401,7 +33473,7 @@ AcDbText
   0
 TEXT
   5
-462
+464
 330
 17
 100
@@ -33433,7 +33505,7 @@ AcDbText
   0
 TEXT
   5
-463
+465
 330
 17
 100
@@ -33465,7 +33537,7 @@ AcDbText
   0
 TEXT
   5
-464
+466
 330
 17
 100
@@ -33497,7 +33569,7 @@ AcDbText
   0
 LWPOLYLINE
   5
-465
+467
 330
 17
 100
@@ -33523,7 +33595,7 @@ AcDbPolyline
   0
 TEXT
   5
-466
+468
 330
 17
 100
@@ -33555,7 +33627,7 @@ AcDbText
   0
 TEXT
   5
-467
+469
 330
 17
 100
@@ -33587,7 +33659,7 @@ AcDbText
   0
 TEXT
   5
-468
+46A
 330
 17
 100
@@ -33619,7 +33691,7 @@ AcDbText
   0
 TEXT
   5
-469
+46B
 330
 17
 100
@@ -33651,7 +33723,7 @@ AcDbText
   0
 LWPOLYLINE
   5
-46A
+46C
 330
 17
 100
@@ -33677,7 +33749,7 @@ AcDbPolyline
   0
 TEXT
   5
-46B
+46D
 330
 17
 100
@@ -33709,7 +33781,7 @@ AcDbText
   0
 TEXT
   5
-46C
+46E
 330
 17
 100
@@ -33741,7 +33813,7 @@ AcDbText
   0
 TEXT
   5
-46D
+46F
 330
 17
 100
@@ -33773,7 +33845,7 @@ AcDbText
   0
 TEXT
   5
-46E
+470
 330
 17
 100
@@ -33805,7 +33877,7 @@ AcDbText
   0
 LWPOLYLINE
   5
-46F
+471
 330
 17
 100
@@ -33831,7 +33903,7 @@ AcDbPolyline
   0
 TEXT
   5
-470
+472
 330
 17
 100
@@ -33863,7 +33935,7 @@ AcDbText
   0
 TEXT
   5
-471
+473
 330
 17
 100
@@ -33895,7 +33967,7 @@ AcDbText
   0
 TEXT
   5
-472
+474
 330
 17
 100
@@ -33927,7 +33999,7 @@ AcDbText
   0
 TEXT
   5
-473
+475
 330
 17
 100
@@ -33959,7 +34031,7 @@ AcDbText
   0
 LWPOLYLINE
   5
-474
+476
 330
 17
 100
@@ -33985,7 +34057,7 @@ AcDbPolyline
   0
 TEXT
   5
-475
+477
 330
 17
 100
@@ -34017,7 +34089,7 @@ AcDbText
   0
 TEXT
   5
-476
+478
 330
 17
 100
@@ -34049,7 +34121,7 @@ AcDbText
   0
 TEXT
   5
-477
+479
 330
 17
 100
@@ -34081,7 +34153,7 @@ AcDbText
   0
 TEXT
   5
-478
+47A
 330
 17
 100
@@ -34113,7 +34185,7 @@ AcDbText
   0
 LWPOLYLINE
   5
-479
+47B
 330
 17
 100
@@ -34139,7 +34211,7 @@ AcDbPolyline
   0
 TEXT
   5
-47A
+47C
 330
 17
 100
@@ -34171,7 +34243,7 @@ AcDbText
   0
 TEXT
   5
-47B
+47D
 330
 17
 100
@@ -34203,7 +34275,7 @@ AcDbText
   0
 TEXT
   5
-47C
+47E
 330
 17
 100
@@ -34235,7 +34307,7 @@ AcDbText
   0
 TEXT
   5
-47D
+47F
 330
 17
 100
@@ -34267,7 +34339,7 @@ AcDbText
   0
 LWPOLYLINE
   5
-47E
+480
 330
 17
 100
@@ -34293,7 +34365,7 @@ AcDbPolyline
   0
 TEXT
   5
-47F
+481
 330
 17
 100
@@ -34325,7 +34397,7 @@ AcDbText
   0
 TEXT
   5
-480
+482
 330
 17
 100
@@ -34357,7 +34429,7 @@ AcDbText
   0
 TEXT
   5
-481
+483
 330
 17
 100
@@ -34389,7 +34461,7 @@ AcDbText
   0
 TEXT
   5
-482
+484
 330
 17
 100
@@ -34421,7 +34493,7 @@ AcDbText
   0
 LWPOLYLINE
   5
-483
+485
 330
 17
 100
@@ -34447,7 +34519,7 @@ AcDbPolyline
   0
 TEXT
   5
-484
+486
 330
 17
 100
@@ -34479,7 +34551,7 @@ AcDbText
   0
 TEXT
   5
-485
+487
 330
 17
 100
@@ -34511,7 +34583,7 @@ AcDbText
   0
 TEXT
   5
-486
+488
 330
 17
 100
@@ -34543,7 +34615,7 @@ AcDbText
   0
 TEXT
   5
-487
+489
 330
 17
 100
@@ -34575,7 +34647,7 @@ AcDbText
   0
 LWPOLYLINE
   5
-488
+48A
 330
 17
 100
@@ -34601,7 +34673,7 @@ AcDbPolyline
   0
 TEXT
   5
-489
+48B
 330
 17
 100
@@ -34633,7 +34705,7 @@ AcDbText
   0
 TEXT
   5
-48A
+48C
 330
 17
 100
@@ -34665,7 +34737,7 @@ AcDbText
   0
 TEXT
   5
-48B
+48D
 330
 17
 100
@@ -34697,7 +34769,7 @@ AcDbText
   0
 TEXT
   5
-48C
+48E
 330
 17
 100
@@ -34729,7 +34801,7 @@ AcDbText
   0
 LWPOLYLINE
   5
-48D
+48F
 330
 17
 100
@@ -34755,7 +34827,7 @@ AcDbPolyline
   0
 TEXT
   5
-48E
+490
 330
 17
 100
@@ -34787,7 +34859,7 @@ AcDbText
   0
 TEXT
   5
-48F
+491
 330
 17
 100
@@ -34819,7 +34891,7 @@ AcDbText
   0
 TEXT
   5
-490
+492
 330
 17
 100
@@ -34851,7 +34923,7 @@ AcDbText
   0
 TEXT
   5
-491
+493
 330
 17
 100
@@ -34883,7 +34955,7 @@ AcDbText
   0
 LWPOLYLINE
   5
-492
+494
 330
 17
 100
@@ -34909,7 +34981,7 @@ AcDbPolyline
   0
 TEXT
   5
-493
+495
 330
 17
 100
@@ -34941,7 +35013,7 @@ AcDbText
   0
 TEXT
   5
-494
+496
 330
 17
 100
@@ -34973,7 +35045,7 @@ AcDbText
   0
 TEXT
   5
-495
+497
 330
 17
 100
@@ -35005,7 +35077,7 @@ AcDbText
   0
 TEXT
   5
-496
+498
 330
 17
 100
@@ -35037,7 +35109,7 @@ AcDbText
   0
 LWPOLYLINE
   5
-497
+499
 330
 17
 100
@@ -35063,7 +35135,7 @@ AcDbPolyline
   0
 TEXT
   5
-498
+49A
 330
 17
 100
@@ -35095,7 +35167,7 @@ AcDbText
   0
 TEXT
   5
-499
+49B
 330
 17
 100
@@ -35127,7 +35199,7 @@ AcDbText
   0
 TEXT
   5
-49A
+49C
 330
 17
 100
@@ -35159,7 +35231,7 @@ AcDbText
   0
 TEXT
   5
-49B
+49D
 330
 17
 100
@@ -35191,7 +35263,7 @@ AcDbText
   0
 LWPOLYLINE
   5
-49C
+49E
 330
 17
 100
@@ -35217,54 +35289,6 @@ AcDbPolyline
   0
 LWPOLYLINE
   5
-49D
-330
-17
-100
-AcDbEntity
-  8
-G-TABLE
-100
-AcDbPolyline
- 90
-2
- 70
-0
- 10
-28400.0
- 20
-20259.999999999978
- 10
-28400.0
- 20
-7539.999999999998
-  0
-LWPOLYLINE
-  5
-49E
-330
-17
-100
-AcDbEntity
-  8
-G-TABLE
-100
-AcDbPolyline
- 90
-2
- 70
-0
- 10
-34200.0
- 20
-20259.999999999978
- 10
-34200.0
- 20
-7539.999999999998
-  0
-LWPOLYLINE
-  5
 49F
 330
 17
@@ -35279,11 +35303,11 @@ AcDbPolyline
  70
 0
  10
-36000.0
+28400.0
  20
 20259.999999999978
  10
-36000.0
+28400.0
  20
 7539.999999999998
   0
@@ -35303,6 +35327,54 @@ AcDbPolyline
  70
 0
  10
+34200.0
+ 20
+20259.999999999978
+ 10
+34200.0
+ 20
+7539.999999999998
+  0
+LWPOLYLINE
+  5
+4A1
+330
+17
+100
+AcDbEntity
+  8
+G-TABLE
+100
+AcDbPolyline
+ 90
+2
+ 70
+0
+ 10
+36000.0
+ 20
+20259.999999999978
+ 10
+36000.0
+ 20
+7539.999999999998
+  0
+LWPOLYLINE
+  5
+4A2
+330
+17
+100
+AcDbEntity
+  8
+G-TABLE
+100
+AcDbPolyline
+ 90
+2
+ 70
+0
+ 10
 37800.0
  20
 20259.999999999978
@@ -35313,7 +35385,7 @@ AcDbPolyline
   0
 LWPOLYLINE
   5
-4A1
+4A3
 330
 17
 100
@@ -36425,7 +36497,7 @@ CREATED_BY_EZDXF
   3
 WRITTEN_BY_EZDXF
 350
-4A4
+4A6
   0
 DICTIONARYVAR
   5
@@ -36437,7 +36509,7 @@ DictionaryVariables
 280
 0
   1
-1.4.4 @ 2026-10-30T14:38:13.263775+00:00
+1.4.4 @ 2026-10-30T14:46:09.911894+00:00
   0
 VISUALSTYLE
   5
@@ -42991,7 +43063,7 @@ strokes_ogs.tif
   0
 DICTIONARYVAR
   5
-4A4
+4A6
 330
 2D
 100
@@ -42999,7 +43071,7 @@ DictionaryVariables
 280
 0
   1
-1.4.4 @ 2026-10-30T14:39:10.701273+00:00
+1.4.4 @ 2026-10-30T14:47:05.987454+00:00
   0
 ENDSEC
   0

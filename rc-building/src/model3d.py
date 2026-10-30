@@ -197,6 +197,10 @@ def classify(h, bx):
         return [(q, "concrete_broom")]
     if bx.cat == "slab" and bx.tag == "庇":
         return [(q, "accent")]
+    if bx.cat == "slab" and bx.tag == "庇B":              # LDK 側はベース色（軒天を明るくして昼光を室内へ反射）
+        return [(q, "base")]
+    if bx.tag == "縦樋":
+        return [(q, "assort_metal")]
     if bx.cat in ("wall", "parapet"):
         return [(q, "base")]
     return [(q, bx.cat)]
@@ -267,8 +271,8 @@ def facade_extras(h, P):
                 q = (W + e - fd, u0, v0, W + e, u1, v1)
             P.add_box("建具", op.floor, "assort_frame", q)
     # 玄関庇の上面（防水）
-    cx0, cy0, cx1, cy1 = h.canopy
-    P.add_box("床スラブ", "EXT", "roof_sheet", (cx0, cy0, h.canopy_z + 150, cx1, cy1, h.canopy_z + 160))
+    for (cx0, cy0, cx1, cy1) in h.canopies:
+        P.add_box("床スラブ", "EXT", "roof_sheet", (cx0, cy0, h.canopy_z + h.canopy_t, cx1, cy1, h.canopy_z + h.canopy_t + 10))
 
 
 # ------------------------------------------------------------------ 外構

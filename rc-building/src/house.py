@@ -497,13 +497,30 @@ class House:
         for (a0, b0, a1, b1) in self.screen:
             self.boxes.append(Box(a0, b0, self.fgl - 400, a1, b1, top, "wall", level="EXT", tag="目隠し壁"))
         self.screen_top = top
-        # 玄関庇（本館から片持ち、出 2.0m）
+        # 連続庇（玄関 → LDK 窓。鋼製の片持ちブラケット＋鋼板屋根。v4.18）
         cn = self.spec["exterior"]["canopy"]
         y_face = -self.t / 2 - self.ins
-        self.canopy = (cn["x"][0], y_face - cn["depth"], cn["x"][1], y_face)
+        x_face = -self.t / 2 - self.ins
+        sx0, sx1 = cn["south"]["x"]
+        wy0, wy1 = cn["west"]["y"]
+        ax0, ax1 = cn["accent_x"]
+        south = (sx0, y_face - cn["south"]["depth"], sx1, y_face)
+        west = (x_face - cn["west"]["depth"], wy0, x_face, wy1)
+        self.canopies = [south, west]
+        self.canopy = self.canopies
         zc = self.fl["1F"] + cn["z"]
-        self.boxes.append(Box(*self.canopy[:2], zc, *self.canopy[2:], zc + 150, "slab", level="EXT", tag="庇"))
         self.canopy_z = zc
+        self.canopy_t = cn["t"]
+        for (a0, a1, tag) in ((sx0, ax0, "庇B"), (ax0, ax1, "庇")):
+            self.boxes.append(Box(a0, south[1], zc, a1, south[3], zc + cn["t"], "slab", level="EXT", tag=tag))
+        self.boxes.append(Box(*west[:2], zc, *west[2:], zc + cn["t"], "slab", level="EXT", tag="庇B"))
+        for (px, py) in cn["downpipes"]:                      # 縦樋 □80（庇の端から地面まで）
+            self.boxes.append(Box(px - 40, py - 40, self.fgl, px + 40, py + 40, zc, "blind", "sash", level="EXT", tag="縦樋"))
+        # 軒天のダウンライト（2,200K・約 3W・@3,000）
+        lt = cn["lights"]
+        pts = [(x, south[1] + cn["south"]["depth"] / 2) for x in range(500, int(sx1), lt["pitch"]) if x > sx0] + \
+              [(west[0] + cn["west"]["depth"] / 2, y) for y in range(2000, int(wy1), lt["pitch"])]
+        self.canopy_lights = [(x, y, zc) for x, y in pts]
 
     # -------------------------------------------------------- exterior
     def _exterior(self):
@@ -833,7 +850,16 @@ class House:
                 yield op
 
     def building_area(self):
-        return self.W * self.D / 1e6
+        """建築面積（壁芯）。庇は先端から 1m 後退した線までを算入（令2条1項2号）。v4.18: 玄関の庇も算入する。"""
+        from shapely.geometry import box as sbox
+        from shapely.ops import unary_union
+        parts = [Polygon([(0, 0), (self.W, 0), (self.W, self.D), (0, self.D)])]
+        for (x0, y0, x1, y1) in getattr(self, "canopies", []):
+            if y1 <= 0:                                  # 南の庇: 北側（建物側）が 0（壁芯）まで、先端側は 1m 後退
+                parts.append(sbox(x0 + 1000, y0 + 1000, x1, 0))     # 西端は西の庇の先端から 1m 後退
+            else:                                         # 西の庇
+                parts.append(sbox(x0 + 1000, y0, 0, y1))
+        return unary_union(parts).area / 1e6
 
     def floor_area(self, f):
         return self.W * self.D / 1e6

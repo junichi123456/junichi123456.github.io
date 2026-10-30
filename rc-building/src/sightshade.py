@@ -163,8 +163,8 @@ def view_obstacles(h, with_screen=True, gates_open=True):
         items.append((box(*r), h.fgl - 400, h.garbage_screen_top, "ゴミ置き目隠し壁"))
     cp = h.carport
     items.append((box(*cp), h.fgl + 2400, h.fgl + 2650, "カーポート屋根"))
-    if getattr(h, "canopy", None):
-        items.append((box(*h.canopy), h.canopy_z, h.canopy_z + 150, "庇"))
+    for r in getattr(h, "canopies", []):
+        items.append((box(*r), h.canopy_z, h.canopy_z + h.canopy_t, "庇"))
     return Prisms(items)
 
 
@@ -264,13 +264,74 @@ def blind_factor(h, side, month, blinds=True):
     return us["fc"]
 
 
-def window_solar(h, gamma_deg=None, shgc=None, blinds=True):
+def overhang_geom(h, op):
+    """窓の上の庇の幾何 (出 P［ガラス面から］, すき間 G, 窓の高さ Hw) mm。庇が無ければ None。ガラス面は RC の外面（外断熱の厚さぶん庇の出より引っ込む）。"""
+    if op.floor != "1F" or op.side not in ("S", "W") or not getattr(h, "canopies", None):
+        return None
+    ins = h.ins
+    for r in h.canopies:
+        x0, y0, x1, y1 = r
+        if op.side == "S" and y1 <= 0 and x0 <= op.u0 + 1 and op.u1 <= x1 + 1:
+            P = -y0 - h.t / 2
+        elif op.side == "W" and x1 <= 0 and y0 - 1 <= op.u0 and op.u1 <= y1 + 1 + 0:
+            P = -x0 - h.t / 2
+        else:
+            continue
+        G = h.canopy_z - op.z1
+        if P > 0 and G >= 0:
+            return (P, G, op.height)
+    return None
+
+
+def _ov_ratio(alt, az, dni, a_s_deg, P, G, Hw):
+    """庇の下の窓の、鉛直面全日射に対する残存率（直達は影の高さ、天空は庇に遮られる分を引く。2 次元・無限長の簡易法）。"""
+    I0 = surface_irradiance(alt, az, dni, 90, a_s_deg)
+    if I0 <= 0:
+        return 1.0
+    dhi, _ = _sky(alt, dni)
+    c = math.cos(az - math.radians(a_s_deg))
+    ci = math.cos(alt) * c
+    direct = max(0.0, dni * ci)
+    diff = I0 - direct
+    sh = 0.0
+    if ci > 0:
+        tphi = math.tan(alt) / max(1e-6, c)
+        sh = min(max(P * tphi - G, 0), Hw) / Hw
+    beta = math.atan((G + Hw / 2) / P)
+    sky = dhi * 0.5
+    I1 = direct * (1 - sh) + sky * math.sin(beta) + (diff - sky)
+    return I1 / I0
+
+
+def overhang_factor(h, op, months):
+    """庇の影の係数 = 期間（months: 月の集合）の鉛直面全日射に対する残存率（庇なしは 1.0）。"""
+    gm = overhang_geom(h, op)
+    if gm is None:
+        return 1.0
+    side_az = SIDE_AZ[op.side] + h.facade_az
+    t0 = t1 = 0.0
+    for alt, az, dni, m in sun_positions(0.5):
+        if m not in months:
+            continue
+        I0 = surface_irradiance(alt, az, dni, 90, side_az)
+        t0 += I0
+        t1 += I0 * _ov_ratio(alt, az, dni, side_az, *gm)
+    return t1 / t0 if t0 else 1.0
+
+
+def window_solar(h, gamma_deg=None, shgc=None, blinds=True, canopy=True):
     """窓の日射取得。gamma: 建物南面の方位（真南から西回り）。shgc を与えると全方位その値（比較用）。"""
     g = h.facade_az if gamma_deg is None else gamma_deg
     glass = {k: 0.0 for k in SIDE_AZ}
+    ov = {k: [] for k in SIDE_AZ}                       # 庇の下の窓 [(面積 m², (出, すき間, 高さ))]
     for op in h.openings(exterior=True):
         if op.kind == "window" and op.side in glass:
-            glass[op.side] += op.width * op.height / 1e6
+            a_ = op.width * op.height / 1e6
+            gm = overhang_geom(h, op) if canopy else None
+            if gm:
+                ov[op.side].append((a_, gm))
+            else:
+                glass[op.side] += a_
     gs = {k: (shgc if shgc is not None else glazing_g(h, k)) for k in SIDE_AZ}
     heat = {k: 0.0 for k in SIDE_AZ}     # 暖房期（11〜3月）の取得熱 kWh
     cool = {k: 0.0 for k in SIDE_AZ}     # 冷房期（6〜9月）の取得熱 kWh
@@ -278,19 +339,24 @@ def window_solar(h, gamma_deg=None, shgc=None, blinds=True):
     for alt, az, dni, m in sun_positions(0.5):
         tot = 0.0
         dhi, _ = _sky(alt, dni)
-        for k, a in glass.items():
-            if a == 0:
-                continue
-            I = surface_irradiance(alt, az, dni, 90, SIDE_AZ[k] + g)
-            f = gs[k] * blind_factor(h, k, m, blinds)
-            tot += I * a * f
-            mean = (SUNSHINE * I + (1 - SUNSHINE) * dhi * 0.8 * 0.5) * a * f * 0.5 * DAYS[m - 1] / 1000
-            if m in (11, 12, 1, 2, 3):
-                heat[k] += mean
-            if m in (6, 7, 8, 9):
-                cool[k] += mean
+        for k in glass:
+            parts = [(glass[k], 1.0)]
+            for a_, gm in ov[k]:
+                parts.append((a_, _ov_ratio(alt, az, dni, SIDE_AZ[k] + g, *gm)))
+            for a, r in parts:
+                if a == 0:
+                    continue
+                I = surface_irradiance(alt, az, dni, 90, SIDE_AZ[k] + g) * r
+                f = gs[k] * blind_factor(h, k, m, blinds)
+                tot += I * a * f
+                mean = (SUNSHINE * I + (1 - SUNSHINE) * dhi * 0.8 * 0.5) * a * f * 0.5 * DAYS[m - 1] / 1000
+                if m in (11, 12, 1, 2, 3):
+                    heat[k] += mean
+                if m in (6, 7, 8, 9):
+                    cool[k] += mean
         if m in (7, 8):
             peak = max(peak, tot)
+    glass = {k: glass[k] + sum(a_ for a_, _ in ov[k]) for k in glass}
     return dict(glass=glass, heat=heat, cool=cool, peak=peak / 1000, gamma=g, g=gs)
 
 
