@@ -713,6 +713,8 @@ def main_interior(cfg, only):
     t0 = time.time()
     sc, lib, meshes, M = build_scene(cfg)
     st = cg_interior.prepare(me, sc, lib, meshes, M, cfg)
+    add_plants(cfg, lib, M)                       # 敷地内のプランター（外観 CG と同じ）
+    cg_interior.add_scenery(me, cfg, M)           # 遠景の木の帯
     log("scene built", round(time.time() - t0, 1), "s;", len(meshes), "objects;", len(lib.mats), "materials; fallbacks:", lib.fallbacks)
     log("MATERIAL_COLORS " + json.dumps(Lib.audit_log, sort_keys=True))
     state, results = {}, []

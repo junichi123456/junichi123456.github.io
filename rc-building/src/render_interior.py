@@ -27,6 +27,56 @@ from model3d import export_glb, material_table, srgb_to_lin  # noqa: E402
 FONT_CANDIDATES = ["/usr/share/fonts/opentype/ipafont-gothic/ipag.ttf", "/usr/share/fonts/truetype/fonts-japanese-gothic.ttf"]
 
 
+def scenery_cfg(h, spec):
+    """窓の外の添景: 遠景の木の帯（seed 固定の乱数配置。周辺建物・道路・水路と重ねない）と、外観 CG と同じプランター。"""
+    import random
+    from shapely.geometry import Point, Polygon
+    from shapely.ops import unary_union
+    from model3d import _site_road_polys
+    sc = spec["interior_cg"].get("scenery")
+    if not sc:
+        return dict(trees=[], planters=[])
+    t = sc["trees"]
+    rnd = random.Random(t["seed"])
+    road, _ = _site_road_polys(h)
+    block = unary_union([Polygon(b).buffer(0) for b in list(h.neighbors) + list(h.existing)] + [Polygon(w).buffer(0) for w in h.water] + [road]).buffer(0)
+    cx, cy = h.W / 2.0, h.D / 2.0
+    # 地形メッシュの範囲（model3d.build_terrain: x −70〜60 m, y −70〜65 m を原点 (ox, oy) からの相対で取る）内だけに置く
+    x_lo, x_hi, y_lo, y_hi = (-70 - h.ox) * 1000, (60 - h.ox) * 1000, (-70 - h.oy) * 1000, (65 - h.oy) * 1000
+    az0 = math.radians(h.facade_az)                       # 建物座標の方位 = 真方位 − facade_az
+    trees = []
+    b0, b1 = t["bearing_deg"]
+    for r_m in (t["r_min_m"] + i * 2.5 for i in range(int((t["r_max_m"] - t["r_min_m"]) / 2.5) + 1)):
+        # 半径ごとのリングに、弧長の間隔 6〜9m で並べる（乱数で半径と方位を少し散らす）
+        b = b0
+        while b <= b1:
+            rr = r_m + rnd.uniform(-1.0, 1.0)
+            ang = math.radians(b) - az0
+            x, y = cx + rr * 1000 * math.sin(ang), cy + rr * 1000 * math.cos(ang)
+            hh = rnd.uniform(t["h_min_m"], t["h_max_m"])
+            rad = hh * 0.32
+            gap = rnd.uniform(t["gap_min_m"], t["gap_max_m"])
+            ok = x_lo < x < x_hi and y_lo < y < y_hi and not block.intersects(Point(x, y).buffer(rad * 1000))
+            if ok and all(math.hypot(x - u["p"][0] * 1000, y - u["p"][1] * 1000) > 4000 for u in trees[-40:]):
+                trees.append(dict(p=[x / 1000.0, y / 1000.0, h.ground(x, y) / 1000.0], h=hh, seed=rnd.randrange(1 << 30)))
+            b += math.degrees(gap / rr)
+    return dict(trees=trees, trunk=srgb_to_lin(t["trunk"]), planters=RC_planters(h, spec))
+
+
+def RC_planters(h, spec):
+    """render_cg.py（外観）と同じプランターのリスト（建物座標 m）。"""
+    S = 1000.0
+    fm = spec["farm"]
+    x0, y0, x1, y1 = h.pergola
+    zb = max(h.ground((x0 + x1) / 2, (y0 + y1) / 2), h.fgl)
+    out = []
+    for b in h.garden_beds:
+        out.append(dict(rect=[v / S for v in b], soil_z=(zb + fm["leg"] + fm["planter_h"] - 50) / S, height=0.30, kind="shade"))
+    for b in h.planters:
+        out.append(dict(rect=[v / S for v in b], soil_z=(h.fgl + 20 + fm["leg"] + fm["planter_h"] - 50) / S, height=0.45, kind="sun"))
+    return out
+
+
 def interior_cfg(h, spec, args, assets, out_dir, glb_path):
     ic = spec["interior_cg"]
     fr = RC.Frame(h)
@@ -71,9 +121,10 @@ def interior_cfg(h, spec, args, assets, out_dir, glb_path):
                    out=str(out_dir / (c["file"] + ".png")))
         cuts.append(cut)
     scr = next(i for i in its if i.id == "TH-S")
+    scn = scenery_cfg(h, spec)
     cfg = dict(
         mode="interior", glb=str(glb_path), alpha=h.alpha, pivot=[h.W / 2000.0, h.D / 2000.0], materials=mats, colors_lin=colors_lin,
-        textures=assets["textures"], hdri={k: v["path"] for k, v in assets["hdri"].items()}, planters=[], window_lights=[], ext_lights=[],
+        textures=assets["textures"], hdri={k: v["path"] for k, v in assets["hdri"].items()}, planters=scn["planters"], scenery=scn, window_lights=[], ext_lights=[],
         lamp_color=list(RC.LAMP_LIN), lamp_strength=0.0, room_light=dict(kelvin=3000, strength=0.0), sky_clamp=spec["cg"].get("sky_clamp", 30.0),
         adaptive_threshold=ic["adaptive_threshold"], max_bounces=8, cuts=cuts, preview=bool(args.preview), raw_log=str(out_dir / "render_log_raw.json"),
         look="None", view_transform=ic.get("view_transform", "Khronos PBR Neutral"),
@@ -129,7 +180,7 @@ def annotate(path, cut, spec, band=36):
     fs = max(10, int(band * 0.5))
     f = _font(fs)
     mo, da, hh, mm = int(cut["when"][5:7]), int(cut["when"][8:10]), cut["when"][11:13], cut["when"][14:16]
-    left = f"家具は仮置き（後日差し替え）・指定商品の寸法と色は仮定・色はいずれも仮定"
+    left = f"家具は仮置き（後日差し替え）・指定商品の寸法と色は仮定・色はいずれも仮定・屋外の樹木は添景"
     chn = cut["ch"]
     lt = f"主照明 {chn['L'][0]:,}K・{chn['L'][1]:.0f}%" if chn["L"][1] > 0 else f"主照明 消灯・補助灯 {chn['D'][0]:,}K・{chn['D'][1]:.0f}%"
     right = f"{cut['title']}　{mo}月{da}日 {hh}:{mm}　{lt}"

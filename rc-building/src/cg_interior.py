@@ -240,6 +240,63 @@ def window_glass_material(CB, tv_ns, tv_ew):
     return mat
 
 
+def add_scenery(CB, cfg, M):
+    """窓の外の遠景の木の帯。4 種の低ポリゴンの木（幹＋icosphere 細分 2 の葉 3〜5 個）を作り、リンク複製（メッシュ共有）で並べる。"""
+    import random
+    sc_cfg = cfg.get("scenery") or {}
+    trees = sc_cfg.get("trees") or []
+    if not trees:
+        return
+    import bmesh
+    leaf = bpy.data.materials.new("tree_leaf")
+    b = CB.NT(leaf)
+    nz = b.node("ShaderNodeTexNoise", noise_dimensions="3D")
+    b.nt.links.new(b.tc().outputs["Object"], nz.inputs["Vector"])
+    nz.inputs["Scale"].default_value = 1.2
+    c1, c2 = cfg["colors_lin"]["plant_a"], cfg["colors_lin"]["plant_b"]
+    b.set(b.bsdf.inputs["Base Color"], b.mixc(lin4(c1), lin4(c2), nz.outputs["Fac"]))
+    b.bsdf.inputs["Roughness"].default_value = 0.8
+    trunk = bpy.data.materials.new("tree_trunk")
+    bt = CB.NT(trunk)
+    bt.bsdf.inputs["Base Color"].default_value = lin4(sc_cfg["trunk"])
+    bt.bsdf.inputs["Roughness"].default_value = 0.9
+    variants = []
+    for v in range(4):
+        rnd = random.Random(100 + v)
+        bm = bmesh.new()
+        # 幹（単位の高さ 1.0 の八角柱）
+        bmesh.ops.create_cone(bm, cap_ends=True, segments=8, radius1=0.022, radius2=0.012, depth=0.42, matrix=Matrix.Translation((0, 0, 0.21)))
+        for f in bm.faces:
+            f.material_index = 1
+        n = rnd.randint(3, 5)
+        for i in range(n):
+            r = rnd.uniform(0.20, 0.30)
+            ang = rnd.uniform(0, 2 * math.pi)
+            d = 0.0 if i == 0 else rnd.uniform(0.10, 0.20)
+            cz = 0.62 + (rnd.uniform(-0.10, 0.20) if i else 0.12)
+            before = set(bm.faces)
+            bmesh.ops.create_icosphere(bm, subdivisions=2, radius=r, matrix=Matrix.Translation((d * math.cos(ang), d * math.sin(ang), cz)))
+            for f in bm.faces:
+                if f not in before:
+                    f.material_index = 0
+        me = bpy.data.meshes.new("tree_v%d" % v)
+        bm.to_mesh(me)
+        bm.free()
+        me.materials.append(leaf)
+        me.materials.append(trunk)
+        variants.append(me)
+    for i, t in enumerate(trees):
+        rnd = random.Random(t["seed"])
+        ob = bpy.data.objects.new("tree", variants[i % 4])          # メッシュを共有（リンク複製）
+        sc_h = t["h"]
+        ob.scale = (sc_h * rnd.uniform(0.85, 1.15), sc_h * rnd.uniform(0.85, 1.15), sc_h)
+        ob.rotation_euler = (0, 0, rnd.uniform(0, 2 * math.pi))
+        ob.location = (t["p"][0], t["p"][1], t["p"][2] - 0.2)
+        bpy.context.scene.collection.objects.link(ob)
+        ob.matrix_world = M @ (Matrix.Translation(ob.location) @ ob.rotation_euler.to_matrix().to_4x4() @ Matrix.Diagonal((*ob.scale, 1.0)))
+    log("scenery trees", len(trees), "variants", len(variants))
+
+
 def cam_only_emission(name, strength, kelvin):
     """カメラ光線にだけ見える発光面（照明は別の面光源・Spot が行う。二重に数えない）。戻り値: (材質, 強さの入力, 色温度の入力)。"""
     m = bpy.data.materials.new(name)
