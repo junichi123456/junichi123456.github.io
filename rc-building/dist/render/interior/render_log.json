@@ -1,14 +1,14 @@
 {
- "total_seconds": 1042.3,
- "glb_export_seconds": 1.9,
+ "total_seconds": 1052.4,
+ "glb_export_seconds": 2.2,
  "asset_fetch_seconds": 0.0,
- "blender_setup_seconds": 1006.1,
+ "blender_setup_seconds": 1015.4,
  "cuts": [
   {
    "id": "I01",
    "file": "/home/user/junichi123456.github.io/rc-building/dist/render/interior/I01_ldk_south.png",
-   "seconds": 251.2,
-   "render_seconds": 251.1,
+   "seconds": 255.5,
+   "render_seconds": 255.4,
    "samples": 64,
    "time_limit": 240,
    "res": [
@@ -17,11 +17,11 @@
    ],
    "exposure": -0.8,
    "wb": 5000,
-   "lamp_k": 4844,
+   "lamp_k": 4625,
    "lamp_pct": 100.0,
    "channels": {
     "L": [
-     4844,
+     4625,
      100.0
     ],
     "D": [
@@ -36,34 +36,35 @@
    "hdri_sun": [
     145.8,
     47.9,
-    -71.5
+    -137.4
    ],
    "texture_fallbacks": [],
-   "time_limit_hit": true
+   "time_limit_hit": true,
+   "when": "2026-03-21T14:00"
   },
   {
    "id": "I02",
-   "file": "/home/user/junichi123456.github.io/rc-building/dist/render/interior/I02_ldk_dusk.png",
-   "seconds": 252.5,
-   "render_seconds": 252.4,
+   "file": "/home/user/junichi123456.github.io/rc-building/dist/render/interior/I02_ldk_kitchen_side.png",
+   "seconds": 253.9,
+   "render_seconds": 253.8,
    "samples": 64,
    "time_limit": 240,
    "res": [
     1600,
     900
    ],
-   "exposure": -0.5,
-   "wb": 4000,
-   "lamp_k": 2925,
-   "lamp_pct": 62.5,
+   "exposure": -1.0,
+   "wb": 5000,
+   "lamp_k": 4625,
+   "lamp_pct": 100.0,
    "channels": {
     "L": [
-     2925,
-     62.5
+     4625,
+     100.0
     ],
     "D": [
-     2700,
-     70.0
+     2200,
+     0.0
     ],
     "F": [
      2200,
@@ -73,29 +74,30 @@
    "hdri_sun": [
     145.8,
     47.9,
-    -71.5
+    -137.4
    ],
    "texture_fallbacks": [],
-   "time_limit_hit": true
+   "time_limit_hit": true,
+   "when": "2026-03-21T14:00"
   },
   {
    "id": "I03",
    "file": "/home/user/junichi123456.github.io/rc-building/dist/render/interior/I03_kitchen.png",
-   "seconds": 248.4,
-   "render_seconds": 248.3,
+   "seconds": 253.0,
+   "render_seconds": 252.8,
    "samples": 64,
    "time_limit": 240,
    "res": [
     1600,
     900
    ],
-   "exposure": -0.5,
+   "exposure": -0.7,
    "wb": 5000,
-   "lamp_k": 4812,
+   "lamp_k": 4625,
    "lamp_pct": 100.0,
    "channels": {
     "L": [
-     4812,
+     4625,
      100.0
     ],
     "D": [
@@ -110,29 +112,30 @@
    "hdri_sun": [
     145.8,
     47.9,
-    -81.1
+    -137.4
    ],
    "texture_fallbacks": [],
-   "time_limit_hit": true
+   "time_limit_hit": true,
+   "when": "2026-03-21T14:00"
   },
   {
    "id": "I14",
    "file": "/home/user/junichi123456.github.io/rc-building/dist/render/interior/I14_ldk_corner.png",
-   "seconds": 251.7,
-   "render_seconds": 251.5,
+   "seconds": 250.4,
+   "render_seconds": 250.3,
    "samples": 64,
    "time_limit": 240,
    "res": [
     1600,
     900
    ],
-   "exposure": -0.8,
+   "exposure": 0.3,
    "wb": 5000,
-   "lamp_k": 4594,
+   "lamp_k": 4625,
    "lamp_pct": 100.0,
    "channels": {
     "L": [
-     4594,
+     4625,
      100.0
     ],
     "D": [
@@ -147,10 +150,11 @@
    "hdri_sun": [
     145.8,
     47.9,
-    -141.4
+    -137.4
    ],
    "texture_fallbacks": [],
-   "time_limit_hit": true
+   "time_limit_hit": true,
+   "when": "2026-03-21T14:00"
   }
  ],
  "textures": {
@@ -195,7 +199,7 @@
    "nearest": "wall"
   }
  },
- "palette_checked": 72,
+ "palette_checked": 74,
  "palette_mismatch": [],
  "settings": {
   "resolution": [
@@ -207,14 +211,14 @@
   "time_limit": 240,
   "view_transform": "Khronos PBR Neutral"
  },
- "version": "v4.18",
+ "version": "v4.19",
  "rerendered_cuts": [
   "I01",
   "I02",
   "I03",
   "I14"
  ],
- "not_rerendered_notice": "I04〜I13 と外観 C01〜C06 は v4.17 時点（階高 3,200・天井高 2,600・旧キッチン・旧 LDK 窓・旧庇）の画像のまま。v4.18 では描き直していない（施主指示: リビングとキッチンだけ）。次回以降に描き直す。",
+ "not_rerendered_notice": "I04〜I13 と外観 C01〜C06 は v4.17 時点（階高 3,200・天井高 2,600・旧キッチン・旧 LDK 窓・旧庇）の画像のまま。v4.19 では I01・I02・I03・I14 だけを 3/21 14:00 で描き直した（ガラス・添景・台の見え方の改善）。",
  "not_rerendered": [
   {
    "id": "I04",
@@ -277,5 +281,15 @@
    "previous_seconds": 251.2
   }
  ],
- "previous_run_total_seconds": 3253.9
+ "previous_run_total_seconds": 1042.3,
+ "rerendered": {
+  "cuts": [
+   "I01",
+   "I02",
+   "I03",
+   "I14"
+  ],
+  "when": "2026-03-21T14:00",
+  "version": "v4.19"
+ }
 }

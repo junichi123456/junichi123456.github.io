@@ -257,6 +257,24 @@ def main(args):
                camera_clearance_mm=clear, palette_checked=len([k for k in cfg["interior"]["palette"] if k in mc]), palette_mismatch=pal_mismatch,
                settings=dict(resolution=ic["resolution"], samples=ic["samples"], adaptive_threshold=ic["adaptive_threshold"], time_limit=ic["time_limit"],
                              view_transform=cfg["view_transform"]))
-    (out_dir / "render_log.json").write_text(json.dumps(log, ensure_ascii=False, indent=1), encoding="utf-8")
+    for r in raw["cuts"]:
+        r["when"] = by_id[r["id"]]["when"]
+    lp = out_dir / "render_log.json"
+    if args.only and not args.preview and lp.exists():
+        # 一部のカットだけ描き直したときは、既存の render_log（描き直していないカットと注記）に重ねてマージする
+        old = json.loads(lp.read_text(encoding="utf-8"))
+        new_ids = {r["id"] for r in raw["cuts"]}
+        order = list(ic["cuts"].keys())
+        merged = dict(old)
+        merged["previous_run_total_seconds"] = old.get("total_seconds")
+        for k_ in ("total_seconds", "glb_export_seconds", "asset_fetch_seconds", "blender_setup_seconds", "source", "palette_checked", "palette_mismatch", "settings"):
+            merged[k_] = log[k_]
+        merged["cuts"] = sorted([c for c in old.get("cuts", []) if c.get("id") not in new_ids] + raw["cuts"], key=lambda c: order.index(c["id"]) if c.get("id") in order else 99)
+        merged["camera_clearance_mm"] = {**old.get("camera_clearance_mm", {}), **clear}
+        merged["textures"] = {**old.get("textures", {}), **log["textures"]}
+        merged["hdri"] = {**old.get("hdri", {}), **log["hdri"]}
+        merged["rerendered"] = dict(cuts=sorted(new_ids), when="2026-03-21T14:00", version="v4.19")
+        log = merged
+    lp.write_text(json.dumps(log, ensure_ascii=False, indent=1), encoding="utf-8")
     print(f"done: {len(raw['cuts'])} cuts, total {total} s -> {out_dir}")
     return 0
