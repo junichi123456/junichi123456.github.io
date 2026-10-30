@@ -88,7 +88,8 @@ def stair_checks(h):
     for s in h.stairs:
         r, t = s.riser, s.tread
         out.append(dict(name=s.name, riser=r, tread=t, slope=r / t, rule=2 * r + t, width=s.width,
-                        ok_slope=r / t <= st["max_slope"], ok_rule=st["step_rule"][0] <= 2 * r + t <= st["step_rule"][1]))
+                        ok_slope=r / t <= st["max_slope"], ok_rule=st["step_rule"][0] <= 2 * r + t <= st["step_rule"][1],
+                        landing=s.landing_depth, ok_landing=s.landing_depth >= s.width, n=s.n))
     return out
 
 

@@ -13,6 +13,7 @@ import furniture_shapes as FS
 KB_SHELF_Z = (300, 600)            # 底板・中段の下面
 KB_TOP_UNDER = 860                 # 天板の下面
 KB_SHELF_T = 12
+CH = 2800                       # 天井高（build_item が spec から設定する）
 KS_TIERS = (1700, 2000, 2300)      # 吊り棚の棚板の下面
 PANTRY_SHELF_Z = (300, 700, 1100, 1500, 1900)
 KNIFE_Z = (1580, 1620)
@@ -34,7 +35,7 @@ def _handle(mb, key, cx, cy, z, r, L, dy=-1):
 def kb_wall(mb, rect, z0):
     x0, y0, x1, y1 = rect
     mb.box("wall_paint", x0, y0, z0, x1, y1, z0 + 900)
-    mb.box("stainless", x0, y0, z0 + 900, x1, y1, z0 + 2600)          # ヘアライン一枚貼り（目地なし）
+    mb.box("stainless", x0, y0, z0 + 900, x1, y1, z0 + CH)          # ヘアライン一枚貼り（目地なし）
 
 
 def kb_counter(mb, rect, z0):
@@ -83,7 +84,7 @@ def kb_fridge(mb, rect, z0):
     """独立型の冷蔵庫（ステンレス扉 W700×D600×H1800）＋上部ふさぎ板（冷蔵庫の天板〜天井、前面と面一）。前は南（-y）。"""
     x0, y0, x1, y1 = rect
     mb.box("stainless", x0, y0, z0, x1, y1, z0 + 1800)
-    mb.box("stainless", x0, y0, z0 + 1800, x1, y1, z0 + 2600)
+    mb.box("stainless", x0, y0, z0 + 1800, x1, y1, z0 + CH)
     mb.box("joint", x0 + 10, y0 - 1, z0 + 1180, x1 - 10, y0, z0 + 1184)
     mb.box("joint", x0 + 340, y0 - 1, z0 + 20, x0 + 344, y0, z0 + 1170)
     mb.box("joint", x0 + 10, y0 - 1, z0 + 1795, x1 - 10, y0, z0 + 1800)
@@ -98,8 +99,8 @@ def pantry_open(mb, rect, z0):
     n = 5
     for k in range(n):
         yy = y0 + (y1 - y0 - 30) * k / (n - 1)
-        mb.box("stainless", x0 + 10, yy, z0, x0 + 40, yy + 30, z0 + 2600)           # 突っ張り支柱 □30（床〜天井）
-        mb.box("stainless", x1 - 40, yy, z0, x1 - 10, yy + 30, z0 + 2600)
+        mb.box("stainless", x0 + 10, yy, z0, x0 + 40, yy + 30, z0 + CH)           # 突っ張り支柱 □30（床〜天井）
+        mb.box("stainless", x1 - 40, yy, z0, x1 - 10, yy + 30, z0 + CH)
 
 
 def island_bay(L, z0, D):

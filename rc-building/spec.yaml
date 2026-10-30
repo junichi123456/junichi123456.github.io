@@ -48,9 +48,9 @@ building:
   grid_x: [6125, 6000, 6125]   # 壁芯（内寸 18,000 角・B案: 中央スパン 6.0m）
   grid_y: [6125, 6000, 6125]
   fl_1f: 1500                  # GL 基準
-  story_heights: {1F: 3200, 2F: 3200}
+  story_heights: {1F: 3400, 2F: 3400}
   parapet: 600
-  ceiling: {1F: 2600, 2F: 2600}
+  ceiling: {1F: 2800, 2F: 2800}
   wall_rc: 250
   insulation: 100
   cladding: 20
@@ -243,10 +243,10 @@ colors:            # 外装・外構の色（sRGB 16進。いずれも仮定 —
 
 facade_zones:      # 外壁の割り付け（建物座標 mm）
   tile: {z: [450, 1500], color: assort}
-  top_band: {z: [7600, 8550], color: assort}
-  floor_line: {z: [4640, 4760], projection: 10, color: accent}
+  top_band: {z: [8000, 8950], color: assort}
+  floor_line: {z: [4840, 4960], projection: 10, color: accent}
   entrance: {x: [7300, 10900], z: [1500, 4000], side: S, color: accent}
-  coping: {z: [8550, 8600], overhang: 20}
+  coping: {z: [8950, 9000], overhang: 20}
   window_frame: {face: 60, depth: 70}
 
 materials:         # 材質（matkey: 色キー, 粗さ, 金属度, コート, テクスチャ, タイル寸法 m）
@@ -471,3 +471,7 @@ kitchen_open:   # キッチン・パントリーの全露出化（施主指示 1
   knife_z: 1600
   shelf_gap_min: 230      # 棚の段の間隔はこの値を超える
   under_clear_min: 250    # 背面カウンター下部の底板（掃除ロボットが入る高さ）
+
+stairs:          # v4.18: 階高 3,400 に合わせ 20 段化（R170。階段1 T260／階段2 T230）
+  s1: {risers: 20, tread: 260}
+  s2: {risers: 20, tread: 230}

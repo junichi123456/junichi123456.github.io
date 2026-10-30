@@ -216,7 +216,7 @@ def bookcase(mb, rect, z0, H, front, key="case_oak", seed=7):
 def tall_kitchen(mb, rect, z0, front, p):
     """背面収納: 冷蔵庫・家電ニッチ・天井までの収納。"""
     L = LF(mb, rect, front)
-    H = 2600
+    H = p.get('ch', 2800)
     pl = 60
     L.box("plinth", 0, L.W, 0, L.D - 40, z0, z0 + pl + 1)
     jt = lambda u: L.box("joint", u - 2, u + 2, L.D, L.D + 1, z0 + pl + 5, z0 + H - 5)

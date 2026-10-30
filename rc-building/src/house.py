@@ -436,8 +436,9 @@ class House:
 
     def _stairs(self):
         H = self.H["1F"]
-        s1 = Stair("階段1", 6250, 8650, 8500, +1, "1F", self.fl["1F"], H, 18, 260)
-        s2 = Stair("階段2", 4000, 6000, 15100, +1, "1F", self.fl["1F"], H, 18, 240)
+        sp = self.spec.get("stairs", {"s1": {"risers": 18, "tread": 260}, "s2": {"risers": 18, "tread": 240}})
+        s1 = Stair("階段1", 6250, 8650, 8500, +1, "1F", self.fl["1F"], H, sp["s1"]["risers"], sp["s1"]["tread"])
+        s2 = Stair("階段2", 4000, 6000, 15100, +1, "1F", self.fl["1F"], H, sp["s2"]["risers"], sp["s2"]["tread"])
         self.boxes += s1.boxes(12000)
         self.boxes += s2.boxes(18125)
         s1.hole = (6250, 8500, 8650, 12000)
