@@ -636,6 +636,7 @@ class House:
                          for k in range(fm["rows"])]
         self.dotcon_farm = Polygon([(fx0, fy0), (fx1, fy0), (fx1, fy1), (fx0, fy1)])
         self.infil_pits = [(11000, -16000)]
+        self._planting()
         # 塀の排水口（フラップ弁）＝ 低い位置
         self.flap = [(-33200, -600), (23150, y_g)]      # v4.21: 東の塀が内側へ寄ったので東端のフラップ弁も内側へ
         self.dotcon_approach = self.approach.intersection(inner).difference(self.dotcon)
@@ -645,6 +646,23 @@ class House:
             dotcon_area_garden=(self.dotcon_garden.area + self.dotcon_farm.area) / 1e6,
             dotcon_l=area * ex["dotcon_storage_l_per_m2"],
             tank_m3=ex["retention_tank_m3"])
+
+    def _planting(self):
+        """植栽（v4.21、spec.yaml の planting）。位置は仮置き。がけ2H 範囲は水路から 2×北のがけ高、東側道路から 2×東のがけ高。"""
+        pl = self.spec["planting"]
+        self.plants = [dict(p, xy=tuple(p["xy"])) for p in pl["plants"]]
+        self.shrub = dict(pl["shrub"], line=LineString(pl["shrub"]["line"]))
+        gc = pl["groundcover"]
+        byid = {p["id"]: p for p in self.plants}
+        self.groundcover = [(byid[i]["xy"], gc["dia"] / 2) for i in gc["around"]]
+        cl = self.spec["site"]["cliff"]
+        zone = None
+        for cls, hh in (("水路", cl["north_h"]), ("東側道路", cl["east_h"])):
+            for (a, b, _), c in zip(self.site_edges, self.edge_class):
+                if c == cls:
+                    g = LineString([a, b]).buffer(2 * hh, cap_style=2)
+                    zone = g if zone is None else zone.union(g)
+        self.cliff_zone = zone.intersection(self.site)
 
     def _exterior_lights(self, gates):
         """防虫の外構照明（低色温度・下向き・人感センサー）。玄関ドアの真上には付けず、足元を照らす。"""

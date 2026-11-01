@@ -50,6 +50,7 @@ LAYERS = {
     "A-SYMB": (7, "Continuous", 18, "記号（方位・切断・レベル）"),
     "A-SITE": (3, "PHANTOM", 25, "敷地境界線（二点鎖線）"),
     "A-ROAD": (8, "Continuous", 18, "道路"),
+    "E-PLNT": (3, "Continuous", 18, "植栽（高木○・中木○・低木 波線・地被 点、v4.21）"),
     "A-ROAD-CW": (250, "Continuous", 35, "車道（#333333、v4.21）"),
     "A-ROAD-SW": (250, "Continuous", 35, "歩道（#333333、v4.21）"),
     "A-GROUND": (7, "Continuous", 50, "地盤面 GL"),

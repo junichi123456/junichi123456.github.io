@@ -144,6 +144,11 @@ def legend(sh, x, y, rows):
             poly = sbox(a[0], a[1] - 1.1 * S, c[0], c[1] + 1.1 * S)
             sh.hatch_polys([poly], pattern="ANSI31", spacing=3.0 if kind == "cw" else 1.5, layer=lay, rgb=ROAD_RGB)
             sh.rect(a[0], a[1] - 1.1 * S, c[0], c[1] + 1.1 * S, lay, lineweight=35, true_color=ROAD_TC)
+        elif kind == "plnt":                # 植栽: 高木（葉張りの円＋中心の点）と地被（点）
+            m = P(x + 3.5, cy)
+            sh.circle(m, 1.8 * S, lay)
+            sh.hatch_polys([Point(*m).buffer(0.35 * S)], solid=True, color=3, layer=lay)
+            sh.hatch_polys([Point(*P(x + 9.5, cy)).buffer(1.5 * S)], pattern="DOTS", spacing=0.8, layer=lay)
         elif kind == "fence":
             sh.rect(a[0], a[1] - 0.5 * S, c[0], c[1] + 0.5 * S, lay)
             sh.hatch_polys([sbox(a[0], a[1] - 0.5 * S, c[0], c[1] + 0.5 * S)])
@@ -1584,9 +1589,32 @@ def _integrated_exterior(h, sh, t):
     for r in h.garbage_screens:
         sh.hatch_polys([sbox(*t(r[0], r[1]), *t(r[2], r[3]))])
         sh.rect(*t(r[0], r[1]), *t(r[2], r[3]), "A-FENCE")
+    _planting_draw(h, sh, t)
     for _, p in h.ext_lights:                        # 外構照明 ● φ1.2mm
         sh.hatch_polys([Point(*t(*p)).buffer(0.6 * S)], solid=True, color=6, layer="E-EXLT")
         sh.circle(t(*p), 0.6 * S, "E-EXLT")
+
+
+def _planting_draw(h, sh, t):
+    """植栽（E-PLNT）: 高木・中木は葉張りの円（高木は中心に点）、低木は波線、地被は点ハッチ。位置は仮置き（要確認）。"""
+    S = sh.S
+    for (x, y), r in h.groundcover:
+        sh.hatch_polys([Polygon(t.pts(Point(x, y).buffer(r, 32).exterior.coords))], pattern="DOTS", spacing=0.8, layer="E-PLNT")
+    for p in h.plants:
+        x, y = p["xy"]
+        sh.circle(t(x, y), p["crown"] / 2, "E-PLNT")
+        if p["kind"] == "高木":
+            sh.hatch_polys([Point(*t(x, y)).buffer(0.4 * S)], solid=True, color=3, layer="E-PLNT")
+        sh.text(p["id"], t(x + p["crown"] / 2 + 250, y), 1.5, "A-TEXT", "MIDDLE_LEFT")
+    ln = h.shrub["line"]
+    n = int(ln.length // 400)
+    pts = []
+    for i in range(n + 1):
+        q = ln.interpolate(min(ln.length, i * 400))
+        pts.append(t(q.x, q.y + (160 if i % 2 else -160)))
+    sh.pline(pts, "E-PLNT")
+    m = ln.interpolate(0.5, normalized=True)
+    sh.text(h.shrub["id"], t(m.x, m.y + 700), 1.5, "A-TEXT", "MIDDLE_CENTER")
 
 
 def _integrated_items(h):
@@ -1601,6 +1629,7 @@ def _integrated_items(h):
         ("ゴミ収集ボックス＋目隠し壁", f"W{gb[2] - gb[0]:,.0f}×D{gb[3] - gb[1]:,.0f}、壁H{ex['garbage_screen']['h']:,}", "A-02D", ctr(gb)),
         ("人用門扉", f"W{abs(h.gates[1][2][0] - h.gates[1][1][0]):,.0f}（後退{ex['gate_setback'] / 1000:.1f}m）", "A-02D", ctr(h.gates[1][1] + h.gates[1][2])),
         ("車両門扉", f"W{abs(h.gates[0][2][0] - h.gates[0][1][0]):,.0f} 電動スライド", "A-02D", ctr(h.gates[0][1] + h.gates[0][2])),
+        ("高木 T1・T2（アオダモ）", "H4.0m・葉張り3.0m ×2（仮置き）", "—", [p["xy"] for p in h.plants if p["kind"] == "高木"]),
         (f"フラップ弁付き排水口 ×{len(h.flap)}", "塀の低位置・逆流防止", "A-02", list(h.flap)),
         (f"浸透桝 ×{len(h.infil_pits)}", "Dotcon+ 帯・東系統", "A-02", list(h.infil_pits)),
         (f"縦樋 ×{len(ex['canopy']['downpipes'])}", "西系統→貯留槽・東系統→浸透桝", "A-02", [tuple(p) for p in ex["canopy"]["downpipes"]]),
@@ -1793,7 +1822,8 @@ def site_integrated(h, number, legal_summary):
             ("A-PAVE", "アプローチ（ANSI37）", "ins"), ("A-DRAIN", "雨水施設（貯留槽・浸透桝等）", "line"),
             ("A-SITE", "敷地境界（推定）", "line"), ("A-LEGAL", "がけ条例 2H 範囲", "line"),
             ("E-EXLT", "外構照明（●）", "line"), ("A-SYMB", "番号丸（下表）", "line"),
-            ("A-ROAD-CW", "車道（#333333）", "cw"), ("A-ROAD-SW", "歩道（#333333・要確認）", "sw")]
+            ("A-ROAD-CW", "車道（#333333）", "cw"), ("A-ROAD-SW", "歩道（#333333・要確認）", "sw"),
+            ("E-PLNT", "植栽（仮置き・要確認）", "plnt")]
     cy = legend(sh, X, 276, rows)
     ly = 276 - 4.6 * 6
     sh.hatch_polys([Point(*sh.P(X + 6, ly)).buffer(0.6 * sh.S)], solid=True, color=6, layer="E-EXLT")
@@ -1802,7 +1832,7 @@ def site_integrated(h, number, legal_summary):
     sh.text("番号表", (X, cy - 2), 3.0, "A-TEXT", paper=True)
     cy = sh.table(X, cy - 4, [9, 56, 48, 14], tab, row_h=4.4, h=1.8)
     notes = [("t", f"敷地面積 {sm['site_area']:,.2f}m²（推定）／建築面積 {sm['building_area']:.2f}m²／建ぺい率 {sm['coverage'] * 100:.2f}%（求積は A-01）"),
-             ("t", "植栽は未計画（別途）。給水・汚水の引込位置は上下水道協議後に追記"),
+             ("t", "植栽は仮置き（要確認）。給水・汚水の引込位置は上下水道協議後に追記"),
              ("t", "門まわりの詳細は A-02D。雨水・止水は A-02、外構照明は E-03"),
              ("t", "がけ2H範囲の線上・内側に塀が入る区間のうち、東側の坂道沿いで道路との段差が2m超となる区間は擁壁兼用塀（令138条・工作物確認申請の対象となる可能性）"),
              ("t", "建物は1階切断（FL+1,100）。破線は屋根（パラペット）・連続庇の外形"),

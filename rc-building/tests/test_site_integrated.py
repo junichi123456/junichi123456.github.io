@@ -86,7 +86,7 @@ def paper_boxes(sh):
 def test_layers():
     _, _, sh = _get()
     used = {e.dxf.layer for e in sh.msp}
-    for need in ("A-CUT", "A-FENCE", "A-PAVE", "A-SITE", "A-ROOM", "E-EXLT", "A-LEGAL", "A-ROAD-CW", "A-ROAD-SW"):
+    for need in ("A-CUT", "A-FENCE", "A-PAVE", "A-SITE", "A-ROOM", "E-EXLT", "A-LEGAL", "A-ROAD-CW", "A-ROAD-SW", "E-PLNT"):
         assert need in used, f"レイヤー {need} の図形がない"
     assert not (used - set(LAYERS)), f"未定義レイヤー {used - set(LAYERS)}"
 

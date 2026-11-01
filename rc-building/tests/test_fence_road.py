@@ -105,6 +105,44 @@ def test_fixtures_inside_fence():
     assert len(h.bollards) == 3 and len(h.spec["security"]["cameras"]) == 8 and len(h.ext_lights) == 12
 
 
+def _no_plant_zones(h):
+    """植えない区域: Dotcon+・アプローチ・駐車場・菜園・貯留槽・塀外の帯・北の2H範囲・建物まわり1.0m・（段階4で）配管±1.0m。"""
+    bld = Polygon([(0, 0), (h.W, 0), (h.W, h.D), (0, h.D)]).buffer(h.spec["planting"]["rules"]["gravel_band"])
+    tk = h.tank
+    zones = {"dotcon_garden": h.dotcon_garden, "parking": h.dotcon, "approach": h.approach, "farm": h.dotcon_farm,
+             "tank": Polygon([(tk[0], tk[1]), (tk[2], tk[1]), (tk[2], tk[3]), (tk[0], tk[3])]), "band": h.fence_band,
+             "cliff": h.cliff_zone, "building+gravel": bld}
+    if hasattr(h, "pipe_zone"):
+        zones["pipes"] = h.pipe_zone
+    return zones
+
+
+def test_planting_rules():
+    h, _, _ = _get()
+    r = h.spec["planting"]["rules"]
+    assert abs(h.cliff_zone.area / 1e6 - 748) < 3, h.cliff_zone.area / 1e6
+    pg = h.pergola
+    bld = Polygon([(0, 0), (h.W, 0), (h.W, h.D), (0, h.D)])
+    ids = [p["id"] for p in h.plants]
+    assert ids == ["T1", "T2", "M1", "M2", "M3"]
+    zones = _no_plant_zones(h)
+    for p in h.plants:
+        pt, rad = Point(p["xy"]), p["crown"] / 2
+        assert h.fence_poly.contains(pt)
+        assert h.fence_poly.boundary.distance(pt) >= r["tree_fence_min"], p["id"]
+        assert bld.distance(pt) >= r["tree_building_min"], p["id"]
+        for k, z in zones.items():
+            assert not z.intersects(pt.buffer(rad)), (p["id"], k)
+        if pg[0] - 4000 <= p["xy"][0] <= pg[2] + 4000 and p["xy"][1] < pg[1]:       # パーゴラの南: 冬至の影が先端パネルに届かない
+            assert p["xy"][1] + rad + p["h"] * r["shadow_ratio"] <= pg[1], p["id"]
+    sl = h.shrub["line"]
+    for k, z in zones.items():
+        assert not z.intersects(sl), ("S1", k)
+    for (xy, rad) in h.groundcover:
+        for k, z in zones.items():
+            assert z.intersection(Point(xy).buffer(rad)).area < 1, ("G", k)
+
+
 if __name__ == "__main__":
     n = 0
     for k, v in sorted(globals().items()):

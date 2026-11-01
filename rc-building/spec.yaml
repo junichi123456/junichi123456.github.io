@@ -236,6 +236,19 @@ roads:                  # v4.21: 道路・歩道（図面の描画のみ。建�
     sw: null            # 歩道の有無は未確認（要確認）
     width_note: 車道 幅約7.4m
 
+planting:               # v4.21 植栽（位置・樹種はすべて仮置き・要確認。座標は建物座標 mm、h=樹高、crown=葉張り）
+  note: 植栽は仮置き（要確認）。避ける樹種 ツバキ・サザンカ（チャドクガ）、サクラ・ウメ（毛虫）、柑橘（アゲハ）、花の多い低木（蜂）
+  plants:
+    - {id: T1, kind: 高木, species: アオダモ（落葉）, xy: [-4500, -5500], h: 4000, crown: 3000}
+    - {id: T2, kind: 高木, species: アオダモ（落葉）, xy: [3500, -7000], h: 4000, crown: 3000}
+    - {id: M1, kind: 中木, species: ソヨゴ（常緑）, xy: [-20000, 3500], h: 2500, crown: 1500}
+    - {id: M2, kind: 中木, species: ソヨゴ（常緑）, xy: [-14000, 2000], h: 2500, crown: 1500}
+    - {id: M3, kind: 中木, species: ソヨゴ（常緑）, xy: [-24000, 6000], h: 2500, crown: 1500}
+  shrub: {id: S1, species: シャリンバイ（矮性）列植, line: [[-2000, -9000], [4000, -9190]], h: 800, w: 800}
+  groundcover: {id: G, species: タマリュウ, around: [T1, T2], dia: 3000}
+  rules: {tree_fence_min: 2000, tree_building_min: 3000, gravel_band: 1000, shadow_ratio: 1.6}   # 高木・中木は塀から2.0m・建物から3.0m以上、冬至の影長さ ≒ 樹高×1.6
+  gravel: 防草シート＋砂利（建物まわり 1.0m・塀外の帯・北の2H範囲は植えない）
+
 finish:
   exterior: "外断熱100＋外装塗装（ベース #F5EFE3、頂部帯 #4F5B2A）、腰壁 FGL〜1FL（GL+1,500）は二丁掛タイル #4F5B2A、玄関まわり・2FL見切り #B8892D（色はいずれも仮定）"
   roof: 外断熱防水（シート防水）。太陽光は設けない（庭のソーラーパーゴラに設置）
