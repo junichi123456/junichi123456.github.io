@@ -140,6 +140,10 @@ def legend(sh, x, y, rows):
             poly = sbox(a[0], a[1] - 1.1 * S, c[0], c[1] + 1.1 * S)
             sh.hatch_polys([poly], pattern="NET", spacing=1.2, layer="A-PAVE")
             sh.rect(a[0], a[1] - 1.1 * S, c[0], c[1] + 1.1 * S, lay)
+        elif kind in ("cw", "sw"):          # 車道・歩道（#333333）
+            poly = sbox(a[0], a[1] - 1.1 * S, c[0], c[1] + 1.1 * S)
+            sh.hatch_polys([poly], pattern="ANSI31", spacing=3.0 if kind == "cw" else 1.5, layer=lay, rgb=ROAD_RGB)
+            sh.rect(a[0], a[1] - 1.1 * S, c[0], c[1] + 1.1 * S, lay, lineweight=35, true_color=ROAD_TC)
         elif kind == "fence":
             sh.rect(a[0], a[1] - 0.5 * S, c[0], c[1] + 0.5 * S, lay)
             sh.hatch_polys([sbox(a[0], a[1] - 0.5 * S, c[0], c[1] + 0.5 * S)])
@@ -151,9 +155,27 @@ def legend(sh, x, y, rows):
 
 
 # ================================================================ site
-def site_base(h, sh, t, neighbors=True, contours=False, margin=9000):
+ROAD_RGB = (0x33, 0x33, 0x33)
+ROAD_TC = 0x333333
+
+
+def road_draw(h, sh, t, win):
+    """車道（ハッチ間隔 3.0mm）と歩道（同 1.5mm）を #333333 で描く（v4.21）。形状は spec.yaml の roads。"""
+    for name, r in h.roads.items():
+        if name == "color":
+            continue
+        for key, lay, sp in (("cw", "A-ROAD-CW", 3.0), ("sw", "A-ROAD-SW", 1.5)):
+            if not r.get(key):
+                continue
+            for p in iter_polygons(Polygon(r[key]).intersection(win)):
+                q = Polygon(t.pts(p.exterior.coords))
+                sh.hatch_polys([q], pattern="ANSI31", spacing=sp, layer=lay, rgb=ROAD_RGB)
+                sh.pline(list(q.exterior.coords), lay, closed=True, lineweight=35, true_color=ROAD_TC)
+
+
+def site_base(h, sh, t, neighbors=True, contours=False, margin=9000, roads=False, margin_top=None):
     x0, y0, x1, y1 = h.site.bounds
-    win = sbox(x0 - margin, y0 - margin, x1 + margin, y1 + margin)
+    win = sbox(x0 - margin, y0 - margin, x1 + margin, y1 + (margin if margin_top is None else margin_top))
     sh.pline(t.pts(list(win.exterior.coords)), "A-NEIGH", closed=True, lineweight=9)
 
     def clip_lines(pts, closed=False, layer="A-ROAD", lw=None):
@@ -170,7 +192,11 @@ def site_base(h, sh, t, neighbors=True, contours=False, margin=9000):
             clip_lines(pts, True, "A-NEIGH")
     for r in h.road_edges:
         clip_lines(r["pts"], False, "A-ROAD")
-    for w in h.water:
+    if roads:
+        road_draw(h, sh, t, win)
+    for wi, w in enumerate(h.water):
+        if roads and wi == 0 and (h.roads.get("north") or {}).get("sw"):
+            continue                       # 歩道（水路の蓋掛け部）として描くので水路のハッチは重ねない
         poly = Polygon(w).intersection(win)
         for p in iter_polygons(poly):
             sh.hatch_polys([Polygon(t.pts(p.exterior.coords))], pattern="ANSI31", spacing=1.5, layer="A-WATER")
@@ -192,7 +218,7 @@ def fence_draw(h, sh, t, label=False, clip=None):
             if seg.length < 1:
                 continue
             o = seg.parallel_offset(h.fence_t / 2, "left")
-            if not h.site.contains(o.interpolate(0.5, normalized=True)):
+            if not h.fence_poly.contains(o.interpolate(0.5, normalized=True)):
                 o = seg.parallel_offset(h.fence_t / 2, "right")
             parts.append(o.buffer(h.fence_t / 2, cap_style=2, join_style=2))
     band = unary_union(parts).buffer(1, join_style=2).buffer(-1, join_style=2)
@@ -220,7 +246,7 @@ def house_outline(h, sh, t, lw=50):
 def site_plan(h, number, legal_summary):
     sh = frame(h, number, "配置図・求積図", 500)
     t = fit(h, sh, (125, 160))
-    site_base(h, sh, t, contours=True)
+    site_base(h, sh, t, contours=True, roads=True)
     fence_draw(h, sh, t)
     proj = project(h.boxes, "plan", filt=lambda b: b.z1 > h.fgl and b.level != "FDN")
     emit(sh, proj, t, cut_lw=25, vis_lw=9)
@@ -284,13 +310,15 @@ def site_plan(h, number, legal_summary):
              ["容積率", f"{sm['far'] * 100:.2f}%（≦200%）"]]
     sh.table(250, 150, [40, 80], rows2, row_h=5.2, h=2.1)
     sh.text("※ 西側境界は標高109.6の点を通り駐車場白線に平行な直線（ご指定）。13〜15は隣接建物からの推定（要測量）。", (250, 115), 1.9, "A-TEXT", paper=True)
+    sh.text("※ 塀は境界から内側へ（北東・東、約2.4〜2.6m）。塀外の帯は敷地内。赤線の座標は概算・要確認（±0.7m）。", (250, 110), 1.9, "A-TEXT", paper=True)
+    sh.text("※ 道路・歩道（#333333）は基盤地図の道路縁・水路から作図（歩道の有無・幅は要確認）。", (250, 105), 1.9, "A-TEXT", paper=True)
     return sh
 
 
 def exterior_plan(h, number):
     sh = frame(h, number, "外構・雨水排水計画図", 400)
     t = fit(h, sh, (150, 168))
-    site_base(h, sh, t, contours=False)
+    site_base(h, sh, t, contours=False, roads=True)
     # 舗装
     sh.hatch_polys([Polygon(t.pts(h.dotcon.exterior.coords))], pattern="NET", spacing=0.9, layer="A-PAVE")
     sh.pline(t.pts(h.dotcon.exterior.coords), "A-PAVE", closed=True)
@@ -305,7 +333,7 @@ def exterior_plan(h, number):
         sh.pline(t.pts(p.exterior.coords), "A-PAVE", closed=True)
         for r in p.interiors:
             sh.pline(t.pts(r.coords), "A-PAVE", closed=True)
-    ap = h.approach.intersection(h.site.buffer(-h.fence_t))
+    ap = h.approach.intersection(h.fence_poly.buffer(-h.fence_t))
     for p in iter_polygons(ap):
         sh.pline(t.pts(p.exterior.coords), "A-PAVE", closed=True)
         sh.hatch_polys([Polygon(t.pts(p.exterior.coords))], pattern="ANSI37", spacing=2.5, layer="A-PAVE")
@@ -379,7 +407,8 @@ def exterior_plan(h, number):
                           ("A-PAVE", "Dotcon+ 透水舗装", "pave"),
                           ("A-DRAIN", "浸透桝・貯留槽", "line"),
                           ("A-FLOOD", "表流水の流入方向", "line"),
-                          ("A-SITE", "敷地境界（推定）", "line")])
+                          ("A-SITE", "敷地境界（推定）", "line"),
+                          ("A-ROAD-CW", "車道（#333333）", "cw"), ("A-ROAD-SW", "歩道（#333333・要確認）", "sw")])
     st = h.ext_storage
     notes = [("h", "内水対策"),
              ("t", f"1. RC塀の基礎〜FGL+{h.spec['requirements']['fence_watertight']}を止水構造。門扉には着脱式止水板 H600"),
@@ -1355,7 +1384,7 @@ def insect_sheet(h, number):
     site_base(h, sh, t, contours=False)
     fence_draw(h, sh, t)
     house_outline(h, sh, t)
-    ap = h.approach.intersection(h.site.buffer(-h.fence_t))
+    ap = h.approach.intersection(h.fence_poly.buffer(-h.fence_t))
     for p in iter_polygons(ap):
         sh.pline(t.pts(p.exterior.coords), "A-PAVE", closed=True)
     cp, pg = h.carport, h.pergola
@@ -1408,7 +1437,7 @@ def gate_detail(h, number):
     road = [e for e, c in zip(h.site_edges, h.edge_class) if c == "南側道路"][0]
     sh.text("南側道路（幅員 7.4m）", t(17000, -33000), 2.4, "A-TEXT", "MIDDLE_CENTER")
     # 舗装・カーポート・アプローチ
-    for geom, lay in ((h.dotcon.intersection(view), "A-PAVE"), (h.approach.intersection(h.site.buffer(-h.fence_t)).intersection(view), "A-PAVE")):
+    for geom, lay in ((h.dotcon.intersection(view), "A-PAVE"), (h.approach.intersection(h.fence_poly.buffer(-h.fence_t)).intersection(view), "A-PAVE")):
         for p in iter_polygons(geom):
             sh.pline(t.pts(p.exterior.coords), lay, closed=True)
     cp = h.carport
@@ -1522,7 +1551,7 @@ def _integrated_exterior(h, sh, t):
     sh.pline(t.pts(h.dotcon.exterior.coords), "A-PAVE", closed=True)
     for p in iter_polygons(h.dotcon_garden):
         hatch([Polygon(t.pts(p.exterior.coords), [t.pts(r.coords) for r in p.interiors])])
-    ap = h.approach.intersection(h.site.buffer(-h.fence_t))
+    ap = h.approach.intersection(h.fence_poly.buffer(-h.fence_t))
     for p in iter_polygons(ap):
         sh.pline(t.pts(p.exterior.coords), "A-PAVE", closed=True)
         sh.hatch_polys([Polygon(t.pts(p.exterior.coords))], pattern="ANSI37", spacing=2.5, layer="A-PAVE")
@@ -1732,7 +1761,7 @@ def site_integrated(h, number, legal_summary):
     sm = legal_summary
     sh = frame(h, number, "総合配置・外構統合図", 300)
     t = fit(h, sh, (131, 165))
-    site_base(h, sh, t, contours=False, margin=3000)
+    site_base(h, sh, t, contours=False, margin=3000, roads=True, margin_top=4500)
     _integrated_exterior(h, sh, t)
     fence_draw(h, sh, t)
     _integrated_building(h, sh, t)
@@ -1763,7 +1792,8 @@ def site_integrated(h, number, legal_summary):
     rows = [("A-FENCE", "RC塀 t=150", "fence"), ("A-PAVE", "Dotcon+ 透水舗装", "pave"),
             ("A-PAVE", "アプローチ（ANSI37）", "ins"), ("A-DRAIN", "雨水施設（貯留槽・浸透桝等）", "line"),
             ("A-SITE", "敷地境界（推定）", "line"), ("A-LEGAL", "がけ条例 2H 範囲", "line"),
-            ("E-EXLT", "外構照明（●）", "line"), ("A-SYMB", "番号丸（下表）", "line")]
+            ("E-EXLT", "外構照明（●）", "line"), ("A-SYMB", "番号丸（下表）", "line"),
+            ("A-ROAD-CW", "車道（#333333）", "cw"), ("A-ROAD-SW", "歩道（#333333・要確認）", "sw")]
     cy = legend(sh, X, 276, rows)
     ly = 276 - 4.6 * 6
     sh.hatch_polys([Point(*sh.P(X + 6, ly)).buffer(0.6 * sh.S)], solid=True, color=6, layer="E-EXLT")
@@ -1791,7 +1821,7 @@ def security_sheet(h, number):
     fence_draw(h, sh, t)
     house_outline(h, sh, t)
     # 塀の内側のビームセンサー（塀から 0.6m 内側の破線）
-    inner = h.site.buffer(-h.fence_t - 600, join_style=2)
+    inner = h.fence_poly.buffer(-h.fence_t - 600, join_style=2)
     for p in iter_polygons(inner):
         sh.pline(t.pts(p.exterior.coords), "A-DRAIN")
     for x, y in sec["cameras"]:

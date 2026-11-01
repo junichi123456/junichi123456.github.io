@@ -278,7 +278,7 @@ def facade_extras(h, P):
 # ------------------------------------------------------------------ 外構
 def exterior_parts(h, P, spec):
     fgl = h.fgl
-    site_in = h.site.buffer(-h.fence_t)
+    site_in = h.fence_poly.buffer(-h.fence_t)
 
     # ---- 塀（区間ごとの個体差の色）と忍び返し
     for li, ln in enumerate(h.fence_lines):
@@ -292,7 +292,7 @@ def exterior_parts(h, P, spec):
             top = h.fence_top(c.x, c.y)
             base = min(h.fgl, h.ground(c.x, c.y)) - 100
             off = seg.parallel_offset(h.fence_t / 2, "left")
-            if not h.site.contains(off.interpolate(0.5, normalized=True)):
+            if not h.fence_poly.contains(off.interpolate(0.5, normalized=True)):
                 off = seg.parallel_offset(h.fence_t / 2, "right")
             poly = off.buffer(h.fence_t / 2, cap_style=2)
             k = int(hashlib.sha1(f"{li}-{pi}".encode()).hexdigest(), 16) % 5 + 1

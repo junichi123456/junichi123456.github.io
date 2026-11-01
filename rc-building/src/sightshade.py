@@ -128,7 +128,7 @@ def fence_prisms(h, gates_open=True):
             seg = LineString([ln.interpolate(d).coords[0], ln.interpolate(d2).coords[0]])
             c = seg.interpolate(0.5, normalized=True)
             off = seg.parallel_offset(h.fence_t / 2, "left")
-            if not h.site.contains(off.interpolate(0.5, normalized=True)):
+            if not h.fence_poly.contains(off.interpolate(0.5, normalized=True)):
                 off = seg.parallel_offset(h.fence_t / 2, "right")
             items.append((off.buffer(h.fence_t / 2 + 20, cap_style=2), -1e4, h.fence_top(c.x, c.y), "RC塀"))
             d = d2

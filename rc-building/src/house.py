@@ -159,6 +159,7 @@ class House:
         # 辺の分類（水路／東側道路／南側道路／隣地）
         cls = list(self.gsi["site"]["cls"])
         self.edge_class = cls
+        self.roads = self.spec.get("roads", {})
         self.road_edges = [dict(ft=r["ft"], pts=[self.m2mm(*p) for p in r["pts"]]) for r in self.gsi["road_edges"]]
         self.water = [[self.m2mm(*p) for p in w] for w in self.gsi["water"]]
         blds = [[self.m2mm(*p) for p in bd["pts"]] for bd in self.gsi["buildings"]]
@@ -531,7 +532,12 @@ class House:
         s_edge = [e for e, c in zip(self.site_edges, self.edge_class) if c == "南側道路"][0]
         y_road = (s_edge[0][1] + s_edge[1][1]) / 2
         self.y_gate = y_g = y_road + ex["gate_setback"]
-        cross = LineString([(-1e6, y_g), (1e6, y_g)]).intersection(site)
+        # 塀の閉じた多角形（v4.21）: 北辺と東辺を施主の赤線（exterior.fence_line）に置き換え、西・南は敷地境界のまま
+        fl = [tuple(p) for p in ex["fence_line"]]
+        self.fence_line_pts = fl
+        self.fence_poly = Polygon(fl + [tuple(p) for p in self.site_pts[6:]])
+        self.fence_band = site.difference(self.fence_poly)     # 敷地内・塀の外側の帯（防草砂利、植栽しない）
+        cross = LineString([(-1e6, y_g), (1e6, y_g)]).intersection(self.fence_poly)
         xs = sorted(c for g in getattr(cross, "geoms", [cross]) for c in (g.coords[0][0], g.coords[-1][0]))
         gate_line = LineString([(xs[0], y_g), (xs[-1], y_g)])
         gates = [("車両門扉", (ex["gate_vehicle_x"][0], y_g), (ex["gate_vehicle_x"][1], y_g)),
@@ -547,7 +553,7 @@ class House:
         # 塀（敷地境界の内側に厚さ 150）: 南側道路沿いは塀を設けず、門の線に塀と門扉を設ける
         self.fence_t = 150
         self.fence_h = req["fence_height"]
-        boundary = LineString(list(site.exterior.coords))
+        boundary = LineString(list(self.fence_poly.exterior.coords))
         cut = boundary.difference(LineString(s_edge[:2]).buffer(5))
         cut = cut.union(gate_line) if True else cut
         for g in gates:
@@ -567,7 +573,7 @@ class House:
         self.carport = (cx0, cy0, cx0 + cp["w"], cy0 + cp["d"])
         self.stalls = [(cx0 + 300 + i * 2800, cy0 + 300, cx0 + 300 + i * 2800 + 2600, cy0 + 300 + 5500) for i in range(3)]
         pave = Polygon([(cx0 - 1200, y_g + self.fence_t), (cx0 + cp["w"] + 1500, y_g + self.fence_t), (cx0 + cp["w"] + 1500, cy0 + cp["d"] + 900),
-                        (cx0 - 1200, cy0 + cp["d"] + 900)]).intersection(site.buffer(-self.fence_t))
+                        (cx0 - 1200, cy0 + cp["d"] + 900)]).intersection(self.fence_poly.buffer(-self.fence_t))
         self.dotcon = pave                    # 駐車場（v4.14: 門前の広場は Dotcon+ に含めない＝施主の再配置図）
         # ゴミ収集ボックス（門の外・西の角、v4.10）: 西の塀と門の塀に沿わせ、扉は東向き。南に目隠し壁＋東端の袖壁
         gb, gs = ex["garbage_box"], ex["garbage_screen"]
@@ -616,7 +622,7 @@ class House:
         px0, py0, px1, py1 = self.pergola
         self.garden_beds = [(px0 + 1000, py0 + 800 + k * (py1 - py0 - 1600) / 3.6, px1 - 1000, py0 + 800 + k * (py1 - py0 - 1600) / 3.6 + 900)
                             for k in range(4)]
-        inner = site.buffer(-self.fence_t)
+        inner = self.fence_poly.buffer(-self.fence_t)
         zones = [Polygon(z).intersection(inner) for z in ex["dotcon_zones"].values()]
         self.dotcon_garden = zones[0]
         for z in zones[1:]:
@@ -631,7 +637,7 @@ class House:
         self.dotcon_farm = Polygon([(fx0, fy0), (fx1, fy0), (fx1, fy1), (fx0, fy1)])
         self.infil_pits = [(11000, -16000)]
         # 塀の排水口（フラップ弁）＝ 低い位置
-        self.flap = [(-33200, -600), (23800, y_g)]
+        self.flap = [(-33200, -600), (23150, y_g)]      # v4.21: 東の塀が内側へ寄ったので東端のフラップ弁も内側へ
         self.dotcon_approach = self.approach.intersection(inner).difference(self.dotcon)
         area = (self.dotcon.area + self.dotcon_approach.area + self.dotcon_garden.area + self.dotcon_farm.area) / 1e6
         self.ext_storage = dict(
@@ -668,7 +674,7 @@ class House:
         best = None
         for ang in range(0, 360, 30):
             q = (x + 2500 * math.cos(math.radians(ang)), y + 2500 * math.sin(math.radians(ang)))
-            if not self.site.contains(Point(q)):
+            if not self.fence_poly.contains(Point(q)):
                 z = self.ground(*q)
                 best = z if best is None else max(best, z)
         return best if best is not None else self.fgl

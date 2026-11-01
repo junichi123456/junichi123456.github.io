@@ -16,8 +16,8 @@ import house_sheets as hs  # noqa: E402
 from cadlib import LAYERS, _text_width  # noqa: E402
 from house import House  # noqa: E402
 
-# 変更前（v4.19）の既存図のエンティティ数。A-02X の追加で変わってはならない。
-BASE_COUNTS = {"A-01": 261, "A-02": 202, "A-02D": 125}
+# 既存図のエンティティ数（v4.19 から v4.21 の変更ごとに意図して更新）。
+BASE_COUNTS = {"A-01": 269, "A-02": 213, "A-02D": 125}      # v4.21 段階1: 道路・歩道の図形を追加（A-01 +8, A-02 +11）
 
 INNER = (10.0, 10.0, 410.0, 287.0)       # 内枠（用紙mm）
 TITLE = (220.0, 10.0, 410.0, 48.0)       # 表題欄
@@ -86,7 +86,7 @@ def paper_boxes(sh):
 def test_layers():
     _, _, sh = _get()
     used = {e.dxf.layer for e in sh.msp}
-    for need in ("A-CUT", "A-FENCE", "A-PAVE", "A-SITE", "A-ROOM", "E-EXLT", "A-LEGAL"):
+    for need in ("A-CUT", "A-FENCE", "A-PAVE", "A-SITE", "A-ROOM", "E-EXLT", "A-LEGAL", "A-ROAD-CW", "A-ROAD-SW"):
         assert need in used, f"レイヤー {need} の図形がない"
     assert not (used - set(LAYERS)), f"未定義レイヤー {used - set(LAYERS)}"
 

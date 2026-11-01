@@ -167,6 +167,8 @@ def checks(h):
     add("ブリーフ", "蓄電池", "ブリーフv3 7章", "排煙機30分＋排水ポンプ6時間＋最低限の生活24時間", f"必要 約{en['battery']:.1f}kWh → 16kWh 級", judge(en["battery"] <= 16.5))
     add("ブリーフ", "駐車台数", "ブリーフv3 2章", f"{req['parking']}台", f"{len(h.stalls)}台（屋根なし・Dotcon+）", judge(len(h.stalls) >= req["parking"]))
     add("ブリーフ", "RC塀", "ブリーフv3 4章", f"H{req['fence_height']:,}（防犯）", "全周 H2.0m 以上（東側坂道沿いは道路面+1.2m以上）", OK)
+    add("ブリーフ", "敷地境界・塀の再配置", "施主指示（v4.21）・令2条1項1号", "北東を斜めに切り、東の塀を約2.4〜2.6m内側へ（敷地境界は変えない）",
+        f"敷地 {h.site.area / 1e6:,.2f}m² のまま。塀外の帯 約{h.fence_band.area / 1e6:.0f}m² は敷地内の空地（防草砂利）。赤線の座標は概算（±0.7m）", CHK)
     add("ブリーフ", "透水性舗装", "ブリーフv3 3.1・施主指示（v4.9・v4.14）", "Dotcon+ を施主の再配置図の位置に",
         f"駐車場・アプローチ 約{h.ext_storage['dotcon_area_parking']:.0f}m²＋パーゴラ下・北・西・東の帯・日なたの菜園 約{h.ext_storage['dotcon_area_garden']:.0f}m² = 約{h.ext_storage['dotcon_area']:.0f}m²（一時貯留 約{h.ext_storage['dotcon_l'] / 1000:.1f}m³）", OK)
 
