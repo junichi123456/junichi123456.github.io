@@ -148,7 +148,7 @@ def legend(sh, x, y, rows):
             m = P(x + 3.5, cy)
             sh.circle(m, 1.8 * S, lay)
             sh.hatch_polys([Point(*m).buffer(0.35 * S)], solid=True, color=3, layer=lay)
-            sh.hatch_polys([Point(*P(x + 9.5, cy)).buffer(1.5 * S)], pattern="DOTS", spacing=0.8, layer=lay)
+            sh.hatch_polys([Point(*P(x + 9.5, cy)).buffer(1.5 * S)], pattern="DOTS", spacing=1.6, layer=lay)
         elif kind == "fence":
             sh.rect(a[0], a[1] - 0.5 * S, c[0], c[1] + 0.5 * S, lay)
             sh.hatch_polys([sbox(a[0], a[1] - 0.5 * S, c[0], c[1] + 0.5 * S)])
@@ -164,7 +164,7 @@ ROAD_RGB = (0x33, 0x33, 0x33)
 ROAD_TC = 0x333333
 
 
-def road_draw(h, sh, t, win):
+def road_draw(h, sh, t, win, avoid=None):
     """車道（ハッチ間隔 3.0mm）と歩道（同 1.5mm）を #333333 で描く（v4.21）。形状は spec.yaml の roads。"""
     for name, r in h.roads.items():
         if name == "color":
@@ -173,12 +173,15 @@ def road_draw(h, sh, t, win):
             if not r.get(key):
                 continue
             for p in iter_polygons(Polygon(r[key]).intersection(win)):
-                q = Polygon(t.pts(p.exterior.coords))
-                sh.hatch_polys([q], pattern="ANSI31", spacing=sp, layer=lay, rgb=ROAD_RGB)
-                sh.pline(list(q.exterior.coords), lay, closed=True, lineweight=35, true_color=ROAD_TC)
+                q0 = Polygon(t.pts(p.exterior.coords))
+                if avoid:                  # 表題・注記（用紙mm の箱）に重ならないよう道路の描画から除く
+                    q0 = q0.difference(sbox(*sh.P(avoid[0], avoid[1]), *sh.P(avoid[2], avoid[3])))
+                for q in iter_polygons(q0):
+                    sh.hatch_polys([q], pattern="ANSI31", spacing=sp, layer=lay, rgb=ROAD_RGB)
+                    sh.pline(list(q.exterior.coords), lay, closed=True, lineweight=35, true_color=ROAD_TC)
 
 
-def site_base(h, sh, t, neighbors=True, contours=False, margin=9000, roads=False, margin_top=None):
+def site_base(h, sh, t, neighbors=True, contours=False, margin=9000, roads=False, margin_top=None, road_avoid=None):
     x0, y0, x1, y1 = h.site.bounds
     win = sbox(x0 - margin, y0 - margin, x1 + margin, y1 + (margin if margin_top is None else margin_top))
     sh.pline(t.pts(list(win.exterior.coords)), "A-NEIGH", closed=True, lineweight=9)
@@ -198,7 +201,7 @@ def site_base(h, sh, t, neighbors=True, contours=False, margin=9000, roads=False
     for r in h.road_edges:
         clip_lines(r["pts"], False, "A-ROAD")
     if roads:
-        road_draw(h, sh, t, win)
+        road_draw(h, sh, t, win, road_avoid)
     for wi, w in enumerate(h.water):
         if roads and wi == 0 and (h.roads.get("north") or {}).get("sw"):
             continue                       # 歩道（水路の蓋掛け部）として描くので水路のハッチは重ねない
@@ -1665,7 +1668,7 @@ def _planting_draw(h, sh, t):
     """植栽（E-PLNT）: 高木・中木は葉張りの円（高木は中心に点）、低木は波線、地被は点ハッチ。位置は仮置き（要確認）。"""
     S = sh.S
     for (x, y), r in h.groundcover:
-        sh.hatch_polys([Polygon(t.pts(Point(x, y).buffer(r, 32).exterior.coords))], pattern="DOTS", spacing=0.8, layer="E-PLNT")
+        sh.hatch_polys([Polygon(t.pts(Point(x, y).buffer(r, 32).exterior.coords))], pattern="DOTS", spacing=1.6, layer="E-PLNT")
     for p in h.plants:
         x, y = p["xy"]
         sh.circle(t(x, y), p["crown"] / 2, "E-PLNT")
@@ -1859,7 +1862,7 @@ def site_integrated(h, number, legal_summary):
     sm = legal_summary
     sh = frame(h, number, "総合配置・外構統合図", 300)
     t = fit(h, sh, (131, 165))
-    site_base(h, sh, t, contours=False, margin=3000, roads=True, margin_top=4500)
+    site_base(h, sh, t, contours=False, margin=3000, roads=True, margin_top=4500, road_avoid=(14, 266, 112, 288))
     _integrated_exterior(h, sh, t)
     fence_draw(h, sh, t)
     _integrated_building(h, sh, t)

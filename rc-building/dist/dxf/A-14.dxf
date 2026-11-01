@@ -493,7 +493,7 @@ $SKPOLY
   9
 $TDCREATE
  40
-2461346.5891550924
+2461346.6584837963
   9
 $TDUCREATE
  40
@@ -501,7 +501,7 @@ $TDUCREATE
   9
 $TDUPDATE
  40
-2461346.5900231483
+2461346.659513889
   9
 $TDUUPDATE
  40
@@ -553,7 +553,7 @@ $SPLINESEGS
   9
 $HANDSEED
   5
-101
+10E
   9
 $SURFTAB1
  70
@@ -933,11 +933,11 @@ $PSTYLEMODE
   9
 $FINGERPRINTGUID
   2
-{DA5201F5-50AE-4C11-8ECC-D4A3EA16B588}
+{3CFC7F0D-6A1E-41F4-A015-B8B6F1240FCB}
   9
 $VERSIONGUID
   2
-{26E3150B-9D65-4133-A300-E1D8E2978E77}
+{8974FA8B-1AD2-4438-8637-CFBCE4C665C0}
   9
 $EXTNAMES
 290
@@ -1327,9 +1327,9 @@ ISM
   0
 CLASS
   1
-LAYOUT
+ACDBPLACEHOLDER
   2
-AcDbLayout
+AcDbPlaceHolder
   3
 ObjectDBX Classes
  90
@@ -1343,9 +1343,9 @@ ObjectDBX Classes
   0
 CLASS
   1
-ACDBPLACEHOLDER
+LAYOUT
   2
-AcDbPlaceHolder
+AcDbLayout
   3
 ObjectDBX Classes
  90
@@ -2237,7 +2237,7 @@ LAYER
 100
 AcDbSymbolTable
  70
-49
+54
   0
 LAYER
   5
@@ -3349,6 +3349,156 @@ AcDbSymbolTableRecord
 100
 AcDbLayerTableRecord
   2
+E-WATER
+ 70
+0
+ 62
+4
+  6
+DASHED
+370
+25
+390
+13
+347
+21
+1001
+AcAecLayerStandard
+1000
+
+1000
+上水（給水管・量水器、v4.21）
+  0
+LAYER
+  5
+B0
+330
+1
+100
+AcDbSymbolTableRecord
+100
+AcDbLayerTableRecord
+  2
+E-SEWER
+ 70
+0
+ 62
+30
+  6
+DASHDOT
+370
+25
+390
+13
+347
+21
+1001
+AcAecLayerStandard
+1000
+
+1000
+汚水（排水管・汚水桝、v4.21）
+  0
+LAYER
+  5
+B1
+330
+1
+100
+AcDbSymbolTableRecord
+100
+AcDbLayerTableRecord
+  2
+E-PLNT
+ 70
+0
+ 62
+3
+  6
+Continuous
+370
+18
+390
+13
+347
+21
+1001
+AcAecLayerStandard
+1000
+
+1000
+植栽（高木○・中木○・低木 波線・地被 点、v4.21）
+  0
+LAYER
+  5
+B2
+330
+1
+100
+AcDbSymbolTableRecord
+100
+AcDbLayerTableRecord
+  2
+A-ROAD-CW
+ 70
+0
+ 62
+250
+  6
+Continuous
+370
+35
+390
+13
+347
+21
+1001
+AcAecLayerStandard
+1000
+
+1000
+車道（#333333、v4.21）
+  0
+LAYER
+  5
+B3
+330
+1
+100
+AcDbSymbolTableRecord
+100
+AcDbLayerTableRecord
+  2
+A-ROAD-SW
+ 70
+0
+ 62
+250
+  6
+Continuous
+370
+35
+390
+13
+347
+21
+1001
+AcAecLayerStandard
+1000
+
+1000
+歩道（#333333、v4.21）
+  0
+LAYER
+  5
+B4
+330
+1
+100
+AcDbSymbolTableRecord
+100
+AcDbLayerTableRecord
+  2
 A-GROUND
  70
 0
@@ -3371,7 +3521,7 @@ AcAecLayerStandard
   0
 LAYER
   5
-B0
+B5
 330
 1
 100
@@ -3401,7 +3551,7 @@ AcAecLayerStandard
   0
 LAYER
   5
-B1
+B6
 330
 1
 100
@@ -3431,7 +3581,7 @@ AcAecLayerStandard
   0
 LAYER
   5
-B2
+B7
 330
 1
 100
@@ -3461,7 +3611,7 @@ AcAecLayerStandard
   0
 LAYER
   5
-B3
+B8
 330
 1
 100
@@ -3491,7 +3641,7 @@ AcAecLayerStandard
   0
 LAYER
   5
-B4
+B9
 330
 1
 100
@@ -3521,7 +3671,7 @@ AcAecLayerStandard
   0
 LAYER
   5
-B5
+BA
 330
 1
 100
@@ -3551,7 +3701,7 @@ AcAecLayerStandard
   0
 LAYER
   5
-B6
+BB
 330
 1
 100
@@ -3581,7 +3731,7 @@ AcAecLayerStandard
   0
 LAYER
   5
-B7
+BC
 330
 1
 100
@@ -3611,7 +3761,7 @@ AcAecLayerStandard
   0
 LAYER
   5
-B8
+BD
 330
 1
 100
@@ -3641,7 +3791,7 @@ AcAecLayerStandard
   0
 LAYER
   5
-B9
+BE
 330
 1
 100
@@ -3671,7 +3821,7 @@ AcAecLayerStandard
   0
 LAYER
   5
-BA
+BF
 330
 1
 100
@@ -4541,7 +4691,7 @@ AcAecLayerStandard
   0
 APPID
   5
-FE
+10B
 330
 3
 100
@@ -4555,7 +4705,7 @@ HATCHBACKGROUNDCOLOR
   0
 APPID
   5
-FF
+10C
 330
 3
 100
@@ -6247,7 +6397,7 @@ EZ_CURVED
   0
 DIMSTYLE
 105
-BB
+C0
 330
 4
 100
@@ -6379,7 +6529,7 @@ JIS
 340
 8A
 342
-101
+10E
 371
 13
 372
@@ -6501,7 +6651,7 @@ _CLOSEDBLANK
   0
 BLOCK_RECORD
   5
-101
+10E
 330
 9
 100
@@ -6821,9 +6971,9 @@ AcDbBlockEnd
   0
 BLOCK
   5
-102
+10F
 330
-101
+10E
 100
 AcDbEntity
   8
@@ -6847,9 +6997,9 @@ _DOT
   0
 LINE
   5
-104
+111
 330
-101
+10E
 100
 AcDbEntity
   8
@@ -6875,9 +7025,9 @@ AcDbLine
   0
 LWPOLYLINE
   5
-105
+112
 330
-101
+10E
 100
 AcDbEntity
   8
@@ -6909,9 +7059,9 @@ AcDbPolyline
   0
 ENDBLK
   5
-103
+110
 330
-101
+10E
 100
 AcDbEntity
   8
@@ -6927,7 +7077,7 @@ ENTITIES
   0
 LWPOLYLINE
   5
-BC
+C1
 330
 17
 100
@@ -6961,7 +7111,7 @@ AcDbPolyline
   0
 LWPOLYLINE
   5
-BD
+C2
 330
 17
 100
@@ -6993,7 +7143,7 @@ AcDbPolyline
   0
 LWPOLYLINE
   5
-BE
+C3
 330
 17
 100
@@ -7027,7 +7177,7 @@ AcDbPolyline
   0
 LINE
   5
-BF
+C4
 330
 17
 100
@@ -7051,7 +7201,7 @@ AcDbLine
   0
 LINE
   5
-C0
+C5
 330
 17
 100
@@ -7075,7 +7225,7 @@ AcDbLine
   0
 LINE
   5
-C1
+C6
 330
 17
 100
@@ -7099,7 +7249,7 @@ AcDbLine
   0
 LINE
   5
-C2
+C7
 330
 17
 100
@@ -7123,7 +7273,7 @@ AcDbLine
   0
 TEXT
   5
-C3
+C8
 330
 17
 100
@@ -7155,7 +7305,7 @@ AcDbText
   0
 TEXT
   5
-C4
+C9
 330
 17
 100
@@ -7187,7 +7337,7 @@ AcDbText
   0
 TEXT
   5
-C5
+CA
 330
 17
 100
@@ -7219,7 +7369,7 @@ AcDbText
   0
 TEXT
   5
-C6
+CB
 330
 17
 100
@@ -7251,7 +7401,7 @@ AcDbText
   0
 TEXT
   5
-C7
+CC
 330
 17
 100
@@ -7283,7 +7433,7 @@ AcDbText
   0
 LINE
   5
-C8
+CD
 330
 17
 100
@@ -7307,7 +7457,7 @@ AcDbLine
   0
 TEXT
   5
-C9
+CE
 330
 17
 100
@@ -7339,7 +7489,7 @@ AcDbText
   0
 TEXT
   5
-CA
+CF
 330
 17
 100
@@ -7371,7 +7521,7 @@ AcDbText
   0
 LINE
   5
-CB
+D0
 330
 17
 100
@@ -7395,7 +7545,7 @@ AcDbLine
   0
 TEXT
   5
-CC
+D1
 330
 17
 100
@@ -7427,7 +7577,7 @@ AcDbText
   0
 TEXT
   5
-CD
+D2
 330
 17
 100
@@ -7459,7 +7609,7 @@ AcDbText
   0
 LINE
   5
-CE
+D3
 330
 17
 100
@@ -7483,7 +7633,7 @@ AcDbLine
   0
 TEXT
   5
-CF
+D4
 330
 17
 100
@@ -7515,7 +7665,7 @@ AcDbText
   0
 TEXT
   5
-D0
+D5
 330
 17
 100
@@ -7547,7 +7697,7 @@ AcDbText
   0
 TEXT
   5
-D1
+D6
 330
 17
 100
@@ -7579,7 +7729,7 @@ AcDbText
   0
 TEXT
   5
-D2
+D7
 330
 17
 100
@@ -7611,7 +7761,7 @@ AcDbText
   0
 LINE
   5
-D3
+D8
 330
 17
 100
@@ -7635,7 +7785,7 @@ AcDbLine
   0
 TEXT
   5
-D4
+D9
 330
 17
 100
@@ -7667,7 +7817,7 @@ AcDbText
   0
 TEXT
   5
-D5
+DA
 330
 17
 100
@@ -7703,7 +7853,7 @@ AcDbText
   0
 TEXT
   5
-D6
+DB
 330
 17
 100
@@ -7735,7 +7885,7 @@ AcDbText
   0
 LWPOLYLINE
   5
-D7
+DC
 330
 17
 100
@@ -7761,7 +7911,7 @@ AcDbPolyline
   0
 TEXT
   5
-D8
+DD
 330
 17
 100
@@ -7793,7 +7943,7 @@ AcDbText
   0
 TEXT
   5
-D9
+DE
 330
 17
 100
@@ -7825,7 +7975,7 @@ AcDbText
   0
 TEXT
   5
-DA
+DF
 330
 17
 100
@@ -7857,7 +8007,7 @@ AcDbText
   0
 TEXT
   5
-DB
+E0
 330
 17
 100
@@ -7889,7 +8039,7 @@ AcDbText
   0
 TEXT
   5
-DC
+E1
 330
 17
 100
@@ -7921,7 +8071,7 @@ AcDbText
   0
 TEXT
   5
-DD
+E2
 330
 17
 100
@@ -7953,7 +8103,7 @@ AcDbText
   0
 LWPOLYLINE
   5
-DE
+E3
 330
 17
 100
@@ -7979,166 +8129,6 @@ AcDbPolyline
   0
 TEXT
   5
-DF
-330
-17
-100
-AcDbEntity
-  8
-A-TEXT
-100
-AcDbText
- 10
-13.0
- 20
-265.09999999999997
- 30
-0.0
- 40
-2.1
-  1
-関連法令
-  7
-JP
- 11
-13.0
- 21
-265.09999999999997
- 31
-0.0
-100
-AcDbText
-  0
-TEXT
-  5
-E0
-330
-17
-100
-AcDbEntity
-  8
-A-TEXT
-100
-AcDbText
- 10
-31.0
- 20
-265.09999999999997
- 30
-0.0
- 40
-2.1
-  1
-建築物省エネ法
-  7
-JP
- 11
-31.0
- 21
-265.09999999999997
- 31
-0.0
-100
-AcDbText
-  0
-TEXT
-  5
-E1
-330
-17
-100
-AcDbEntity
-  8
-A-TEXT
-100
-AcDbText
- 10
-67.0
- 20
-265.09999999999997
- 30
-0.0
- 40
-2.1
-  1
-建築物省エネ法 10条（住
-  7
-JP
- 11
-67.0
- 21
-265.09999999999997
- 31
-0.0
-100
-AcDbText
-  0
-TEXT
-  5
-E2
-330
-17
-100
-AcDbEntity
-  8
-A-TEXT
-100
-AcDbText
- 10
-67.0
- 20
-262.05499999999995
- 30
-0.0
- 40
-2.1
-  1
-宅の適合義務）
-  7
-JP
- 11
-67.0
- 21
-262.05499999999995
- 31
-0.0
-100
-AcDbText
-  0
-TEXT
-  5
-E3
-330
-17
-100
-AcDbEntity
-  8
-A-TEXT
-100
-AcDbText
- 10
-105.0
- 20
-265.09999999999997
- 30
-0.0
- 40
-2.1
-  1
-地域区分6: 外皮 UA 0.87以下 ほか
-  7
-JP
- 11
-105.0
- 21
-265.09999999999997
- 31
-0.0
-100
-AcDbText
-  0
-TEXT
-  5
 E4
 330
 17
@@ -8149,7 +8139,7 @@ A-TEXT
 100
 AcDbText
  10
-213.0
+13.0
  20
 265.09999999999997
  30
@@ -8157,11 +8147,11 @@ AcDbText
  40
 2.1
   1
-UA 0.25〜0.29（ブリーフ）
+外構
   7
 JP
  11
-213.0
+13.0
  21
 265.09999999999997
  31
@@ -8181,7 +8171,7 @@ A-TEXT
 100
 AcDbText
  10
-373.0
+31.0
  20
 265.09999999999997
  30
@@ -8189,11 +8179,11 @@ AcDbText
  40
 2.1
   1
-適合
+水路の占用・境界
   7
 JP
  11
-373.0
+31.0
  21
 265.09999999999997
  31
@@ -8201,7 +8191,7 @@ JP
 100
 AcDbText
   0
-LWPOLYLINE
+TEXT
   5
 E6
 330
@@ -8209,23 +8199,29 @@ E6
 100
 AcDbEntity
   8
-G-TABLE
-370
-18
+A-TEXT
 100
-AcDbPolyline
- 90
-2
- 70
-0
+AcDbText
  10
-12.0
+67.0
  20
-260.51
- 10
-390.0
- 20
-260.51
+265.09999999999997
+ 30
+0.0
+ 40
+2.1
+  1
+法定外公共物管理条例（八
+  7
+JP
+ 11
+67.0
+ 21
+265.09999999999997
+ 31
+0.0
+100
+AcDbText
   0
 TEXT
   5
@@ -8239,21 +8235,21 @@ A-TEXT
 100
 AcDbText
  10
-13.0
+67.0
  20
-257.21
+262.05499999999995
  30
 0.0
  40
 2.1
   1
-関連法令
+王子市）
   7
 JP
  11
-13.0
+67.0
  21
-257.21
+262.05499999999995
  31
 0.0
 100
@@ -8271,21 +8267,21 @@ A-TEXT
 100
 AcDbText
  10
-31.0
+105.0
  20
-257.21
+265.09999999999997
  30
 0.0
  40
 2.1
   1
-宅地造成・盛土等規制法
+境界確定・占用協議
   7
 JP
  11
-31.0
+105.0
  21
-257.21
+265.09999999999997
  31
 0.0
 100
@@ -8303,21 +8299,21 @@ A-TEXT
 100
 AcDbText
  10
-67.0
+213.0
  20
-257.21
+265.09999999999997
  30
 0.0
  40
 2.1
   1
-同法
+北側の塀・排水口の位置を協議
   7
 JP
  11
-67.0
+213.0
  21
-257.21
+265.09999999999997
  31
 0.0
 100
@@ -8335,6 +8331,192 @@ A-TEXT
 100
 AcDbText
  10
+373.0
+ 20
+265.09999999999997
+ 30
+0.0
+ 40
+2.1
+  1
+要確認
+  7
+JP
+ 11
+373.0
+ 21
+265.09999999999997
+ 31
+0.0
+100
+AcDbText
+  0
+LWPOLYLINE
+  5
+EB
+330
+17
+100
+AcDbEntity
+  8
+G-TABLE
+370
+18
+100
+AcDbPolyline
+ 90
+2
+ 70
+0
+ 10
+12.0
+ 20
+260.51
+ 10
+390.0
+ 20
+260.51
+  0
+TEXT
+  5
+EC
+330
+17
+100
+AcDbEntity
+  8
+A-TEXT
+100
+AcDbText
+ 10
+13.0
+ 20
+257.21
+ 30
+0.0
+ 40
+2.1
+  1
+関連法令
+  7
+JP
+ 11
+13.0
+ 21
+257.21
+ 31
+0.0
+100
+AcDbText
+  0
+TEXT
+  5
+ED
+330
+17
+100
+AcDbEntity
+  8
+A-TEXT
+100
+AcDbText
+ 10
+31.0
+ 20
+257.21
+ 30
+0.0
+ 40
+2.1
+  1
+建築物省エネ法
+  7
+JP
+ 11
+31.0
+ 21
+257.21
+ 31
+0.0
+100
+AcDbText
+  0
+TEXT
+  5
+EE
+330
+17
+100
+AcDbEntity
+  8
+A-TEXT
+100
+AcDbText
+ 10
+67.0
+ 20
+257.21
+ 30
+0.0
+ 40
+2.1
+  1
+建築物省エネ法 10条（住
+  7
+JP
+ 11
+67.0
+ 21
+257.21
+ 31
+0.0
+100
+AcDbText
+  0
+TEXT
+  5
+EF
+330
+17
+100
+AcDbEntity
+  8
+A-TEXT
+100
+AcDbText
+ 10
+67.0
+ 20
+254.165
+ 30
+0.0
+ 40
+2.1
+  1
+宅の適合義務）
+  7
+JP
+ 11
+67.0
+ 21
+254.165
+ 31
+0.0
+100
+AcDbText
+  0
+TEXT
+  5
+F0
+330
+17
+100
+AcDbEntity
+  8
+A-TEXT
+100
+AcDbText
+ 10
 105.0
  20
 257.21
@@ -8343,7 +8525,7 @@ AcDbText
  40
 2.1
   1
-規制区域内の切土・盛土
+地域区分6: 外皮 UA 0.87以下 ほか
   7
 JP
  11
@@ -8357,7 +8539,7 @@ AcDbText
   0
 TEXT
   5
-EB
+F1
 330
 17
 100
@@ -8375,7 +8557,7 @@ AcDbText
  40
 2.1
   1
-切土・盛土なし（現況地盤を維持）
+UA 0.25〜0.29（ブリーフ）
   7
 JP
  11
@@ -8389,7 +8571,7 @@ AcDbText
   0
 TEXT
   5
-EC
+F2
 330
 17
 100
@@ -8421,7 +8603,7 @@ AcDbText
   0
 LWPOLYLINE
   5
-ED
+F3
 330
 17
 100
@@ -8439,203 +8621,11 @@ AcDbPolyline
  10
 12.0
  20
-254.91
+252.62
  10
 390.0
  20
-254.91
-  0
-TEXT
-  5
-EE
-330
-17
-100
-AcDbEntity
-  8
-A-TEXT
-100
-AcDbText
- 10
-13.0
- 20
-251.61
- 30
-0.0
- 40
-2.1
-  1
-関連法令
-  7
-JP
- 11
-13.0
- 21
-251.61
- 31
-0.0
-100
-AcDbText
-  0
-TEXT
-  5
-EF
-330
-17
-100
-AcDbEntity
-  8
-A-TEXT
-100
-AcDbText
- 10
-31.0
- 20
-251.61
- 30
-0.0
- 40
-2.1
-  1
-雨水浸透
-  7
-JP
- 11
-31.0
- 21
-251.61
- 31
-0.0
-100
-AcDbText
-  0
-TEXT
-  5
-F0
-330
-17
-100
-AcDbEntity
-  8
-A-TEXT
-100
-AcDbText
- 10
-67.0
- 20
-251.61
- 30
-0.0
- 40
-2.1
-  1
-八王子市 雨水浸透施設の
-  7
-JP
- 11
-67.0
- 21
-251.61
- 31
-0.0
-100
-AcDbText
-  0
-TEXT
-  5
-F1
-330
-17
-100
-AcDbEntity
-  8
-A-TEXT
-100
-AcDbText
- 10
-67.0
- 20
-248.56500000000003
- 30
-0.0
- 40
-2.1
-  1
-指導・助成
-  7
-JP
- 11
-67.0
- 21
-248.56500000000003
- 31
-0.0
-100
-AcDbText
-  0
-TEXT
-  5
-F2
-330
-17
-100
-AcDbEntity
-  8
-A-TEXT
-100
-AcDbText
- 10
-105.0
- 20
-251.61
- 30
-0.0
- 40
-2.1
-  1
-設置基準・補助の確認
-  7
-JP
- 11
-105.0
- 21
-251.61
- 31
-0.0
-100
-AcDbText
-  0
-TEXT
-  5
-F3
-330
-17
-100
-AcDbEntity
-  8
-A-TEXT
-100
-AcDbText
- 10
-213.0
- 20
-251.61
- 30
-0.0
- 40
-2.1
-  1
-貯留槽25m³・Dotcon+ 透水舗装・浸透桝
-  7
-JP
- 11
-213.0
- 21
-251.61
- 31
-0.0
-100
-AcDbText
+252.62
   0
 TEXT
   5
@@ -8649,21 +8639,181 @@ A-TEXT
 100
 AcDbText
  10
-373.0
+13.0
  20
-251.61
+249.32000000000002
  30
 0.0
  40
 2.1
   1
-要確認
+関連法令
+  7
+JP
+ 11
+13.0
+ 21
+249.32000000000002
+ 31
+0.0
+100
+AcDbText
+  0
+TEXT
+  5
+F5
+330
+17
+100
+AcDbEntity
+  8
+A-TEXT
+100
+AcDbText
+ 10
+31.0
+ 20
+249.32000000000002
+ 30
+0.0
+ 40
+2.1
+  1
+宅地造成・盛土等規制法
+  7
+JP
+ 11
+31.0
+ 21
+249.32000000000002
+ 31
+0.0
+100
+AcDbText
+  0
+TEXT
+  5
+F6
+330
+17
+100
+AcDbEntity
+  8
+A-TEXT
+100
+AcDbText
+ 10
+67.0
+ 20
+249.32000000000002
+ 30
+0.0
+ 40
+2.1
+  1
+同法
+  7
+JP
+ 11
+67.0
+ 21
+249.32000000000002
+ 31
+0.0
+100
+AcDbText
+  0
+TEXT
+  5
+F7
+330
+17
+100
+AcDbEntity
+  8
+A-TEXT
+100
+AcDbText
+ 10
+105.0
+ 20
+249.32000000000002
+ 30
+0.0
+ 40
+2.1
+  1
+規制区域内の切土・盛土
+  7
+JP
+ 11
+105.0
+ 21
+249.32000000000002
+ 31
+0.0
+100
+AcDbText
+  0
+TEXT
+  5
+F8
+330
+17
+100
+AcDbEntity
+  8
+A-TEXT
+100
+AcDbText
+ 10
+213.0
+ 20
+249.32000000000002
+ 30
+0.0
+ 40
+2.1
+  1
+切土・盛土なし（現況地盤を維持）
+  7
+JP
+ 11
+213.0
+ 21
+249.32000000000002
+ 31
+0.0
+100
+AcDbText
+  0
+TEXT
+  5
+F9
+330
+17
+100
+AcDbEntity
+  8
+A-TEXT
+100
+AcDbText
+ 10
+373.0
+ 20
+249.32000000000002
+ 30
+0.0
+ 40
+2.1
+  1
+適合
   7
 JP
  11
 373.0
  21
-251.61
+249.32000000000002
  31
 0.0
 100
@@ -8671,7 +8821,7 @@ AcDbText
   0
 LWPOLYLINE
   5
-F5
+FA
 330
 17
 100
@@ -8695,127 +8845,7 @@ AcDbPolyline
  20
 247.02
   0
-LWPOLYLINE
-  5
-F6
-330
-17
-100
-AcDbEntity
-  8
-G-TABLE
-100
-AcDbPolyline
- 90
-2
- 70
-0
- 10
-12.0
- 20
-274.0
- 10
-12.0
- 20
-247.02
-  0
-LWPOLYLINE
-  5
-F7
-330
-17
-100
-AcDbEntity
-  8
-G-TABLE
-100
-AcDbPolyline
- 90
-2
- 70
-0
- 10
-30.0
- 20
-274.0
- 10
-30.0
- 20
-247.02
-  0
-LWPOLYLINE
-  5
-F8
-330
-17
-100
-AcDbEntity
-  8
-G-TABLE
-100
-AcDbPolyline
- 90
-2
- 70
-0
- 10
-66.0
- 20
-274.0
- 10
-66.0
- 20
-247.02
-  0
-LWPOLYLINE
-  5
-F9
-330
-17
-100
-AcDbEntity
-  8
-G-TABLE
-100
-AcDbPolyline
- 90
-2
- 70
-0
- 10
-104.0
- 20
-274.0
- 10
-104.0
- 20
-247.02
-  0
-LWPOLYLINE
-  5
-FA
-330
-17
-100
-AcDbEntity
-  8
-G-TABLE
-100
-AcDbPolyline
- 90
-2
- 70
-0
- 10
-212.0
- 20
-274.0
- 10
-212.0
- 20
-247.02
-  0
-LWPOLYLINE
+TEXT
   5
 FB
 330
@@ -8823,6 +8853,376 @@ FB
 100
 AcDbEntity
   8
+A-TEXT
+100
+AcDbText
+ 10
+13.0
+ 20
+243.72000000000003
+ 30
+0.0
+ 40
+2.1
+  1
+関連法令
+  7
+JP
+ 11
+13.0
+ 21
+243.72000000000003
+ 31
+0.0
+100
+AcDbText
+  0
+TEXT
+  5
+FC
+330
+17
+100
+AcDbEntity
+  8
+A-TEXT
+100
+AcDbText
+ 10
+31.0
+ 20
+243.72000000000003
+ 30
+0.0
+ 40
+2.1
+  1
+雨水浸透
+  7
+JP
+ 11
+31.0
+ 21
+243.72000000000003
+ 31
+0.0
+100
+AcDbText
+  0
+TEXT
+  5
+FD
+330
+17
+100
+AcDbEntity
+  8
+A-TEXT
+100
+AcDbText
+ 10
+67.0
+ 20
+243.72000000000003
+ 30
+0.0
+ 40
+2.1
+  1
+八王子市 雨水浸透施設の
+  7
+JP
+ 11
+67.0
+ 21
+243.72000000000003
+ 31
+0.0
+100
+AcDbText
+  0
+TEXT
+  5
+FE
+330
+17
+100
+AcDbEntity
+  8
+A-TEXT
+100
+AcDbText
+ 10
+67.0
+ 20
+240.67500000000004
+ 30
+0.0
+ 40
+2.1
+  1
+指導・助成
+  7
+JP
+ 11
+67.0
+ 21
+240.67500000000004
+ 31
+0.0
+100
+AcDbText
+  0
+TEXT
+  5
+FF
+330
+17
+100
+AcDbEntity
+  8
+A-TEXT
+100
+AcDbText
+ 10
+105.0
+ 20
+243.72000000000003
+ 30
+0.0
+ 40
+2.1
+  1
+設置基準・補助の確認
+  7
+JP
+ 11
+105.0
+ 21
+243.72000000000003
+ 31
+0.0
+100
+AcDbText
+  0
+TEXT
+  5
+100
+330
+17
+100
+AcDbEntity
+  8
+A-TEXT
+100
+AcDbText
+ 10
+213.0
+ 20
+243.72000000000003
+ 30
+0.0
+ 40
+2.1
+  1
+貯留槽25m³・Dotcon+ 透水舗装・浸透桝
+  7
+JP
+ 11
+213.0
+ 21
+243.72000000000003
+ 31
+0.0
+100
+AcDbText
+  0
+TEXT
+  5
+101
+330
+17
+100
+AcDbEntity
+  8
+A-TEXT
+100
+AcDbText
+ 10
+373.0
+ 20
+243.72000000000003
+ 30
+0.0
+ 40
+2.1
+  1
+要確認
+  7
+JP
+ 11
+373.0
+ 21
+243.72000000000003
+ 31
+0.0
+100
+AcDbText
+  0
+LWPOLYLINE
+  5
+102
+330
+17
+100
+AcDbEntity
+  8
+G-TABLE
+370
+18
+100
+AcDbPolyline
+ 90
+2
+ 70
+0
+ 10
+12.0
+ 20
+239.13000000000002
+ 10
+390.0
+ 20
+239.13000000000002
+  0
+LWPOLYLINE
+  5
+103
+330
+17
+100
+AcDbEntity
+  8
+G-TABLE
+100
+AcDbPolyline
+ 90
+2
+ 70
+0
+ 10
+12.0
+ 20
+274.0
+ 10
+12.0
+ 20
+239.13000000000002
+  0
+LWPOLYLINE
+  5
+104
+330
+17
+100
+AcDbEntity
+  8
+G-TABLE
+100
+AcDbPolyline
+ 90
+2
+ 70
+0
+ 10
+30.0
+ 20
+274.0
+ 10
+30.0
+ 20
+239.13000000000002
+  0
+LWPOLYLINE
+  5
+105
+330
+17
+100
+AcDbEntity
+  8
+G-TABLE
+100
+AcDbPolyline
+ 90
+2
+ 70
+0
+ 10
+66.0
+ 20
+274.0
+ 10
+66.0
+ 20
+239.13000000000002
+  0
+LWPOLYLINE
+  5
+106
+330
+17
+100
+AcDbEntity
+  8
+G-TABLE
+100
+AcDbPolyline
+ 90
+2
+ 70
+0
+ 10
+104.0
+ 20
+274.0
+ 10
+104.0
+ 20
+239.13000000000002
+  0
+LWPOLYLINE
+  5
+107
+330
+17
+100
+AcDbEntity
+  8
+G-TABLE
+100
+AcDbPolyline
+ 90
+2
+ 70
+0
+ 10
+212.0
+ 20
+274.0
+ 10
+212.0
+ 20
+239.13000000000002
+  0
+LWPOLYLINE
+  5
+108
+330
+17
+100
+AcDbEntity
+  8
 G-TABLE
 100
 AcDbPolyline
@@ -8837,11 +9237,11 @@ AcDbPolyline
  10
 372.0
  20
-247.02
+239.13000000000002
   0
 LWPOLYLINE
   5
-FC
+109
 330
 17
 100
@@ -8861,11 +9261,11 @@ AcDbPolyline
  10
 390.0
  20
-247.02
+239.13000000000002
   0
 TEXT
   5
-FD
+10A
 330
 17
 100
@@ -9985,7 +10385,7 @@ CREATED_BY_EZDXF
   3
 WRITTEN_BY_EZDXF
 350
-100
+10D
   0
 DICTIONARYVAR
   5
@@ -9997,7 +10397,7 @@ DictionaryVariables
 280
 0
   1
-1.4.4 @ 2026-11-01T14:08:23.344065+00:00
+1.4.4 @ 2026-11-01T15:48:13.968233+00:00
   0
 VISUALSTYLE
   5
@@ -16551,7 +16951,7 @@ strokes_ogs.tif
   0
 DICTIONARYVAR
   5
-100
+10D
 330
 2D
 100
@@ -16559,7 +16959,7 @@ DictionaryVariables
 280
 0
   1
-1.4.4 @ 2026-11-01T14:09:38.743257+00:00
+1.4.4 @ 2026-11-01T15:49:42.078504+00:00
   0
 ENDSEC
   0
