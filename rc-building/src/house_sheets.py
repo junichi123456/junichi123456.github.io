@@ -855,7 +855,9 @@ def cover(h, dl, sm):
     sh.text("計画概要", (24, 238), 4.0, "A-TEXT", paper=True)
     sh.table(24, 233, [36, 160], rows, row_h=7.0, h=2.5)
     sh.text("図面リスト", (236, 238), 4.0, "A-TEXT", paper=True)
-    sh.table(236, 233, [20, 112, 30], [["図番", "図面名称", "縮尺"]] + [list(r) for r in dl], row_h=6.6, h=2.4)
+    half = (len(dl) + 1) // 2                      # 2段組（表題欄・用紙下端にかからない）
+    for x, part in ((236, dl[:half]), (322, dl[half:])):
+        sh.table(x, 233, [16, 58, 12], [["図番", "図面名称", "縮尺"]] + [list(r) for r in part], row_h=6.6, h=2.0)
     return sh
 
 
