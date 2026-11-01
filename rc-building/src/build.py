@@ -38,6 +38,7 @@ def main():
         hs.site_plan(h, "A-01", sm),
         hs.exterior_plan(h, "A-02"),
         hs.gate_detail(h, "A-02D"),
+        hs.site_integrated(h, "A-02X", sm),
         hs.floor_plan(h, "1F", "A-03"),
         hs.floor_plan(h, "2F", "A-04"),
         hs.roof_plan(h, "A-05"),

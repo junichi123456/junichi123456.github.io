@@ -36,6 +36,7 @@ LAYERS = {
     "A-VIS": (7, "Continuous", 18, "見え掛り（細線）"),
     "A-FURN": (7, "Continuous", 18, "家具（仮置き・外形の細線）"),
     "E-LITE": (7, "Continuous", 18, "埋込ダウンライト（○ φ1.5mm）"),
+    "E-EXLT": (6, "Continuous", 18, "外構照明（● φ1.2mm）"),
     "E-LINE": (4, "Continuous", 70, "直付ライン照明（棒状 LED・主照明）"),
     "E-FOOT": (6, "Continuous", 25, "階段の足元灯（▼）"),
     "E-SENS": (3, "Continuous", 18, "人感・在室センサー（◇）"),

@@ -395,16 +395,23 @@ def exterior_plan(h, number):
 
 
 # ================================================================ plans
+def plan_projection(h, floor):
+    """平面図の切断投影（FL+1,100 で切る）。floor_plan と site_integrated が共用する。"""
+    fl = h.fl[floor]
+    cut = fl + 1100
+    zmin = fl - 1 if floor == "1F" else fl - h.H["1F"] / 2 - 1
+    return project(h.boxes, "plan", cut=-cut, depth_limit=-zmin if floor == "2F" else -(h.fgl - 1),
+                   filt=lambda b: not ((b.cat in ("glass", "door") and b.z0 < cut < b.z1)
+                                       or (b.cat == "stair" and b.level != "EXT" and b.z1 > cut)))
+
+
 def floor_plan(h, floor, number):
     names = {"1F": "1階平面図", "2F": "2階平面図"}
     sh = frame(h, number, names[floor], 100)
     t = T(sh, (0, 0), (52, 73))
     fl = h.fl[floor]
     cut = fl + 1100
-    zmin = fl - 1 if floor == "1F" else fl - h.H["1F"] / 2 - 1
-    proj = project(h.boxes, "plan", cut=-cut, depth_limit=-zmin if floor == "2F" else -(h.fgl - 1),
-                   filt=lambda b: not ((b.cat in ("glass", "door") and b.z0 < cut < b.z1)
-                                       or (b.cat == "stair" and b.level != "EXT" and b.z1 > cut)))
+    proj = plan_projection(h, floor)
     emit(sh, proj, t)
     grid(h, sh, t)
     plan_dims(h, sh, t, floor)
@@ -1471,6 +1478,121 @@ def gate_detail(h, number):
              ("t", f"鍵: {vs['key_box']}（リレーアタック対策）"),
              ("t", f"監視: {vs['camera']}。{vs['sensor']}。勝手口は廃止し、出入口は南の2か所に限る")]
     side_panel(sh, 250, 270, notes, width=150)
+    return sh
+
+
+def _integrated_building(h, sh, t):
+    """総合配置図の建物: 1階切断（壁・開口の線）＋屋根・庇の外形＋室名＋玄関▲。"""
+    cut = h.fl["1F"] + 1100
+    emit(sh, plan_projection(h, "1F"), t)
+    for w in h.walls:                                # 外壁の開口だけを線で示す
+        if w.cat == "insul":
+            continue
+        ext = (w.axis == "x" and (abs(w.c) < 400 or abs(w.c - h.D) < 400)) or (w.axis == "y" and (abs(w.c) < 400 or abs(w.c - h.W) < 400))
+        for op in w.openings:
+            if not ext or op.floor != "1F" or op.operation == "opening" or not (op.z0 < cut < op.z1):
+                continue
+            p0 = t(op.u0, w.c) if w.axis == "x" else t(w.c, op.u0)
+            p1 = t(op.u1, w.c) if w.axis == "x" else t(w.c, op.u1)
+            sh.line(p0, p1, "A-GLAZ" if op.kind == "window" else "A-DOOR", lineweight=35)
+    o = h.outer_dims()                               # 屋根（パラペット）外形
+    sh.rect(*t(o[0], o[1]), *t(o[2], o[3]), "A-HIDDEN")
+    for cn in h.canopies:                            # 連続庇
+        sh.rect(*t(cn[0], cn[1]), *t(cn[2], cn[3]), "A-HIDDEN")
+    for r in h.rooms:                                # 室名（面積なし・小室は省略）
+        if r.floor != "1F":
+            continue
+        rw, rd = r.rect[2] - r.rect[0], r.rect[3] - r.rect[1]
+        if min(rw, rd) < 1800 or _text_width(r.name, 2.0) * sh.S > rw - 300:
+            continue
+        sh.text(r.name, t(*r.label_at), 2.0, "A-ROOM", "MIDDLE_CENTER")
+    ex = h.entrance                                  # 玄関 ▲
+    cx = (ex.u0 + ex.u1) / 2
+    r = 1.6 * sh.S
+    c = t(cx, -900)
+    sh.pline([(c[0] - r, c[1] - r), (c[0] + r, c[1] - r), (c[0], c[1] + r)], "A-SYMB", closed=True)
+    sh.hatch_polys([Polygon([(c[0] - r, c[1] - r), (c[0] + r, c[1] - r), (c[0], c[1] + r)])], solid=True, color=7)
+
+
+def _integrated_exterior(h, sh, t):
+    """総合配置図の外構: 舗装・カーポート・パーゴラ・菜園・雨水施設・外構照明。小物の位置は _integrated_items が返す。"""
+    S = sh.S
+    hatch = lambda polys: sh.hatch_polys(polys, pattern="NET", spacing=1.0, layer="A-PAVE")
+    hatch([Polygon(t.pts(h.dotcon.exterior.coords))])
+    sh.pline(t.pts(h.dotcon.exterior.coords), "A-PAVE", closed=True)
+    for p in iter_polygons(h.dotcon_garden):
+        hatch([Polygon(t.pts(p.exterior.coords), [t.pts(r.coords) for r in p.interiors])])
+    ap = h.approach.intersection(h.site.buffer(-h.fence_t))
+    for p in iter_polygons(ap):
+        sh.pline(t.pts(p.exterior.coords), "A-PAVE", closed=True)
+        sh.hatch_polys([Polygon(t.pts(p.exterior.coords))], pattern="ANSI37", spacing=2.5, layer="A-PAVE")
+    fr = h.farm
+    for pl in h.planters:
+        sh.rect(*t(pl[0], pl[1]), *t(pl[2], pl[3]), "A-VIS")
+    pg, cp = h.pergola, h.carport
+    sh.rect(*t(pg[0], pg[1]), *t(pg[2], pg[3]), "A-VIS")
+    sh.rect(*t(cp[0], cp[1]), *t(cp[2], cp[3]), "A-VIS")
+    for st in h.stalls:
+        sh.rect(*t(st[0], st[1]), *t(st[2], st[3]), "A-VIS")
+    # 雨水施設
+    tk = h.tank
+    sh.rect(*t(tk[0], tk[1]), *t(tk[2], tk[3]), "A-DRAIN")
+    sh.line(t(tk[0], tk[1]), t(tk[2], tk[3]), "A-DRAIN")
+    for p in h.infil_pits:
+        sh.circle(t(*p), 0.9 * S, "A-DRAIN")
+    for p in h.flap:
+        sh.rect(*t(p[0] - 500, p[1] - 500), *t(p[0] + 500, p[1] + 500), "A-DRAIN")
+    for p in h.spec["exterior"]["canopy"]["downpipes"]:
+        sh.circle(t(*p), 0.7 * S, "A-DRAIN")
+    # 小物
+    for bx, by in h.bollards:
+        sh.circle(t(bx, by), 0.7 * S, "A-VIS")
+    for r in (h.delivery_box, h.garbage_box):
+        sh.rect(*t(r[0], r[1]), *t(r[2], r[3]), "A-VIS")
+    for r in h.garbage_screens:
+        sh.hatch_polys([sbox(*t(r[0], r[1]), *t(r[2], r[3]))])
+        sh.rect(*t(r[0], r[1]), *t(r[2], r[3]), "A-FENCE")
+    for _, p in h.ext_lights:                        # 外構照明 ● φ1.2mm
+        sh.hatch_polys([Point(*t(*p)).buffer(0.6 * S)], solid=True, color=6, layer="E-EXLT")
+        sh.circle(t(*p), 0.6 * S, "E-EXLT")
+
+
+def _integrated_items(h):
+    """番号引出しの対象（名称・数量/寸法・詳細図・位置）。位置はモデル値から取る。"""
+    ex = h.spec["exterior"]
+    vs = h.spec["vehicle_security"]
+    ctr = lambda r: [((r[0] + r[2]) / 2, (r[1] + r[3]) / 2)]
+    gb = h.garbage_box
+    items = [
+        (f"電動昇降ボラード ×{len(h.bollards)}", f"φ{vs['bollards']['d']}・地上高{vs['bollards']['h']}", "A-02D", list(h.bollards)),
+        ("宅配ボックス", f"W{h.delivery_box[2] - h.delivery_box[0]:,.0f}×D{h.delivery_box[3] - h.delivery_box[1]:,.0f}", "A-02D", ctr(h.delivery_box)),
+        ("ゴミ収集ボックス＋目隠し壁", f"W{gb[2] - gb[0]:,.0f}×D{gb[3] - gb[1]:,.0f}、壁H{ex['garbage_screen']['h']:,}", "A-02D", ctr(gb)),
+        ("人用門扉", f"W{abs(h.gates[1][2][0] - h.gates[1][1][0]):,.0f}（後退{ex['gate_setback'] / 1000:.1f}m）", "A-02D", ctr(h.gates[1][1] + h.gates[1][2])),
+        ("車両門扉", f"W{abs(h.gates[0][2][0] - h.gates[0][1][0]):,.0f} 電動スライド", "A-02D", ctr(h.gates[0][1] + h.gates[0][2])),
+        (f"フラップ弁付き排水口 ×{len(h.flap)}", "塀の低位置・逆流防止", "A-02", list(h.flap)),
+        (f"浸透桝 ×{len(h.infil_pits)}", "Dotcon+ 帯・東系統", "A-02", list(h.infil_pits)),
+        (f"縦樋 ×{len(ex['canopy']['downpipes'])}", "西系統→貯留槽・東系統→浸透桝", "A-02", [tuple(p) for p in ex["canopy"]["downpipes"]]),
+        ("防犯カメラ ×2（門）", "赤外線 940nm", "A-02D",
+         [(h.gates[1][1][0] - 300, h.y_gate + 400), (h.gates[0][2][0] + 300, h.y_gate + 400)]),
+    ]
+    kinds = {}
+    for name, p in h.ext_lights:
+        k = "門灯" if name.startswith("門灯") else name.split("（")[0]
+        kinds.setdefault(k, []).append(p)
+    for k, pts in kinds.items():
+        items.append((f"外構照明 {k} ×{len(pts)}", "● 低色温度・下向き・人感", "E-03", pts))
+    return items
+
+
+def site_integrated(h, number, legal_summary):
+    """総合配置・外構統合図（A3 横1枚）: 建物1階切断と外構要素を1枚に統合する。"""
+    sh = frame(h, number, "総合配置・外構統合図", 300)
+    t = fit(h, sh, (131, 165))
+    site_base(h, sh, t, contours=False, margin=3000)
+    _integrated_exterior(h, sh, t)
+    fence_draw(h, sh, t)
+    _integrated_building(h, sh, t)
+    sh.view_title("総合配置・外構統合図", "1:300", (18, 280))
     return sh
 
 
