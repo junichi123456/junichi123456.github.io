@@ -11,6 +11,7 @@ from shapely.geometry import Point, Polygon
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "src"))
+sys.path.insert(0, str(ROOT / "tests"))
 
 import house_legal  # noqa: E402
 import house_sheets as hs  # noqa: E402
@@ -141,6 +142,52 @@ def test_planting_rules():
     for (xy, rad) in h.groundcover:
         for k, z in zones.items():
             assert z.intersection(Point(xy).buffer(rad)).area < 1, ("G", k)
+
+
+def test_utilities_layout():
+    h, _, _ = _get()
+    from shapely.geometry import LineString
+    bld = Polygon([(0, 0), (h.W, 0), (h.W, h.D), (0, h.D)])
+    for key, gs in h.pipes.items():
+        for g in gs:
+            assert h.site.buffer(5).contains(g), key
+            if key == "sewer":
+                assert g.distance(bld) > 1000, key                      # 汚水管は建物の砂利帯の外（雨水は縦樋の足元から出る）
+    water_end = Point(h.pipes["water"][0].coords[-1])
+    assert abs(water_end.x - 12600) < 1 and abs(water_end.y + 245) < 1
+    assert h.water_meter[1] < h.y_gate                                   # 量水器は門の外（検針で門を開けない）
+    sw = h.pipes["sewer"][0]
+    assert 50 < sw.length / 1000 < 60, sw.length                         # 建物出口から最終桝まで 約55m
+    assert tuple(sw.coords[-1]) == h.sewer_final and tuple(h.pipes["storm_e"][1].coords[-1]) == h.storm_final
+    assert Point(h.sewer_final).distance(Point(h.storm_final)) > 1000    # 汚水と雨水は別の最終桝
+    # 桝: 15m 以内ごと（汚水）
+    d = [sw.project(Point(m)) for m in h.sewer_manholes]
+    assert d == sorted(d) and all(b - a <= 15000 + 1 for a, b in zip(d, d[1:])), d
+    assert all(sw.distance(Point(m)) < 1 for m in h.sewer_manholes)
+    for k, z in (("pipe_zone", h.pipe_zone),):
+        for p in h.plants:
+            assert not z.intersects(Point(p["xy"]).buffer(p["crown"] / 2)), (k, p["id"])
+        assert not z.intersects(h.shrub["line"])
+    # 雨水の越流先: 貯留槽 25m³ → 西の浸透桝 2基、東は既存浸透桝 → 雨水最終桝
+    assert len(h.storm_pits) == 2 and tuple(h.infil_pits[0]) == tuple(h.pipes["storm_e"][0].coords[-1])
+
+
+def test_a02_inside_frame_and_labels():
+    h, sm, _ = _get()
+    import test_site_integrated as T
+    sh = hs.exterior_plan(h, "A-02")
+    bad = [(ly, e.dxftype(), [round(v) for v in b]) for e, ly, b in T.paper_boxes(sh)
+           if b[0] < T.INNER[0] - 0.01 or b[1] < T.INNER[1] - 0.01 or b[2] > T.INNER[2] + 0.01 or b[3] > T.INNER[3] + 0.01
+           or (b[0] < T.TITLE[2] and b[2] > T.TITLE[0] and b[1] < T.TITLE[3] and b[3] > T.TITLE[1])]
+    assert not bad, bad[:6]
+    texts = " ".join(e.dxf.text for e in sh.msp if e.dxftype() == "TEXT")
+    assert "植栽" in texts and "勾配" in texts and "未計画" not in texts
+
+
+def test_a02x_notes():
+    h, _, sh = _get()
+    texts = " ".join(e.dxf.text for e in sh.msp if e.dxftype() == "TEXT")
+    assert "植栽は未計画" not in texts and "仮置き（要確認）" in texts
 
 
 if __name__ == "__main__":

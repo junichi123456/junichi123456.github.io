@@ -321,7 +321,7 @@ def site_plan(h, number, legal_summary):
 
 
 def exterior_plan(h, number):
-    sh = frame(h, number, "外構・雨水排水計画図", 400)
+    sh = frame(h, number, "外構・給排水計画図", 400)
     t = fit(h, sh, (150, 168))
     site_base(h, sh, t, contours=False, roads=True)
     # 舗装
@@ -379,7 +379,7 @@ def exterior_plan(h, number):
         sh.rect(*t(p[0] - 500, p[1] - 500), *t(p[0] + 500, p[1] + 500), "A-DRAIN")
         sh.text("排水口（フラップ弁）", t(p[0] + 800, p[1]), 1.5, "A-TEXT", "MIDDLE_LEFT")
     # 外からの流入方向（高い側 → 敷地）
-    for (a, b) in [((0, 44000), (0, 36000)), ((-20000, 50000), (-20000, 40000)), ((30000, 22000), (22000, 18000)),
+    for (a, b) in [((0, 44000), (0, 36000)), ((-20000, 46000), (-20000, 40000)), ((30000, 22000), (22000, 18000)),
                    ((28000, 0), (21000, -2000))]:
         sh.pline(t.pts([a, b]), "A-FLOOD", lineweight=35)
         ang = math.atan2(b[1] - a[1], b[0] - a[0])
@@ -406,14 +406,18 @@ def exterior_plan(h, number):
     for (px, py) in h.spec["exterior"]["canopy"]["downpipes"]:
         sh.circle(t(px, py), abs(t(500, 0)[0] - t(0, 0)[0]), "A-DRAIN")
     sh.text("連続庇 縦樋（西→雨水貯留槽、東→浸透桝）", t(-9000, 5500), 1.5, "A-TEXT", "MIDDLE_CENTER")
+    _planting_draw(h, sh, t)
+    _utilities_draw(h, sh, t, labels=True)
     sh.north_arrow(sh.P(282, 60), 6, rot=h.facade_az)
-    sh.view_title("外構・雨水排水計画図", "1:400", (18, 22))
-    legend(sh, 300, 280, [("A-FENCE", "RC塀 t=150（数値=FGLからの天端高 m）", "fence"),
+    sh.view_title("外構・給排水計画図", "1:400", (18, 22))
+    ly_ = legend(sh, 300, 280, [("A-FENCE", "RC塀 t=150（数値=FGLからの天端高 m）", "fence"),
                           ("A-PAVE", "Dotcon+ 透水舗装", "pave"),
                           ("A-DRAIN", "浸透桝・貯留槽", "line"),
                           ("A-FLOOD", "表流水の流入方向", "line"),
                           ("A-SITE", "敷地境界（推定）", "line"),
-                          ("A-ROAD-CW", "車道（#333333）", "cw"), ("A-ROAD-SW", "歩道（#333333・要確認）", "sw")])
+                          ("A-ROAD-CW", "車道（#333333）", "cw"), ("A-ROAD-SW", "歩道（#333333・要確認）", "sw"),
+                          ("E-PLNT", "植栽（仮置き・要確認）", "plnt"),
+                          ("E-WATER", "上水（給水管・量水器 □）", "line"), ("E-SEWER", "汚水（○×は汚水桝 汚1〜）", "line")])
     st = h.ext_storage
     notes = [("h", "内水対策"),
              ("t", f"1. RC塀の基礎〜FGL+{h.spec['requirements']['fence_watertight']}を止水構造。門扉には着脱式止水板 H600"),
@@ -423,8 +427,30 @@ def exterior_plan(h, number):
              ("t", "5. 建物: 1FL=GL+1,500、床下は設備ピット、逆流防止弁・排水ポンプ（非常電源）"),
              ("t", f"参考: 時間雨量50mmで敷地全体の流出量は約{h.site.area / 1e6 * 0.05:.0f}m³/h。貯留・浸透は初期雨水の抑制が主目的で、超過分は止水と排水ポンプで対応"),
              ("h", "防犯"),
-             ("t", "RC塀 H2.0m（東側の坂道沿いは道路面+1.2m以上）。上部に侵入防止金物、センサーライト・防犯カメラ、門扉は塀と同じ高さ")]
-    side_panel(sh, 300, 252, notes, width=105)
+             ("t", "RC塀 H2.0m（東側の坂道沿いは道路面+1.2m以上）。上部に侵入防止金物、センサーライト・防犯カメラ、門扉は塀と同じ高さ"),
+             ("h", "給排水（仮置き・要確認）"),
+             ("t", "管径・勾配は下表。汚水と雨水は別の管・別の最終桝（分流式と仮定）。公共管の位置・深さ、分流式かどうかは上下水道局で確認。壁・塀・目隠し壁の基礎はスリーブ貫通"),
+             ("t", "レベル: 設計GL±0（南側道路 TP+109.0）、FGL=GL+450（TP+109.45）、1FL=GL+1,500。土かぶり 宅地内300mm以上。" + h.spec["utilities"]["levels"]["final_invert"])]
+    cy = side_panel(sh, 300, ly_ - 4, notes, width=105)
+    u = h.spec["utilities"]
+    ln = lambda key: sum(g.length for g in h.pipes[key]) / 1000
+    pr = [["管", "管種・口径", "勾配", "延長"],
+          ["上水（量水器→機械室）", u["water"]["dia"], "—", f"約{ln('water'):.0f}m"],
+          ["汚水（汚1〜汚%d）" % len(h.sewer_manholes), u["sewer"]["pipe"], u["sewer"]["slope"], f"約{ln('sewer'):.0f}m"],
+          ["雨水 西（縦樋→貯留槽→浸透桝）", "塩ビ " + u["storm"]["pipe"], u["storm"]["slope"], f"約{ln('storm_w'):.0f}m"],
+          ["雨水 東（縦樋→浸透桝→雨水最終桝）", "塩ビ " + u["storm"]["pipe"], u["storm"]["slope"], f"約{ln('storm_e'):.0f}m"]]
+    cy = sh.table(300, cy - 1, [48, 33, 11, 13], pr, row_h=4.4, h=1.8)
+    sh.text("植栽（仮置き・要確認）", (300, cy - 4), 2.6, "A-TEXT", paper=True)
+    plr = [["記号", "樹種", "寸法", "数量"]]
+    for k, nm in (("高木", "T"), ("中木", "M")):
+        ps = [p for p in h.plants if p["kind"] == k]
+        plr.append([f"{ps[0]['id']}" + (f"〜{ps[-1]['id']}" if len(ps) > 1 else ""), f"{k}: {ps[0]['species']}",
+                    f"H{ps[0]['h'] / 1000:.1f}m・葉張り{ps[0]['crown'] / 1000:.1f}m", f"{len(ps)}本"])
+    sp = h.shrub
+    plr.append([sp["id"], f"低木: {sp['species']}", f"H{sp['h'] / 1000:.1f}m・延長{sp['line'].length / 1000:.0f}m", "1列"])
+    plr.append(["G", f"地被: {h.spec['planting']['groundcover']['species']}", f"T1・T2の根元 φ{h.spec['planting']['groundcover']['dia'] / 1000:.1f}m", "2か所"])
+    cy = sh.table(300, cy - 6, [14, 47, 34, 10], plr, row_h=4.4, h=1.8)
+    side_panel(sh, 300, cy - 4, [("t", "防草シート＋砂利: 建物まわり1.0m・塀外の帯・北の2H範囲（植えない）。避ける樹種: ツバキ・サザンカ・サクラ・ウメ・柑橘")], width=105)
     return sh
 
 
@@ -1590,9 +1616,49 @@ def _integrated_exterior(h, sh, t):
         sh.hatch_polys([sbox(*t(r[0], r[1]), *t(r[2], r[3]))])
         sh.rect(*t(r[0], r[1]), *t(r[2], r[3]), "A-FENCE")
     _planting_draw(h, sh, t)
+    _utilities_draw(h, sh, t)
     for _, p in h.ext_lights:                        # 外構照明 ● φ1.2mm
         sh.hatch_polys([Point(*t(*p)).buffer(0.6 * S)], solid=True, color=6, layer="E-EXLT")
         sh.circle(t(*p), 0.6 * S, "E-EXLT")
+
+
+def _flow_arrows(sh, t, ln, layer, every=10000, size=650):
+    """管に沿って every ごとに流れの向き（→）を描く（線の向き＝流れの向き）。"""
+    d = every / 2
+    while d < ln.length - 300:
+        p, q = ln.interpolate(d), ln.interpolate(d + 50)
+        ang = math.atan2(q.y - p.y, q.x - p.x)
+        for s_ in (0.45, -0.45):
+            sh.line(t(p.x + 150 * math.cos(ang), p.y + 150 * math.sin(ang)),
+                    t(p.x + 150 * math.cos(ang) - size * math.cos(ang + s_), p.y + 150 * math.sin(ang) - size * math.sin(ang + s_)), layer)
+        d += every
+
+
+def _utilities_draw(h, sh, t, labels=False):
+    """給排水（上水 E-WATER・汚水 E-SEWER・雨水 A-DRAIN）。管径は書かない（A-02 の右欄表）。記号: 量水器 □、汚水桝 ○に×、雨水桝 ○。"""
+    S = sh.S
+    for key, lay in (("water", "E-WATER"), ("sewer", "E-SEWER"), ("storm_w", "A-DRAIN"), ("storm_e", "A-DRAIN")):
+        for ln in h.pipes[key]:
+            sh.pline(t.pts(ln.coords), lay)
+            _flow_arrows(sh, t, ln, lay)
+    x, y = h.water_meter
+    sh.rect(*t(x - 450, y - 450), *t(x + 450, y + 450), "E-WATER", lineweight=35)
+    for i, p in enumerate(h.sewer_manholes, 1):
+        r = 0.9 * S
+        c = t(*p)
+        sh.circle(c, r, "E-SEWER")
+        sh.line((c[0] - r * 0.7, c[1] - r * 0.7), (c[0] + r * 0.7, c[1] + r * 0.7), "E-SEWER")
+        sh.line((c[0] - r * 0.7, c[1] + r * 0.7), (c[0] + r * 0.7, c[1] - r * 0.7), "E-SEWER")
+        if labels:
+            sh.text(f"汚{i}", (c[0] + 1.3 * S, c[1] + 0.2 * S), 1.4, "A-TEXT", "MIDDLE_LEFT")
+    for i, p in enumerate(h.storm_manholes, 1):
+        sh.circle(t(*p), 0.9 * S, "A-DRAIN")
+        if labels:
+            c = t(*p)
+            sh.text(f"雨{i}", (c[0] + 1.3 * S, c[1] + 0.2 * S), 1.4, "A-TEXT", "MIDDLE_LEFT")
+    for p in h.storm_pits:
+        sh.circle(t(*p), 0.9 * S, "A-DRAIN")
+        sh.circle(t(*p), 0.45 * S, "A-DRAIN")
 
 
 def _planting_draw(h, sh, t):
@@ -1630,6 +1696,9 @@ def _integrated_items(h):
         ("人用門扉", f"W{abs(h.gates[1][2][0] - h.gates[1][1][0]):,.0f}（後退{ex['gate_setback'] / 1000:.1f}m）", "A-02D", ctr(h.gates[1][1] + h.gates[1][2])),
         ("車両門扉", f"W{abs(h.gates[0][2][0] - h.gates[0][1][0]):,.0f} 電動スライド", "A-02D", ctr(h.gates[0][1] + h.gates[0][2])),
         ("高木 T1・T2（アオダモ）", "H4.0m・葉張り3.0m ×2（仮置き）", "—", [p["xy"] for p in h.plants if p["kind"] == "高木"]),
+        ("量水器（上水）", "□ 門の外・南側道路から引込（仮置き）", "—", [h.water_meter]),
+        ("汚水最終桝", "○× 塩ビφ150 → 公共下水（仮置き）", "—", [h.sewer_final]),
+        ("雨水最終桝", "○ φ150 → 公共雨水（仮置き）", "—", [h.storm_final]),
         (f"フラップ弁付き排水口 ×{len(h.flap)}", "塀の低位置・逆流防止", "A-02", list(h.flap)),
         (f"浸透桝 ×{len(h.infil_pits)}", "Dotcon+ 帯・東系統", "A-02", list(h.infil_pits)),
         (f"縦樋 ×{len(ex['canopy']['downpipes'])}", "西系統→貯留槽・東系統→浸透桝", "A-02", [tuple(p) for p in ex["canopy"]["downpipes"]]),
@@ -1823,7 +1892,8 @@ def site_integrated(h, number, legal_summary):
             ("A-SITE", "敷地境界（推定）", "line"), ("A-LEGAL", "がけ条例 2H 範囲", "line"),
             ("E-EXLT", "外構照明（●）", "line"), ("A-SYMB", "番号丸（下表）", "line"),
             ("A-ROAD-CW", "車道（#333333）", "cw"), ("A-ROAD-SW", "歩道（#333333・要確認）", "sw"),
-            ("E-PLNT", "植栽（仮置き・要確認）", "plnt")]
+            ("E-PLNT", "植栽（仮置き・要確認）", "plnt"),
+            ("E-WATER", "上水（給水管・量水器 □）", "line"), ("E-SEWER", "汚水（○×は汚水桝）", "line")]
     cy = legend(sh, X, 276, rows)
     ly = 276 - 4.6 * 6
     sh.hatch_polys([Point(*sh.P(X + 6, ly)).buffer(0.6 * sh.S)], solid=True, color=6, layer="E-EXLT")
@@ -1832,7 +1902,7 @@ def site_integrated(h, number, legal_summary):
     sh.text("番号表", (X, cy - 2), 3.0, "A-TEXT", paper=True)
     cy = sh.table(X, cy - 4, [9, 56, 48, 14], tab, row_h=4.4, h=1.8)
     notes = [("t", f"敷地面積 {sm['site_area']:,.2f}m²（推定）／建築面積 {sm['building_area']:.2f}m²／建ぺい率 {sm['coverage'] * 100:.2f}%（求積は A-01）"),
-             ("t", "植栽は仮置き（要確認）。給水・汚水の引込位置は上下水道協議後に追記"),
+             ("t", "植栽・給排水の位置は仮置き（要確認）。引込位置・口径・公共管の深さは上下水道局との協議後に確定"),
              ("t", "門まわりの詳細は A-02D。雨水・止水は A-02、外構照明は E-03"),
              ("t", "がけ2H範囲の線上・内側に塀が入る区間のうち、東側の坂道沿いで道路との段差が2m超となる区間は擁壁兼用塀（令138条・工作物確認申請の対象となる可能性）"),
              ("t", "建物は1階切断（FL+1,100）。破線は屋根（パラペット）・連続庇の外形"),

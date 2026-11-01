@@ -637,6 +637,7 @@ class House:
         self.dotcon_farm = Polygon([(fx0, fy0), (fx1, fy0), (fx1, fy1), (fx0, fy1)])
         self.infil_pits = [(11000, -16000)]
         self._planting()
+        self._utilities()
         # 塀の排水口（フラップ弁）＝ 低い位置
         self.flap = [(-33200, -600), (23150, y_g)]      # v4.21: 東の塀が内側へ寄ったので東端のフラップ弁も内側へ
         self.dotcon_approach = self.approach.intersection(inner).difference(self.dotcon)
@@ -663,6 +664,26 @@ class House:
                     g = LineString([a, b]).buffer(2 * hh, cap_style=2)
                     zone = g if zone is None else zone.union(g)
         self.cliff_zone = zone.intersection(self.site)
+
+    def _utilities(self):
+        """給排水（v4.21、spec.yaml の utilities）。すべて仮置き。管の ±1.0m を pipe_zone とし、植栽はここに置かない。"""
+        u = self.spec["utilities"]
+        st = u["storm"]
+        L = LineString
+        self.pipes = {
+            "water": [L(u["water"]["line"])],
+            "sewer": [L(u["sewer"]["line"])],
+            "storm_w": [L(st["west_in"]), L(st["west_over"])] + [L(b) for b in st["west_branch"]],
+            "storm_e": [L(st["east_in"]), L(st["east_over"])],
+        }
+        self.water_meter = tuple(u["water"]["meter"])
+        self.sewer_manholes = [tuple(p) for p in u["sewer"]["manholes"]]
+        self.sewer_final = tuple(u["sewer"]["final"])
+        self.storm_manholes = [tuple(p) for p in st["manholes"]]
+        self.storm_final = tuple(st["final"])
+        self.storm_pits = [tuple(p) for p in st["west_pits"]]
+        from shapely.ops import unary_union
+        self.pipe_zone = unary_union([g.buffer(1000) for gs in self.pipes.values() for g in gs])
 
     def _exterior_lights(self, gates):
         """防虫の外構照明（低色温度・下向き・人感センサー）。玄関ドアの真上には付けず、足元を照らす。"""
