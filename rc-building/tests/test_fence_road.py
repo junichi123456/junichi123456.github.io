@@ -70,6 +70,41 @@ def test_roads_not_overlapping_site():
         assert cw.intersection(h.site).area < 2e6, (name, cw.intersection(h.site).area)   # 敷地内にはほぼ入らない（2m²未満の端の誤差）
 
 
+def _zones(h):
+    return {k: Polygon(z) for k, z in h.spec["exterior"]["dotcon_zones"].items()}
+
+
+def test_dotcon_zones_inside_fence():
+    h, _, _ = _get()
+    inner = h.fence_poly.buffer(-h.fence_t)
+    for k, z in _zones(h).items():
+        assert z.difference(inner).area < 0.05e6, (k, z.difference(inner).area / 1e6)     # 端の誤差 0.05m² 未満
+    for g in (h.dotcon_garden, h.dotcon, h.dotcon_farm, h.approach.intersection(inner)):
+        assert g.difference(inner).area < 1, g.difference(inner).area
+    ne = _zones(h)["north_east"]
+    assert abs(ne.area / 1e6 - 122.4) < 1.0, ne.area / 1e6
+    assert abs(h.ext_storage["dotcon_area"] - 828) < 3, h.ext_storage["dotcon_area"]       # 旧 838m²
+
+
+def test_dotcon_zones_no_overlap():
+    h, _, _ = _get()
+    zs = list(_zones(h).values())
+    assert zs[0].intersection(zs[1]).area < 1
+    bld = Polygon([(0, 0), (h.W, 0), (h.W, h.D), (0, h.D)]).buffer(1000)            # 建物＋防草砂利帯 1.0m
+    for z in zs:
+        assert bld.intersection(z).area < 1
+        assert z.intersection(h.dotcon_farm).area < 1 and z.distance(h.dotcon_farm) > 150
+        assert z.intersection(h.dotcon).area < 1 and z.intersection(h.approach).area < 1
+
+
+def test_fixtures_inside_fence():
+    h, _, _ = _get()
+    inner = h.fence_poly.buffer(-h.fence_t)
+    for p in h.bollards + [tuple(c) for c in h.spec["security"]["cameras"]] + [p for _, p in h.ext_lights]:
+        assert inner.contains(Point(p)), p
+    assert len(h.bollards) == 3 and len(h.spec["security"]["cameras"]) == 8 and len(h.ext_lights) == 12
+
+
 if __name__ == "__main__":
     n = 0
     for k, v in sorted(globals().items()):
