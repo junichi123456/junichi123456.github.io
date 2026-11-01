@@ -1500,7 +1500,7 @@ def _integrated_building(h, sh, t):
     for cn in h.canopies:                            # 連続庇
         sh.rect(*t(cn[0], cn[1]), *t(cn[2], cn[3]), "A-HIDDEN")
     for r in h.rooms:                                # 室名（面積なし・小室は省略）
-        if r.floor != "1F":
+        if r.floor != "1F" or "階段" in r.name:
             continue
         rw, rd = r.rect[2] - r.rect[0], r.rect[3] - r.rect[1]
         if min(rw, rd) < 1800 or _text_width(r.name, 2.0) * sh.S > rw - 300:
@@ -1545,6 +1545,9 @@ def _integrated_exterior(h, sh, t):
     for p in h.spec["exterior"]["canopy"]["downpipes"]:
         sh.circle(t(*p), 0.7 * S, "A-DRAIN")
     # 小物
+    sh.text("ソーラーパーゴラ（日よけ付き菜園）", t((pg[0] + pg[2]) / 2, (pg[1] + pg[3]) / 2), 2.0, "A-TEXT", "MIDDLE_CENTER")
+    sh.text("ソーラーカーポート（3台）", t((cp[0] + cp[2]) / 2, cp[3] + 900), 1.8, "A-TEXT", "MIDDLE_CENTER")
+    sh.text(f"雨水貯留槽 {h.spec['exterior']['retention_tank_m3']}m³", t((tk[0] + tk[2]) / 2, tk[3] + 1000), 1.6, "A-TEXT", "MIDDLE_CENTER")
     for bx, by in h.bollards:
         sh.circle(t(bx, by), 0.7 * S, "A-VIS")
     for r in (h.delivery_box, h.garbage_box):
@@ -1584,15 +1587,197 @@ def _integrated_items(h):
     return items
 
 
+def _dim_line(sh, p0, p1, label, h=1.8):
+    """寸法線（用紙上 p0→p1 はモデル座標）。端部に斜線、中央に寸法値。"""
+    sh.line(p0, p1, "A-DIMS")
+    ang = math.atan2(p1[1] - p0[1], p1[0] - p0[0])
+    k = 1.0 * sh.S
+    for q in (p0, p1):
+        sh.line((q[0] - k * math.cos(ang + 0.785), q[1] - k * math.sin(ang + 0.785)),
+                (q[0] + k * math.cos(ang + 0.785), q[1] + k * math.sin(ang + 0.785)), "A-DIMS")
+    m = ((p0[0] + p1[0]) / 2, (p0[1] + p1[1]) / 2)
+    vert = abs(math.sin(ang)) > 0.7
+    off = 1.4 * sh.S
+    sh.text(label, (m[0] - off, m[1]) if vert else (m[0], m[1] + off), h, "A-DIMS", "MIDDLE_CENTER", rot=90 if vert else 0)
+
+
+def _integrated_dims(h, sh, t):
+    """建物外形〜敷地境界の離れ（S・E・N・W の4本）。"""
+    o = h.outer_dims()
+    my, mx = (o[1] + o[3]) / 2, (o[0] + o[2]) / 2
+    edge = h.site.exterior
+    for name, a, b in (("S", (11500, o[1]), (11500, -1e6)), ("N", (mx, o[3]), (mx, 1e6)),
+                       ("E", (o[2], my), (1e6, my)), ("W", (o[0], my), (-1e6, my))):
+        pt = LineString([a, b]).intersection(edge)
+        hits = [g for g in getattr(pt, "geoms", [pt]) if not g.is_empty]
+        if not hits:
+            continue
+        q = min(hits, key=lambda g: Point(a).distance(g))
+        d = Point(a).distance(q) / 1000.0
+        _dim_line(sh, t(*a), t(q.x, q.y), f"{d:.2f}m")
+
+
+def _integrated_cliff(h, sh, t):
+    """がけ条例の2H範囲線（水路端から 2×北のがけ高、東側道路境界から 2×東のがけ高）。"""
+    cl = h.spec["site"]["cliff"]
+    out = []
+    for cls, hh, tag in (("水路", cl["north_h"], "水路"), ("東側道路", cl["east_h"], "東側道路")):
+        d = 2 * hh
+        for (a, b, _), c in zip(h.site_edges, h.edge_class):
+            if c != cls:
+                continue
+            seg = LineString([a, b])
+            for side in ("left", "right"):
+                o = seg.parallel_offset(d, side)
+                if h.site.contains(o.interpolate(0.5, normalized=True)):
+                    g = o.intersection(h.site)
+                    for part in getattr(g, "geoms", [g]):
+                        if part.geom_type == "LineString" and part.length > 1000:
+                            sh.pline(t.pts(part.coords), "A-LEGAL")
+                            out.append((tag, d, part))
+                    break
+    seen = set()
+    for tag, d, part in out:                         # 区間ごとに1つ、中央に短い注記
+        if tag in seen:
+            continue
+        seen.add(tag)
+        m = part.interpolate(0.12 if tag == "東側道路" else 0.5, normalized=True)
+        sh.text(f"がけ2H {d / 1000:.1f}m（{tag}から）", t(m.x, m.y), 1.7, "A-LEGAL-TEXT", "MIDDLE_CENTER")
+
+
+def _integrated_levels(h, sh, t):
+    """道路・水路の TP 点（4点）と、建物まわりのレベル注記。"""
+    c = h.site.centroid
+    for i in (7, 4, 3, 0):
+        x, y = h.site_pts[i]
+        dx, dy = c.x - x, c.y - y
+        n = math.hypot(dx, dy) or 1
+        x2, y2 = x + dx / n * 2200, y + dy / n * 2200
+        sh.line(t(x2 - 400, y2), t(x2 + 400, y2), "A-SYMB")
+        sh.line(t(x2, y2 - 400), t(x2, y2 + 400), "A-SYMB")
+        sh.text(f"TP+{tp(h, h.ground(x, y)):.1f}", t(x2, y2 - 1500), 1.5, "A-SYMB", "MIDDLE_CENTER")
+    sh.text(f"1FL=GL+{h.fl['1F']:,}／FGL=GL+{h.fgl}", t(h.W + 1800, h.D / 2 + 3200), 1.5, "A-SYMB", "MIDDLE_LEFT")
+    sh.text("設計GL±0（TP+%.1f・南側道路）" % h.gl_tp, t(h.W + 1800, h.D / 2 + 2300), 1.5, "A-SYMB", "MIDDLE_LEFT")
+
+
+def _integrated_callouts(h, sh, t, items):
+    """番号丸 φ3mm を引出し先の近くへ自動配置（建物中心から離れる向き、丸どうしは離す）。戻り値: 描いた番号丸の数。"""
+    S = sh.S
+    inv = lambda p: ((p[0] - sh.ox) / S, (p[1] - sh.oy) / S)
+    bc = inv(t(h.W / 2, h.D / 2))
+    anchors, bub = [], []
+    for it in items:
+        a = inv(t(*it[3][0]))
+        dx, dy = a[0] - bc[0], a[1] - bc[1]
+        n = math.hypot(dx, dy) or 1
+        anchors.append(a)
+        bub.append([a[0] + dx / n * 6.0, a[1] + dy / n * 6.0])
+    obst = []                                        # すでに描いた文字の外形（用紙mm）。丸はこれを避ける
+    for e in sh.msp:
+        if e.dxftype() == "TEXT" and e.dxf.layer not in ("G-FRAME", "G-TITLE"):
+            hp = e.dxf.height / S
+            w = _text_width(e.dxf.text, hp)
+            al, p1, _ = e.get_placement()
+            x0 = (p1[0] - sh.ox) / S
+            y0 = (p1[1] - sh.oy) / S
+            x0 -= w / 2 if "CENTER" in al.name else (w if "RIGHT" in al.name else 0)
+            y0 -= hp / 2 if al.name.startswith("MIDDLE") else (hp if al.name.startswith("TOP") else 0)
+            if e.dxf.get("rotation", 0) % 180 == 90:
+                x0, w, hp = x0 + w / 2 - hp / 2, hp, w
+                y0 -= hp / 2 - w * 0
+            obst.append((x0, y0, x0 + w, y0 + hp))
+    lo, hi = (16.0, 54.0), (248.0, 282.0)
+    clamp = lambda b: [min(max(b[0], lo[0]), hi[0]), min(max(b[1], lo[1]), hi[1])]
+    for _ in range(80):
+        moved = False
+        for i in range(len(bub)):
+            for j in range(i + 1, len(bub)):
+                dx, dy = bub[j][0] - bub[i][0], bub[j][1] - bub[i][1]
+                d = math.hypot(dx, dy)
+                if d < 4.6:
+                    ux, uy = (dx / d, dy / d) if d > 1e-6 else (1.0, 0.0)
+                    k = (4.6 - d) / 2 + 0.05
+                    bub[i][0] -= ux * k; bub[i][1] -= uy * k
+                    bub[j][0] += ux * k; bub[j][1] += uy * k
+                    moved = True
+        for b in bub:
+            for (x0, y0, x1, y1) in obst:
+                nx, ny = min(max(b[0], x0), x1), min(max(b[1], y0), y1)
+                dx, dy = b[0] - nx, b[1] - ny
+                d = math.hypot(dx, dy)
+                if d < 2.0:                              # 丸の半径1.5＋余白
+                    if d < 1e-6:                         # 文字の内側: 最寄りの辺へ出す
+                        dx, dy = 0.0, (1.0 if b[1] >= (y0 + y1) / 2 else -1.0)
+                        d, nx, ny = 1.0, b[0], (y1 if dy > 0 else y0)
+                        dx, dy = 0.0, dy * 1.0
+                    k = (2.0 - d) / d if d > 0 else 1.0
+                    b[0] += dx * k
+                    b[1] += dy * k
+                    moved = True
+        bub = [clamp(b) for b in bub]
+        if not moved:
+            break
+    for i, (a, b) in enumerate(zip(anchors, bub), 1):
+        P = sh.P
+        ang = math.atan2(b[1] - a[1], b[0] - a[0])
+        sh.line(P(*a), P(b[0] - 1.5 * math.cos(ang), b[1] - 1.5 * math.sin(ang)), "A-SYMB")
+        sh.circle(P(*b), 1.5 * S, "A-SYMB")
+        sh.text(str(i), P(*b), 1.8, "A-SYMB", "MIDDLE_CENTER")
+    return len(items)
+
+
 def site_integrated(h, number, legal_summary):
-    """総合配置・外構統合図（A3 横1枚）: 建物1階切断と外構要素を1枚に統合する。"""
+    """総合配置・外構統合図（A3 横1枚・S=1:300）: 建物1階切断と外構要素を1枚に統合する。
+    用紙・縮尺: 1:250 では敷地南東（門・ボラード）が表題欄にかかるため 1:300 とした。"""
+    sm = legal_summary
     sh = frame(h, number, "総合配置・外構統合図", 300)
     t = fit(h, sh, (131, 165))
     site_base(h, sh, t, contours=False, margin=3000)
     _integrated_exterior(h, sh, t)
     fence_draw(h, sh, t)
     _integrated_building(h, sh, t)
+    _integrated_cliff(h, sh, t)
+    _integrated_levels(h, sh, t)
+    _integrated_dims(h, sh, t)
+    for i, p in enumerate(h.site_pts):                # 頂点番号
+        sh.circle(t(*p), 0.7 * sh.S, "A-SYMB")
+        c = h.site.centroid
+        dx, dy = p[0] - c.x, p[1] - c.y
+        n = math.hypot(dx, dy) or 1
+        sh.text(str(i + 1), t(p[0] + dx / n * 1800, p[1] + dy / n * 1800), 1.5, "A-SYMB", "MIDDLE_CENTER")
+    for cls, txt in (("水路", "水路・北側道路"), ("東側道路", "東側道路"), ("南側道路", "南側道路")):
+        es = [(LineString([a, b]), a, b) for (a, b, _), c in zip(h.site_edges, h.edge_class) if c == cls]
+        ln, a, b = max(es, key=lambda e: e[0].length)
+        m = ln.interpolate(0.5, normalized=True)
+        c = h.site.centroid
+        dx, dy = m.x - c.x, m.y - c.y
+        n = math.hypot(dx, dy) or 1
+        sh.text(txt, t(m.x + dx / n * 4000, m.y + dy / n * 4000), 2.0, "A-TEXT", "MIDDLE_CENTER")
+    items = _integrated_items(h)
+    nb = _integrated_callouts(h, sh, t, items)
+    sh.north_arrow(sh.P(364, 268), 6, rot=h.facade_az)
     sh.view_title("総合配置・外構統合図", "1:300", (18, 280))
+    # ---- 右欄: 凡例・番号表・注記
+    X = 262
+    sh.text("凡例", (X, 280), 3.0, "A-TEXT", paper=True)
+    rows = [("A-FENCE", "RC塀 t=150", "fence"), ("A-PAVE", "Dotcon+ 透水舗装", "pave"),
+            ("A-PAVE", "アプローチ（ANSI37）", "ins"), ("A-DRAIN", "雨水施設（貯留槽・浸透桝等）", "line"),
+            ("A-SITE", "敷地境界（推定）", "line"), ("A-LEGAL", "がけ条例 2H 範囲", "line"),
+            ("E-EXLT", "外構照明（●）", "line"), ("A-SYMB", "番号丸（下表）", "line")]
+    cy = legend(sh, X, 276, rows)
+    ly = 276 - 4.6 * 6
+    sh.hatch_polys([Point(*sh.P(X + 6, ly)).buffer(0.6 * sh.S)], solid=True, color=6, layer="E-EXLT")
+    sh.circle(sh.P(X + 6, ly - 4.6), 1.5 * sh.S, "A-SYMB")
+    tab = [["番号", "名称", "寸法・数量", "詳細図"]] + [[str(i), it[0], it[1], it[2]] for i, it in enumerate(items, 1)]
+    sh.text("番号表", (X, cy - 2), 3.0, "A-TEXT", paper=True)
+    cy = sh.table(X, cy - 4, [9, 56, 48, 14], tab, row_h=4.4, h=1.8)
+    notes = [("t", f"敷地面積 {sm['site_area']:,.2f}m²（推定）／建築面積 {sm['building_area']:.2f}m²／建ぺい率 {sm['coverage'] * 100:.2f}%（求積は A-01）"),
+             ("t", "植栽は未計画（別途）。給水・汚水の引込位置は上下水道協議後に追記"),
+             ("t", "門まわりの詳細は A-02D。雨水・止水は A-02、外構照明は E-03"),
+             ("t", "がけ2H範囲の線上・内側に塀が入る区間のうち、東側の坂道沿いで道路との段差が2m超となる区間は擁壁兼用塀（令138条・工作物確認申請の対象となる可能性）"),
+             ("t", "建物は1階切断（FL+1,100）。破線は屋根（パラペット）・連続庇の外形"),
+             ("t", "敷地境界・道路縁・水路・隣接建物: 国土地理院 基盤地図情報／標高: DEM5A（TP m）")]
+    side_panel(sh, X, cy - 4, notes, width=132)
     return sh
 
 

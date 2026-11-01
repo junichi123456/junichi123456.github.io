@@ -86,7 +86,7 @@ def paper_boxes(sh):
 def test_layers():
     _, _, sh = _get()
     used = {e.dxf.layer for e in sh.msp}
-    for need in ("A-CUT", "A-FENCE", "A-PAVE", "A-SITE", "A-ROOM", "E-EXLT"):
+    for need in ("A-CUT", "A-FENCE", "A-PAVE", "A-SITE", "A-ROOM", "E-EXLT", "A-LEGAL"):
         assert need in used, f"レイヤー {need} の図形がない"
     assert not (used - set(LAYERS)), f"未定義レイヤー {used - set(LAYERS)}"
 
@@ -100,6 +100,27 @@ def test_inside_frame_and_clear_of_title():
         elif x0 < TITLE[2] and x1 > TITLE[0] and y0 < TITLE[3] and y1 > TITLE[1]:
             bad.append((ly, e.dxftype(), round(x0), round(y0), round(x1), round(y1), "表題欄"))
     assert not bad, bad[:8]
+
+
+def _plan_circles(sh, layer, r_paper):
+    """図面部（用紙 x<256）にある、半径 r_paper(mm) の円の数。右欄の凡例見本は数えない。"""
+    n = 0
+    for e in sh.msp:
+        if e.dxftype() == "CIRCLE" and e.dxf.layer == layer and abs(e.dxf.radius / sh.S - r_paper) < 1e-6:
+            if (e.dxf.center[0] - sh.ox) / sh.S < 256:
+                n += 1
+    return n
+
+
+def test_number_table_matches_bubbles():
+    _, _, sh = _get()
+    rows = len(sh.last_table_rows) - 1               # 見出し行を除く
+    assert rows == _plan_circles(sh, "A-SYMB", 1.5) and rows >= 12, (rows, _plan_circles(sh, "A-SYMB", 1.5))
+
+
+def test_exterior_light_count():
+    h, _, sh = _get()
+    assert _plan_circles(sh, "E-EXLT", 0.6) == len(h.ext_lights)
 
 
 def test_existing_sheets_unchanged():
