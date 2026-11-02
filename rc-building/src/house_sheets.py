@@ -2090,3 +2090,60 @@ def seismic_sheet(h, number):
              ("t", "耐震等級3を取得する場合は、品確法の評価（壁量・偏心・床倍率に相当する検討）を別途行う")]
     side_panel(sh, 205, 182, notes, width=195)
     return sh
+
+
+# ================================================================ 歩行者専用道路 舗装要件（v4.22）
+def donation_sheet(h, number):
+    """A-02Y 歩行者専用道路 舗装要件（提案）A3 1枚: 舗装要件表＋帯の位置図（縮図 1:1000）＋手続きの流れ。
+    市へ割譲する帯の法的扱い・最終の舗装仕様は八王子市との協議で決まる（提案・要確認）。"""
+    d = h.spec["site"]["donation"]
+    sh = frame(h, number, "歩行者専用道路 舗装要件（提案）", 1000, label="1:1000（位置図）")
+    sh.text("歩行者専用道路 舗装要件（市への指定・協議事項の提案）", (15, 280), 3.4, "A-TEXT", paper=True)
+    sh.text(f"{d['label']}　寄付地 約{h.donation_poly.area / 1e6:,.0f}m²（要確認）。帯の座標は赤線の概算（±0.7m）。", (15, 273), 2.0, "A-TEXT", paper=True)
+    rows = [["項目", "提案値", "備考"]] + [list(r) for r in d["pave"]]
+    cy = sh.table(15, 268, [27, 82, 70], rows, row_h=7.0, h=1.8)
+    notes = [("t", "本表は提案であり、寄付（採納）か譲渡か、道路認定・区域変更、歩行者専用道路の指定の可否、舗装の最終仕様は八王子市の道路部局・建築指導課との協議で決まる（すべて要確認）。"),
+             ("t", "採納されない場合は私道（施主所有のまま一般開放、または通路として敷地に戻す）とし、敷地面積を旧境界に戻す選択肢を残す。"),
+             ("t", "塀・基礎・根固めは施主、舗装・側溝・照明・車止め・除草・清掃の区分は協定書で定める（要確認）。")]
+    side_panel(sh, 15, cy - 5, notes, width=176)
+    # ---- 位置図（縮図）
+    x0, y0, x1, y1 = h.site_gross.bounds
+    t = T(sh, ((x0 + x1) / 2, (y0 + y1) / 2), (320, 218))
+    sh.text("位置図（帯の位置）", (268, 281), 2.8, "A-TEXT", paper=True)
+    sh.pline(t.pts(h.gross_edges_pts), "A-DONATE-BND", closed=True)
+    win = sbox(x0 - 4000, y0 - 4000, x1 + 4000, y1 + 4000)
+    for r in h.road_edges:
+        g = LineString(r["pts"]).intersection(win)
+        for part in getattr(g, "geoms", [g]):
+            if part.geom_type == "LineString" and not part.is_empty:
+                sh.pline(t.pts(part.coords), "A-ROAD")
+    donation_draw(h, sh, t, labels=False)
+    sh.pline(t.pts(h.site_pts), "A-SITE", closed=True)
+    fence_draw(h, sh, t)
+    house_outline(h, sh, t, lw=25)
+    for txt, (mx, my) in (("北の歩道・水路", (-2000, 33500)), ("東側道路", (36000, 12000)), ("南側道路", (4000, -49000))):
+        sh.text(txt, t(mx, my), 1.8, "A-TEXT", "MIDDLE_CENTER")
+    sh.text("斜め格子: 寄付地（帯）／破線: 寄付地境界（旧敷地境界）／二点鎖線: 新敷地境界", (268, 177), 1.7, "A-TEXT", paper=True)
+    sh.text("北東角 幅約6.6m（楔形）・東辺 幅2.36〜2.61m・南東角で幅0。北端は北の歩道と、東端は東側道路と接続", (268, 173), 1.7, "A-TEXT", paper=True)
+    sh.north_arrow(sh.P(386, 268), 5, rot=h.facade_az)
+    # ---- 手続きの流れ（すべて要確認）
+    sh.text("手続きの流れ（想定・すべて要確認）", (268, 160), 2.8, "A-TEXT", paper=True)
+    steps = ["事前協議: 八王子市の道路部局・建築指導課（開発許可の対象か、寄付採納の受入基準）",
+             "境界確定測量: 隣地・水路管理者・道路管理者の立会い",
+             "分筆登記（地積測量図）: 帯を別筆にする",
+             "寄付採納（または譲渡）: 道路認定・区域変更・歩行者専用道路の指定の可否",
+             "所有権移転登記・固定資産税の扱い（公衆用道路の非課税申告）",
+             "協定書: 舗装要件・維持管理区分・照明の管理者・鍵の管理"]
+    y = 156
+    for i, s_ in enumerate(steps, 1):
+        sh.rect(*sh.P(268, y - 9), *sh.P(405, y), "G-TABLE")
+        sh.circle(sh.P(274, y - 4.5), 2.6 * sh.S, "A-SYMB")
+        sh.text(str(i), (274, y - 4.5), 2.2, "A-SYMB", "MIDDLE_CENTER", paper=True)
+        for k, line in enumerate(_wrap(s_, 120, 2.0)):
+            sh.text(line, (280, y - 3.2 - k * 3.4), 2.0, "A-TEXT", paper=True)
+        if i < len(steps):
+            sh.line(sh.P(274, y - 9), sh.P(274, y - 12), "A-SYMB")
+            sh.line(sh.P(274, y - 12), sh.P(273, y - 10.6), "A-SYMB")
+            sh.line(sh.P(274, y - 12), sh.P(275, y - 10.6), "A-SYMB")
+        y -= 12
+    return sh
