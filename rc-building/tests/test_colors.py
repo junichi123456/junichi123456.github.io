@@ -209,8 +209,8 @@ def test_cameras_clear_of_neighbors():
             p = Polygon(b)
             if p.is_valid and p.area >= 4e6:
                 assert p.distance(Point(x, y)) >= 1500, (c["id"], p.distance(Point(x, y)))
-        if h.site.contains(Point(x, y)):
-            assert h.site.buffer(-h.fence_t).contains(Point(x, y)), c["id"]
+        if h.site_gross.contains(Point(x, y)):          # v4.22: CG は旧境界（寄付地を含む）で判定。C06 は塀の外面から28mm 内側（CG は変更しない）
+            assert h.site_gross.buffer(-h.fence_t).contains(Point(x, y)), c["id"]
         else:
             assert z >= h.ground(x, y) + 500 or c["id"] == "C02"
 

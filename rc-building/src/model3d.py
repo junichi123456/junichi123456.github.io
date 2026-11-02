@@ -604,7 +604,7 @@ def build_terrain(h, scene, rot):
         nrm = -nrm
     lines = []
     for off in (300, w - 450):       # 境界側と対向側の路側線（幅150）
-        c = ext.parallel_offset(off, "left" if np.cross(dirv, nrm) > 0 else "right")
+        c = ext.parallel_offset(off, "left" if (dirv[0] * nrm[1] - dirv[1] * nrm[0]) > 0 else "right")
         lines.append(c.buffer(75, cap_style=2))
     lines_poly = unary_union(lines)
     out["道路|-|road_line"] = mesh_from_tris(rt, lines_poly, "int", 24.0)

@@ -1930,9 +1930,10 @@ def site_integrated(h, number, legal_summary):
     sh.text("凡例", (X, 280), 3.0, "A-TEXT", paper=True)
     rows = [("A-FENCE", "RC塀 t=150", "fence"), ("A-PAVE", "Dotcon+ 透水舗装", "pave"),
             ("A-PAVE", "アプローチ（ANSI37）", "ins"), ("A-DRAIN", "雨水施設（貯留槽・浸透桝等）", "line"),
-            ("A-SITE", "敷地境界（推定）", "line"), ("A-LEGAL", "がけ条例 2H 範囲", "line"),
+            ("A-SITE", "敷地境界（新・塀の外面）", "line"), ("A-LEGAL", "がけ条例 2H 範囲", "line"),
             ("E-EXLT", "外構照明（●）", "line"), ("A-SYMB", "番号丸（下表）", "line"),
             ("A-ROAD-CW", "車道（#333333）", "cw"), ("A-ROAD-SW", "歩道（#333333・要確認）", "sw"),
+            ("A-DONATE", "寄付地（市へ割譲の提案・要確認）", "don"), ("A-DONATE-BND", "寄付地境界（旧敷地境界）", "line"),
             ("E-PLNT", "植栽（仮置き・要確認）", "plnt"),
             ("E-WATER", "上水（給水管・量水器 □）", "line"), ("E-SEWER", "汚水（○×は汚水桝）", "line")]
     cy = legend(sh, X, 276, rows)
