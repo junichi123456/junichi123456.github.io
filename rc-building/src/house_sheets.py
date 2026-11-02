@@ -19,7 +19,7 @@ def tp(h, z):
 # ================================================================ helpers
 def fit(h, sh, center_paper, margin=0):
     """敷地の外接矩形の中心を用紙上 center_paper に置く。"""
-    x0, y0, x1, y1 = h.site.bounds
+    x0, y0, x1, y1 = h.site_gross.bounds       # v4.22: 寄付地を含む旧境界の外接矩形（用紙上の配置を保つ）
     return T(sh, ((x0 + x1) / 2, (y0 + y1) / 2), center_paper)
 
 def frame(h, number, title, scale, label=None):
@@ -144,6 +144,11 @@ def legend(sh, x, y, rows):
             poly = sbox(a[0], a[1] - 1.1 * S, c[0], c[1] + 1.1 * S)
             sh.hatch_polys([poly], pattern="ANSI31", spacing=3.0 if kind == "cw" else 1.5, layer=lay, rgb=ROAD_RGB)
             sh.rect(a[0], a[1] - 1.1 * S, c[0], c[1] + 1.1 * S, lay, lineweight=35, true_color=ROAD_TC)
+        elif kind == "don":                 # 寄付地: 45°・135° の斜め格子 間隔2.0mm（v4.22）
+            poly = sbox(a[0], a[1] - 1.1 * S, c[0], c[1] + 1.1 * S)
+            for ang in (0.0, 90.0):
+                sh.hatch_polys([poly], pattern="ANSI31", spacing=2.0, layer=lay, rgb=ROAD_RGB, angle=ang)
+            sh.rect(a[0], a[1] - 1.1 * S, c[0], c[1] + 1.1 * S, lay, true_color=ROAD_TC)
         elif kind == "plnt":                # 植栽: 高木（葉張りの円＋中心の点）と地被（点）
             m = P(x + 3.5, cy)
             sh.circle(m, 1.8 * S, lay)
@@ -172,7 +177,7 @@ def road_draw(h, sh, t, win, avoid=None):
         for key, lay, sp in (("cw", "A-ROAD-CW", 3.0), ("sw", "A-ROAD-SW", 1.5)):
             if not r.get(key):
                 continue
-            for p in iter_polygons(Polygon(r[key]).intersection(win)):
+            for p in iter_polygons(Polygon(r[key]).difference(h.site).difference(h.donation_poly).intersection(win)):   # 敷地・寄付地と重なる分は差し引く（v4.22）
                 q0 = Polygon(t.pts(p.exterior.coords))
                 if avoid:                  # 表題・注記（用紙mm の箱）に重ならないよう道路の描画から除く
                     q0 = q0.difference(sbox(*sh.P(avoid[0], avoid[1]), *sh.P(avoid[2], avoid[3])))
@@ -181,8 +186,34 @@ def road_draw(h, sh, t, win, avoid=None):
                     sh.pline(list(q.exterior.coords), lay, closed=True, lineweight=35, true_color=ROAD_TC)
 
 
-def site_base(h, sh, t, neighbors=True, contours=False, margin=9000, roads=False, margin_top=None, road_avoid=None):
-    x0, y0, x1, y1 = h.site.bounds
+DONATE_LABEL = "歩行者専用道路（市へ割譲・舗装要件協議）"
+
+
+def donation_draw(h, sh, t, label_h=1.6, labels=True):
+    """寄付地（塀外の帯）: 45°・135° の斜め格子（間隔2.0mm、#333333）、寄付地境界（旧敷地境界）の破線、ラベル（v4.22）。
+    車道（平行 3.0mm）・歩道（平行 1.5mm）と見分けられる。ラベルは東辺（帯に沿って回転）と北東角に1か所ずつ。"""
+    polys = [Polygon(t.pts(p.exterior.coords)) for p in iter_polygons(h.donation_poly)]
+    for ang in (0.0, 90.0):
+        sh.hatch_polys(polys, pattern="ANSI31", spacing=2.0, layer="A-DONATE", rgb=ROAD_RGB, angle=ang)
+    for q in polys:
+        sh.pline(list(q.exterior.coords), "A-DONATE", closed=True, true_color=ROAD_TC)
+    sh.pline(t.pts([p for p in h.gross_edges_pts]), "A-DONATE-BND", closed=True)
+    if not labels:
+        return
+    fl = h.fence_line_pts
+    (x1, y1), (x2, y2), (x3, y3) = fl[1], fl[2], fl[3]
+    ang = math.degrees(math.atan2(y2 - y3, x2 - x3))             # 東辺（F3→F2）に沿って下から上へ読む
+    mx, my = (x2 + x3) / 2, (y2 + y3) / 2
+    nx, ny = (y3 - y2), -(x3 - x2)                                 # 塀から外向き（東）の法線
+    n = math.hypot(nx, ny) or 1
+    sh.text(DONATE_LABEL + "　約%dm²（要確認）" % round(h.donation_poly.area / 1e6), t(mx + nx / n * 1200, my + ny / n * 1200), label_h, "A-DONATE", "MIDDLE_CENTER", rot=ang, true_color=ROAD_TC)
+    cx, cy = (x1 + x2) / 2, (y1 + y2) / 2
+    sh.text("歩行者専用道路", t(cx + 2600, cy + 1500), label_h, "A-DONATE", "MIDDLE_CENTER", true_color=ROAD_TC)
+    sh.text("約%dm²（要確認）" % round(h.donation_poly.area / 1e6), t(cx + 2600, cy - 400), label_h, "A-DONATE", "MIDDLE_CENTER", true_color=ROAD_TC)
+
+
+def site_base(h, sh, t, neighbors=True, contours=False, margin=9000, roads=False, margin_top=None, road_avoid=None, donation=False, label_h=1.6):
+    x0, y0, x1, y1 = h.site_gross.bounds
     win = sbox(x0 - margin, y0 - margin, x1 + margin, y1 + (margin if margin_top is None else margin_top))
     sh.pline(t.pts(list(win.exterior.coords)), "A-NEIGH", closed=True, lineweight=9)
 
@@ -202,6 +233,8 @@ def site_base(h, sh, t, neighbors=True, contours=False, margin=9000, roads=False
         clip_lines(r["pts"], False, "A-ROAD")
     if roads:
         road_draw(h, sh, t, win, road_avoid)
+    if donation:
+        donation_draw(h, sh, t, label_h=label_h)
     for wi, w in enumerate(h.water):
         if roads and wi == 0 and (h.roads.get("north") or {}).get("sw"):
             continue                       # 歩道（水路の蓋掛け部）として描くので水路のハッチは重ねない
@@ -254,7 +287,7 @@ def house_outline(h, sh, t, lw=50):
 def site_plan(h, number, legal_summary):
     sh = frame(h, number, "配置図・求積図", 500)
     t = fit(h, sh, (125, 160))
-    site_base(h, sh, t, contours=True, roads=True)
+    site_base(h, sh, t, contours=True, roads=True, donation=True, label_h=1.7)
     fence_draw(h, sh, t)
     proj = project(h.boxes, "plan", filt=lambda b: b.z1 > h.fgl and b.level != "FDN")
     emit(sh, proj, t, cut_lw=25, vis_lw=9)
@@ -311,22 +344,26 @@ def site_plan(h, number, legal_summary):
     sh.table(250, 277, [12, 30, 30, 48], rows, row_h=4.6, h=1.85)
     sm = legal_summary
     rows2 = [["項目", "面積・比率"],
-             ["敷地面積（推定）", f"{sm['site_area']:,.2f} m²（{sm['site_area'] / 3.305785:,.1f}坪）"],
+             ["敷地面積（新境界＝塀の外面）", f"{sm['site_area']:,.2f} m²（{sm['site_area'] / 3.305785:,.1f}坪）"],
+             ["旧境界（寄付地境界）の面積", f"{h.site_gross.area / 1e6:,.2f} m²"],
+             ["寄付地（塀外の帯・市へ割譲の提案）", f"約{h.donation_poly.area / 1e6:,.2f} m²（要確認）"],
+             ["（検算）新 + 寄付地", f"{sm['site_area']:,.2f} + {h.site_gross.area / 1e6 - sm['site_area']:,.2f} = {h.site_gross.area / 1e6:,.2f}"],
              ["建築面積（壁芯＋庇の先端から1m後退）", f"{sm['building_area']:.2f} m²"],
              ["延べ面積", f"{sm['total']:.2f} m²"],
              ["建ぺい率", f"{sm['coverage'] * 100:.2f}%（≦60%）"],
              ["容積率", f"{sm['far'] * 100:.2f}%（≦200%）"]]
-    sh.table(250, 150, [40, 80], rows2, row_h=5.2, h=2.1)
-    sh.text("※ 西側境界は標高109.6の点を通り駐車場白線に平行な直線（ご指定）。13〜15は隣接建物からの推定（要測量）。", (250, 115), 1.9, "A-TEXT", paper=True)
-    sh.text("※ 塀は境界から内側へ（北東・東、約2.4〜2.6m）。塀外の帯は敷地内。赤線の座標は概算・要確認（±0.7m）。", (250, 110), 1.9, "A-TEXT", paper=True)
-    sh.text("※ 道路・歩道（#333333）は基盤地図の道路縁・水路から作図（歩道の有無・幅は要確認）。", (250, 105), 1.9, "A-TEXT", paper=True)
+    sh.table(250, 150, [52, 68], rows2, row_h=5.2, h=2.1)
+    sh.text("※ 西側境界は標高109.6の点を通り駐車場白線に平行な直線（ご指定）。13〜15は隣接建物からの推定（要測量）。", (250, 98), 1.9, "A-TEXT", paper=True)
+    sh.text("※ 塀の外面を新しい敷地境界とし、塀外の帯（寄付地）は市へ割譲し歩行者専用道路とする提案（寄付・道路認定は要確認）。", (250, 93), 1.9, "A-TEXT", paper=True)
+    sh.text("   赤線の座標は概算・要確認（±0.7m）。破線: 寄付地境界（旧敷地境界）。斜め格子: 寄付地。", (250, 88), 1.9, "A-TEXT", paper=True)
+    sh.text("※ 道路・歩道（#333333）は基盤地図の道路縁・水路から作図（歩道の有無・幅は要確認）。", (250, 83), 1.9, "A-TEXT", paper=True)
     return sh
 
 
 def exterior_plan(h, number):
     sh = frame(h, number, "外構・給排水計画図", 400)
     t = fit(h, sh, (150, 168))
-    site_base(h, sh, t, contours=False, roads=True)
+    site_base(h, sh, t, contours=False, roads=True, donation=True)
     # 舗装
     sh.hatch_polys([Polygon(t.pts(h.dotcon.exterior.coords))], pattern="NET", spacing=0.9, layer="A-PAVE")
     sh.pline(t.pts(h.dotcon.exterior.coords), "A-PAVE", closed=True)
@@ -417,8 +454,9 @@ def exterior_plan(h, number):
                           ("A-PAVE", "Dotcon+ 透水舗装", "pave"),
                           ("A-DRAIN", "浸透桝・貯留槽", "line"),
                           ("A-FLOOD", "表流水の流入方向", "line"),
-                          ("A-SITE", "敷地境界（推定）", "line"),
+                          ("A-SITE", "敷地境界（新・塀の外面）", "line"),
                           ("A-ROAD-CW", "車道（#333333）", "cw"), ("A-ROAD-SW", "歩道（#333333・要確認）", "sw"),
+            ("A-DONATE", "寄付地（市へ割譲の提案・要確認）", "don"), ("A-DONATE-BND", "寄付地境界（旧敷地境界）", "line"),
                           ("E-PLNT", "植栽（仮置き・要確認）", "plnt"),
                           ("E-WATER", "上水（給水管・量水器 □）", "line"), ("E-SEWER", "汚水（○×は汚水桝 汚1〜）", "line")])
     st = h.ext_storage
@@ -453,7 +491,7 @@ def exterior_plan(h, number):
     plr.append([sp["id"], f"低木: {sp['species']}", f"H{sp['h'] / 1000:.1f}m・延長{sp['line'].length / 1000:.0f}m", "1列"])
     plr.append(["G", f"地被: {h.spec['planting']['groundcover']['species']}", f"T1・T2の根元 φ{h.spec['planting']['groundcover']['dia'] / 1000:.1f}m", "2か所"])
     cy = sh.table(300, cy - 6, [14, 47, 34, 10], plr, row_h=4.4, h=1.8)
-    side_panel(sh, 300, cy - 4, [("t", "防草シート＋砂利: 建物まわり1.0m・塀外の帯・北の2H範囲（植えない）。避ける樹種: ツバキ・サザンカ・サクラ・ウメ・柑橘")], width=105)
+    side_panel(sh, 300, cy - 4, [("t", "防草シート＋砂利: 建物まわり1.0m・北の2H範囲（植えない）。塀外の帯は寄付地（歩行者専用道路の提案・要確認）で、植栽・設備は置かない。避ける樹種: ツバキ・サザンカ・サクラ・ウメ・柑橘")], width=105)
     return sh
 
 
@@ -1862,7 +1900,7 @@ def site_integrated(h, number, legal_summary):
     sm = legal_summary
     sh = frame(h, number, "総合配置・外構統合図", 300)
     t = fit(h, sh, (131, 165))
-    site_base(h, sh, t, contours=False, margin=3000, roads=True, margin_top=4500, road_avoid=(14, 266, 112, 288))
+    site_base(h, sh, t, contours=False, margin=3000, roads=True, margin_top=4500, road_avoid=(14, 266, 112, 288), donation=True)
     _integrated_exterior(h, sh, t)
     fence_draw(h, sh, t)
     _integrated_building(h, sh, t)

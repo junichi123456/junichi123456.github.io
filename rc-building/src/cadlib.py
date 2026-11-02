@@ -55,6 +55,8 @@ LAYERS = {
     "E-PLNT": (3, "Continuous", 18, "植栽（高木○・中木○・低木 波線・地被 点、v4.21）"),
     "A-ROAD-CW": (250, "Continuous", 35, "車道（#333333、v4.21）"),
     "A-ROAD-SW": (250, "Continuous", 35, "歩道（#333333、v4.21）"),
+    "A-DONATE": (250, "Continuous", 13, "寄付地（塀外の帯・市へ割譲の提案）の塗り・ラベル（#333333、v4.22）"),
+    "A-DONATE-BND": (250, "DASHED", 25, "寄付地境界（旧敷地境界、v4.22）"),
     "A-GROUND": (7, "Continuous", 50, "地盤面 GL"),
     "A-LEGAL": (1, "DASHED", 25, "法規制ライン（斜線・延焼ライン）"),
     "A-LEGAL-TEXT": (1, "Continuous", 18, "法規注記"),
@@ -159,13 +161,13 @@ class Sheet:
         m.set_location(p)
         return m
 
-    def hatch_polys(self, polys, layer="A-CUT-HATCH", pattern="ANSI31", spacing=1.0, solid=False, color=None, rgb=None):
+    def hatch_polys(self, polys, layer="A-CUT-HATCH", pattern="ANSI31", spacing=1.0, solid=False, color=None, rgb=None, angle=0.0):
         """spacing: 用紙上のハッチ線間隔 (mm)。"""
         h = self.msp.add_hatch(color=color or 256, dxfattribs={"layer": layer})
         if solid:
             h.set_solid_fill(color=color or 8)
         else:
-            h.set_pattern_fill(pattern, scale=spacing * self.S / 3.175)
+            h.set_pattern_fill(pattern, scale=spacing * self.S / 3.175, angle=angle)
         if rgb is not None:
             h.dxf.true_color = ezdxf.colors.rgb2int(tuple(int(v) for v in rgb))
         for poly in polys:

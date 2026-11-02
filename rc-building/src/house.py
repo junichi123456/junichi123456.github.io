@@ -159,6 +159,7 @@ class House:
         self.fence_band = self.donation_poly     # 別名（v4.21 互換）
         gp = [self.m2mm(*p) for p in self.gsi["site_gross"]["pts"]]
         self.gross_edges = [(gp[i], gp[(i + 1) % len(gp)], k) for i, k in enumerate(self.gsi["site_gross"]["kind"])]
+        self.gross_edges_pts = gp
         self.gross_class = list(self.gsi["site_gross"]["cls"])     # 3D・CG は旧境界で見た目を保つ
         n = len(pts)
         self.site_edges = [(pts[i], pts[(i + 1) % n], self.site_kind[i]) for i in range(n)]
