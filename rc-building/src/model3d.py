@@ -467,7 +467,7 @@ def exterior_parts(h, P, spec):
 def _site_road_polys(h):
     """南側道路（境界から 7,400）・東側道路（境界から東へ 5,500）の帯。"""
     pts = {}
-    for (a, b, k), c in zip(h.site_edges, h.edge_class):
+    for (a, b, k), c in zip(h.gross_edges, h.gross_class):
         pts.setdefault(c, []).append((a, b))
     def band(segs, width):
         coords = [segs[0][0]] + [s[1] for s in segs]
@@ -478,7 +478,7 @@ def _site_road_polys(h):
         ln = LineString(ext)
         cands = [ln.buffer(width, single_sided=True), LineString(ext[::-1]).buffer(width, single_sided=True)]
         for c in cands:
-            if not c.buffer(-10).intersects(h.site):
+            if not c.buffer(-10).intersects(h.site_gross):
                 return c
         return cands[0]
     south = band(pts["南側道路"], h.spec["site"]["south_road_width"])
@@ -493,7 +493,7 @@ def terrain_parts(h):
     for j, ym in enumerate(ys):
         for i, xm in enumerate(xs):
             x, y = (xm - h.ox) * 1000, (ym - h.oy) * 1000
-            z = h.fgl if h.site.contains(Point(x, y)) else h.ground(x, y)
+            z = h.fgl if h.site_gross.contains(Point(x, y)) else h.ground(x, y)
             V[(i, j)] = (x, y, z - 30)
     road, s_edge = _site_road_polys(h)
     water = unary_union([Polygon(w).buffer(0) for w in h.water]).buffer(0)
@@ -502,7 +502,7 @@ def terrain_parts(h):
         for i in range(len(xs) - 1):
             a, b, c, e = V[(i, j)], V[(i + 1, j)], V[(i + 1, j + 1)], V[(i, j + 1)]
             cx, cy = (a[0] + c[0]) / 2, (a[1] + c[1]) / 2
-            (tris_in if h.site.contains(Point(cx, cy)) else tris_out).extend([(a, b, c), (a, c, e)])
+            (tris_in if h.site_gross.contains(Point(cx, cy)) else tris_out).extend([(a, b, c), (a, c, e)])
 
     def plane_z(tri):
         A = np.array([[p[0], p[1], 1.0] for p in tri])

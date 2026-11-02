@@ -129,7 +129,7 @@ class Frame:
 
 def eye_z(h, x, y, eye_h):
     from shapely.geometry import Point
-    return (h.fgl if h.site.contains(Point(x, y)) else h.ground(x, y)) + eye_h
+    return (h.fgl if h.site_gross.contains(Point(x, y)) else h.ground(x, y)) + eye_h
 
 
 def build_cfg(h, spec, args, assets, out_dir):

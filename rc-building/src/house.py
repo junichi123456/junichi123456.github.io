@@ -153,7 +153,13 @@ class House:
         pts = [self.m2mm(*p) for p in self.gsi["site"]["pts"]]
         self.site_pts = pts
         self.site_kind = self.gsi["site"]["kind"]
-        self.site = Polygon(pts)
+        self.site = Polygon(pts)                 # v4.22: 新しい敷地＝塀の外面（帯は寄付地として除く）
+        self.site_gross = Polygon([self.m2mm(*p) for p in self.gsi["site_gross"]["pts"]])   # 寄付地境界（旧敷地境界）
+        self.donation_poly = Polygon([self.m2mm(*p) for p in self.gsi["donation"]["pts"]])  # 寄付地（塀外の帯、約203m²）
+        self.fence_band = self.donation_poly     # 別名（v4.21 互換）
+        gp = [self.m2mm(*p) for p in self.gsi["site_gross"]["pts"]]
+        self.gross_edges = [(gp[i], gp[(i + 1) % len(gp)], k) for i, k in enumerate(self.gsi["site_gross"]["kind"])]
+        self.gross_class = list(self.gsi["site_gross"]["cls"])     # 3D・CG は旧境界で見た目を保つ
         n = len(pts)
         self.site_edges = [(pts[i], pts[(i + 1) % n], self.site_kind[i]) for i in range(n)]
         # 辺の分類（水路／東側道路／南側道路／隣地）
@@ -535,8 +541,7 @@ class House:
         # 塀の閉じた多角形（v4.21）: 北辺と東辺を施主の赤線（exterior.fence_line）に置き換え、西・南は敷地境界のまま
         fl = [tuple(p) for p in ex["fence_line"]]
         self.fence_line_pts = fl
-        self.fence_poly = Polygon(fl + [tuple(p) for p in self.site_pts[6:]])
-        self.fence_band = site.difference(self.fence_poly)     # 敷地内・塀の外側の帯（防草砂利、植栽しない）
+        self.fence_poly = Polygon(self.site_pts)     # v4.22: 塀の外面＝新しい敷地境界（fence_line＋旧境界の点6〜11）
         cross = LineString([(-1e6, y_g), (1e6, y_g)]).intersection(self.fence_poly)
         xs = sorted(c for g in getattr(cross, "geoms", [cross]) for c in (g.coords[0][0], g.coords[-1][0]))
         gate_line = LineString([(xs[0], y_g), (xs[-1], y_g)])

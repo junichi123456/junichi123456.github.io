@@ -33,8 +33,8 @@ def test_fence_vertices_and_band_area():
     assert [tuple(p) for p in h.fence_line_pts] == [(-31444, 29585), (22000, 27970), (28110, 20930), (23070, -31175)]
     assert abs(h.fence_poly.area / 1e6 - 2426.4) < 8
     assert abs(h.fence_band.area / 1e6 - 203.2) < 5, h.fence_band.area / 1e6
-    assert abs(h.site.area / 1e6 - 2629.64) < 0.05            # 敷地は変えない
-    assert h.fence_poly.is_valid and h.site.contains(h.fence_poly.buffer(-1))
+    assert abs(h.site.area / 1e6 - 2426.42) < 0.05            # v4.22: 新しい敷地＝塀の外面
+    assert h.fence_poly.is_valid and h.site.contains(h.fence_poly.buffer(-1)) and abs(h.site.area - h.fence_poly.area) < 1e3
 
 
 def test_gate_line_east_end():
@@ -121,7 +121,7 @@ def _no_plant_zones(h):
 def test_planting_rules():
     h, _, _ = _get()
     r = h.spec["planting"]["rules"]
-    assert abs(h.cliff_zone.area / 1e6 - 748) < 3, h.cliff_zone.area / 1e6
+    assert abs(h.cliff_zone.area / 1e6 - 711) < 3, h.cliff_zone.area / 1e6
     pg = h.pergola
     bld = Polygon([(0, 0), (h.W, 0), (h.W, h.D), (0, h.D)])
     ids = [p["id"] for p in h.plants]
