@@ -167,8 +167,8 @@ def checks(h):
     add("ブリーフ", "蓄電池", "ブリーフv3 7章", "排煙機30分＋排水ポンプ6時間＋最低限の生活24時間", f"必要 約{en['battery']:.1f}kWh → 16kWh 級", judge(en["battery"] <= 16.5))
     add("ブリーフ", "駐車台数", "ブリーフv3 2章", f"{req['parking']}台", f"{len(h.stalls)}台（屋根なし・Dotcon+）", judge(len(h.stalls) >= req["parking"]))
     add("ブリーフ", "RC塀", "ブリーフv3 4章", f"H{req['fence_height']:,}（防犯）", "全周 H2.0m 以上（東側坂道沿いは道路面+1.2m以上）", OK)
-    add("ブリーフ", "敷地境界・塀の再配置", "施主指示（v4.21）・令2条1項1号", "北東を斜めに切り、東の塀を約2.4〜2.6m内側へ（敷地境界は変えない）",
-        f"敷地 {h.site.area / 1e6:,.2f}m² のまま。塀外の帯 約{h.fence_band.area / 1e6:.0f}m² は敷地内の空地（防草砂利）。赤線の座標は概算（±0.7m）", CHK)
+    add("ブリーフ", "敷地境界・塀の再配置", "施主指示（v4.21）・令2条1項1号", "北東を斜めに切り、東の塀を約2.4〜2.6m内側へ",
+        f"v4.22 で敷地境界を塀の外面に変更: 新敷地 {h.site.area / 1e6:,.2f}m²（旧 {h.site_gross.area / 1e6:,.2f}m²）。塀外の帯 約{h.donation_poly.area / 1e6:.0f}m² は寄付地（市へ割譲する提案）。赤線の座標は概算（±0.7m）", CHK)
     add("ブリーフ", "透水性舗装", "ブリーフv3 3.1・施主指示（v4.9・v4.14）", "Dotcon+ を施主の再配置図の位置に",
         f"駐車場・アプローチ 約{h.ext_storage['dotcon_area_parking']:.0f}m²＋パーゴラ下・北・西・東の帯・日なたの菜園 約{h.ext_storage['dotcon_area_garden']:.0f}m² = 約{h.ext_storage['dotcon_area']:.0f}m²（一時貯留 約{h.ext_storage['dotcon_l'] / 1000:.1f}m³）", OK)
 
@@ -206,7 +206,7 @@ def checks(h):
     gv = SS_.garbage_visibility(h)
     gs_ = ex_["garbage_screen"]
     add("ブリーフ", "敷地境界・塀の再配置", "施主指示（v4.14）", "北（水路の溝）と東（東側道路）から塀を内側へ寄せ、北東の角を除外",
-        f"敷地 約{h.site.area / 1e6:,.0f}m²（再配置前 2,772m²）。塀は新しい境界の内側に沿わせる", CHK)
+        f"旧境界で約{h.site_gross.area / 1e6:,.0f}m²（再配置前 2,772m²）。v4.22 で塀の外面を新しい敷地境界とし、塀外の帯は寄付地（割譲）の提案", CHK)
     add("ブリーフ", "門の後退・ゴミ収集ボックス", "施主指示（v4.8・v4.10）", "南側の門を約4m 後退。門の外にゴミ収集ボックス（西の角）、道路から見えない",
         f"門の線を道路境界から{ex_['gate_setback'] / 1000:.1f}m 後退。ボックス W{ex_['garbage_box']['w']:,}×D{ex_['garbage_box']['d']:,}×H{ex_['garbage_box']['h']:,} を門の外・西の角に置き、"
         f"南に自立壁（X{gs_['x_end'] / 1000:.1f}m まで）＋袖壁{gs_['wing'] / 1000:.1f}m（H{gs_['h']:,}）。"
@@ -256,7 +256,16 @@ def checks(h):
     add("ブリーフ", "紫外線対策", "施主指示（v4.5）", "日照による紫外線をカットする設備",
         f"全窓 UVカット合わせガラス（紫外線透過率{gz['tuv'] * 100:.0f}%以下）＋南・東・西の窓{len(h.blinds)}か所に外付け電動スクリーン（{us['months'][0]}〜{us['months'][-1]}月 自動）→ 室内に入る紫外線 約{uv['cases'][-1][2] / uv['tot_inc'] * 100:.1f}%（M-03）", OK)
     add("集団規定", "用途地域の制限", "法48条・別表第2", f"{site['zoning']}：住宅は建築可", "一戸建ての住宅", CHK)
-    add("集団規定", "接道", "法43条", "道路に2m以上接する", f"南側道路 約13.9m・東側道路 約81.8m", OK)
+    def _len(cls_, edges, classes):
+        return sum(LineString([a, b]).length for (a, b, _), c in zip(edges, classes) if c == cls_) / 1000
+    ls_s = _len("南側道路", h.site_edges, h.edge_class)
+    ls_e = _len("東側道路", h.site_edges, h.edge_class)
+    add("集団規定", "接道", "法43条", "道路に2m以上接する",
+        f"南側道路 約{ls_s:.1f}m（南だけで2m以上）。東側道路は新境界では帯（寄付地）を挟み、帯が42条の道路になる場合のみ約{ls_e:.0f}m・ならなければ0m", OK if ls_s >= 2 else NG)
+    add("集団規定", "寄付（割譲）手続き", "施主決定（v4.22）・道路法・不動産登記法", "帯を市へ割譲し、歩行者専用道路とする（舗装の要件だけ指定/協議）",
+        f"寄付地 約{h.donation_poly.area / 1e6:.0f}m²。寄付採納か譲渡か・開発許可の対象か・分筆登記・境界確定・道路認定／区域変更・歩行者専用道路の指定・維持管理区分・固定資産税の扱いは八王子市と協議（すべて要確認）。採納されない場合は私道として敷地に戻す選択肢を残す", CHK)
+    add("集団規定", "接道（東・帯の扱い）", "法42条・43条", "帯（幅2.4〜2.6m）が道路に編入されるか",
+        "帯は4m未満で単独では42条の道路にならない見込み。東側道路の区域変更（編入）の可否を建築指導課・道路部局に確認。接道・道路斜線（東）・がけ2H の測り方に影響", CHK)
     add("集団規定", "建ぺい率", "法53条", f"{site['coverage_limit'] * 100:.0f}%以下（角地緩和は不使用）",
         f"{sm['building_area']:.2f}/{sm['site_area']:,.2f} = {sm['coverage'] * 100:.2f}%", judge(sm["coverage"] <= site["coverage_limit"]))
     road_far = site["south_road_width"] / 1000 * site["road_far_factor"]
@@ -268,10 +277,19 @@ def checks(h):
     allow = site["road_slope"] * (site["south_road_width"] + 2 * setback)
     add("集団規定", "道路斜線（南）", "法56条1項1号・2項", f"勾配{site['road_slope']}、後退距離 {setback / 1000:.1f}m による緩和",
         f"建物南面で許容 {allow / 1000:.1f}m ≧ 高さ {h.parapet_top / 1000:.2f}m", judge(allow >= h.parapet_top))
+    # 道路斜線（東）: 帯が道路に編入されない場合（旧境界から）と編入される場合（新境界から）の小さい方で判定
+    gedges = [LineString([a, b]) for (a, b, _), c in zip(h.gross_edges, h.gross_class) if c == "東側道路"]
+    setback_e0 = min(hb.distance(l) for l in gedges)
     setback_e = dist["東側道路"] * 1000
-    allow_e = site["road_slope"] * (site["east_road_width"] + 2 * setback_e)
-    add("集団規定", "道路斜線（東）", "法56条1項1号・2項", f"後退距離 {setback_e / 1000:.1f}m（道路高さが敷地より高い区間は緩和あり）",
-        f"許容 {allow_e / 1000:.1f}m ≧ {h.parapet_top / 1000:.2f}m", judge(allow_e >= h.parapet_top))
+    wd = site["east_road_width_with_donation"]
+    allow_e0 = site["road_slope"] * (site["east_road_width"] + 2 * setback_e0)
+    allow_e1 = site["road_slope"] * (wd + 2 * setback_e)
+    allow_e = min(allow_e0, allow_e1)
+    add("集団規定", "道路斜線（東）", "法56条1項1号・2項", f"後退距離 旧境界から{setback_e0 / 1000:.1f}m／新境界（帯が道路に編入の場合、幅員{wd / 1000:.2f}m）から{setback_e / 1000:.2f}m の小さい方（道路高さが敷地より高い区間は緩和あり）",
+        f"許容 {allow_e / 1000:.1f}m（案1 {allow_e0 / 1000:.1f}m・案2 {allow_e1 / 1000:.1f}m）≧ {h.parapet_top / 1000:.2f}m", judge(allow_e >= h.parapet_top))
+    allow_n = site["road_slope"] * 2 * dist["水路"] * 1000
+    add("集団規定", "道路斜線（北・参考）", "法56条1項1号・2項", "帯が道路になる場合の参考（幅員0とみる）。北側道路は水路と帯を挟み接しない",
+        f"許容 {allow_n / 1000:.1f}m ≧ {h.parapet_top / 1000:.2f}m", judge(allow_n >= h.parapet_top))
     add("集団規定", "隣地斜線", "法56条1項2号", "31m＋2.5×L", f"最高高さ {h.parapet_top / 1000:.2f}m < 31m", OK)
     add("集団規定", "北側斜線", "法56条1項3号", "低層・中高層住居専用地域等", "準工業地域（推定）", NA)
     add("集団規定", "日影規制", "法56条の2・都条例", "準工業：高さ10m超が対象（指定時）", f"高さ {h.parapet_top / 1000:.2f}m ≦ 10m", OK)
@@ -279,9 +297,9 @@ def checks(h):
 
     # ---------------- 東京都建築安全条例
     add("都条例", "がけ（北側）", "東京都建築安全条例6条", f"高さ2m超のがけ: 下端から2H={2 * site['cliff']['north_h'] / 1000:.1f}m 以上離す",
-        f"水路（がけ下端）まで {dist['水路']:.1f}m", judge(dist["水路"] * 1000 >= 2 * site["cliff"]["north_h"]))
+        f"新境界（塀の外面）から測り、水路（がけ下端）まで {dist['水路']:.1f}m（がけ下端の位置は変えない・要確認）", judge(dist["水路"] * 1000 >= 2 * site["cliff"]["north_h"]))
     add("都条例", "がけ（東側）", "東京都建築安全条例6条", f"道路との高低差 最大{site['cliff']['east_h'] / 1000:.1f}m: 2H={2 * site['cliff']['east_h'] / 1000:.1f}m",
-        f"東側道路境界まで {dist['東側道路']:.1f}m", judge(dist["東側道路"] * 1000 >= 2 * site["cliff"]["east_h"]))
+        f"新境界まで {dist['東側道路']:.2f}m（余裕 {dist['東側道路'] - 2 * site['cliff']['east_h'] / 1000:.2f}m・小さいので要確認）", judge(dist["東側道路"] * 1000 >= 2 * site["cliff"]["east_h"]))
     add("都条例", "角敷地の隅切り", "東京都建築安全条例2条", "幅員がいずれも6m未満の道路の角敷地",
         f"南側道路 約{site['south_road_width'] / 1000:.1f}m（6m以上）", NA)
     add("都条例", "敷地と道路（大規模建築物）", "東京都建築安全条例4条", "延べ1,000m²超は接道長さの割増し", f"延べ {sm['total']:.0f}m²", NA)
