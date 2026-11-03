@@ -389,7 +389,7 @@ def meshes(h, its):
         out.append(("台所小物", "1F", key, None, m))
     # ジム機器（既存の矩形の内側に形を作る）
     f1 = h.fl["1F"]
-    for n, (name, r, hh, kg) in enumerate(h.equipment):
+    for n, (name, r, hh, kg) in enumerate(getattr(h, "equipment_cg", h.equipment)):
         mb = FS.MB()
         FS.gym_equipment(mb, name, r, hh, f1)
         for key, m in mb.meshes().items():

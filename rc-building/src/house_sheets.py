@@ -58,6 +58,97 @@ def plan_dims(h, sh, t, floor):
     vdim(sh, t, h.gy, h.W + 1200)
 
 
+def battery_room_draw(h, sh, t, detail=False):
+    """蓄電室（v4.23）: 間仕切り（LGS＋強化PB 1時間耐火）・防火扉・室名と面積・蓄電池ラック・蓄電 PCS・RC 束壁（破線）。
+    detail=True は拡大詳細（機械室2室の分電盤・PCS・ラック・排煙機・架台も描く）。"""
+    b = h.spec["battery"]
+    x0, y0, x1, y1 = h.battery_room.rect
+    for w in h.battery_walls:
+        if w.axis == "x":
+            sh.rect(*t(w.a, w.c - w.t / 2), *t(w.b, w.c + w.t / 2), "A-CUT-LGS")
+        else:
+            segs = sorted((op.u0, op.u1) for op in w.openings)
+            u = w.a
+            for a_, b_ in segs + [(w.b, w.b)]:
+                if a_ > u:
+                    sh.rect(*t(w.c - w.t / 2, u), *t(w.c + w.t / 2, a_), "A-CUT-LGS")
+                u = max(u, b_)
+    door_symbol(sh, t, h.battery_door)
+    sh.hatch_polys([sbox(*t(x0, y0), *t(x1, y1))], layer="E-BATT", pattern="ANSI31", spacing=2.5, color=1)
+    sh.rect(*t(x0, y0), *t(x1, y1), "E-BATT")
+    rx0, rx1 = 17225, 18025                                           # 蓄電池ラック（幅700×奥行800、背面 0.1m）
+    for k in range(3):
+        ya = 6550 + k * 750
+        sh.rect(*t(rx0, ya), *t(rx1, ya + 700), "E-BATT", lineweight=35)
+    px0, py0, px1, py1 = 16300, 8350, 16900, 8850                     # 蓄電 PCS（壁掛け・北壁）
+    sh.rect(*t(px0, py0), *t(px1, py1), "E-PV", lineweight=35)
+    for xb in (17400, 17850):                                         # RC 束壁（床下ピット、2列）
+        sh.line(t(xb, y0 + 100), t(xb, y1 - 100), "A-HIDDEN", lineweight=25)
+    if detail:
+        sh.text("蓄電池ラック 3列×7段", t(17625, 7600), 1.5, "A-TEXT", "MIDDLE_CENTER", rot=90)
+        sh.text("蓄電 PCS", t(16600, 8600), 1.4, "E-PV", "MIDDLE_CENTER")
+        sh.text("RC束壁（ピット）", t(17625, 8960), 1.3, "A-TEXT", "MIDDLE_CENTER")
+    else:
+        sh.text("蓄電室", t(16900, 7800), 1.8, "A-ROOM", "MIDDLE_CENTER")
+        sh.text(f"{h.battery_room.area:.1f}m²", t(16900, 7450), 1.4, "A-ROOM", "MIDDLE_CENTER")
+
+
+def machine_battery_detail(h, sh, number_xy=(266, 160), width=150.0, scale=60):
+    """A-03 の差込み拡大詳細（機械室2室＋蓄電室）。用紙上 number_xy を左上に、縮尺 1:scale（本図は 1:100）で描く。
+    分電盤・PCS・ラック・排煙機・架台（束壁の破線）。位置はいずれも仮置き（要確認）。"""
+    x0, y0, x1, y1 = 12250, 6350, 18125, 12000
+    pw, ph = (x1 - x0) / scale, (y1 - y0) / scale
+    left, top = number_xy[0], number_xy[1] - 8
+
+    class _T:
+        def __call__(self, u, v):
+            return sh.P(left + 2 + (u - x0) / scale, top - 2 - (y1 - v) / scale)
+        def pts(self, seq):
+            return [self(u, v) for u, v in seq]
+    t2 = _T()
+    sh.text(f"拡大詳細（機械室2室＋蓄電室）1:{scale}", (left, number_xy[1] - 3), 2.2, "A-TEXT", paper=True)
+    sh.rect(*sh.P(left, top - ph - 4), *sh.P(left + pw + 4, top), "G-TABLE")
+    for name, r in (("機械室（西系統）", (12250, 9000, 15100, 12000)), ("機械室（東系統）", (15200, 9000, 18125, 12000))):
+        sh.rect(*t2(r[0], r[1]), *t2(r[2], r[3]), "A-CUT-LGS")
+        sh.text(name, t2((r[0] + r[2]) / 2, r[3] - 250), 1.5, "A-ROOM", "MIDDLE_CENTER")
+    sh.line(t2(12250, 8950), t2(18125, 8950), "A-CUT-LGS", lineweight=50)
+    sh.text("ジム", t2(13800, 7000), 1.6, "A-ROOM", "MIDDLE_CENTER")
+    # 蓄電室（本図と同じ要素を詳細縮尺で）
+    bx0, by0, bx1, by1 = h.battery_room.rect
+    sh.hatch_polys([sbox(*t2(bx0, by0), *t2(bx1, by1))], layer="E-BATT", pattern="ANSI31", spacing=2.0, color=1)
+    sh.rect(*t2(bx0, by0), *t2(bx1, by1), "E-BATT")
+    for w in h.battery_walls:
+        if w.axis == "x":
+            sh.rect(*t2(w.a, w.c - w.t / 2), *t2(w.b, w.c + w.t / 2), "A-CUT-LGS")
+        else:
+            u = w.a
+            for a_, b_ in sorted((op.u0, op.u1) for op in w.openings) + [(w.b, w.b)]:
+                if a_ > u:
+                    sh.rect(*t2(w.c - w.t / 2, u), *t2(w.c + w.t / 2, a_), "A-CUT-LGS")
+                u = max(u, b_)
+    sh.text("防火扉 W900（自閉）", t2(15900, 7050), 1.3, "A-TEXT", "MIDDLE_RIGHT")
+    for kx in range(3):
+        ya = 6550 + kx * 750
+        sh.rect(*t2(17225, ya), *t2(18025, ya + 700), "E-BATT", lineweight=35)
+    for xb in (17400, 17850):
+        sh.line(t2(xb, by0 + 100), t2(xb, by1 - 100), "A-HIDDEN", lineweight=25)
+    sh.text("蓄電池ラック 3列×7段", t2(17625, 7600), 1.3, "A-TEXT", "MIDDLE_CENTER", rot=90)
+    sh.text("RC架台＋束壁2列（破線）", t2(17000, 6500), 1.2, "A-TEXT", "MIDDLE_CENTER")
+    sh.rect(*t2(16300, 8350), *t2(16900, 8850), "E-PV", lineweight=35)
+    sh.text("蓄電PCS", t2(16600, 8600), 1.2, "E-PV", "MIDDLE_CENTER")
+    pn = h.spec["lifeline"]["power"]["panels"]
+    for key, nm in (("main", "主分電盤"), ("essential", "特定負荷"),):
+        cx, cy = pn[key]
+        sh.rect(*t2(cx - 350, cy - 125), *t2(cx + 350, cy + 125), "E-POWER", lineweight=35)
+        sh.text(nm, t2(cx, cy - 330), 1.2, "E-POWER", "TOP_CENTER")
+    for nm, r in (("排煙機", (12400, 9100, 13400, 9900)), ("排煙機", (17300, 9400, 18050, 10200)),
+                  ("空調・全熱交換", (12250, 10800, 15100, 12000)), ("浄水器・ネットワークラック", (16000, 11000, 18125, 12000))):
+        sh.rect(*t2(r[0], r[1]), *t2(r[2], r[3]), "A-VIS", lineweight=25)
+        sh.text(nm, t2((r[0] + r[2]) / 2, (r[1] + r[3]) / 2), 1.2, "A-TEXT", "MIDDLE_CENTER")
+    sh.line(t2(16600, 8850), t2(16600, 9050), "E-POWER", lineweight=35)
+    sh.text("AC 配線 約1m（壁貫通・防火措置）", t2(16000, 8950 + 5), 1.2, "A-TEXT", "BOTTOM_RIGHT")
+
+
 def room_labels(h, sh, t, floor, hgt=2.6):
     for r in h.rooms:
         if r.floor != floor:
@@ -576,6 +667,8 @@ def floor_plan(h, floor, number):
             sh.rect(*t(r[0], r[1]), *t(r[2], r[3]), "A-VIS", lineweight=25)
             vert = (r[3] - r[1]) > (r[2] - r[0]) * 1.3
             sh.text(name, t((r[0] + r[2]) / 2, (r[1] + r[3]) / 2), 1.3, "A-TEXT", "MIDDLE_CENTER", rot=90 if vert else 0)
+        battery_room_draw(h, sh, t)
+        machine_battery_detail(h, sh)
         z = h.treadmill_zone
         sh.rect(*t(z[0], z[1]), *t(z[2], z[3]), "A-HIDDEN")
         sh.text("トレッドミル後方 安全帯2.0m", t((z[0] + z[2]) / 2, z[1] + 300), 1.3, "A-TEXT", "MIDDLE_CENTER")

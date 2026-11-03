@@ -70,6 +70,54 @@ def test_legal_rows():
     assert "32.83%" in items["建ぺい率（予約ゾーンを満たした場合・参考）"]["planned"]
 
 
+def test_battery_room():
+    from shapely.geometry import box as sbox
+    c = _get()
+    h = c["h"]
+    x0, y0, x1, y1 = h.battery_room.rect
+    assert y1 <= h.D / 2 + 1 and abs(h.D / 2 - 9125) < 1, (y1, h.D)           # 南半分（建物中心 y=9,125 以下）
+    assert sbox(*h.gym.rect).contains(sbox(*h.battery_room.rect))
+    assert abs(h.battery_room.area - 4.6) < 0.1
+    assert h.gym.area >= 44.85 and abs(h.gym.area - 46.3) < 0.1, h.gym.area
+    room = sbox(x0, y0, x1, y1)
+    for name, r, hh, kg in h.equipment:
+        assert not sbox(*r).intersects(room), name
+    # 扉の開き範囲（ジム側 W900）に機器がない
+    d = h.battery_door
+    sw = sbox(x0 - d.width, d.u0, x0, d.u1)
+    for name, r, hh, kg in h.equipment:
+        assert not sbox(*r).intersects(sw), name
+    cc = {n: r for n, r, *_ in h.equipment}["ケーブルクロスオーバー"]
+    assert cc[0] == 12500 and cc[2] == 16000
+    # 機械室と同じ南半分の外（機械室は北）、換気用に東外壁に面する
+    assert x1 == 18125
+
+
+def test_cg_and_3d_unchanged():
+    """CG・3D は変えない: 蓄電室・機器移動は h.rooms／h.walls／3D 用機器配置に入れない。glb のハッシュが v4.22 と一致。"""
+    import hashlib
+    import tempfile
+    from model3d import export_glb
+    h = _get()["h"]
+    assert all(r.name != "蓄電室" for r in h.rooms) and not any(w in h.walls for w in h.battery_walls)
+    with tempfile.TemporaryDirectory() as d:
+        export_glb(h, Path(d) / "a.glb")
+        export_glb(h, Path(d) / "b.glb", interior=True)
+        ha = hashlib.sha256((Path(d) / "a.glb").read_bytes()).hexdigest()[:16]
+        hb = hashlib.sha256((Path(d) / "b.glb").read_bytes()).hexdigest()[:16]
+    assert (ha, hb) == GLB_V422, (ha, hb)
+
+
+def test_a03_count():
+    import house_sheets as hs
+    h = _get()["h"]
+    assert len(list(hs.floor_plan(h, "1F", "A-03").msp)) == A03_COUNT
+
+
+GLB_V422 = ("9e2ddbd5bb59a2af", "66f2eabaf1603679")      # v4.22 の model.glb／model_interior.glb の SHA-256 先頭16桁
+A03_COUNT = 463                                            # v4.22 の 411 + 蓄電室（間仕切り・扉・ラック・PCS・束壁・室名）と拡大詳細 52
+
+
 if __name__ == "__main__":
     n = 0
     for k, v in sorted(globals().items()):

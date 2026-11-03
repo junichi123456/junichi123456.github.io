@@ -679,7 +679,7 @@ def build_parts(h, interior=False):
     exterior_parts(h, P, spec)
     # ジム機器（簡易ボリューム）
     if not interior:
-        for name, r, hh, kg in getattr(h, "equipment", []):
+        for name, r, hh, kg in getattr(h, "equipment_cg", getattr(h, "equipment", [])):
             P.add_box("ジム機器", "1F", "equipment", (r[0], r[1], h.fl["1F"], r[2], r[3], h.fl["1F"] + hh))
     return P
 

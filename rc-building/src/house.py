@@ -108,6 +108,7 @@ class House:
         self._stairs()
         self._entrance()
         self._gym_equipment()
+        self._battery_room()
         self._exterior()
         self._label_openings()
         for w in self.walls:
@@ -367,6 +368,28 @@ class House:
             ("ストレッチマット", (17250, 2700, 18050, 4500), 20, 5),
         ]
         self.treadmill_zone = (14700, 2400, 17000, 4400)
+
+    def _battery_room(self):
+        """蓄電室（v4.23、1階南半分・ジムの北東角）。CG・3D・他の図面を変えないため、h.rooms／h.walls には入れず
+        h.battery_room・h.battery_walls（LGS＋強化PB 1時間耐火、扉は防火設備）として別に持つ（A-03 だけが描く）。
+        ジムの面積は area_override で差し引き、ケーブルクロスオーバーを西へ寄せる。3D 用には従来の機器配置を equipment_cg に残す。"""
+        b = self.spec["battery"]
+        x0, y0, x1, y1 = b["rect"]
+        f = "1F"
+        z0 = self.fl[f]
+        z1 = self.fl["2F"] - self.slab_t
+        self.equipment_cg = list(self.equipment)
+        dx = b["gym_crossover_dx"]
+        self.equipment = [(n, ((r[0] + dx, r[1], r[2] + dx, r[3]) if n == "ケーブルクロスオーバー" else r), hh, kg) for n, r, hh, kg in self.equipment]
+        iw, idp = b["inner"]
+        self.battery_room = Room("蓄電室", f, (x0, y0, x1, y1), False, ((x0 + x1) / 2, (y0 + y1) / 2), 0, area_override=iw * idp / 1e6)
+        self.gym.area_override = self.gym.area - (x1 - x0) * (y1 - y0) / 1e6
+        self.gym.label_at = (14400, 7000)
+        ws = Wall("x", y0, x0, x1, self.pt, z0, z1, "partition", "lgs", floor=f, side="I")
+        wd = Wall("y", b["fire_door"]["wall"], y0, y1, self.pt, z0, z1, "partition", "lgs", floor=f, side="I")
+        u0, u1 = b["fire_door"]["u"]
+        self.battery_door = wd.add(Opening("door", u0, u1, z0, z0 + 2000, f, "I", "防火設備（自閉・ジム側へ外開き）", "swing", swing=-1, hinge=0))
+        self.battery_walls = [ws, wd]
 
     def _door(self, lv, wname, u0, u1, name="木製片開き戸", op="swing", swing=1, hinge=0, h=2000, fire=False):
         w = self.rc_walls[lv][wname]

@@ -142,7 +142,7 @@ def camera_clearance(h, its, cuts):
     boxes = [(b.x0, b.y0, b.z0, b.x1, b.y1, b.z1, b.cat) for b in h.boxes if b.cat in ("wall", "partition", "parapet", "stair", "slab", "door", "glass", "footing")]
     for it in its:
         boxes.append((it.rect[0], it.rect[1], it.z0, it.rect[2], it.rect[3], it.z0 + it.h, it.id))
-    for name, r, hh, kg in h.equipment:
+    for name, r, hh, kg in getattr(h, "equipment_cg", h.equipment):
         boxes.append((r[0], r[1], h.fl["1F"], r[2], r[3], h.fl["1F"] + hh, name))
     out = {}
     for c in cuts:
