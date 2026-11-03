@@ -627,6 +627,14 @@ lifeline:
   depths: {power_parking_m: 0.6, power_other_m: 0.6, comm_m: 0.6, water_m: 0.45, sewer_final_invert_m: 0.98}   # 安全側に一律。管路式の値は要確認
   sections: [{name: 門前, at: [14200, -28800]}, {name: 駐車場下, at: [14200, -14000]}, {name: 西の庭, at: [-9500, 12500]}]
 
+gym_annex:                                # v4.24 ジム拡張部（玄関ホール側）。ホール東側を LGS 遮音二重壁で仕切る
+  rect: [10600, 2100, 12000, 6000]
+  wall_x: 10550
+  wall_y: 2050
+  door_u: [3000, 4000]
+  door_h: 2300
+  mat: [10900, 4300, 11700, 6000]
+
 battery:
   rect: [16050, 6350, 18125, 8900]        # 蓄電室（ジムの北東角）外形。y 9,125 以下＝南半分
   inner: [1930, 2400]                     # 内法 W×D（仕上げ・間仕切の厚さを除く）
@@ -640,6 +648,7 @@ battery:
   kg_per_kwh: 11.1
   days_target: 7
   gym_min_m2: 44.85                       # 34.5×1.3
+  gym_target_m2: 51.6                     # v4.24: 蓄電室で失った面積を含め回収（本体＋拡張部）
   gym_crossover_dx: -100                  # ケーブルクロスオーバーを西へ 100
   emergency_fixed_kwh: 6.1                # 排煙 1.6＋排水ポンプ 4.5（初日のみ）
   profile_assumptions:                    # 推定（要確認）

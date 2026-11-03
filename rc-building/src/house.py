@@ -286,12 +286,23 @@ class House:
         self.ldk.daylight_area = self.ldk.area + kit.area
         self.ldk.daylight_name = "LDK（キッチン含む）"
         R("玄関土間", f, (6250, 125, 12000, 2000), label=(9400, 1100))
-        R("式台（框1）", f, (6250, 2000, 12000, 2400), label=(11000, 2200))
-        R("ホール", f, (6250, 2400, 12000, 6000), label=(8600, 4600))
-        self.genkan = dict(doma=(6250, 125, 12000, 2000), shikidai=(6250, 2000, 12000, 2400), step=180)
+        R("式台（框1）", f, (6250, 2000, 10500, 2400), label=(8400, 2200))
+        R("ホール", f, (6250, 2400, 10500, 6000), label=(8400, 4600))
+        self.genkan = dict(doma=(6250, 125, 12000, 2000), shikidai=(6250, 2000, 10500, 2400), step=180)
         self.shoe = (6250, 125, 6700, 2000)          # 下足入れ（造作）
         self.bench = (11300, 125, 12000, 1500)       # 腰掛けベンチ
         self.gym = R("ジム", f, (12250, 125, 18125, 8900), True, label=(17300, 7600))
+        # v4.24 ジム拡張部（ホール東側 1.4m を LGS 遮音二重壁で仕切る）。名前に「ホール」を含めない（lighting の部分一致対策）
+        ga = self.spec["gym_annex"]
+        self.gym_annex = R("ジム（拡張部）", f, tuple(ga["rect"]), False)
+        self.gym.daylight_area = self.gym.area + self.gym_annex.area       # 後で蓄電室分を引いた area を使うため _battery_room で再計算
+        self.gym.daylight_name = "ジム（拡張部含む）"
+        wx, wy = ga["wall_x"], ga["wall_y"]
+        z0 = self.fl[f]
+        wpx = L(f, "y", wx, 2000, 6000)                                    # ①ホールとの境（遮音二重壁）
+        L(f, "x", wy, 10500, 12000)                                        # ②土間との境
+        u0, u1 = ga["door_u"]
+        self.gym_door = wpx.add(Opening("door", u0, u1, z0, z0 + ga["door_h"], f, "I", "遮音ドア（Ts-35・搬入兼用）", "swing", swing=1, hinge=0))
         R("ホール・階段1", f, (6250, 6250, 12000, 9800), label=(10000, 7600))
         R("トイレ（手洗い付）", f, (8750, 9900, 10600, 12000))
         L(f, "x", 9850, 8750, 10650, [(9200, 10000, "swing", 1, 0)])
@@ -365,7 +376,7 @@ class House:
             ("ラットプル・ロー", (14300, 4800, 15400, 6300), 2200, 300),
             ("レッグプレス", (15900, 4800, 18000, 6200), 1500, 400),
             ("ケーブルクロスオーバー", (12600, 7700, 16100, 8500), 2300, 450),
-            ("ストレッチマット", (17250, 2700, 18050, 4500), 20, 5),
+            ("ストレッチマット", tuple(self.spec["gym_annex"]["mat"]), 20, 5),
         ]
         self.treadmill_zone = (14700, 2400, 17000, 4400)
 
@@ -385,6 +396,7 @@ class House:
         self.battery_room = Room("蓄電室", f, (x0, y0, x1, y1), False, ((x0 + x1) / 2, (y0 + y1) / 2), 0, area_override=iw * idp / 1e6)
         self.gym.area_override = self.gym.area - (x1 - x0) * (y1 - y0) / 1e6
         self.gym.label_at = (14400, 7000)
+        self.gym.daylight_area = self.gym.area + self.gym_annex.area
         ws = Wall("x", y0, x0, x1, self.pt, z0, z1, "partition", "lgs", floor=f, side="I")
         wd = Wall("y", b["fire_door"]["wall"], y0, y1, self.pt, z0, z1, "partition", "lgs", floor=f, side="I")
         u0, u1 = b["fire_door"]["u"]
@@ -434,8 +446,8 @@ class House:
         D, G = self._door, self._gap
         # ---------------- 1F
         self.entrance = self._ext_door("1F", "S", 8600, 9600, 2300, "玄関ドア（断熱・防犯CP）")
-        D("1F", "X3", 3000, 4000, "遮音ドア（Ts-35・搬入兼用）", swing=1, h=2300)
         self._glass_door("GD-1", "1F", "X2", 2800, 4000, "ガラス上吊り引戸（合わせ強化）", -1)      # 左（西）: LDK 側の面に取付
+        G("1F", "X3", 3000, 4000, h=2300, name="開口（ジム↔拡張部）")
         G("1F", "X2", 6400, 7700, name="開口（キッチン↔ホール）")
         D("1F", "X2", 12500, 13400, op="sliding", name="木製引戸")
         D("1F", "X3", 9300, 10100, swing=1, hinge=0)

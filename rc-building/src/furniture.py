@@ -112,9 +112,8 @@ def items(h):
     add("KB-F", "1F", "キッチン", "冷蔵庫＋上部ふさぎ板", "kb_fridge", (5300, 11350, 6000, 11950), h.ch["1F"], "stainless", base="none")
     add("KS-W", "1F", "キッチン", "西の目隠し収納（奥行 450・H1,550・引違い戸、上は突っ張りパネル）", "ks_wall", (125, 6250, 575, 10600), h.ch["1F"], "case_ash", base="none")
     # ---- 玄関・ホール
-    add("G-S1", "1F", "玄関土間", "下足入れ（造作・天井まで・扉付き）", "tall", h.shoe, FL["1F"] + h.ch["1F"] - DOMA, "case_ash", z0=DOMA, front="+x")
+    add("G-S1", "1F", "玄関土間", "下足入れ（造作・天井まで・扉付き・電波遮断キーボックス内蔵）", "tall", h.shoe, FL["1F"] + h.ch["1F"] - DOMA, "case_ash", z0=DOMA, front="+x")
     add("G-B1", "1F", "玄関土間", "腰掛けベンチ（造作、座 H420＋クッション）", "bench", h.bench, 420, "case_ash", z0=DOMA, seat=True, front="+y", note="座る家具。要施主確認")
-    add("H-S1", "1F", "ホール", "ホール収納（電波遮断キーボックス内蔵）", "tall", (11550, 4200, 12000, 6000), h.ch["1F"], "case_ash")
     add("H-S2", "1F", "ホール", "コート収納", "tall", (6250, 4200, 6700, 6000), h.ch["1F"], "case_ash")
     # ---- ジム（機器は h.equipment）
     add("J-M1", "1F", "ジム", "鏡（突っ張り枠・飛散防止フィルム）", "mirror", (16300, 8840, 18000, 8900), 2000, "mirror", z0=FL["1F"] + 300, base="frame", stack=True)

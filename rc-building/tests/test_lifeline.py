@@ -79,6 +79,7 @@ def test_battery_room():
     assert sbox(*h.gym.rect).contains(sbox(*h.battery_room.rect))
     assert abs(h.battery_room.area - 4.6) < 0.1
     assert h.gym.area >= 44.85 and abs(h.gym.area - 46.3) < 0.1, h.gym.area
+    assert h.gym.daylight_area >= h.spec["battery"]["gym_target_m2"] and abs(h.gym.daylight_area - 51.72) < 0.05   # v4.24 拡張部込み
     room = sbox(x0, y0, x1, y1)
     for name, r, hh, kg in h.equipment:
         assert not sbox(*r).intersects(room), name
@@ -242,9 +243,9 @@ def test_lifeline_sheets():
     assert t2.count("要確認") >= 10 and "推定" in t2
 
 
-GLB_V422 = ("9e2ddbd5bb59a2af", "66f2eabaf1603679")      # v4.22 の model.glb／model_interior.glb の SHA-256 先頭16桁
-A02X_COUNT = 584                                           # v4.22 の 561 + 予約ゾーン（外形・点ハッチ・ラベル2）・蓄電室の塗り・番号3件・凡例2行 ほか
-A03_COUNT = 463                                            # v4.22 の 411 + 蓄電室（間仕切り・扉・ラック・PCS・束壁・室名）と拡大詳細 52
+GLB_V422 = ("739f6a2325c5ef73", "0d2f2ca39b808e3f")      # model.glb／model_interior.glb の SHA-256 先頭16桁。v4.22 は 9e2ddbd5…／66f2eabaf…。v4.24 で更新: ジム拡張部の LGS 間仕切り2本と式台の縮小（x12,000→10,500）が GLB に入るため（CG・3D の描画コードは不変）
+A02X_COUNT = 586                                           # v4.24: +2（ジム拡張部の間仕切り2本）。 v4.22 の 561 + 予約ゾーン（外形・点ハッチ・ラベル2）・蓄電室の塗り・番号3件・凡例2行 ほか
+A03_COUNT = 467                                            # v4.24 段階1: 411→（間仕切り・扉・室名・マット移動・H-S1 撤去の差し引き）。 v4.22 の 411 + 蓄電室（間仕切り・扉・ラック・PCS・束壁・室名）と拡大詳細 52
 
 
 if __name__ == "__main__":
@@ -255,3 +256,33 @@ if __name__ == "__main__":
             n += 1
             print("ok", k)
     print(f"{n} tests passed")
+
+
+def test_gym_annex_geometry_and_structure():
+    """v4.24 ジム拡張部: 面積・重なり・通路・GD-2・RC（壁量・偏心率）は不変。"""
+    from shapely.geometry import box as sb
+    h = _get()["h"]
+    a = h.gym_annex
+    assert abs(a.area - 5.46) < 0.01 and h.gym.daylight_area >= 51.6
+    g = h.genkan
+    for k in ("doma", "shikidai"):
+        assert not sb(*a.rect).intersection(sb(*g[k])).area > 0, k
+    hall = next(r for r in h.rooms if r.name == "ホール")
+    assert not sb(*a.rect).intersection(sb(*hall.rect)).area > 0
+    assert hall.rect[2] - 6700 >= 1300                       # H-S2 から間仕切りまで（通路 ≧1,300）
+    assert (hall.rect[2] - hall.rect[0]) == 4250 and abs(hall.area - 15.3) < 0.01
+    gd2 = [op for w in h.walls for op in w.openings if "ガラス" in op.name and w.c == h.gy[1] and w.axis == "x" and w.floor == "1F"][0]
+    assert (gd2.u0, gd2.u1) == (7500, 10500) and 10450 - 8975 == 1475 and hall.rect[2] <= 10500 and h.spec["gym_annex"]["wall_x"] - 50 >= 10500
+    x3 = [op for w in h.walls if w.floor == "1F" and w.cat == "wall" and w.axis == "y" and w.c == h.gx[2] for op in w.openings if op.kind == "door" and op.u0 < 5000]
+    assert [(o.u0, o.u1, o.height, o.operation) for o in x3] == [(3000, 4000, 2300, "opening")]
+    wq = house_legal.wall_quantity(h)
+    assert abs(wq[("1F", "X方向")][1] - 16.00) < 0.01 and abs(wq[("1F", "Y方向")][1] - 16.97) < 0.01
+
+
+def test_gym_annex_lighting_name():
+    """名前の対応: 拡張部は GYM（500lx）で、「ホール」を含まない（HAL にならない）。"""
+    import lighting
+    h = _get()["h"]
+    assert "ホール" not in h.gym_annex.name
+    assert lighting.room_code(h, h.gym_annex) == "GYM" and lighting.target_lx(h, h.gym_annex.name) == lighting.target_lx(h, "ジム")
+    assert lighting.ceiling_z(h, h.gym_annex) == h.fl["1F"] + h.ch["1F"]            # 拡張部は CH2,800（直天井ではない）
