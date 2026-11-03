@@ -17,7 +17,9 @@ from cadlib import LAYERS, _text_width  # noqa: E402
 from house import House  # noqa: E402
 
 # 既存図のエンティティ数（v4.19 から v4.21 の変更ごとに意図して更新）。
-BASE_COUNTS = {"A-01": 272, "A-02": 417, "A-02D": 125}      # v4.21 段階1: 道路・歩道の図形を追加（A-01 +8、A-02 +11、段階3〜4で植栽・給排水・右欄の表を追加 A-02 403）
+BASE_COUNTS = {"A-01": 272, "A-02": 417, "A-02D": 125,
+               # v4.23 段階1: 破壊禁止の対象に加えた（v4.22 の現在数。A-02X・A-03 は増分を test_lifeline で固定）
+               "A-02Y": 164, "A-04": 382, "A-05": 98, "A-06": 212, "A-07": 219, "A-08": 96, "A-09": 278, "A-10": 294, "S-01": 153, "S-02": 118}      # v4.21 段階1: 道路・歩道の図形を追加（A-01 +8、A-02 +11、段階3〜4で植栽・給排水・右欄の表を追加 A-02 403）
 
 INNER = (10.0, 10.0, 410.0, 287.0)       # 内枠（用紙mm）
 TITLE = (220.0, 10.0, 410.0, 48.0)       # 表題欄
@@ -29,8 +31,8 @@ _C = {}
 def _get():
     if not _C:
         h = House(ROOT)
-        rows, sm, _ = house_legal.checks(h)
-        _C.update(h=h, sm=sm, sh=hs.site_integrated(h, "A-02X", sm))
+        rows, sm, wq = house_legal.checks(h)
+        _C.update(h=h, sm=sm, wq=wq, sh=hs.site_integrated(h, "A-02X", sm))
     return _C["h"], _C["sm"], _C["sh"]
 
 
@@ -125,9 +127,24 @@ def test_exterior_light_count():
 
 def test_existing_sheets_unchanged():
     h, sm, _ = _get()
+    from sheetlib import fittings_sheet
+    wall_rows = [["階", "方向", "耐力壁長さ", "壁量", "判定"]]
+    for (f, d), (L, q) in sorted(_C["wq"].items()):
+        wall_rows.append([f, d, f"{L:.1f} m", f"{q:.1f} cm/m²", "≧12 適合" if q >= 12 else "不足"])
+    wall_rows.append(["", "", "壁厚", f"{h.t / 10:.0f} cm", "≧15 適合"])
     got = {"A-01": len(list(hs.site_plan(h, "A-01", sm).msp)),
            "A-02": len(list(hs.exterior_plan(h, "A-02").msp)),
-           "A-02D": len(list(hs.gate_detail(h, "A-02D").msp))}
+           "A-02D": len(list(hs.gate_detail(h, "A-02D").msp)),
+           "A-02Y": len(list(hs.donation_sheet(h, "A-02Y").msp)),
+           "A-04": len(list(hs.floor_plan(h, "2F", "A-04").msp)),
+           "A-05": len(list(hs.roof_plan(h, "A-05").msp)),
+           "A-06": len(list(hs.elevations(h, "A-06").msp)),
+           "A-07": len(list(hs.building_sections(h, "A-07").msp)),
+           "A-08": len(list(hs.site_sections(h, "A-08").msp)),
+           "A-09": len(list(fittings_sheet(h, "A-09").msp)),
+           "A-10": len(list(hs.openings_smoke_sheet(h, "A-10").msp)),
+           "S-01": len(list(hs.wall_plan(h, "S-01", wall_rows).msp)),
+           "S-02": len(list(hs.details(h, "S-02").msp))}
     assert got == BASE_COUNTS, got
 
 

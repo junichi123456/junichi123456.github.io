@@ -642,6 +642,7 @@ class House:
                          for k in range(fm["rows"])]
         self.dotcon_farm = Polygon([(fx0, fy0), (fx1, fy0), (fx1, fy1), (fx0, fy1)])
         self.infil_pits = [(11000, -16000)]
+        self._pv_reserve(inner)
         self._planting()
         self._utilities()
         # 塀の排水口（フラップ弁）＝ 低い位置
@@ -653,6 +654,17 @@ class House:
             dotcon_area_garden=(self.dotcon_garden.area + self.dotcon_farm.area) / 1e6,
             dotcon_l=area * ex["dotcon_storage_l_per_m2"],
             tank_m3=ex["retention_tank_m3"])
+
+    def _pv_reserve(self, inner):
+        """ソーラーパーゴラ南の拡張予約ゾーン RZ（v4.23、spec.yaml の pv_reserve）。塀内面から offset 以上離し、x ≦ x_max・y ≦ y_max に限る。
+        RZ-a＝パーゴラの幅（x −27,000〜−9,000）、RZ-b＝その西。"""
+        pr = self.spec["pv_reserve"]
+        from shapely.geometry import box as _box
+        rz = inner.buffer(-pr["offset"], join_style=2).intersection(_box(-1e6, -1e6, pr["x_max"], pr["y_max"]))
+        self.pv_reserve = rz
+        px0, _, px1, _ = self.pergola
+        self.pv_reserve_a = rz.intersection(_box(px0, -1e6, px1, 1e6))
+        self.pv_reserve_b = rz.difference(self.pv_reserve_a)
 
     def _planting(self):
         """植栽（v4.21、spec.yaml の planting）。位置は仮置き。がけ2H 範囲は水路から 2×北のがけ高、東側道路から 2×東のがけ高。"""

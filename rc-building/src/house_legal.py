@@ -164,7 +164,25 @@ def checks(h):
     add("集団規定", "建ぺい率（パーゴラ・カーポート含む）", "法53条・法2条1号", "屋根と柱をもつ架台は建築物として扱う見込み",
         f"({sm['building_area']:.2f}+パーゴラ{pg_area:.0f}+カーポート{en['cp_area']:.0f})/{sm['site_area']:,.2f} = {(sm['building_area'] + pg_area + en['cp_area']) / sm['site_area'] * 100:.2f}%",
         judge((sm['building_area'] + pg_area + en['cp_area']) / sm['site_area'] <= h.spec['site']['coverage_limit']))
-    add("ブリーフ", "蓄電池", "ブリーフv3 7章", "排煙機30分＋排水ポンプ6時間＋最低限の生活24時間", f"必要 約{en['battery']:.1f}kWh → 16kWh 級", judge(en["battery"] <= 16.5))
+    bs = PF.battery_sizing(h, en)
+    bt = h.spec["battery"]
+    add("ブリーフ", "蓄電池（理論上1週間）", "施主指示（v4.23）・ブリーフ31章", f"1階南半分に1週間相当（日射ゼロ・寿命末期 SOH {bt['soh_eol']:.1f}）",
+        f"公称 {bt['nominal_kwh']}kWh 級（LFP）。防災モード {bs['rows']['C']['kwh']:.1f}kWh/日 → 必要公称 {bs['rows']['C']['nominal']:.0f}kWh、自立 {bs['days_eol']:.1f}日（新品 {bs['days_new']:.1f}日、排煙・ポンプ {bt['emergency_fixed_kwh']}kWh 控除後 {bs['days_eol_net']:.1f}日）。蓄電室 {bs['room_area']:.1f}m²（y≦9,125）",
+        judge(bt["nominal_kwh"] >= bs["rows"]["C"]["nominal"] and bs["days_eol_net"] >= bt["days_target"] and bt["rect"][3] <= h.D / 2 + 0.5))
+    pr_pct = (sm["building_area"] + pg_area + en["cp_area"] + h.pv_reserve_a.area / 1e6) / sm["site_area"] * 100
+    pr_all = (sm["building_area"] + pg_area + en["cp_area"] + h.pv_reserve.area / 1e6) / sm["site_area"] * 100
+    add("集団規定", "建ぺい率（予約ゾーンを満たした場合・参考）", "法53条・法2条1号", "屋根と柱をもつ架台は建築物として扱う見込み",
+        f"RZ-a のみ {pr_pct:.2f}%／RZ 全体（{h.pv_reserve.area / 1e6:.1f}m²）{pr_all:.2f}%（60%以下）。地上置きで架台下を利用しない場合は建築物に当たらない扱いの技術的助言あり（国住指4936号と記憶、要確認）",
+        judge(pr_all <= h.spec["site"]["coverage_limit"] * 100))
+    add("ブリーフ", "太陽光の拡張（予約ゾーン）", "施主指示（v4.23）", f"塀内面から {h.spec['pv_reserve']['offset'] / 1000:.1f}m までの予約ゾーン",
+        f"現状 {en['pv_kwp']:.2f}kWp・{en['pv_gen']:,.0f}kWh/年（需要の{en['pv_gen'] / en['total'] * 100:.0f}%）／拡張後 {en['pv_kwp_ext']:.1f}kWp・約{en['pv_gen_ext']:,.0f}kWh/年（{en['pv_gen_ext'] / en['total'] * 100:.0f}%）。影の損失 {h.spec['pv_reserve']['shade_loss'] * 100:.0f}% は推定",
+        judge(h.pv_reserve.area > 0))
+    add("関連法令", "蓄電池の届出・位置構造", "対象火気省令・東京都火災予防条例", "定格容量の閾値超で届出・離隔／区画（閾値・条番号とも確信なし）",
+        f"{bt['nominal_kwh']}kWh 級 → 所轄消防署（八王子消防署）と事前協議。蓄電室は1時間耐火区画を自主設定", CHK)
+    add("関連法令", "電気工作物の区分・低圧連系（拡張後）", "電気事業法・電技解釈 第8章・系統連系規程 JEAC 9701", "低圧連系は 50kW 未満。区分・届出は規模による",
+        f"拡張後 {en['pv_kwp_ext']:.1f}kWp → PCS 合計を {h.spec['pv_reserve']['pcs_limit_kw']}kW 以下に制限（パネル過積載）。小規模事業用電気工作物の届出・使用前自己確認／自家用の要否は要確認", CHK)
+    add("関連法令", "汚水管 勾配（φ150）", "下水道法施行令 第8条ほか・市の排水設備指針", "1/100 以上（φ150 は 1.5/100 を推奨する指針あり、要確認）",
+        f"計画 {h.spec['utilities']['sewer']['slope']}。1.5/100 とした場合、最終桝の管底は約 GL-{h.spec['lifeline']['depths']['sewer_final_invert_m'] * 1000:.0f}", CHK)
     add("ブリーフ", "駐車台数", "ブリーフv3 2章", f"{req['parking']}台", f"{len(h.stalls)}台（屋根なし・Dotcon+）", judge(len(h.stalls) >= req["parking"]))
     add("ブリーフ", "RC塀", "ブリーフv3 4章", f"H{req['fence_height']:,}（防犯）", "全周 H2.0m 以上（東側坂道沿いは道路面+1.2m以上）", OK)
     add("ブリーフ", "敷地境界・塀の再配置", "施主指示（v4.21）・令2条1項1号", "北東を斜めに切り、東の塀を約2.4〜2.6m内側へ",
@@ -341,7 +359,7 @@ def checks(h):
     add("単体規定", "防煙垂れ壁（LDK↔ホール・キッチン↔ホール）", "令126条の2第1項", "防煙壁: 間仕切壁または天井から50cm以上下方に突き出した不燃の垂れ壁",
         f"開口 H2,200・天井{h.ch['1F']:,}のため垂れ壁{h.ch['1F'] - 2200}（≧500）で適合。欄間パネル100は不要（ガラス扉の欄間は意匠として残す。透明扉は防煙壁に数えない）。審査機関に確認", judge(h.ch["1F"] - 2200 >= 500))
     add("単体規定", "排煙の予備電源・手動開放", "令126条の3第1項5号・11号", "手動開放装置（床から0.8〜1.5m）・予備電源",
-        "各室に手動開放装置、蓄電池（駐車場PV と連携）を予備電源に兼用", OK)
+        "各室に手動開放装置、蓄電池 200kWh 級（PV と連携）を予備電源に兼用", OK)
     add("単体規定", "内装制限（火気使用室）", "法35条の2・令128条の4第4項", "2階建て住宅の1階で火気を使う室",
         "IHクッキングヒーターなら対象外。ガス採用時は準不燃", CHK)
     add("単体規定", "非常用の照明", "令126条の4", "一戸建ての住宅は除外", "—", NA)

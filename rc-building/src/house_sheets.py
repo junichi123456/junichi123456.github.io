@@ -1019,7 +1019,7 @@ def openings_smoke_sheet(h, number):
              ("t", "全窓（1・2階）: 外側を防犯合わせガラス（CP 認定品）。窓台: 居室 FL+1,000、ジム FL+2,000"),
              ("t", "換気は全館空調・全熱交換（窓に依存しない）。排煙時は機械室の給気ダンパーが連動して開く"),
              ("t", "開口 H2,200 で天井 2,800 のため防煙垂れ壁 600（≧500）。欄間パネル100 は不要（ガラス扉の欄間は意匠として残す）（要確認）"),
-             ("t", "排煙機: 西・東系統の各機械室に 120m³/分×1台。排煙口は各居室の天井、手動開放装置は床から0.8〜1.5m。予備電源は蓄電池（駐車場PV と連携、30分以上）")]
+             ("t", "排煙機: 西・東系統の各機械室に 120m³/分×1台。排煙口は各居室の天井、手動開放装置は床から0.8〜1.5m。予備電源は蓄電池 200kWh 級（蓄電室、PV と連携、30分以上）")]
     side_panel(sh, 190, y2 - 6, notes, width=210)
     return sh
 
@@ -1067,6 +1067,7 @@ def energy_sheet(h, number):
              ("t", f"条件: {c['name']}、外気 冬{c['t_win']}℃・夏{c['t_sum']}℃（{c['x_sum']}g/kg）、換気 {PF.ACH}回/h（全熱交換 {PF.RECOVERY * 100:.0f}%回収）、HDD {new['hdd']:.0f}・CDD {new['cdd']:.0f}")]
     side_panel(sh, 12, y - 6, notes, width=175)
     en = PF.energy(h, new)
+    bsz = PF.battery_sizing(h, en)
     rows = [["用途", "年間電力 kWh"]] + [[k, f"{v:,.0f}"] for k, v in en["items"]] + [["合計", f"{en['total']:,.0f}"]]
     sh.text("(4) 年間電力需要", (200, 271), 2.8, "A-TEXT", paper=True)
     y2 = sh.table(200, 268, [120, 40], rows, row_h=5.0, h=2.0)
@@ -1079,7 +1080,8 @@ def energy_sheet(h, number):
             ["3台用ソーラーカーポート", f"{en['cp_area']:.0f}m² → {en['cp_kwp']:.1f}kWp・影損失{en['shade']['carport']['loss'] * 100:.1f}% → {en['cp_gen']:,.0f}kWh"],
             ["パーゴラの損失（被覆率70%＋影）", f"全面被覆に対し 約{en['coverage_deficit'] + en['shade_deficit']:,.0f}kWh → カーポートで{en['cp_gen'] / (en['coverage_deficit'] + en['shade_deficit']) * 100:.0f}%を補う"],
             ["合計 年間発電量", f"{en['pv_kwp']:.1f}kWp・{en['pv_gen']:,.0f} kWh（需要の {en['pv_gen'] / en['total'] * 100:.0f}%）"],
-            ["蓄電池（停電時）", f"排煙{en['backup']['smoke']:.1f}＋排水ポンプ{en['backup']['pump']:.1f}＋生活{en['backup']['base']:.1f} ≒ {en['battery']:.1f} kWh → 16kWh級"]]
+            ["拡張後（予約ゾーン RZ）", f"RZ {h.pv_reserve.area / 1e6:.0f}m² → {en['rz_kwp']:.1f}kWp・{en['rz_gen']:,.0f}kWh（影3%は推定）。合計 {en['pv_kwp_ext']:.1f}kWp・約{en['pv_gen_ext']:,.0f}kWh（需要の {en['pv_gen_ext'] / en['total'] * 100:.0f}%）"],
+            ["蓄電池（停電時）", f"{bsz['rows']['C']['kwh']:.1f}kWh/日の防災モードで7日 → 必要公称 {bsz['rows']['C']['nominal']:.0f}kWh → 200kWh級（蓄電室 4.6m²）。A年平均 {bsz['rows']['A']['nominal']:.0f}・B冬 {bsz['rows']['B']['nominal']:.0f}kWh は南半分に収まらない"]]
     sh.text("(5) 必要発電量 — 日よけ付き菜園（ソーラーパーゴラ）＋3台用ソーラーカーポート", (200, y2 - 6), 2.8, "A-TEXT", paper=True)
     y2 = sh.table(200, y2 - 9, [62, 140], rows, row_h=5.0, h=2.0)
     side_panel(sh, 200, y2 - 6, [("t", "本館とは構造的に分離した独立架台（鉄骨・軒高2.8m・南向き10°）。パネルを列状にすき間をあけて並べ（被覆率70%）、光と雨を下の菜園・庭に落とす。営農型太陽光（ソーラーシェアリング）やソーラーパーゴラとして実例がある"),

@@ -149,11 +149,69 @@ def energy(h, hl):
     smoke_fan = 2 * (120 / 60 * 400 / 0.5) / 1000           # kW（120m³/分・400Pa・効率0.5）×2台
     backup = dict(smoke=smoke_fan * 0.5, pump=0.75 * 6, base=0.4 * 24)
     battery = sum(backup.values())
-    return dict(items=items, total=total, need_kwp=need_kwp, need_kwp_margin=need_kwp_margin, pergola_area=pergola_area,
+    # v4.23 予約ゾーン RZ（拡張後）。影の損失は spec の推定値（sightshade での再計算は未実施）
+    pr = h.spec["pv_reserve"]
+    rz_kwp = h.pv_reserve.area / 1e6 * pr["coverage"] * pr["module_kwp_per_m2"]
+    rz_a_kwp = h.pv_reserve_a.area / 1e6 * pr["coverage"] * pr["module_kwp_per_m2"]
+    rz_gen = rz_kwp * c["pv_yield"] * (1 - pr["shade_loss"])
+    rz_a_gen = rz_a_kwp * c["pv_yield"] * (1 - pr["shade_loss"])
+    return dict(items=items, total=total, need_kwp=need_kwp, rz_kwp=rz_kwp, rz_gen=rz_gen, rz_a_kwp=rz_a_kwp, rz_a_gen=rz_a_gen,
+                pv_kwp_ext=pv_kwp + rz_kwp, pv_gen_ext=pg_gen + cp_gen + rz_gen, need_kwp_margin=need_kwp_margin, pergola_area=pergola_area,
                 panel_area=panel_area, coverage=pg["coverage"], pv_kwp=pv_kwp, pv_gen=pg_gen + cp_gen, need_area=need_area,
                 pg_kwp=pg_kwp, pg_gen=pg_gen, cp_area=cp_area, cp_kwp=cp_kwp, cp_gen=cp_gen, shade=sh,
                 coverage_deficit=coverage_deficit, shade_deficit=shade_deficit, f_pg=f_pg, f_cp=f_cp,
                 kwp_per_m2=kwp_per_m2, smoke_fan=smoke_fan, backup=backup, battery=battery)
+
+
+def daily_profiles(h, en):
+    """停電時の日負荷ケース A〜D（kWh/日）。A 年平均（現行＋ネットワーク）／B 冬ピーク／C 防災モード／D 最低。
+    内訳の推定値は spec.yaml の battery（server_kw・winter_heat_kwh_day 等。推定・要確認）。"""
+    b = h.spec["battery"]
+    a = b["profile_assumptions"]
+    server = a["server_kw"] * 24
+    ann = en["total"] / 365
+    nonheat = sum(v for n, v in en["items"] if not n.startswith(("暖房", "冷房", "加湿"))) / 365     # 暖冷房・加湿以外の日負荷
+    return {
+        "A": dict(name="年平均（現行＋ネットワーク）", kwh=ann + server),
+        "B": dict(name="冬ピーク（1月）", kwh=nonheat + a["winter_heat_kwh_day"] + a["winter_hum_kwh_day"] + server),
+        "C": dict(name="防災モード", kwh=sum(v for _, v in b["disaster_items"]), fixed=b["emergency_fixed_kwh"]),
+        "D": dict(name="最低（空調なし）", kwh=sum(v for _, v in b["minimum_items"]), fixed=b["emergency_fixed_kwh"]),
+    }
+
+
+def battery_sizing(h, en):
+    """7日分の使用可能量と公称容量 = 必要値 ÷ (DoD × 寿命末期 SOH × 効率)。面積・重量は推定の原単位。
+    推奨は防災モード C の 200kWh 級。自立日数は日射ゼロの場合の日数（新品は DoD のみ、寿命末期は DoD×SOH×効率）。"""
+    b = h.spec["battery"]
+    f = b["dod"] * b["soh_eol"] * b["eff"]
+    days = b["days_target"]
+    rows = {}
+    for k, p in daily_profiles(h, en).items():
+        use = p["kwh"] * days + p.get("fixed", 0.0)
+        nom = use / f
+        rows[k] = dict(p, use=use, nominal=nom, area=nom / b["kwh_per_m2"], tons=nom / b["kwh_per_t"])
+    nom = b["nominal_kwh"]
+    c = rows["C"]["kwh"]
+    eol = nom * f / c
+    new = nom * b["dod"] / c
+    eol_net = (nom * f - b["emergency_fixed_kwh"]) / c
+    dec = b["december_share"]
+    pv = {}
+    for key, kwp, gen in (("now", en["pv_kwp"], en["pv_gen"]), ("ext", en["pv_kwp_ext"], en["pv_gen_ext"])):
+        avg = gen * dec / 31
+        pv[key] = dict(kwp=kwp, gen=gen, avg=avg, cloudy=avg * b["cloudy_ratio"])
+    def autonomy(load, kind):
+        d = pv[kind]
+        usable = nom * f
+        out = {}
+        for nm, g in (("avg", d["avg"]), ("cloudy", d["cloudy"])):
+            net = load - g
+            out[nm] = None if net <= 0 else usable / net          # None＝収支プラス（無期限）
+        return out
+    aut = {(case, kind): autonomy(rows[case]["kwh"], kind) for case in ("C", "B") for kind in ("now", "ext")}
+    return dict(factor=f, rows=rows, nominal=nom, usable_eol=nom * f, days_eol=eol, days_new=new, days_eol_net=eol_net,
+                room_area=(b["rect"][2] - b["rect"][0]) * (b["rect"][3] - b["rect"][1]) / 1e6, pv=pv, autonomy=aut,
+                weight_t=nom / b["kwh_per_t"])
 
 
 # ------------------------------------------------------------------ 耐震
