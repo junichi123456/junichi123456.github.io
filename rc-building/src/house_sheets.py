@@ -157,9 +157,11 @@ def room_labels(h, sh, t, floor, hgt=2.6):
         x, y = r.label_at
         small = (r.rect[2] - r.rect[0]) < 1800 or (r.rect[3] - r.rect[1]) < 1500
         th = 2.0 if small else hgt
-        sh.text(r.name, t(x, y + 150), th, "A-ROOM", "MIDDLE_CENTER")
+        sh.text(getattr(r, "label_name", r.name), t(x, y + 150), th, "A-ROOM", "MIDDLE_CENTER")
         sub = f"{r.area:.1f}m²"
-        if r.habitable or r.area > 12:
+        if r is getattr(h, "gym", None) and floor == "1F":
+            sub = f"{r.area:.1f}m²（計{r.daylight_area:.1f}m²）"
+        elif r.habitable or r.area > 12:
             sub += f"（{r.area / TATAMI:.1f}畳）"
         sh.text(sub, t(x, y - (th + 1.2) * sh.S * 0.75), 1.6, "A-ROOM", "MIDDLE_CENTER")
 
@@ -655,8 +657,8 @@ def floor_plan(h, floor, number):
         # 二重框・下足入れ
         g = h.genkan
         sh.line(t(g["doma"][0], g["doma"][3]), t(g["doma"][2], g["doma"][3]), "A-VIS", lineweight=35)
-        sh.text(f"框1 +{g['step']}", t(11400, 1850), 1.4, "A-TEXT", "TOP_CENTER")
-        sh.text(f"框2 +{g['step']}", t(11400, 2550), 1.4, "A-TEXT", "BOTTOM_CENTER")
+        sh.text(f"框1 +{g['step']}", t(9800, 1850), 1.4, "A-TEXT", "TOP_CENTER")
+        sh.text(f"框2 +{g['step']}", t(9800, 2550), 1.4, "A-TEXT", "BOTTOM_CENTER")
         sh.rect(*t(*h.shoe[:2]), *t(*h.shoe[2:]), "A-VIS")
         sh.line(t(*h.shoe[:2]), t(*h.shoe[2:]), "A-VIS")
         sh.text("下足入れ", t(6475, 1100), 1.4, "A-TEXT", "MIDDLE_CENTER", rot=90)
@@ -686,7 +688,8 @@ def floor_plan(h, floor, number):
         notes += [("t", "回遊①（家族）: 玄関ホール→LDK→キッチン→ホール→玄関。行き止まりのない一周動線"),
                   ("t", "回遊②（家事）: キッチン→ランドリー→洗面脱衣→廊下→ホール→キッチン"),
                   ("t", "洗う→干す→しまう: ランドリー・室内干し → 隣のファミリークローゼット／階段2で2階ファミクロへ直行"),
-                  ("t", f"ジム {h.gym.area:.1f}m²（当初34.5m²の{h.gym.area / 34.52:.2f}倍）。機器はエニタイムフィットネス等の商業ジム相当（10品目を配置）。搬入: 外部階段 → 玄関 W1,000×H2,300 → 土間 → 二重框 → ホールで右折 → 遮音ドア W1,000 → ジム"),
+                  ("t", f"ジム {h.gym.daylight_area:.1f}m²（本体{h.gym.area:.1f}＋拡張部{h.gym_annex.area:.1f}。当初34.5m²の{h.gym.daylight_area / 34.52:.2f}倍）。ホール東側1.4mをLGS遮音二重壁で仕切って拡張（RC不変）。機器は商業ジム相当（10品目）。搬入: 外部階段 → 玄関 W1,000×H2,300 → 土間 → 二重框 → ホールで右折 → 遮音ドア（Ts-35）→ 拡張部 → RC開口 → ジム"),
+                  ("t", f"要確認: ホール収納 H-S1 を撤去し電波遮断キーボックスを下足入れに移設（収納量の減少）／拡張部の床レベル（ジムと同一、差が出れば X3 開口の敷居で見切る）／拡張部は軽い運動専用（真上が WIC・廊下）"),
                   ("t", "玄関: SICなし（土間に下足入れ・ベンチ）。二重框: 土間 1FL-360 → 式台 1FL-180 → ホール 1FL。中央スパン6.0mで土間幅5.75m"),
                   ("t", "階段1: 有効幅1,150・蹴上177.8・踏面260。中央のトイレは手洗い付き 3.9m²"),
                   ("t", "ジム床: 積載荷重 5,000N/m²（提案）・浮き床。天井は直天井（CH 約2,900）を推奨"),

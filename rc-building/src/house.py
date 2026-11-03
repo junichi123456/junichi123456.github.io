@@ -294,7 +294,8 @@ class House:
         self.gym = R("ジム", f, (12250, 125, 18125, 8900), True, label=(17300, 7600))
         # v4.24 ジム拡張部（ホール東側 1.4m を LGS 遮音二重壁で仕切る）。名前に「ホール」を含めない（lighting の部分一致対策）
         ga = self.spec["gym_annex"]
-        self.gym_annex = R("ジム（拡張部）", f, tuple(ga["rect"]), False)
+        self.gym_annex = R("ジム（拡張部）", f, tuple(ga["rect"]), False, label=(11300, 2650))
+        self.gym_annex.label_name = "ジム拡張部"                            # 図面の室名（幅 1.4m に収める）
         self.gym.daylight_area = self.gym.area + self.gym_annex.area       # 後で蓄電室分を引いた area を使うため _battery_room で再計算
         self.gym.daylight_name = "ジム（拡張部含む）"
         wx, wy = ga["wall_x"], ga["wall_y"]
@@ -395,7 +396,7 @@ class House:
         iw, idp = b["inner"]
         self.battery_room = Room("蓄電室", f, (x0, y0, x1, y1), False, ((x0 + x1) / 2, (y0 + y1) / 2), 0, area_override=iw * idp / 1e6)
         self.gym.area_override = self.gym.area - (x1 - x0) * (y1 - y0) / 1e6
-        self.gym.label_at = (14400, 7000)
+        self.gym.label_at = (14200, 7000)
         self.gym.daylight_area = self.gym.area + self.gym_annex.area
         ws = Wall("x", y0, x0, x1, self.pt, z0, z1, "partition", "lgs", floor=f, side="I")
         wd = Wall("y", b["fire_door"]["wall"], y0, y1, self.pt, z0, z1, "partition", "lgs", floor=f, side="I")
