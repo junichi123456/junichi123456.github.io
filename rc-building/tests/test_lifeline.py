@@ -114,7 +114,43 @@ def test_a03_count():
     assert len(list(hs.floor_plan(h, "1F", "A-03").msp)) == A03_COUNT
 
 
+def test_tank_and_reserve():
+    from shapely.geometry import Point
+    h = _get()["h"]
+    tk = h.tank_poly()
+    assert tk.intersection(h.cliff_zone).area == 0 and tk.distance(h.cliff_zone) >= 5000, tk.distance(h.cliff_zone)   # がけ2H範囲から5m 以上
+    assert not tk.intersects(h.pv_reserve)
+    assert abs(tk.area / 1e6 - 25) < 0.01 and h.fence_poly.buffer(-h.fence_t).contains(tk)
+    px0, py0, px1, py1 = h.pergola
+    assert px0 <= h.tank[0] and h.tank[2] <= px1 and py0 <= h.tank[1] and h.tank[3] <= py1      # パーゴラの下
+    assert h.tank_poly().distance(Point(-11000, 16500)) < 1                                      # 流入口は槽の東辺
+    # 中木 M1〜M3 は RZ の外
+    for p in h.plants:
+        if p["id"] in ("M1", "M2", "M3"):
+            assert not h.pv_reserve.buffer(p["crown"] / 2).intersects(Point(p["xy"])), p["id"]
+    # 越流経路の始点は槽の縁
+    assert tk.distance(Point(*h.spec["utilities"]["storm"]["west_over"][0])) < 1
+
+
+def test_reserve_foundations():
+    from shapely.geometry import LineString, Point
+    h = _get()["h"]
+    fs = h.pv_reserve_foundations
+    assert len(fs) >= 3
+    spare = LineString(h.spec["lifeline"]["power"]["pv_reserve_spare"])
+    for x, y in fs:
+        p = Point(x, y)
+        assert h.pv_reserve.contains(p) and not h.pipe_zone.contains(p) and p.distance(spare) >= 1000 and h.tank_poly().distance(p) >= 1000
+
+
+def test_a02x_count():
+    import house_sheets as hs
+    c = _get()
+    assert len(list(hs.site_integrated(c["h"], "A-02X", c["sm"]).msp)) == A02X_COUNT
+
+
 GLB_V422 = ("9e2ddbd5bb59a2af", "66f2eabaf1603679")      # v4.22 の model.glb／model_interior.glb の SHA-256 先頭16桁
+A02X_COUNT = 584                                           # v4.22 の 561 + 予約ゾーン（外形・点ハッチ・ラベル2）・蓄電室の塗り・番号3件・凡例2行 ほか
 A03_COUNT = 463                                            # v4.22 の 411 + 蓄電室（間仕切り・扉・ラック・PCS・束壁・室名）と拡大詳細 52
 
 

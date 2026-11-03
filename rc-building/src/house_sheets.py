@@ -501,7 +501,7 @@ def exterior_plan(h, number):
     tk = h.tank
     sh.rect(*t(tk[0], tk[1]), *t(tk[2], tk[3]), "A-DRAIN")
     sh.line(t(tk[0], tk[1]), t(tk[2], tk[3]), "A-DRAIN")
-    sh.text(f"地下雨水貯留槽 {h.spec['exterior']['retention_tank_m3']}m³", t((tk[0] + tk[2]) / 2, tk[3] + 900), 1.7, "A-TEXT", "MIDDLE_CENTER")
+    sh.text(f"地下雨水貯留槽 {h.spec['exterior']['retention_tank_m3']}m³（密閉・防虫網0.4mm・フラップ弁）", t((tk[0] + tk[2]) / 2, tk[3] + 900), 1.7, "A-TEXT", "MIDDLE_CENTER")
     st_ = h.ext_storage
     sh.text(f"菜園・北・東 Dotcon+ 約{st_['dotcon_area_garden']:.0f}m²", t(-20000, 31000), 1.7, "A-TEXT", "MIDDLE_CENTER")
     for p in h.infil_pits:
@@ -1691,6 +1691,9 @@ def _integrated_building(h, sh, t):
             p0 = t(op.u0, w.c) if w.axis == "x" else t(w.c, op.u0)
             p1 = t(op.u1, w.c) if w.axis == "x" else t(w.c, op.u1)
             sh.line(p0, p1, "A-GLAZ" if op.kind == "window" else "A-DOOR", lineweight=35)
+    bx0, by0, bx1, by1 = h.battery_room.rect          # v4.23 蓄電室（E-BATT 塗り）
+    sh.hatch_polys([sbox(*t(bx0, by0), *t(bx1, by1))], solid=True, color=1, layer="E-BATT")
+    sh.rect(*t(bx0, by0), *t(bx1, by1), "E-BATT")
     o = h.outer_dims()                               # 屋根（パラペット）外形
     sh.rect(*t(o[0], o[1]), *t(o[2], o[3]), "A-HIDDEN")
     for cn in h.canopies:                            # 連続庇
@@ -1708,6 +1711,20 @@ def _integrated_building(h, sh, t):
     c = t(cx, -900)
     sh.pline([(c[0] - r, c[1] - r), (c[0] + r, c[1] - r), (c[0], c[1] + r)], "A-SYMB", closed=True)
     sh.hatch_polys([Polygon([(c[0] - r, c[1] - r), (c[0] + r, c[1] - r), (c[0], c[1] + r)])], solid=True, color=7)
+
+
+def _reserve_draw(h, sh, t, foundations=False):
+    """将来ソーラー予約ゾーン RZ（A-PVRES: 外形 DASHED＋細かい点ハッチ）。foundations=True は基礎候補点（□）も描く（A-02Z）。"""
+    polys = [Polygon(t.pts(p.exterior.coords)) for p in iter_polygons(h.pv_reserve)]
+    sh.hatch_polys(polys, layer="A-PVRES", pattern="DOTS", spacing=3.0)
+    for q in polys:
+        sh.pline(list(q.exterior.coords), "A-PVRES", closed=True)
+    c = h.pv_reserve_a.centroid
+    sh.text(f"将来ソーラー予約ゾーン {h.pv_reserve.area / 1e6:.0f}m²", t(c.x - 2500, c.y + 600), 1.8, "A-PVRES", "MIDDLE_CENTER")
+    sh.text("（塀内面から1.3m・今回は範囲のみ）", t(c.x - 2500, c.y - 600), 1.4, "A-PVRES", "MIDDLE_CENTER")
+    if foundations:
+        for (x, y) in h.pv_reserve_foundations:
+            sh.rect(*t(x - 250, y - 250), *t(x + 250, y + 250), "A-PVRES", lineweight=35)
 
 
 def _integrated_exterior(h, sh, t):
@@ -1741,9 +1758,10 @@ def _integrated_exterior(h, sh, t):
     for p in h.spec["exterior"]["canopy"]["downpipes"]:
         sh.circle(t(*p), 0.7 * S, "A-DRAIN")
     # 小物
-    sh.text("ソーラーパーゴラ（日よけ付き菜園）", t((pg[0] + pg[2]) / 2, (pg[1] + pg[3]) / 2), 2.0, "A-TEXT", "MIDDLE_CENTER")
+    sh.text("ソーラーパーゴラ（日よけ付き菜園）", t((pg[0] + pg[2]) / 2, pg[3] - 1500), 2.0, "A-TEXT", "MIDDLE_CENTER")
     sh.text("ソーラーカーポート（3台）", t((cp[0] + cp[2]) / 2, cp[3] + 900), 1.8, "A-TEXT", "MIDDLE_CENTER")
-    sh.text(f"雨水貯留槽 {h.spec['exterior']['retention_tank_m3']}m³", t((tk[0] + tk[2]) / 2, tk[3] + 1000), 1.6, "A-TEXT", "MIDDLE_CENTER")
+    sh.text(f"雨水貯留槽 {h.spec['exterior']['retention_tank_m3']}m³（密閉・防虫網0.4mm・フラップ弁）", t((tk[0] + tk[2]) / 2, tk[3] + 1000), 1.5, "A-TEXT", "MIDDLE_CENTER")
+    _reserve_draw(h, sh, t)
     for bx, by in h.bollards:
         sh.circle(t(bx, by), 0.7 * S, "A-VIS")
     for r in (h.delivery_box, h.garbage_box):
@@ -1840,6 +1858,9 @@ def _integrated_items(h):
         (f"縦樋 ×{len(ex['canopy']['downpipes'])}", "西系統→貯留槽・東系統→浸透桝", "A-02", [tuple(p) for p in ex["canopy"]["downpipes"]]),
         ("防犯カメラ ×2（門）", "赤外線 940nm", "A-02D",
          [(h.gates[1][1][0] - 300, h.y_gate + 400), (h.gates[0][2][0] + 300, h.y_gate + 400)]),
+        ("蓄電室（1階・ジム北東角）", f"{h.spec['battery']['nominal_kwh']}kWh級・{h.battery_room.area:.1f}m²", "A-03", ctr(h.battery_room.rect)),
+        ("将来ソーラー予約ゾーン", f"{h.pv_reserve.area / 1e6:.0f}m²（塀内面から1.3m）", "A-02Z", [(h.pv_reserve_a.centroid.x, h.pv_reserve_a.centroid.y - 2500)]),
+        ("雨水貯留槽（密閉・防虫）", f"{h.spec['exterior']['retention_tank_m3']}m³・パーゴラの下へ移設", "A-02Z", ctr(h.tank)),
     ]
     kinds = {}
     for name, p in h.ext_lights:
@@ -2029,7 +2050,7 @@ def site_integrated(h, number, legal_summary):
             ("E-EXLT", "外構照明（●）", "line"), ("A-SYMB", "番号丸（下表）", "line"),
             ("A-ROAD-CW", "車道（#333333）", "cw"), ("A-ROAD-SW", "歩道（#333333・要確認）", "sw"),
             ("A-DONATE", "寄付地（市へ割譲の提案・要確認）", "don"), ("A-DONATE-BND", "寄付地境界（旧敷地境界）", "line"),
-            ("E-PLNT", "植栽（仮置き・要確認）", "plnt"),
+            ("E-PLNT", "植栽（仮置き・要確認）", "plnt"), ("A-PVRES", "将来ソーラー予約ゾーン（破線＋点）", "line"), ("E-BATT", "蓄電室（1階・塗り）", "line"),
             ("E-WATER", "上水（給水管・量水器 □）", "line"), ("E-SEWER", "汚水（○×は汚水桝）", "line")]
     cy = legend(sh, X, 276, rows)
     ly = 276 - 4.6 * 6

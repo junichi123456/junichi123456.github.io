@@ -646,7 +646,7 @@ class House:
         self.approach = self.approach_line.buffer(750, cap_style=2, join_style=2)
         self._exterior_lights(gates)
         # 雨水貯留槽（西側の庭、地下・菜園の散水に利用）
-        self.tank = (-23500, 22000, -18500, 27000)
+        self.tank = tuple(ex["retention_tank_rect"])          # v4.23: パーゴラの下（がけ2H範囲の外）へ移設
         # Dotcon+ の配置（v4.14 施主の再配置図）: パーゴラの下全体と北・西の帯、北東〜東の帯。パーゴラの下もプランター（脚付き）
         px0, py0, px1, py1 = self.pergola
         self.garden_beds = [(px0 + 1000, py0 + 800 + k * (py1 - py0 - 1600) / 3.6, px1 - 1000, py0 + 800 + k * (py1 - py0 - 1600) / 3.6 + 900)
@@ -677,6 +677,10 @@ class House:
             dotcon_area_garden=(self.dotcon_garden.area + self.dotcon_farm.area) / 1e6,
             dotcon_l=area * ex["dotcon_storage_l_per_m2"],
             tank_m3=ex["retention_tank_m3"])
+
+    def tank_poly(self):
+        tk = self.tank
+        return Polygon([(tk[0], tk[1]), (tk[2], tk[1]), (tk[2], tk[3]), (tk[0], tk[3])])
 
     def _pv_reserve(self, inner):
         """ソーラーパーゴラ南の拡張予約ゾーン RZ（v4.23、spec.yaml の pv_reserve）。塀内面から offset 以上離し、x ≦ x_max・y ≦ y_max に限る。
@@ -725,6 +729,19 @@ class House:
         self.storm_pits = [tuple(p) for p in st["west_pits"]]
         from shapely.ops import unary_union
         self.pipe_zone = unary_union([g.buffer(1000) for gs in self.pipes.values() for g in gs])
+        # v4.23 予約ゾーンの基礎候補点: グリッド間隔ごとの点のうち、配管・予備管路から pipe_clear 以上離れ、RZ の縁から 300 以上内側のもの
+        pr = self.spec["pv_reserve"]
+        spare = LineString(self.spec["lifeline"]["power"]["pv_reserve_spare"])
+        avoid = unary_union([self.pipe_zone, spare.buffer(pr["pipe_clear"]), self.tank_poly().buffer(pr["pipe_clear"])])
+        core = self.pv_reserve.buffer(-300)
+        gx0, gy0, gx1, gy1 = core.bounds
+        g = pr["foundation_grid"]
+        self.pv_reserve_foundations = []
+        for i in range(int((gx1 - gx0) // g) + 1):
+            for j in range(int((gy1 - gy0) // g) + 1):
+                p = Point(gx1 - 500 - i * g, gy1 - 500 - j * g)
+                if core.contains(p) and not avoid.contains(p):
+                    self.pv_reserve_foundations.append((p.x, p.y))
 
     def _exterior_lights(self, gates):
         """防虫の外構照明（低色温度・下向き・人感センサー）。玄関ドアの真上には付けず、足元を照らす。"""
