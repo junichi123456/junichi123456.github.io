@@ -1721,7 +1721,7 @@ def _reserve_draw(h, sh, t, foundations=False):
     for q in polys:
         sh.pline(list(q.exterior.coords), "A-PVRES", closed=True)
     c = h.pv_reserve_a.centroid
-    sh.text(f"将来ソーラー予約ゾーン {h.pv_reserve.area / 1e6:.0f}m²", t(c.x - 2500, c.y + 600), 1.8, "A-PVRES", "MIDDLE_CENTER")
+    sh.text(f"将来ソーラー予約ゾーン {h.pv_reserve.area / 1e6:.1f}m²", t(c.x - 2500, c.y + 600), 1.8, "A-PVRES", "MIDDLE_CENTER")
     sh.text("（塀内面から1.3m・今回は範囲のみ）", t(c.x - 2500, c.y - 600), 1.4, "A-PVRES", "MIDDLE_CENTER")
     if foundations:
         for (x, y) in h.pv_reserve_foundations:
@@ -1860,7 +1860,7 @@ def _integrated_items(h):
         ("防犯カメラ ×2（門）", "赤外線 940nm", "A-02D",
          [(h.gates[1][1][0] - 300, h.y_gate + 400), (h.gates[0][2][0] + 300, h.y_gate + 400)]),
         ("蓄電室（1階・ジム北東角）", f"{h.spec['battery']['nominal_kwh']}kWh級・{h.battery_room.area:.1f}m²", "A-03", ctr(h.battery_room.rect)),
-        ("将来ソーラー予約ゾーン", f"{h.pv_reserve.area / 1e6:.0f}m²（塀内面から1.3m）", "A-02Z", [(h.pv_reserve_a.centroid.x, h.pv_reserve_a.centroid.y - 2500)]),
+        ("将来ソーラー予約ゾーン", f"{h.pv_reserve.area / 1e6:.1f}m²（塀内面から1.3m）", "A-02Z", [(h.pv_reserve_a.centroid.x, h.pv_reserve_a.centroid.y - 2500)]),
         ("雨水貯留槽（密閉・防虫）", f"{h.spec['exterior']['retention_tank_m3']}m³・パーゴラの下へ移設", "A-02Z", ctr(h.tank)),
     ]
     kinds = {}
