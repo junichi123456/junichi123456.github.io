@@ -149,6 +149,99 @@ def test_a02x_count():
     assert len(list(hs.site_integrated(c["h"], "A-02X", c["sm"]).msp)) == A02X_COUNT
 
 
+def _lines(h):
+    from shapely.geometry import LineString
+    ll = h.spec["lifeline"]
+    pw = ll["power"]
+    pipes = {"water": h.pipes["water"], "sewer": h.pipes["sewer"], "storm": h.pipes["storm_w"] + h.pipes["storm_e"]}
+    return dict(trunk=LineString(pw["trunk"]), comm=LineString(ll["comm"]["line"]), pv=LineString(pw["pv_pergola"]),
+                spare=LineString(pw["pv_reserve_spare"])), pipes
+
+
+def test_lifeline_inside_boundary():
+    from shapely.geometry import Point
+    h = _get()["h"]
+    ll = h.spec["lifeline"]["power"]
+    site = h.site.buffer(5)                         # 道路境界上の引込点は境界線上
+    lines, _ = _lines(h)
+    for k, g in lines.items():
+        assert site.contains(g), k
+    pts = [tuple(ll["entry"])] + [tuple(p) for p in ll["hh"]] + [tuple(ll["pv_reserve_hh"])] + [tuple(v) for v in ll["pcs"].values()] + [tuple(v) for v in ll["panels"].values()] \
+        + [tuple(ll["switchboard"][:2]), tuple(ll["switchboard"][2:])]
+    for p in pts:
+        assert site.contains(Point(p)), p
+        assert not h.donation_poly.buffer(-10).contains(Point(p)), p       # 寄付地に設備なし
+    for g in list(lines.values()):
+        assert g.intersection(h.donation_poly.buffer(-10)).is_empty
+    for gs in _lines(h)[1].values():
+        for g in gs:
+            assert g.intersection(h.donation_poly.buffer(-10)).is_empty
+
+
+def test_power_clearances():
+    """電力と通信・水・汚水・雨水の離隔 >= 300（交差は点で交わるだけ＝上下 0.3m を図に明記）。"""
+    from shapely.geometry import Point
+    h = _get()["h"]
+    lines, pipes = _lines(h)
+    power = [lines["trunk"], lines["pv"], lines["spare"]]
+    others = [lines["comm"]] + [g for gs in pipes.values() for g in gs]
+    for pw_ in power:
+        for o in others:
+            inter = pw_.intersection(o)
+            if inter.is_empty:
+                assert pw_.distance(o) >= 300, (pw_.wkt[:40], o.wkt[:40], pw_.distance(o))
+            else:
+                assert inter.geom_type == "Point", "並走して重なる"
+    # 通信は電力から 300 離す（同溝・別管）
+    from shapely.geometry import LineString
+    assert lines["comm"].distance(lines["trunk"]) >= 299
+
+
+def test_battery_room_distance_to_panels():
+    from shapely.geometry import Point
+    h = _get()["h"]
+    x, y = h.spec["lifeline"]["power"]["panels"]["main"]
+    assert Point(x, y).distance(__import__("shapely.geometry", fromlist=["box"]).box(*h.battery_room.rect)) < 1500   # 配線 約1m
+
+
+def _sheet_problems(sh):
+    import test_site_integrated as T
+    bad = []
+    tb = []
+    for e, ly, (x0, y0, x1, y1) in T.paper_boxes(sh):
+        if x0 < T.INNER[0] - 0.01 or y0 < T.INNER[1] - 0.01 or x1 > T.INNER[2] + 0.01 or y1 > T.INNER[3] + 0.01:
+            bad.append((ly, "枠外"))
+        elif x0 < T.TITLE[2] and x1 > T.TITLE[0] and y0 < T.TITLE[3] and y1 > T.TITLE[1]:
+            bad.append((ly, "表題欄"))
+        if e.dxftype() == "TEXT":
+            tb.append((x0, y0, x1, y1, e.dxf.text))
+    return bad, tb
+
+
+def test_lifeline_sheets():
+    import house_sheets as hs
+    from cadlib import LAYERS
+    h = _get()["h"]
+    sz = hs.lifeline_sheet(h, "A-02Z")
+    sz2 = hs.lifeline_tables(h, "A-02Z2")
+    used = {e.dxf.layer for e in sz.msp}
+    for need in ("E-POWER", "E-COMM", "E-PV", "E-SPARE", "E-BATT", "A-PVRES", "E-WATER", "E-SEWER", "A-DRAIN", "A-DONATE"):
+        assert need in used, need
+    assert not (used - set(LAYERS))
+    for sh in (sz, sz2):
+        bad, tb = _sheet_problems(sh)
+        assert not bad, bad[:5]
+    texts = [e.dxf.text for e in sz.msp if e.dxftype() == "TEXT"]
+    assert any("ガス引込なし" in t for t in texts)
+    # 番号表と番号丸の数が一致
+    rows = len(sz.last_table_rows) - 1
+    circ = sum(1 for e in sz.msp if e.dxftype() == "CIRCLE" and e.dxf.layer == "A-SYMB" and abs(e.dxf.radius / sz.S - 1.5) < 1e-6)
+    assert rows == 15 and circ == 15, (rows, circ)
+    # 基準表: 条項の断定を避ける。要確認・推定の語が各条項行に含まれる
+    t2 = " ".join(e.dxf.text for e in sz2.msp if e.dxftype() == "TEXT")
+    assert t2.count("要確認") >= 10 and "推定" in t2
+
+
 GLB_V422 = ("9e2ddbd5bb59a2af", "66f2eabaf1603679")      # v4.22 の model.glb／model_interior.glb の SHA-256 先頭16桁
 A02X_COUNT = 584                                           # v4.22 の 561 + 予約ゾーン（外形・点ハッチ・ラベル2）・蓄電室の塗り・番号3件・凡例2行 ほか
 A03_COUNT = 463                                            # v4.22 の 411 + 蓄電室（間仕切り・扉・ラック・PCS・束壁・室名）と拡大詳細 52

@@ -8,6 +8,7 @@ from shapely.geometry import LineString, Point, Polygon, box as sbox
 from cadlib import Sheet, _text_width, _wrap
 from sheetlib import T, emit, hdim, vdim, door_symbol, window_symbol, opening_tag, side_panel, uv_fn
 from views import VIEWS, iter_lines, iter_polygons, project
+import performance as PF
 
 TATAMI = 1.62
 
@@ -2263,4 +2264,222 @@ def donation_sheet(h, number):
             sh.line(sh.P(274, y - 12), sh.P(273, y - 10.6), "A-SYMB")
             sh.line(sh.P(274, y - 12), sh.P(275, y - 10.6), "A-SYMB")
         y -= 12
+    return sh
+
+
+# ================================================================ v4.23 ライフライン別紙（A-02Z・A-02Z2）
+def _leader(sh, t, target, pos, text, layer="A-TEXT", h_=1.6, align="MIDDLE_LEFT"):
+    """引出し線＋文字。target・pos はモデル座標 mm。"""
+    sh.line(t(*target), t(*pos), "A-SYMB", lineweight=9)
+    sh.text(text, t(*pos), h_, layer, align)
+
+
+def _section_box(sh, x, y, w, hh, title, items, notes):
+    """管路断面の模式図（縮尺なし）。用紙 mm の左上 (x, y)。items: (名称, 地表からの深さ m, 左端からの位置 0〜1, 径 mm, layer)。"""
+    sh.text(title, (x, y), 2.0, "A-TEXT", paper=True)
+    top = y - 4
+    sh.rect(*sh.P(x, top - hh), *sh.P(x + w, top), "G-TABLE")
+    gl = top - 6
+    sh.line(sh.P(x, gl), sh.P(x + w, gl), "A-GROUND")
+    sh.text("GL±0", (x + 1, gl + 1.2), 1.3, "A-TEXT", paper=True)
+    k = 20.0                                           # 1m あたり用紙 mm（模式）
+    for name, d, fx, dia, lay in items:
+        cx, cy = x + fx * w, gl - d * k
+        sh.circle(sh.P(cx, cy), max(dia, 50) / 1000 * k / 2 * sh.S * 1.0 + 0.6 * sh.S, lay)
+        sh.text(name, (cx, cy - 3.2), 1.3, "A-TEXT", "MIDDLE_CENTER", paper=True)
+        sh.text(f"-{d:.2f}", (cx, cy + 2.4), 1.2, "A-TEXT", "MIDDLE_CENTER", paper=True)
+    cy = top - hh - 3
+    for n in notes:
+        sh.text(n, (x, cy), 1.4, "A-TEXT", paper=True)
+        cy -= 2.8
+    return cy
+
+
+def lifeline_sheet(h, number):
+    """A-02Z ライフライン配置・経路図（A3 横・1:300）。引込点・経路・HH・盤・PCS・上下水・雨水・予約ゾーン・蓄電室・寄付地。
+    すべて新しい境界の内側に置き、東・北の寄付地には何も入れない。位置・深さはすべて仮置き（要確認）。"""
+    ll = h.spec["lifeline"]
+    pw = ll["power"]
+    sh = frame(h, number, "ライフライン配置・経路図", 300)
+    t = fit(h, sh, (131, 165))
+    site_base(h, sh, t, contours=False, margin=3000, roads=True, margin_top=4500, road_avoid=(14, 266, 112, 288), donation=True)
+    fence_draw(h, sh, t)
+    house_outline(h, sh, t)
+    bx0, by0, bx1, by1 = h.battery_room.rect
+    sh.hatch_polys([sbox(*t(bx0, by0), *t(bx1, by1))], solid=True, color=1, layer="E-BATT")
+    pg, cp = h.pergola, h.carport
+    sh.rect(*t(pg[0], pg[1]), *t(pg[2], pg[3]), "A-VIS")
+    sh.rect(*t(cp[0], cp[1]), *t(cp[2], cp[3]), "A-VIS")
+    sh.text("ソーラーパーゴラ 27kWp", t((pg[0] + pg[2]) / 2, pg[3] - 1300), 1.6, "A-TEXT", "MIDDLE_CENTER")
+    sh.text("ソーラーカーポート", t((cp[0] + cp[2]) / 2, cp[3] + 800), 1.5, "A-TEXT", "MIDDLE_CENTER")
+    _integrated_cliff(h, sh, t)
+    _utilities_draw(h, sh, t)
+    tk = h.tank
+    sh.rect(*t(tk[0], tk[1]), *t(tk[2], tk[3]), "A-DRAIN")
+    sh.line(t(tk[0], tk[1]), t(tk[2], tk[3]), "A-DRAIN")
+    sh.text("雨水貯留槽 25m³（密閉・防虫網0.4mm・フラップ弁）", t((tk[0] + tk[2]) / 2, tk[3] + 1100), 1.4, "A-TEXT", "MIDDLE_CENTER")
+    _reserve_draw(h, sh, t, foundations=True)
+    # ---- 電力・通信・PV
+    sh.pline(t.pts(pw["trunk"]), "E-POWER", lineweight=35)
+    sh.pline(t.pts(ll["comm"]["line"]), "E-COMM", lineweight=25)
+    sh.pline(t.pts(pw["pv_pergola"]), "E-PV", lineweight=35)
+    sh.pline(t.pts(pw["pv_reserve_spare"]), "E-SPARE", lineweight=25)
+    sh.line(t(*pw["entry"]), t(pw["trunk"][0][0], pw["trunk"][0][1]), "E-POWER", lineweight=35)
+    for p in pw["hh"] + [pw["pv_reserve_hh"]]:
+        sh.rect(*t(p[0] - 450, p[1] - 450), *t(p[0] + 450, p[1] + 450), "E-POWER", lineweight=35)
+    sw = pw["switchboard"]
+    sh.rect(*t(sw[0], sw[1] - 250), *t(sw[2], sw[1] + 250), "E-POWER", lineweight=50)
+    for nm in ("pergola", "carport"):
+        x, y = pw["pcs"][nm]
+        sh.rect(*t(x - 400, y - 400), *t(x + 400, y + 400), "E-PV", lineweight=35)
+    for key in ("main", "essential"):
+        x, y = pw["panels"][key]
+        sh.rect(*t(x - 350, y - 125), *t(x + 350, y + 125), "E-POWER", lineweight=35)
+    x, y = pw["pcs"]["battery"]
+    sh.rect(*t(x - 300, y - 250), *t(x + 300, y + 250), "E-PV", lineweight=35)
+    # ---- 番号引出し（番号表は右欄）
+    S = sh.S
+    call = [("電力・通信 地中引込点（南側道路の電柱から。電柱位置は要確認）", (15500, -31589), (17700, -31000)),
+            ("引込開閉器盤＋電力量計（門の塀に組込む・下端 FGL+1,200 以上・外面を門前広場へ）", (15500, -27589), (16900, -25800)),
+            ("幹線 PE φ65×2（1本予備）＋通信 別管 φ50×2。駐車場区画1の下を北へ", (14200, -22000), (15900, -22000)),
+            ("HH ハンドホール（曲がり・約30m ごと）", (14200, -14000), (15800, -14000)),
+            ("建物南面で基礎スリーブ（止水）→ 床下ピット → 機械室（東）", (14200, -245), (15600, -1800)),
+            ("PCS（カーポートの柱）", (13000, -19400), (13000, -21200)),
+            ("主分電盤・特定負荷分電盤（機械室・東）", (16500, 9175), (19500, 10500)),
+            ("蓄電室 200kWh 級・蓄電 PCS（双方向、AC 結合）", (17100, 7600), (19500, 7600)),
+            ("PCS（パーゴラ東端・屋外）", (-9000, 15000), (-7000, 13500)),
+            ("PV AC 配線 → 西面スリーブ。雨水管と交差（上下 0.3m）", (-4000, 16000), (-2800, 17500)),
+            ("HH（予約ゾーン）と予備管路 PE φ65×2 → パーゴラの溝へ合流", (-9500, 9000), (-8000, 8000)),
+            ("量水器（上水 φ25・門前広場）", (13000, -30900), (13200, -33000)),
+            ("汚水最終桝（φ150・1/100、1.5/100 を推奨・要確認）", (9900, -30900), (9400, -33000)),
+            ("雨水最終桝（汚水と別桝・分流式と仮定）", (11300, -30900), (11300, -33000)),
+            ("雨水貯留槽 25m³（パーゴラの下・密閉・防虫）。越流 → 西の浸透桝2基", ((h.tank[0] + h.tank[2]) / 2, h.tank[1]), ((h.tank[0] + h.tank[2]) / 2, h.tank[1] - 2200))]
+    for i, (txt, tg, bp) in enumerate(call, 1):
+        sh.line(t(*tg), t(*bp), "A-SYMB", lineweight=9)
+        sh.circle(t(*bp), 1.5 * S, "A-SYMB")
+        sh.text(str(i), t(*bp), 1.5, "A-SYMB", "MIDDLE_CENTER")
+    sh.text("ガス引込なし（オール電化）", t(5000, -25000), 1.6, "A-TEXT", "MIDDLE_CENTER")
+    sh.north_arrow(sh.P(370, 120), 6, rot=h.facade_az)
+    sh.view_title("ライフライン配置・経路図", "1:300", (18, 280))
+    # ---- 右欄: 凡例・管路断面・注記
+    X = 262
+    sh.text("凡例", (X, 280), 3.0, "A-TEXT", paper=True)
+    rows = [("E-POWER", "電力 引込・幹線（地中管路）", "line"), ("E-COMM", "通信 引込（光・別管）", "line"),
+            ("E-PV", "太陽光 AC 配線・PCS", "line"), ("E-SPARE", "予備管路（予約ゾーン→パーゴラ）", "line"),
+            ("E-WATER", "上水", "line"), ("E-SEWER", "汚水", "line"), ("A-DRAIN", "雨水（貯留槽・浸透桝）", "line"),
+            ("A-PVRES", "将来ソーラー予約ゾーン・基礎候補 □", "line"), ("E-BATT", "蓄電室（1階）", "line"),
+            ("A-DONATE", "寄付地（設備なし）", "don"), ("A-LEGAL", "がけ条例 2H 範囲", "line"),
+            ("A-SITE", "敷地境界（新・塀の外面）", "line")]
+    cy = legend(sh, X, 276, rows)
+    sh.text("管路断面（模式・縮尺なし）", (X, cy - 1), 2.2, "A-TEXT", paper=True)
+    cy -= 6
+    cy = _section_box(sh, X, cy, 64, 30, "① 門前（x=14,200）",
+                      [("電力φ65×2", 0.6, 0.30, 65, "E-POWER"), ("通信φ50×2", 0.6, 0.50, 50, "E-COMM"), ("上水φ25", 0.45, 0.88, 25, "E-WATER")],
+                      ["電力と通信 水平 0.3m（同溝・別管）", "上水まで 1.6m"])
+    cy -= 2
+    cy = _section_box(sh, X, cy, 64, 30, "② 駐車場下（Dotcon+ 路盤の下）",
+                      [("電力φ65×2", 0.6, 0.35, 65, "E-POWER"), ("通信φ50×2", 0.6, 0.65, 50, "E-COMM")],
+                      ["重量物の圧力を受ける場所は 0.6m 以上（管路式・要確認）"])
+    cy -= 2
+    cy = _section_box(sh, X, cy, 64, 30, "③ 西の庭（雨水管との交差）",
+                      [("PV電力", 0.6, 0.30, 65, "E-PV"), ("雨水φ150", 0.9, 0.70, 150, "A-DRAIN")],
+                      ["交差は上下 0.3m 以上（要確認）"])
+    sh.text("番号表", (332, 280), 3.0, "A-TEXT", paper=True)
+    sh.table(332, 276, [8, 66], [["番号", "内容（位置・深さは仮置き・要確認）"]] + [[str(i), c[0]] for i, c in enumerate(call, 1)], row_h=4.4, h=1.7)
+    return sh
+
+
+LIFELINE_STANDARDS = [
+    ["項目", "代表値", "出典", "計画"],
+    ["地中電線 埋設深さ（直接埋設）", "重量物の圧力を受ける場所 1.2m、その他 0.6m", "電気設備技術基準の解釈 第120条（改正の有無 要確認）", "管路式とし、駐車場下 0.6m 以上・その他 0.3m 以上（管路式の値は要確認）。安全側に一律 0.6m"],
+    ["地中電線と弱電流電線の離隔", "低圧・高圧 0.3m", "電技解釈 第125条（要確認）", "0.3m（同溝・別管）"],
+    ["地中電線と水道管・下水管", "規定値は要確認。内線規程の推奨 0.3m 程度（推定）", "内線規程（要確認）", "水平 0.3m 以上、交差は上下 0.3m"],
+    ["給水管の土被り（宅地内）", "0.3m 以上（車両部 0.6m、推定）", "東京都水道局 給水装置工事設計施工指針（八王子市域は都水道。要確認）", "0.45m（凍結深 約0.2〜0.3m 推定）"],
+    ["量水器の位置", "宅地内・道路境界の近く・検針と交換が容易", "同上（要確認）", "境界から0.69m"],
+    ["排水管 勾配", "1/100 以上（やむを得ない場合を除く）", "下水道法施行令 第8条", "汚水 φ150 1/100 → 1.5/100 を推奨（排水設備指針の一般値、要確認）。最終桝の管底 GL-700 → 約GL-980"],
+    ["排水管 最小管径", "汚水 100mm 以上（排水人口による）", "施行令 第8条（要確認）", "φ150"],
+    ["桝の間隔", "管内径の120倍以下（φ150 で18m）、起点・曲がり・合流に設置", "施行令 第8条", "最大 13.7m（適合）"],
+    ["汚水桝と雨水桝", "法定値なし（推定: 1.0m 以上・別系統）", "市の排水設備基準（要確認）", "1.4m"],
+    ["最終桝", "境界から1m 以内（推定）", "八王子市 排水設備（要確認）", "0.69m"],
+    ["系統連系", "低圧連系は 50kW 未満", "電技解釈 第8章（分散型電源）・系統連系規程 JEAC 9701", "拡張後は PCS 合計を 49.5kW 以下に制限（パネル過積載）。電気事業法の区分（小規模事業用電気工作物の届出・使用前自己確認、50kW 以上は自家用）は要確認"],
+    ["蓄電池の届出・離隔", "定格 10kWh 超で届出・位置構造基準（従前 4,800Ah・セル）。20kWh 超で不燃区画等の可能性", "対象火気省令（令和5年改正）・東京都火災予防条例（閾値・条番号とも要確認）", "200kWh 級 → 所轄消防署（八王子消防署）と事前協議"],
+    ["蓄電池（建築基準法）", "建築設備（法2条3号）。専用の離隔規定は見当たらない（要確認）", "—", "1時間耐火の区画を自主設定"],
+    ["排煙の予備電源", "30分以上", "令126条の3（告示の適合は要確認）", "特定負荷に排煙機"],
+]
+
+
+def _flow_box(sh, x, y, w, hh, text, layer="G-TABLE", dashed=False):
+    sh.rect(*sh.P(x, y - hh), *sh.P(x + w, y), "A-HIDDEN" if dashed else layer, lineweight=25)
+    lines = _wrap(text, w - 2, 1.6)
+    y0 = y - hh / 2 + (len(lines) - 1) * 1.4
+    for k, ln in enumerate(lines):
+        sh.text(ln, (x + w / 2, y0 - k * 2.8), 1.6, "A-TEXT", "MIDDLE_CENTER", paper=True)
+
+
+def _flow_line(sh, pts, layer="E-POWER", arrow=True):
+    sh.pline([sh.P(*p) for p in pts], layer, lineweight=25)
+    if arrow:
+        (x0, y0), (x1, y1) = pts[-2], pts[-1]
+        d = math.hypot(x1 - x0, y1 - y0) or 1
+        ux, uy = (x1 - x0) / d, (y1 - y0) / d
+        for sg in (1, -1):
+            sh.line(sh.P(x1, y1), sh.P(x1 - 1.6 * ux - sg * 0.8 * uy, y1 - 1.6 * uy + sg * 0.8 * ux), layer)
+
+
+def lifeline_tables(h, number):
+    """A-02Z2 ライフラインの基準表（法定基準・代表値・計画）・電気の系統図（単線結線の簡略）・蓄電容量表・要確認。
+    条項は確信のあるものだけ。他は「要確認」「推定」と明記する。"""
+    en = PF.energy(h, PF.heat_load(h))
+    bs = PF.battery_sizing(h, en)
+    sh = frame(h, number, "ライフライン基準表・系統図", 1, label="—")
+    sh.text("ライフライン 法定基準・代表値と計画（条項は確信のあるものだけ。他は要確認・推定）", (12, 282), 3.0, "A-TEXT", paper=True)
+    y = sh.table(12, 277, [32, 50, 50, 68], LIFELINE_STANDARDS, row_h=5.0, h=1.7)
+    side_panel(sh, 12, y - 5, [("t", "代表値は一般的な値の記憶によるもので、最新の条文・自治体の指針・事業者の約款で確認する（すべて要確認）。電柱・公共桝・配水管の位置と深さ、分流式かどうかも未確認。")], width=200)
+    # ---- 系統図
+    X0 = 228
+    sh.text("電気の系統図（単線結線の簡略）", (X0, 282), 3.0, "A-TEXT", paper=True)
+    W, H_ = 38, 9
+    cx = [X0, X0 + 45, X0 + 90, X0 + 135]
+    r1, r2, r3 = 276, 259, 242
+    _flow_box(sh, cx[0], r1, W, H_, "配電線（南側道路・地中引込）")
+    _flow_box(sh, cx[1], r1, W, H_, "引込開閉器盤＋電力量計（門の塀）")
+    _flow_box(sh, cx[2], r1, W, H_, "主分電盤（機械室・東）")
+    _flow_box(sh, cx[3], r1, W, H_, "一般負荷（照明・空調・IH ほか）")
+    _flow_line(sh, [(cx[0] + W, r1 - 4.5), (cx[1], r1 - 4.5)])
+    _flow_line(sh, [(cx[1] + W, r1 - 4.5), (cx[2], r1 - 4.5)])
+    _flow_line(sh, [(cx[2] + W, r1 - 4.5), (cx[3], r1 - 4.5)])
+    _flow_box(sh, cx[2], r2, W, H_, "蓄電 PCS（双方向・AC 結合）", "E-BATT")
+    _flow_box(sh, cx[3], r2, W, H_, "蓄電池 200kWh 級（LFP・蓄電室）", "E-BATT")
+    _flow_line(sh, [(cx[2] + W / 2, r1 - H_), (cx[2] + W / 2, r2)])
+    _flow_line(sh, [(cx[2] + W, r2 - 4.5), (cx[3], r2 - 4.5)], "E-BATT")
+    _flow_box(sh, cx[2], r3, W, H_, "特定負荷分電盤（機械室・東）")
+    _flow_box(sh, cx[3], r3, W, H_, "特定負荷: 排煙機・排水ポンプ・冷蔵庫・通信警備・照明・HP空調1系統・給湯・IH1口")
+    _flow_line(sh, [(cx[2] + W / 2, r2 - H_), (cx[2] + W / 2, r3)])
+    _flow_line(sh, [(cx[2] + W, r3 - 4.5), (cx[3], r3 - 4.5)])
+    _flow_box(sh, cx[0], r2, W, H_, "PCS パーゴラ 27.1kWp（屋外・AC 連系）", "E-PV")
+    _flow_box(sh, cx[1], r2, W, H_, "PCS カーポート 10.2kWp（柱）", "E-PV")
+    _flow_box(sh, cx[0], r3, W, H_, "予約ゾーン 41.0kWp（将来・PCS 追加。合計 49.5kW 以下）", "E-PV", dashed=True)
+    bus = r1 - H_ - 4
+    _flow_line(sh, [(cx[0] + W / 2, r2), (cx[0] + W / 2, bus), (cx[2] + W / 2, bus)], "E-PV", arrow=False)
+    _flow_line(sh, [(cx[1] + W / 2, r2), (cx[1] + W / 2, bus)], "E-PV", arrow=False)
+    _flow_line(sh, [(cx[0] + W / 2, r3), (cx[0] + W / 2, r2 - H_)], "E-SPARE", arrow=False)
+    sh.text("商用停電時は蓄電 PCS が自立出力に切り替え、特定負荷だけに給電。PV は日中の充電・給電に連系", (X0, r3 - H_ - 4), 1.6, "A-TEXT", paper=True)
+    # ---- 蓄電容量表
+    yy = r3 - H_ - 11
+    sh.text("蓄電容量（7日分・公称 = 必要値 ÷ (DoD 0.9 × 寿命末期 SOH 0.8 × 効率 0.95 = %.3f)）" % bs["factor"], (X0, yy), 2.2, "A-TEXT", paper=True)
+    rows = [["ケース", "kWh/日", "7日 使用可能量", "公称容量", "面積（推定）", "重量（推定）"]]
+    for k in "ABCD":
+        r = bs["rows"][k]
+        rows.append([f"{k} {r['name']}", f"{r['kwh']:.1f}", f"{r['use']:.0f}kWh", f"{r['nominal']:.0f}kWh", f"{r['area']:.1f}m²", f"{r['tons']:.1f}t"])
+    yy = sh.table(X0, yy - 3, [50, 16, 28, 22, 24, 24], rows, row_h=4.6, h=1.7)
+    a = bs["autonomy"]
+    fmt = lambda v: "収支プラス" if v is None else f"約{v:.1f}日"
+    notes = [("t", f"推奨: 公称 200kWh 級（防災モード C）。日射ゼロ・寿命末期で {bs['days_eol']:.1f}日（新品 {bs['days_new']:.1f}日、排煙・ポンプ 6.1kWh 控除後 {bs['days_eol_net']:.1f}日）。A・B は室が12〜18m²・7〜10t になり南半分に入らない。"),
+             ("t", f"12月に太陽光で毎日充電する場合（日射は年の5.5%・曇天は平均の20%、推定）。防災モード: 現状 平均日 {fmt(a[('C', 'now')]['avg'])}・曇天 {fmt(a[('C', 'now')]['cloudy'])}、拡張後 曇天でも{fmt(a[('C', 'ext')]['cloudy'])}。通常の冬: 現状 平均日 {fmt(a[('B', 'now')]['avg'])}・曇天 {fmt(a[('B', 'now')]['cloudy'])}、拡張後 平均日 {fmt(a[('B', 'ext')]['avg'])}・曇天 {fmt(a[('B', 'ext')]['cloudy'])}。")]
+    yy = side_panel(sh, X0, yy - 4, notes, width=176)
+    sh.text("要確認（追加）", (X0, yy - 1), 2.4, "A-TEXT", paper=True)
+    chk = ["1 南側道路の電柱・通信柱・公共汚水/雨水桝・配水管の位置と深さ、分流式か", "2 地中電線の埋設深さ（電技解釈120条の改正）と離隔", "3 東京都水道局の土被り・量水器位置",
+           "4 排水管 φ150 の勾配（1/100 か 1.5/100）", "5 蓄電池の火災予防条例上の閾値・届出・区画（八王子消防署）", "6 電気事業法の区分と低圧連系の上限（PCS 49.5kW 制限）",
+           "7 地上置きパネルの建築物該当性", "8 蓄電室の束壁と S-03 の偏心率", "9 ジム機器の移動の了承（施主）", "10 現地の浸透試験（雨水貯留槽の要否）"]
+    side_panel(sh, X0, yy - 6, [("t", "　".join(chk))], width=176)
     return sh
