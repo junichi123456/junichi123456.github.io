@@ -2006,7 +2006,9 @@ def ad_seed(X, k):
 
 
 def _job_adapt(a):
-    key, X, k, s0, s1, h0, h1 = a
+    key, X, k, s0, s1, h0, h1 = a[:7]
+    depth = a[7] if len(a) > 7 and a[7] else DEPTH          # m7: 省略時は従来どおり DEPTH
+    seed = a[8] if len(a) > 8 and a[8] is not None else ad_seed(X, k)
     t0 = time.time()
     o0 = o1 = w0 = w1 = None
     try:
@@ -2014,7 +2016,7 @@ def _job_adapt(a):
         o1, w1 = _AD_SELECT(s1, s0, h1)
         sec_sel = round(time.time() - t0, 2)
         rr_apply(_TEAMS[s0])
-        r = _AD_PLAY((None, s1, o0, o1, ad_seed(X, k), DEPTH[0], DEPTH[1], False, None, False, (s0,), (True, True)) + _pb_args(s0, s1))
+        r = _AD_PLAY((None, s1, o0, o1, seed, depth[0], depth[1], False, None, False, (s0,), (True, True)) + _pb_args(s0, s1))
     except Exception:
         sec_sel = round(time.time() - t0, 2)
         r = {'res': None, 'error': traceback.format_exc()[-800:]}
@@ -2100,11 +2102,11 @@ def ad_load_games(P, sig):
     return {'version': AD_VERSION, 'plan_sig': sig, 'main': None, 'depth': list(DEPTH), 'deny': [True, True], 'games': {}, 'playbook': _pb_sig()}
 
 
-def ad_hist(games, X, A, upto, L):
+def ad_hist(games, X, A, upto, L, kp='ad'):
     """A 視点の履歴（第1〜upto戦、古い順）。"""
     out = []
     for k in range(upto):
-        g = games['games'][f'ad:{X}|{k}']
+        g = games['games'][f'{kp}:{X}|{k}']
         mine, theirs = (g['sel0'], g['sel1']) if g['side0'] == A else (g['sel1'], g['sel0'])
         res = g['res']
         r = 0.5 if res == 0 else (1 if (res == 1) == (g['side0'] == A) else 0)
@@ -2112,11 +2114,11 @@ def ad_hist(games, X, A, upto, L):
     return out
 
 
-def ad_record(job, r, L):
+def ad_record(job, r, L, seed_fn=ad_seed):
     key, X, k, s0, s1 = job[:5]
     res = r.get('res')
     w = None if res is None else (s0 if res == 1 else (s1 if res == -1 else None))
-    rec = {'side0': s0, 'side1': s1, 'sel0': r.get('sel0'), 'sel1': r.get('sel1'), 'seed': ad_seed(X, k), 'res': res, 'winner': w,
+    rec = {'side0': s0, 'side1': s1, 'sel0': r.get('sel0'), 'sel1': r.get('sel1'), 'seed': seed_fn(X, k), 'res': res, 'winner': w,
            'judged': r.get('judged'), 'turns': r.get('turns'), 'left': r.get('left'), 'faints': r.get('faints'), 'sec': r.get('sec'),
            'error': r.get('error'), 'deny': [True, True], 'opp': X, 'k': k, 'n': k + 1, 'main_side': 0 if s0 == L else 1,
            'why0': r.get('why0'), 'why1': r.get('why1'), 'sec_sel': r.get('sec_sel')}
@@ -4150,6 +4152,484 @@ def cmd_final20(a):
     {'plan': cmd_f20_plan, 'run': cmd_f20_run, 'report': cmd_f20_report, 'selftest': cmd_f20_selftest}[a.what](a)
 
 
+# ======================================================================
+# m7: 新構築 M7 × 蓄積構築50 × 10戦（SPEC_M7RUN.md）
+# ======================================================================
+M7_VERSION = 'm7a'
+M7_DEPTH = (5, 5)
+M7_ID = 'M7'
+DEF_M7MD = os.path.join(HERE, '..', 'logs', 'M7RUN.md')
+_M7_CALLS = [None]          # selftest 用: 偽の対戦が seed を追記するファイル
+
+
+def m7_paths(out_dir=None):
+    d = out_dir or DEF_OUT
+    return {'dir': d, 'plan': os.path.join(d, 'm7_plan.json'), 'games': os.path.join(d, 'm7_games.json'),
+            'logs': os.path.join(d, 'm7_logs.jsonl'), 'md': os.path.join(d, 'M7RUN.md') if out_dir else DEF_M7MD}
+
+
+def m7_seed(X, k):
+    return zlib.crc32(f'm7{X}{k}'.encode())
+
+
+def party_team(name='M7', tid=M7_ID):
+    party = json.load(open(os.path.join(R.PARTY_D, f'{name}.json'), encoding='utf-8'))
+    mons = []
+    for e in party:
+        sp = e['species']
+        mega = sp in B.BASE_OF
+        base = B.BASE_OF.get(sp, sp)
+        if mega:
+            abs_ = POKE[base]['ab']
+            bab = e.get('base_ability') or (e['ability'] if e['ability'] in abs_ else abs_[0])
+        else:
+            bab = e['ability']
+        mons.append({'base': base, 'species': sp, 'mega': mega, 'nature': e['nature'], 'ap': _ap(e.get('ap') or e.get('defn')),
+                     'ability': e['ability'], 'base_ability': bab, 'item': e.get('item') or '', 'moves': list(e['moves']), 'stone': False})
+    if sum(1 for m in mons if m['mega']) != 1:
+        raise SystemExit(f'{name}: メガ持ちが1体ではありません')
+    return {'id': tid, 'title': f'{tid}（新構築案）', 'rank': None, 'final': None, 'peak': None, 'weight': 1.0, 'mons': mons}
+
+
+def m7_opponents(s3, n=50, check=True):
+    T = s3['teams']
+    ids = sorted((i for i in s3['ids'] if i not in ('R11', M7_ID)), key=lambda i: sort_key(T[i]))
+    elig = [i for i in ids if T[i].get('rank') or T[i].get('final') or T[i].get('peak')]
+    opps, skipped = [], []
+    for i in elig:
+        if len(opps) >= n:
+            break
+        try:
+            if check:
+                rr_apply(T[i])
+            opps.append(i)
+        except Exception as e:
+            skipped.append({'id': i, 'why': str(e)[:120]})
+    return opps, skipped, elig
+
+
+def _m7_load_s3():
+    p = s3_paths(None)['plan']
+    if not os.path.exists(p):
+        raise SystemExit(f'{p} がありません')
+    return json.load(open(p, encoding='utf-8'))
+
+
+def cmd_m7_plan(a, limit_sel=None):
+    P = m7_paths(a.out_dir)
+    os.makedirs(P['dir'], exist_ok=True)
+    s3 = _m7_load_s3()
+    if M7_ID in s3['teams']:
+        raise SystemExit('s3_plan に M7 があります')
+    rt = party_team(a.party, M7_ID)
+    teams = {**s3['teams'], M7_ID: rt}
+    _rr_init_main(teams)
+    _worker_init(teams)
+    opps, skipped, _ = m7_opponents(s3, 50)
+    for x in skipped:
+        print(f"  除外 {x['id']}: {x['why']}", flush=True)
+    if len(opps) < 50:
+        raise SystemExit('適格が足りません')
+    rr_apply(rt)
+    sig = hashlib.sha256((s3['sig'] + json.dumps(rt, ensure_ascii=False, sort_keys=True) + ','.join(opps) + M7_VERSION + '5,5').encode()).hexdigest()
+    plan = None
+    if os.path.exists(P['plan']):
+        old = json.load(open(P['plan'], encoding='utf-8'))
+        if old.get('sig') == sig:
+            plan = old
+        elif not a.force:
+            raise SystemExit('m7_plan.json の sig が違います（--force で退避して作り直し）')
+        else:
+            os.replace(P['plan'], P['plan'][:-5] + time.strftime('.%Y%m%d_%H%M%S.json'))
+    if plan is None:
+        t0 = time.time()
+        print('M7 の静的スコア計算...', flush=True)
+        with make_pool(a.procs, teams) as pool:
+            ws = dict(pool.map(_job_static, [M7_ID]))
+        ov = json.load(open(GUIDE_OVERRIDES, encoding='utf-8')) if os.path.exists(GUIDE_OVERRIDES) else None
+        info = build_candidates(rt, None, ws[M7_ID], ov)
+        cs = {tuple(o) for o in info['candidates']}
+        mg = {m['base'] for m in rt['mons'] if m['mega']}
+        plan = {'version': M7_VERSION, 'created': time.strftime('%Y-%m-%d %H:%M:%S'), 's3_sig': s3['sig'], 'sig': sig, 'party': a.party,
+                'games_per_pair': 10, 'depth': list(M7_DEPTH), 'deny': [True, True], 'opponents': opps, 'skipped': skipped,
+                'candidates': info['candidates'], 'excluded_no_mega': [o for o in all_orders(rt) if not (set(o) & mg) and tuple(o) not in cs],
+                'm7_team': {**rt, **info, 'static': ws[M7_ID]}, 'sel1': {}}
+        print(f'  {time.time() - t0:.0f}秒', flush=True)
+        safeio.write_json(P['plan'], plan)
+    teams[M7_ID] = plan['m7_team']
+    need = []
+    for X in opps[:limit_sel] if limit_sel else opps:
+        for A_, B_ in ((M7_ID, X), (X, M7_ID)):
+            if f'{A_}|{B_}' not in plan['sel1']:
+                need.append((A_, B_))
+    print(f'対戦相手 {len(opps)}、sel1 計算 {len(need)}', flush=True)
+    if need:
+        t0 = time.time()
+        with make_pool(a.procs, teams) as pool:
+            for n, (k, d) in enumerate(pool.imap_unordered(_job_decide, need, chunksize=1), 1):
+                if 'error' in d:
+                    raise SystemExit(f'選出計算エラー {k}: {d["error"]}')
+                plan['sel1'][k] = d
+                if n % 20 == 0:
+                    safeio.write_json(P['plan'], plan)
+        print(f'  sel1 計算 {time.time() - t0:.0f}秒', flush=True)
+    safeio.write_json(P['plan'], plan)
+    print(f"書きました: {P['plan']}（sig {sig[:12]}）")
+    return plan
+
+
+def m7_load_games(P, sig):
+    if os.path.exists(P['games']):
+        g = json.load(open(P['games'], encoding='utf-8'))
+        if g.get('plan_sig') != sig:
+            raise SystemExit('m7_games.json の plan_sig が m7_plan.json と違います')
+        return g
+    return {'version': M7_VERSION, 'plan_sig': sig, 'main': M7_ID, 'depth': list(M7_DEPTH), 'deny': [True, True], 'games': {}, 'playbook': _pb_sig()}
+
+
+def cmd_m7_run(a):
+    P = m7_paths(a.out_dir)
+    if not os.path.exists(P['plan']):
+        raise SystemExit(f"{P['plan']} がありません。先に m7 plan を実行してください")
+    plan = json.load(open(P['plan'], encoding='utf-8'))
+    s3 = _m7_load_s3()
+    if s3['sig'] != plan['s3_sig']:
+        raise SystemExit('s3_plan.json の sig が m7_plan.json と違います')
+    if _PB_FLAG['on']:
+        import playbook
+        if M7_ID in playbook.load_all():
+            raise SystemExit('プレイブックに M7 があります（M7 側は対象外のはず）')
+    L, opps, G = M7_ID, plan['opponents'], plan['games_per_pair']
+    miss = [f'{x}|{y}' for X in opps for x, y in ((L, X), (X, L)) if f'{x}|{y}' not in plan['sel1']]
+    if miss:
+        raise SystemExit(f'sel1 が未計算です（{len(miss)}件）。m7 plan を完了してください')
+    teams = {**s3['teams'], M7_ID: plan['m7_team']}
+    games = m7_load_games(P, plan['sig'])
+    pb_guard(games)
+    _AD['sel1'] = plan['sel1']
+    gm = games['games']
+
+    def next_k(X):
+        for k in range(G):
+            g = gm.get(f'm7:{X}|{k}')
+            if g is None:
+                return k
+            if g['res'] is None:
+                return k if a.retry_errors else None
+        return None
+
+    tot = len(opps) * G
+    base = sum(1 for g in gm.values() if g['res'] is not None)
+    print(f'全体 {tot}戦、済み {base}、今回 最大 {a.max_games or "全部"}', flush=True)
+    os.makedirs(P['dir'], exist_ok=True)
+    active, n_disp, n_done = {}, 0, 0
+    t0 = time.time()
+    with make_pool(a.procs, teams) as pool:
+        while True:
+            for X in opps:
+                if len(active) >= a.procs or (a.max_games and n_disp >= a.max_games):
+                    break
+                if X in active:
+                    continue
+                k = next_k(X)
+                if k is None:
+                    continue
+                s0, s1 = (L, X) if k % 2 == 0 else (X, L)
+                job = (f'm7:{X}|{k}', X, k, s0, s1, ad_hist(games, X, s0, k, L, 'm7'), ad_hist(games, X, s1, k, L, 'm7'), M7_DEPTH, m7_seed(X, k))
+                active[X] = (pool.apply_async(_job_adapt, (job,)), job)
+                n_disp += 1
+            if not active:
+                break
+            got = False
+            for X, (ar, job) in list(active.items()):
+                if not ar.ready():
+                    continue
+                got = True
+                r = ar.get()
+                del active[X]
+                n_done += 1
+                gm[job[0]] = ad_record(job, r, L, m7_seed)
+                safeio.write_json(P['games'], games)
+                if r.get('log') is not None:
+                    append_log(P, job[0], r['log'])
+                mark = '例外' if r.get('res') is None else ('分' if r['res'] == 0 else ('勝' if (r['res'] == 1) == (job[3] == L) else '負'))
+                el = (time.time() - t0) / 60
+                rem = el / n_done * max(0, (min(a.max_games, tot - base) if a.max_games else tot - base) - n_done)
+                print(f"[{base + n_done}/{tot}] {job[0]} M7{mark} {r.get('turns')}手 {r['sec']:.0f}秒(選出{r.get('sec_sel') or 0:.0f}) 経過{el:.1f}分 残り約{rem:.1f}分", flush=True)
+            if not got:
+                time.sleep(0.05)
+    return n_done
+
+
+def _m7_base(n):
+    return B.BASE_OF.get(n, n)
+
+
+def cmd_m7_report(a):
+    P = m7_paths(a.out_dir)
+    plan = json.load(open(P['plan'], encoding='utf-8'))
+    T = _m7_load_s3()['teams']
+    T[M7_ID] = plan['m7_team']
+    L, opps = M7_ID, plan['opponents']
+    games = m7_load_games(P, plan['sig'])['games']
+    recs = [g for g in games.values() if g.get('opp') in opps]
+    ok_ = [g for g in recs if g['res'] is not None]
+    tot = len(opps) * plan['games_per_pair']
+    mg = {m['base'] for m in plan['m7_team']['mons'] if m['mega']}
+    mine = lambda g: tuple((g['sel0'] if g['main_side'] == 0 else g['sel1']) or ())
+    theirs = lambda g: tuple((g['sel1'] if g['main_side'] == 0 else g['sel0']) or ())
+    why = lambda g: (g['why0'] if g['main_side'] == 0 else g['why1']) or {}
+    by = {X: sorted([g for g in ok_ if g['opp'] == X], key=lambda g: g['k']) for X in opps}
+    out = [f'# M7 × 蓄積構築{len(opps)} × {plan["games_per_pair"]}戦（深さ5・適応選出）', '']
+    jd = [g for g in ok_ if g.get('judged')]
+    out += ['## 1. 全体', f'- M7 の戦績: {_rate([_lw(g, L) for g in ok_])}（完了 {len(ok_)}/{tot}、分=0.5）',
+            f'- 例外: {sum(1 for g in recs if g["res"] is None)}、判定決着: {len(jd)}戦、平均手数 {_avg([g["turns"] for g in ok_ if g.get("turns")]):.1f}', '']
+    # 2
+    out += ['## 2. 相手構築ごと（M7 視点 ○勝 ●負 △分、判定は o/x、勝率昇順）', '| 構築 | id8 | rank | 10戦 | 勝率 |', '|---|---|---|---|---|']
+    wr, rows = {}, []
+    for X in opps:
+        s, ws_ = '', 0.0
+        for g in by[X]:
+            v, j = _lw(g, L), g.get('judged')
+            s += ('o' if j else '○') if v == 1 else (('x' if j else '●') if v == 0 else '△')
+            ws_ += v
+        wr[X] = ws_ / len(by[X]) if by[X] else 0.0
+        rows.append((wr[X], opps.index(X), f"| {T[X]['title'][:24]} | {X[:8]} | {T[X].get('rank')} | {s} | {ws_:g}/{len(by[X])} {wr[X] * 100:.0f}% |"))
+    out += [r[2] for r in sorted(rows)] + ['']
+    # 3
+    out += ['## 3. 推移（第n戦、全相手合計）']
+    for n in range(1, plan['games_per_pair'] + 1):
+        out.append(f'- 第{n}戦: {_rate([_lw(g, L) for g in ok_ if g["k"] == n - 1])}')
+    h = plan['games_per_pair'] // 2
+    out += [f'- 前半(1-{h}): {_rate([_lw(g, L) for g in ok_ if g["k"] < h])} / 後半({h + 1}-{plan["games_per_pair"]}): {_rate([_lw(g, L) for g in ok_ if g["k"] >= h])}', '']
+    # 4
+    out += ['## 4. M7 の選出別勝率', '### 並び（先発込み）']
+    po, pt, src = collections.defaultdict(list), collections.defaultdict(list), collections.defaultdict(list)
+    for g in ok_:
+        po[mine(g)].append(_lw(g, L))
+        pt[tuple(sorted(mine(g)))].append(_lw(g, L))
+        src['adapt' if why(g).get('src') == 'adapt' else 'sel1 basic'].append(_lw(g, L))
+    for o, v in sorted(po.items(), key=lambda x: (-len(x[1]), x[0])):
+        out.append(f'- {_ostr(o)}{"（メガ入り）" if set(o) & mg else "（メガなし）"}: {len(v)}戦 {sum(v) / len(v) * 100:.0f}%')
+    out.append('### 3体組')
+    for o, v in sorted(pt.items(), key=lambda x: (-len(x[1]), x[0])):
+        out.append(f'- {_ostr(o)}: {len(v)}戦 {sum(v) / len(v) * 100:.0f}%')
+    out.append('### 小計')
+    out.append(f'- メガ入り: {_rate([_lw(g, L) for g in ok_ if set(mine(g)) & mg])} / メガなし: {_rate([_lw(g, L) for g in ok_ if not set(mine(g)) & mg])}')
+    out.append(f'- 選出元: ' + ' / '.join(f'{k} {_rate(v)}' for k, v in sorted(src.items())))
+    out.append('')
+    # 5
+    out += ['## 5. 最も負けた相手トップ10']
+    for X in sorted(opps, key=lambda x: (wr[x], -sum(1 for g in by[x] if _lw(g, L) == 0.0), opps.index(x)))[:10]:
+        fl, fk, oo = collections.Counter(), collections.Counter(), collections.Counter()
+        for g in by[X]:
+            fs = [f for f in (g.get('faints') or []) if f[1] == g['main_side']]
+            if fs:
+                fl[_m7_base(fs[0][2])] += 1
+            for f in fs:
+                fk[f[3]] += 1
+            oo[_ostr(theirs(g))] += 1
+        out.append(f"- {T[X]['title'][:22]}（{X[:8]}）勝率{wr[X] * 100:.0f}%: 最初に倒れたM7 {fl.most_common(3)} / 倒した相手個体 {fk.most_common(3)} / 相手の並び {oo.most_common(2)}")
+    out.append('')
+    # 6
+    out += ['## 6. リザホーク（深さ4・ADAPT.md）との比較', '- ADAPT.md: 58.0%（290/500、深さ4）。M7 は深さ5のため厳密比較ではない']
+    try:
+        ap_ = ad_paths(None)
+        adp = json.load(open(ap_['plan'], encoding='utf-8'))
+        adg = json.load(open(ap_['games'], encoding='utf-8'))['games']
+        com = [X for X in opps if X in adp['opponents']]
+        lz = [_lw(g, adp['main']) for g in adg.values() if g.get('opp') in com and g['res'] is not None]
+        mz = [_lw(g, L) for X in com for g in by[X]]
+        out.append(f'- 共通相手 {len(com)}構築: リザホーク {_rate(lz)} / M7 {_rate(mz)}')
+    except Exception as e:
+        out.append(f'- 共通相手の比較は読めませんでした: {e}')
+    if AD_MAIN in by:
+        out.append(f'- M7 対 リザホーク（{AD_MAIN[:8]}）: {_rate([_lw(g, L) for g in by[AD_MAIN]])}')
+    out.append('')
+    # 7
+    out += ['## 7. M7 の個体ごと', '| 個体 | 選出 | 先発 | 出た試合の勝率 | 倒した | 倒された |', '|---|---|---|---|---|---|']
+    for m in plan['m7_team']['mons']:
+        b = m['base']
+        sg = [g for g in ok_ if b in mine(g)]
+        kills = sum(1 for g in ok_ for f in (g.get('faints') or []) if f[1] != g['main_side'] and _m7_base(f[3]) == b)
+        dead = sum(1 for g in ok_ for f in (g.get('faints') or []) if f[1] == g['main_side'] and _m7_base(f[2]) == b)
+        out.append(f"| {b} | {len(sg)} | {sum(1 for g in ok_ if mine(g)[:1] == (b,))} | {_rate_s(sum(_lw(g, L) for g in sg), len(sg))} | {kills} | {dead} |")
+    mg_n = 0
+    for g in ok_:
+        if any(m in mg for m in mine(g)):
+            names = [f[2] for f in (g.get('faints') or []) if f[1] == g['main_side']] + [x[0] for x in ((g.get('left') or [[], []])[g['main_side']] or [])]
+            mg_n += any(n in B.BASE_OF for n in names)
+    out += [f'- メガした試合数（faints/left に メガ名が出た試合の近似）: {mg_n}', '']
+    # 8
+    out += ['## 8. 設定', f'- 深さ {plan["depth"]}、deny {plan["deny"]}、プレイブック署名 {_pb_sig()}（相手側のみ）、seed=crc32("m7{{X}}{{k}}")、plan sig {plan["sig"]}',
+            f'- M7 candidates {len(plan["candidates"])}: ' + ' ; '.join(_ostr(o) for o in plan['candidates']),
+            f'- 外れたメガなし並び {len(plan["excluded_no_mega"])}: ' + ' ; '.join(_ostr(o) for o in plan['excluded_no_mega'])]
+    os.makedirs(os.path.dirname(P['md']), exist_ok=True)
+    open(P['md'], 'w', encoding='utf-8').write('\n'.join(out) + '\n')
+    print(f"書きました: {P['md']}")
+
+
+def cmd_m7_selftest(a):
+    import shutil, subprocess, tempfile, statistics as stt
+    global _AD_PLAY, _AD_SELECT, _AD_EVAL
+    D = a.out_dir or tempfile.mkdtemp(prefix='m7test_')
+    os.makedirs(D, exist_ok=True)
+    results = []
+
+    def ok(n, cond, msg=''):
+        results.append((n, bool(cond)))
+        print(f"{'○' if cond else '×'} {n} {msg}", flush=True)
+
+    before = _sha_all()
+    p = subprocess.run([sys.executable, '-m', 'py_compile', 'roundrobin.py'], cwd=HERE, capture_output=True, text=True)
+    ok('1 py_compile', p.returncode == 0, p.stderr[-200:])
+    s3 = _m7_load_s3()
+    D2 = os.path.join(D, 'plan')
+
+    class A_:
+        pass
+    pa = A_()
+    pa.out_dir, pa.party, pa.procs, pa.force = D2, 'M7', a.procs, True
+    t0 = time.time()
+    plan = cmd_m7_plan(pa, limit_sel=2 if a.quick else 3)
+    print(f'   plan（静的スコア＋sel1 {len(plan["sel1"])}件）{time.time() - t0:.0f}秒', flush=True)
+    T = {**s3['teams'], M7_ID: plan['m7_team']}
+    _worker_init(T)
+    _AD['sel1'] = plan['sel1']
+    L, opps = M7_ID, plan['opponents']
+    # a
+    rt = party_team('M7')
+    try:
+        rr_apply(rt)
+        mv = B.MY.get('カイリュー')
+        st = B.new_state([m['base'] for m in rt['mons']][:3], [m['base'] for m in T[opps[0]]['mons']][:3])
+        oka = (sum(m['mega'] for m in rt['mons']) == 1 and mv and mv[0].ability == 'マルチスケイル' and mv[1].species == 'メガカイリュー'
+               and st.sides[0][0].can_mega and rt['mons'][0]['base_ability'] == 'マルチスケイル')
+    except Exception:
+        oka = False
+        print(traceback.format_exc()[-300:])
+    ok('2a party_team / rr_apply / メガ', oka)
+    # b
+    ids = sorted((i for i in s3['ids'] if i not in ('R11', M7_ID)), key=lambda i: sort_key(s3['teams'][i]))
+    elig = [i for i in ids if s3['teams'][i].get('rank') or s3['teams'][i].get('final') or s3['teams'][i].get('peak')]
+    try:
+        for i in opps:
+            rr_apply(T[i])
+        ap_ = True
+    except Exception:
+        ap_ = False
+    ok('2b 相手集合', len(opps) == 50 and 'R11' not in opps and M7_ID not in opps and 'db0baa2843d2bd4b' in opps and opps == elig[:50] and ap_,
+       f'適格{len(elig)} 除外{len(plan["skipped"])}')
+    # c
+    cs = [tuple(o) for o in plan['candidates']]
+    ao = {tuple(o) for o in all_orders(T[M7_ID])}
+    nn = sum(1 for c in cs if 'カイリュー' not in c)
+    ok('2c candidates', len(cs) == 24 and set(cs) <= ao and nn <= 4 and not any(tuple(o) in set(cs) for o in plan['excluded_no_mega'])
+       and len(plan['excluded_no_mega']) == 30 - nn, f'メガなし{nn} 外れたメガなし{len(plan["excluded_no_mega"])}')
+    # d
+    X = opps[0]
+    r0, _ = adapt_select(L, X, [])
+    tgt = cs[5]
+    oth = cs[0]
+    _AD_EVAL = lambda o, c, smart: 100.0 if tuple(o) == tgt else -100.0
+    try:
+        hh = lambda mines: [{'n': i + 1, 'mine': list(m), 'theirs': list(plan['sel1'][f'{X}|{L}']['order']), 'res_for_A': 0.5} for i, m in enumerate(mines)]
+        r_ban, w_ban = adapt_select(L, X, hh([tgt, tgt]))
+        r_ok, _ = adapt_select(L, X, hh([oth, tgt]))
+    finally:
+        _AD_EVAL = None
+    ok('2d adapt_select', tuple(r0) == tuple(plan['sel1'][f'{L}|{X}']['order']) and tuple(r0) in cs and tuple(r_ok) == tgt and tuple(r_ban) != tgt
+       and tuple(r_ban) in cs and w_ban['banned_streak'] == list(tgt))
+    # e
+    seen = []
+
+    def spy_play(args):
+        seen.append(args)
+        return {'res': 1, 'faints': [], 'left': [[], []], 'turns': 1, 'judged': False}
+
+    def fake_select(A, Bid, hist):
+        o = list(_TEAMS[A]['candidates'][len(hist) % 24])
+        return o, {'src': 'fake', 'order': o, 'hist_len': len(hist)}
+    _AD_SELECT, _AD_PLAY = fake_select, spy_play
+    try:
+        _job_adapt(('m7:x|0', X, 0, L, X, [], [], M7_DEPTH, m7_seed(X, 0)))
+        _job_adapt(('m7:x|1', X, 1, X, L, [], [], M7_DEPTH, m7_seed(X, 1)))
+    finally:
+        _AD_SELECT, _AD_PLAY = adapt_select, R.blind_play
+    a0, a1 = seen
+    pb0 = a0[12][0] if len(a0) > 12 else None
+    pb1 = a1[12][1] if len(a1) > 12 else None
+    ok('2e seed/側/深さ/プレイブック', m7_seed(X, 0) == zlib.crc32(f'm7{X}0'.encode()) and a0[4] == m7_seed(X, 0) and a1[4] == m7_seed(X, 1)
+       and a0[5:7] == (5, 5) and a1[5:7] == (5, 5) and a0[11] == (True, True) and pb0 is None and pb1 is None and a0[10] == (L,) and a1[10] == (X,)
+       and a0[1] == X and a1[1] == L)
+    # f 再開
+    calls = os.path.join(D, 'calls.txt')
+    _M7_CALLS[0] = calls
+
+    def fake_play(args):
+        open(_M7_CALLS[0], 'a').write(f'{args[4]}\n')
+        return {'res': 1 if args[4] % 2 else -1, 'log': ['x'], 'faints': [[3, 0, 'ガブリアス', 'ミミッキュ']], 'left': [[], []], 'turns': 7, 'judged': False}
+    _AD_SELECT, _AD_PLAY = fake_select, fake_play
+    D7 = os.path.join(D, 'fake')
+    os.makedirs(D7, exist_ok=True)
+    p7 = dict(plan)
+    p7['opponents'] = opps[:3]
+    safeio.write_json(os.path.join(D7, 'm7_plan.json'), p7)
+
+    class R_:
+        pass
+    ra = R_()
+    ra.out_dir, ra.procs, ra.max_games, ra.retry_errors = D7, 3, 2, False
+    try:
+        if not set(f'{x}|{y}' for X_ in opps[:3] for x, y in ((L, X_), (X_, L))) <= set(plan['sel1']):
+            p7['sel1'] = {f'{x}|{y}': {'order': list(T[x]['candidates'][0])} for X_ in opps[:3] for x, y in ((L, X_), (X_, L))}
+            safeio.write_json(os.path.join(D7, 'm7_plan.json'), p7)
+        cmd_m7_run(ra)
+        n1 = len(json.load(open(os.path.join(D7, 'm7_games.json'), encoding='utf-8'))['games'])
+        ra.max_games = 0
+        cmd_m7_run(ra)
+        g7 = json.load(open(os.path.join(D7, 'm7_games.json'), encoding='utf-8'))['games']
+        cl = open(calls).read().split()
+        seq = all(all(f'm7:{x}|{k}' in g7 for k in range(10)) for x in opps[:3])
+        sd = all(g['seed'] == m7_seed(g['opp'], g['k']) and (g['side0'] == L) == (g['k'] % 2 == 0) and g['why0']['hist_len'] == g['k'] for g in g7.values())
+        ok('2f 再開', n1 == 2 and len(g7) == 30 and len(cl) == 30 and len(set(cl)) == 30 and seq and sd, f'中断時{n1}戦 計算回数{len(cl)} 一意{len(set(cl))}')
+        cmd_m7_report(ra)
+        md = open(os.path.join(D7, 'M7RUN.md'), encoding='utf-8').read()
+        heads = ['## 1. 全体', '## 2. 相手構築ごと', '## 3. 推移', '## 4. M7 の選出別勝率', '## 5. 最も負けた相手トップ10', '## 6. リザホーク', '## 7. M7 の個体ごと', '## 8. 設定']
+        ok('2h report', all(h in md for h in heads), f'{len(md)}字')
+    except SystemExit as e:
+        ok('2f/2h fake', False, str(e))
+    except Exception:
+        ok('2f/2h fake', False, traceback.format_exc()[-500:])
+    finally:
+        _AD_SELECT, _AD_PLAY = adapt_select, R.blind_play
+        _M7_CALLS[0] = None
+    # g 時間
+    ts = []
+    cases = [(L, X, tuple(T[X]['candidates'][1])), (X, L, cs[3])] + ([] if a.quick else [(L, opps[1], tuple(T[opps[1]]['candidates'][2]))])
+    for A_id, Bid, c in cases:
+        h = [{'n': n, 'mine': list(T[A_id]['candidates'][0]), 'theirs': list(c), 'res_for_A': 1} for n in (1, 2, 3)]
+        t0 = time.time()
+        adapt_select(A_id, Bid, h)
+        ts.append(time.time() - t0)
+    ok('2g 選出時間（中央値<=15・最大<=30）', stt.median(ts) <= 15 and max(ts) <= 30, f'{[round(t, 1) for t in ts]} sel1 decide秒 {[v.get("sec") for v in plan["sel1"].values()]}')
+    r = _job_adapt(('m7:t|0', X, 0, L, X, [], [], M7_DEPTH, m7_seed(X, 0)))
+    print(f"   実戦1戦(k=0, M7 対 {X[:8]}) res={r.get('res')} {r.get('turns')}手 全体{r['sec']}秒（選出{r['sec_sel']}秒）", flush=True)
+    ok('2g 実戦1戦が完走', r.get('res') is not None or r.get('judged') is not None, str(r.get('error'))[-200:])
+    after = _sha_all()
+    ok('3 既存ファイルの sha256 不変', before == after, f'{len(before)}件')
+    ok('3b 既定の場所に m7_* / M7RUN.md が無い', not any(os.path.exists(os.path.join(DEF_OUT, f)) for f in ('m7_plan.json', 'm7_games.json', 'm7_logs.jsonl')) and not os.path.exists(DEF_M7MD))
+    print('\n結果:', 'すべて ○' if all(c for _, c in results) else '×あり: ' + ', '.join(n for n, c in results if not c))
+    if not a.keep and not a.out_dir:
+        shutil.rmtree(D, ignore_errors=True)
+    else:
+        print('残した:', D)
+
+
+def cmd_m7(a):
+    {'plan': cmd_m7_plan, 'run': cmd_m7_run, 'report': cmd_m7_report, 'selftest': cmd_m7_selftest}[a.what](a)
+
+
 def main():
     ap = argparse.ArgumentParser()
     sp = ap.add_subparsers(dest='cmd', required=True)
@@ -4195,6 +4675,17 @@ def main():
     p.add_argument('--quick', action='store_true')
     p.add_argument('--keep', action='store_true')
     p.add_argument('--out-dir')
+    p = sp.add_parser('m7')
+    p.add_argument('what', choices=['plan', 'run', 'report', 'selftest'])
+    p.add_argument('--party', default='M7')
+    p.add_argument('--prefix', default='m7')
+    p.add_argument('--procs', type=int, default=4)
+    p.add_argument('--force', action='store_true')
+    p.add_argument('--max-games', type=int, default=0)
+    p.add_argument('--retry-errors', action='store_true')
+    p.add_argument('--quick', action='store_true')
+    p.add_argument('--keep', action='store_true')
+    p.add_argument('--out-dir')
     p = sp.add_parser('counter')
     p.add_argument('what', choices=['plan', 'run', 'report', 'selftest'])
     p.add_argument('--opps')
@@ -4226,11 +4717,11 @@ def main():
     p.add_argument('--max-games', type=int, default=0)
     p.add_argument('--retry-errors', action='store_true')
     p.add_argument('--out-dir')
-    for nm in ('run', 'deny', 'adapt', 'counter', 'sched3', 'final20'):
+    for nm in ('run', 'deny', 'adapt', 'm7', 'counter', 'sched3', 'final20'):
         sp.choices[nm].add_argument('--no-playbook', action='store_true')
     a = ap.parse_args()
     _PB_FLAG['on'] = not getattr(a, 'no_playbook', False)
-    {'final20': cmd_final20, 'sched3': cmd_sched3, 'playbook': cmd_playbook, 'counter': cmd_counter, 'adapt': cmd_adapt, 'deny': cmd_deny, 'plan': cmd_plan, 'run': cmd_run, 'report': cmd_report, 'selftest': cmd_selftest, 'show': cmd_show}[a.cmd](a)
+    {'m7': cmd_m7, 'final20': cmd_final20, 'sched3': cmd_sched3, 'playbook': cmd_playbook, 'counter': cmd_counter, 'adapt': cmd_adapt, 'deny': cmd_deny, 'plan': cmd_plan, 'run': cmd_run, 'report': cmd_report, 'selftest': cmd_selftest, 'show': cmd_show}[a.cmd](a)
 
 
 if __name__ == '__main__':
