@@ -3741,6 +3741,415 @@ def cmd_sched3(a):
     {'plan': cmd_s3_plan, 'run': cmd_s3_run, 'report': cmd_s3_report, 'selftest': cmd_s3_selftest}[a.what](a)
 
 
+# ---------------------------------------------------------------- final20（sched3 の3戦3勝20構築の総当たり）
+F20_VERSION = 'f20v1'
+F20_N = 20
+
+
+def f20_paths(out_dir=None):
+    d = out_dir or DEF_OUT
+    return {'dir': d, 'plan': os.path.join(d, 'f20_plan.json'), 'games': os.path.join(d, 'f20_games.json'),
+            'logs': os.path.join(d, 'f20_logs.jsonl'), 'md': os.path.join(d, 'f20_report.md')}
+
+
+def f20_pick(st):
+    """s3_stats の結果から対象20構築を選ぶ。返り値 (ids, reasons)。"""
+    rate = lambda i: st[i]['w'] / st[i]['n'] if st[i]['n'] else 0.0
+    allr = sorted(st, key=lambda i: (-rate(i), -st[i]['hp'], i))
+    full = [i for i in allr if st[i]['n'] == 3 and st[i]['w'] == st[i]['n']]
+    if len(full) >= F20_N:
+        pick = full[:F20_N]
+    else:
+        pick = full + [i for i in allr if i not in full][:F20_N - len(full)]
+    return pick, {i: ('3/3' if i in full else '補充') for i in pick}
+
+
+def f20_edges(ids):
+    out = []
+    for x, y in itertools.combinations(sorted(ids), 2):
+        a, b = pair_ab(x, y)
+        for k in (0, 1):
+            X, Y = (a, b) if k % 2 == 0 else (b, a)
+            out.append({'e': len(out), 'a': a, 'b': b, 'k': k, 'X': X, 'Y': Y,
+                        'seed': zlib.crc32(f'f20{a}{b}{k}'.encode()), 'key': f'f20:{a}|{b}|{k}'})
+    return out
+
+
+def f20_fill_sel(plan, s3sel):
+    """s3 の選出を再利用。未計算の順序付き組 [(x,y)] を返す。"""
+    missing = []
+    for ed in plan['edges']:
+        for x, y in ((ed['X'], ed['Y']), (ed['Y'], ed['X'])):
+            k = f'{x}|{y}'
+            if k not in plan['sel'] and k in s3sel:
+                plan['sel'][k] = json.loads(json.dumps(s3sel[k]))
+                plan['sel_src'][k] = 's3'
+            if k not in plan['sel'] and (x, y) not in missing:
+                missing.append((x, y))
+    return missing
+
+
+def cmd_f20_plan(a):
+    P = f20_paths(a.out_dir)
+    S = s3_paths(a.out_dir)
+    if not (os.path.exists(S['plan']) and os.path.exists(S['games'])):
+        raise SystemExit('s3_plan.json / s3_games.json がありません')
+    sp3 = json.load(open(S['plan'], encoding='utf-8'))
+    sg3 = json.load(open(S['games'], encoding='utf-8'))
+    if sg3.get('plan_sig') != sp3.get('sig'):
+        raise SystemExit('s3_games.json の plan_sig が s3_plan.json と違います')
+    st3 = s3_stats(sp3, sg3)
+    ids, reasons = f20_pick(st3)
+    ids = sorted(ids)
+    rr, _ = s3_build(None)
+    rr = {i: rr[i] for i in ids if i in rr}
+    if len(rr) != len(ids):
+        raise SystemExit(f'構築が見つかりません: {[i for i in ids if i not in rr]}')
+    bad = s3_apply_all(rr)
+    if bad:
+        raise SystemExit(f'apply 失敗: {bad}')
+    miss = [i for i in ids if i not in sp3['teams']]
+    if miss:
+        raise SystemExit(f's3_plan.teams にない構築: {miss}')
+    depth = S3_DEPTH
+    sig = hashlib.sha256((json.dumps([rr[i] for i in ids], ensure_ascii=False, sort_keys=True) + F20_VERSION
+                          + f'{depth[0]},{depth[1]}' + sp3['sig']).encode()).hexdigest()
+    plan = None
+    if os.path.exists(P['plan']):
+        old = json.load(open(P['plan'], encoding='utf-8'))
+        if old.get('sig') == sig:
+            plan = old
+        elif not a.force:
+            raise SystemExit('f20_plan.json の sig が違います（--force で退避して作り直し）')
+        else:
+            os.replace(P['plan'], P['plan'][:-5] + time.strftime('.%Y%m%d_%H%M%S.json'))
+    if plan is None:
+        s3info = {}
+        for i in ids:
+            opp = [st3[g['opp']]['w'] / st3[g['opp']]['n'] for g in st3[i]['games'] if st3[g['opp']]['n']]
+            s3info[i] = {'reason': reasons[i], 'w': st3[i]['w'], 'n': st3[i]['n'], 'hp': st3[i]['hp'],
+                         'opp_rate': (sum(opp) / len(opp)) if opp else None}
+        plan = {'version': F20_VERSION, 'created': time.strftime('%Y-%m-%d %H:%M:%S'), 'depth': list(depth), 'deny': list(S3_DENY),
+                'sig': sig, 's3_sig': sp3['sig'], 'ids': ids, 's3': s3info, 'excluded': [],
+                'teams': {i: sp3['teams'][i] for i in ids}, 'edges': f20_edges(ids), 'sel': {}, 'sel_src': {}}
+    missing = f20_fill_sel(plan, sp3.get('sel', {}))
+    save_plan(P, plan)
+    lim = getattr(a, 'sel_limit', None)
+    if lim is not None:
+        keep = {(ed['X'], ed['Y']) for ed in plan['edges'][:lim]} | {(ed['Y'], ed['X']) for ed in plan['edges'][:lim]}
+        missing = [p for p in missing if p in keep]
+    cmd_select(P, plan, 0, a.procs, missing)
+    for p in missing:
+        if f'{p[0]}|{p[1]}' in plan['sel']:
+            plan['sel_src'].setdefault(f'{p[0]}|{p[1]}', 'new')
+    save_plan(P, plan)
+    n_s3 = sum(1 for v in plan['sel_src'].values() if v == 's3')
+    n_new = sum(1 for v in plan['sel_src'].values() if v == 'new')
+    print(f"N={len(plan['ids'])}、{len(plan['edges']) // 2}組×2={len(plan['edges'])}戦、再利用選出 {n_s3}件、新規 {n_new}件"
+          f"（未計算 {f20_nsel(plan)}件）")
+    print(f20_estimate(plan, None, a.procs))
+    return plan
+
+
+def f20_nsel(plan):
+    return len({k for ed in plan['edges'] for k in (f"{ed['X']}|{ed['Y']}", f"{ed['Y']}|{ed['X']}") if k not in plan['sel']})
+
+
+def f20_estimate(plan, games, procs):
+    s = s3_estimate(plan, games, procs)
+    return s[:s.index('、未計算')] + f"、未計算の選出 {f20_nsel(plan)}件 ≈ {f20_nsel(plan) * 7 / procs / 60:.0f}分"
+
+
+def f20_record(job, r):
+    key, X, Y, selX, selY, seed, deny, depth = job
+    a, b, k = key[4:].split('|')
+    res = r.get('res')
+    w = None if res is None else (X if res == 1 else (Y if res == -1 else None))
+    rec = {'a': a, 'b': b, 'k': int(k), 'side0': X, 'side1': Y, 'sel0': selX, 'sel1': selY, 'seed': seed, 'res': res, 'winner': w,
+           'judged': r.get('judged'), 'turns': r.get('turns'), 'left': r.get('left'), 'faints': r.get('faints'),
+           'sec': r.get('sec'), 'error': r.get('error')}
+    if r.get('deny_stats') is not None:
+        rec['deny_stats'] = r['deny_stats']
+    if r.get('pb'):
+        rec['pb'] = r['pb']
+    return rec
+
+
+def f20_load_games(P, plan):
+    if os.path.exists(P['games']):
+        g = json.load(open(P['games'], encoding='utf-8'))
+        if g.get('plan_sig') != plan['sig']:
+            raise SystemExit('f20_games.json の plan_sig が f20_plan.json と違います')
+        return g
+    return {'version': F20_VERSION, 'plan_sig': plan['sig'], 'depth': plan['depth'], 'deny': plan['deny'],
+            'playbook': _pb_sig(), 'games': {}}
+
+
+def cmd_f20_run(a):
+    P = f20_paths(a.out_dir)
+    plan = load_plan(P)
+    games = f20_load_games(P, plan)
+    pb_guard(games)
+    lim = getattr(a, 'jobs_limit', 0)
+    jobs = s3_jobs({**plan, 'edges': plan['edges'][:lim]} if lim else plan)
+    todo = [j for j in jobs if not done_game(games, j[0], a.retry_errors)]
+    tot = len(jobs)
+    base = tot - len(todo)
+    if a.max_games:
+        todo = todo[:a.max_games]
+    print(f'全体 {tot}戦、済み {base}、今回 {len(todo)}戦', flush=True)
+    print(f20_estimate(plan, games, a.procs), flush=True)
+    if not todo:
+        return 0
+    t0 = time.time()
+    n = 0
+    with make_pool(a.procs, plan['teams']) as pool:
+        for r in pool.imap_unordered(_job_s3, todo, chunksize=1):
+            n += 1
+            job = next(j for j in todo if j[0] == r['key'])
+            games['games'][r['key']] = f20_record(job, r)
+            safeio.write_json(P['games'], games)
+            if r.get('log') is not None:
+                append_log(P, r['key'], r['log'])
+            mark = '例外' if r.get('res') is None else ('勝' if r['res'] == 1 else '負')
+            el = (time.time() - t0) / 60
+            print(f"[{base + n}/{tot}] {r['key']} {job[1][:8]}側{mark} {r.get('turns')}手 {r['sec']:.0f}秒 経過{el:.1f}分 "
+                  f"残り約{el / n * (len(todo) - n):.1f}分", flush=True)
+    return n
+
+
+def f20_mini(group, games):
+    gs = set(group)
+    pts = {i: 0.0 for i in group}
+    for g in games['games'].values():
+        if g['res'] is None or g['side0'] not in gs or g['side1'] not in gs:
+            continue
+        r = g['res']
+        pts[g['side0']] += 0.5 if r == 0 else (1.0 if r == 1 else 0.0)
+        pts[g['side1']] += 0.5 if r == 0 else (1.0 if r == -1 else 0.0)
+    return pts
+
+
+def f20_rank(ids, st, games):
+    """勝率↓ → 同率グループ内の直接対決得点↓ → 平均残HP差↓ → id↑。"""
+    rate = lambda i: st[i]['w'] / st[i]['n'] if st[i]['n'] else 0.0
+    avg = lambda i: st[i]['hp'] / st[i]['n'] if st[i]['n'] else 0.0
+    grp = {}
+    for i in ids:
+        grp.setdefault(round(rate(i) * 1e6), []).append(i)
+    out = []
+    for r in sorted(grp, reverse=True):
+        g = grp[r]
+        mp_ = f20_mini(g, games) if len(g) > 1 else {g[0]: 0.0}
+        out += sorted(g, key=lambda i: (-mp_[i], -avg(i), i))
+    return out
+
+
+def _avg_ranks(v):
+    order = sorted(range(len(v)), key=lambda i: -v[i])
+    r = [0.0] * len(v)
+    i = 0
+    while i < len(order):
+        j = i
+        while j + 1 < len(order) and v[order[j + 1]] == v[order[i]]:
+            j += 1
+        for t in range(i, j + 1):
+            r[order[t]] = (i + j) / 2 + 1
+        i = j + 1
+    return r
+
+
+def f20_spearman(x, y):
+    rx, ry = _avg_ranks(x), _avg_ranks(y)
+    mx, my = sum(rx) / len(rx), sum(ry) / len(ry)
+    sx = math.sqrt(sum((p - mx) ** 2 for p in rx))
+    sy = math.sqrt(sum((q - my) ** 2 for q in ry))
+    if not sx or not sy:
+        return None
+    return sum((p - mx) * (q - my) for p, q in zip(rx, ry)) / (sx * sy)
+
+
+def cmd_f20_report(a):
+    P = f20_paths(a.out_dir)
+    plan = load_plan(P)
+    games = f20_load_games(P, plan)
+    st = s3_stats(plan, games)
+    ids = plan['ids']
+    rk = f20_rank(ids, st, games)
+    pos = {i: n for n, i in enumerate(rk, 1)}
+    title = lambda i: (plan['teams'][i].get('title') or i)
+    rate = lambda i: st[i]['w'] / st[i]['n'] if st[i]['n'] else 0.0
+    avg = lambda i: st[i]['hp'] / st[i]['n'] if st[i]['n'] else 0.0
+    gs = list(games['games'].values())
+    nd = sum(1 for g in gs if g['res'] is not None)
+    nj = sum(1 for g in gs if g.get('judged'))
+    nx = sum(1 for g in gs if g['res'] is None)
+    ne = len(plan['edges'])
+    M = {i: {} for i in ids}
+    for i in ids:
+        for g in st[i]['games']:
+            c = M[i].setdefault(g['opp'], [0.0, 0])
+            c[0] += g['score']
+            c[1] += 1
+    L = ['# final20: sched3 で3戦3勝の20構築による総当たり', '']
+    for i, lab in (('R11', 'R11'), (S3_LH, 'リザホーク')):
+        if i in pos:
+            L.append(f"- **{lab}（{i}）の順位: {pos[i]}位 / {len(ids)}**（{st[i]['w']:g}/{st[i]['n']}、勝率 {rate(i) * 100:.0f}%）")
+    L += [f'- 完了 {nd}/{ne}戦、判定決着 {nj}戦、例外 {nx}戦', '',
+          '## 1. ランキング', '',
+          '並び: 勝率↓ → 直接対決（同率グループ内の相互対戦の得点↓、3者以上もミニリーグ）→ 平均残HP差↓ → id↑', '',
+          f'| 順位 | 構築 | 勝/{2 * (len(ids) - 1)} | 勝率 | Wilson 95% | 平均残HP差 | s3成績 |', '|---|---|---|---|---|---|---|']
+    for i in rk:
+        s = st[i]
+        lo, hi = wilson(s['w'], s['n'])
+        s3 = plan['s3'][i]
+        L.append(f"| {pos[i]} | {title(i)[:24]}（{i[:8]}） | {s['w']:g}/{s['n']} | {rate(i) * 100:.0f}% | {lo * 100:.0f}〜{hi * 100:.0f}% | "
+                 f"{avg(i):+.0f} | {s3['w']:g}-{s3['n'] - s3['w']:g}{'' if s3['reason'] == '3/3' else '（補充）'} |")
+    L += ['', '## 2. 勝敗行列（行=自分、セル=その相手への得点 0〜2、列見出し=順位）', '',
+          '| 順位 id | ' + ' | '.join(str(pos[j]) for j in rk) + ' |', '|---|' + '---|' * len(rk)]
+    for i in rk:
+        cells = []
+        for j in rk:
+            if i == j:
+                cells.append('・')
+            else:
+                c = M[i].get(j)
+                cells.append('-' if not c else f'{c[0]:g}')
+        L.append(f'| {pos[i]} {i[:8]} | ' + ' | '.join(cells) + ' |')
+    L += ['', '## 3. 上位5構築の強い相手・弱い相手', '']
+    for i in rk[:5]:
+        strong = [j for j in rk if M[i].get(j) and M[i][j][1] == 2 and M[i][j][0] == 2]
+        weak = [j for j in rk if M[i].get(j) and M[i][j][1] == 2 and M[i][j][0] == 0]
+        note = '0-2'
+        if not weak:
+            weak = [j for j in rk if M[i].get(j) and M[i][j][1] == 2 and 0.5 <= M[i][j][0] <= 1]
+            note = '0.5〜1点'
+        fm = lambda js: '、'.join(f'{pos[j]}位{title(j)[:10]}' for j in js) or 'なし'
+        L.append(f"- {pos[i]}位 {title(i)[:24]}（{i[:8]}）: 強い相手(2-0) {fm(strong)} / 弱い相手({note}) {fm(weak)}")
+    L += ['', '## 4. sched3 との比較', '',
+          '全員 s3 は 3-0（補充を除く）。s3 の相手の強さ（相手の s3 勝率平均）と final20 勝率を並べる。', '',
+          '| 順位 | 構築 | s3 相手の s3 勝率平均 | s3 残HP差 | final20 勝率 |', '|---|---|---|---|---|']
+    for i in rk:
+        s3 = plan['s3'][i]
+        orr = s3.get('opp_rate')
+        L.append(f"| {pos[i]} | {title(i)[:24]}（{i[:8]}） | {'-' if orr is None else f'{orr * 100:.0f}%'} | {s3['hp']:+.0f} | {rate(i) * 100:.0f}% |")
+    sp = f20_spearman([plan['s3'][i]['hp'] for i in ids], [-pos[i] for i in ids])
+    L += ['', f"Spearman 順位相関（s3 残HP差順 vs final20 順位）: {'算出不可' if sp is None else f'{sp:+.2f}'}", '',
+          '## 注意', '',
+          '38戦の Wilson 区間幅は約±15pt。区間が重なる構築は区別できない。選出は固定（ガイド/基本）でブラインド、5手読みAI同士の結果であり実戦の強さそのものではない。']
+    txt = '\n'.join(L) + '\n'
+    os.makedirs(P['dir'], exist_ok=True)
+    with open(P['md'], 'w', encoding='utf-8') as f:
+        f.write(txt)
+    print(txt)
+    print(f"書きました: {P['md']}")
+
+
+def cmd_f20_selftest(a):
+    import tempfile, shutil, random, io
+    ng = []
+
+    def chk(name, ok, info=''):
+        print(('OK ' if ok else 'NG ') + name + (f' {info}' if info and not ok else ''), flush=True)
+        if not ok:
+            ng.append(name)
+    before = _sha_all()
+    S = s3_paths(None)
+    sp3 = json.load(open(S['plan'], encoding='utf-8'))
+    sg3 = json.load(open(S['games'], encoding='utf-8'))
+    st3 = s3_stats(sp3, sg3)
+    # 1
+    ids, rs = f20_pick(st3)
+    full = {i for i, s in st3.items() if s['n'] == 3 and s['w'] == 3}
+    rr, _ = s3_build(None)
+    bad = s3_apply_all({i: rr[i] for i in ids})
+    chk('1 対象20・3/3一致・全apply成功', len(ids) == 20 and set(ids) == full and not bad and S3_LH in ids and set(rs.values()) == {'3/3'}, (len(ids), len(full), bad))
+    # 2
+    fk = lambda n, hp: {'w': n and 3.0, 'n': n, 'hp': hp}
+    fake = {f'a{i:02d}': {'w': 3.0, 'n': 3, 'hp': 100 - i} for i in range(21)}
+    fake.update({f'b{i:02d}': {'w': 2.0, 'n': 3, 'hp': 50 - i} for i in range(5)})
+    p21, r21 = f20_pick(fake)
+    fake19 = {k: v for k, v in fake.items() if k != 'a20' and k != 'a19'}
+    p19, r19 = f20_pick(fake19)
+    chk('2 21個→上位20に切詰め', p21 == [f'a{i:02d}' for i in range(20)] and set(r21.values()) == {'3/3'})
+    chk('2 19個→次点1つ補充', len(p19) == 20 and p19[19] == 'b00' and r19['b00'] == '補充' and sum(v == '3/3' for v in r19.values()) == 19, p19)
+    # 3
+    ed = f20_edges(ids)
+    keys = {e['key'] for e in ed}
+    ok = len(ed) == 380 and len(keys) == 380
+    ok = ok and all(e['seed'] == zlib.crc32(f"f20{e['a']}{e['b']}{e['k']}".encode()) and (e['X'], e['Y']) == ((e['a'], e['b']) if e['k'] % 2 == 0 else (e['b'], e['a'])) for e in ed)
+    ok = ok and len({f"{e['X']}|{e['Y']}" for e in ed}) == 380
+    chk('3 ジョブ380・重複なし・種・左右入替', ok)
+    # 4
+    a0 = ed[0]
+    tp = {'edges': ed, 'sel': {}, 'sel_src': {}}
+    miss = f20_fill_sel(tp, {f"{a0['X']}|{a0['Y']}": {'order': ['x', 'y', 'z'], 'src': 't'}})
+    chk('4 s3 sel にある組はコピー', tp['sel'].get(f"{a0['X']}|{a0['Y']}", {}).get('order') == ['x', 'y', 'z'] and tp['sel_src'] == {f"{a0['X']}|{a0['Y']}": 's3'} and len(miss) == 379, len(miss))
+    # 5 plan/run/report
+    tmp = tempfile.mkdtemp(prefix='f20test_')
+    tmp2 = tempfile.mkdtemp(prefix='f20test2_')
+    old_depth = globals()['S3_DEPTH']
+    try:
+        shutil.copy(S['plan'], tmp)
+        shutil.copy(S['games'], tmp)
+        globals()['S3_DEPTH'] = (1, 1)
+        ns = argparse.Namespace(procs=a.procs, force=False, out_dir=tmp, max_games=2, retry_errors=False, sel_limit=3, jobs_limit=3)
+        plan = cmd_f20_plan(ns)
+        P = f20_paths(tmp)
+        chk('5 plan: 20構築・380戦・depth(1,1)', len(plan['ids']) == 20 and len(plan['edges']) == 380 and plan['depth'] == [1, 1]
+            and all(f"{e['X']}|{e['Y']}" in plan['sel'] for e in plan['edges'][:3]))
+        cmd_f20_run(ns)
+        g1 = json.load(open(P['games'], encoding='utf-8'))
+        chk('5 --max-games 2 で2戦・妥当なJSON', len(g1['games']) == 2 and g1['plan_sig'] == plan['sig'])
+        ns.max_games = 1
+        cmd_f20_run(ns)
+        g2 = json.load(open(P['games'], encoding='utf-8'))
+        chk('5 再実行で3戦・先の2戦は不変（再開）', len(g2['games']) == 3 and all(g2['games'][k] == v for k, v in g1['games'].items()))
+        shutil.copy(P['plan'], tmp2)
+        # 6 report（合成戦績）
+        rnd = random.Random(7)
+        gm = {}
+        for e in plan['edges']:
+            r = rnd.choice([1, -1, 1, -1, 0])
+            gm[e['key']] = {'a': e['a'], 'b': e['b'], 'k': e['k'], 'side0': e['X'], 'side1': e['Y'], 'res': r, 'winner': None, 'judged': rnd.random() < .1,
+                            'turns': 20, 'left': [[['m', 50]] * 3, [['m', 20]] * 3]}
+        P2 = f20_paths(tmp2)
+        safeio.write_json(P2['games'], {'version': F20_VERSION, 'plan_sig': plan['sig'], 'depth': plan['depth'], 'deny': plan['deny'], 'playbook': None, 'games': gm})
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            cmd_f20_report(argparse.Namespace(out_dir=tmp2))
+        t = buf.getvalue()
+        rows = [l for l in t.splitlines() if re.match(r'\| \d+ \S+ \|', l)]
+        chk('6 report: 勝敗行列20行・Wilson・直接対決・380/380', len(rows) == 20 and 'Wilson' in t and '直接対決' in t and '完了 380/380' in t and os.path.exists(P2['md']), len(rows))
+    finally:
+        globals()['S3_DEPTH'] = old_depth
+        shutil.rmtree(tmp, ignore_errors=True)
+        shutil.rmtree(tmp2, ignore_errors=True)
+
+    # 6b 直接対決タイブレーク（合成3者同率）
+    def sg(x, y, r, hb=10):
+        return {'side0': x, 'side1': y, 'res': r, 'left': [[['m', 100 if x == 'B' else hb]], [['m', 100 if y == 'B' else hb]]]}
+    G = []
+    for x, y, rs_ in (('A', 'B', (1, 1)), ('A', 'C', (1, -1)), ('B', 'C', (1, -1)), ('A', 'O', (-1, -1)), ('B', 'O', (1, 1)), ('C', 'O', (1, -1)),
+                      ('P', 'O', (-1, -1))):
+        G += [sg(x, y, r) for r in rs_]
+    pl = {'ids': ['A', 'B', 'C', 'O', 'P']}
+    gms = {'games': {str(i): g for i, g in enumerate(G)}}
+    st = s3_stats(pl, gms)
+    order = f20_rank(pl['ids'], st, gms)
+    chk('6 同率3者は直接対決→HP（A,C,B）', order == ['O', 'A', 'C', 'B', 'P'], order)
+    # 7
+    chk('7 既存ファイル sha256 不変', _sha_all() == before)
+    if ng:
+        print('NG:', ng)
+        raise SystemExit(1)
+    print('final20 selftest 全項目 OK')
+
+
+def cmd_final20(a):
+    {'plan': cmd_f20_plan, 'run': cmd_f20_run, 'report': cmd_f20_report, 'selftest': cmd_f20_selftest}[a.what](a)
+
+
 def main():
     ap = argparse.ArgumentParser()
     sp = ap.add_subparsers(dest='cmd', required=True)
@@ -3810,11 +4219,18 @@ def main():
     p.add_argument('--max-games', type=int, default=0)
     p.add_argument('--retry-errors', action='store_true')
     p.add_argument('--out-dir')
-    for nm in ('run', 'deny', 'adapt', 'counter', 'sched3'):
+    p = sp.add_parser('final20')
+    p.add_argument('what', choices=['plan', 'run', 'report', 'selftest'])
+    p.add_argument('--procs', type=int, default=4)
+    p.add_argument('--force', action='store_true')
+    p.add_argument('--max-games', type=int, default=0)
+    p.add_argument('--retry-errors', action='store_true')
+    p.add_argument('--out-dir')
+    for nm in ('run', 'deny', 'adapt', 'counter', 'sched3', 'final20'):
         sp.choices[nm].add_argument('--no-playbook', action='store_true')
     a = ap.parse_args()
     _PB_FLAG['on'] = not getattr(a, 'no_playbook', False)
-    {'sched3': cmd_sched3, 'playbook': cmd_playbook, 'counter': cmd_counter, 'adapt': cmd_adapt, 'deny': cmd_deny, 'plan': cmd_plan, 'run': cmd_run, 'report': cmd_report, 'selftest': cmd_selftest, 'show': cmd_show}[a.cmd](a)
+    {'final20': cmd_final20, 'sched3': cmd_sched3, 'playbook': cmd_playbook, 'counter': cmd_counter, 'adapt': cmd_adapt, 'deny': cmd_deny, 'plan': cmd_plan, 'run': cmd_run, 'report': cmd_report, 'selftest': cmd_selftest, 'show': cmd_show}[a.cmd](a)
 
 
 if __name__ == '__main__':
