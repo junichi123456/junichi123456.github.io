@@ -492,6 +492,28 @@
 "teams": [
 "1621f25e509eef8b"
 ]
+},
+{
+"nature": "ずぶとい",
+"ap": {
+"hp": 32,
+"def": 32,
+"spa": 1,
+"spd": 1
+},
+"item": "リザードナイトY",
+"moves": [
+"ウェザーボール",
+"ソーラービーム",
+"がんせきふうじ",
+"りゅうのはどう"
+],
+"ability": "もうか",
+"mega": "メガリザードンＹ",
+"mega_ability": "ひでり",
+"teams": [
+"62a1379fa5459b3f"
+]
 }
 ],
 "セグレイブ": [
@@ -1059,7 +1081,8 @@
 "mega_ability": null,
 "teams": [
 "420ff007df57bf6e",
-"2ab0e9d6c4021c97"
+"2ab0e9d6c4021c97",
+"62a1379fa5459b3f"
 ]
 },
 {
@@ -4996,6 +5019,27 @@
 "teams": [
 "def9f56d68b5e52f"
 ]
+},
+{
+"nature": "いじっぱり",
+"ap": {
+"hp": 17,
+"atk": 17,
+"spe": 32
+},
+"item": "ボーマンダナイト",
+"moves": [
+"すてみタックル",
+"じしん",
+"りゅうのまい",
+"はねやすめ"
+],
+"ability": "いかく",
+"mega": "メガボーマンダ",
+"mega_ability": "スカイスキン",
+"teams": [
+"e8ac262d07dc1206"
+]
 }
 ],
 "サーフゴー": [
@@ -5344,6 +5388,28 @@
 "mega_ability": null,
 "teams": [
 "a1166bf1060842df"
+]
+},
+{
+"nature": "ひかえめ",
+"ap": {
+"hp": 27,
+"spa": 17,
+"spd": 10,
+"spe": 12
+},
+"item": "たべのこし",
+"moves": [
+"ゴールドラッシュ",
+"シャドーボール",
+"わるだくみ",
+"じこさいせい"
+],
+"ability": "おうごんのからだ",
+"mega": null,
+"mega_ability": null,
+"teams": [
+"e8ac262d07dc1206"
 ]
 }
 ],
@@ -6228,6 +6294,27 @@
 "mega_ability": null,
 "teams": [
 "5d4b6bf3a759ae18"
+]
+},
+{
+"nature": "いじっぱり",
+"ap": {
+"atk": 32,
+"def": 2,
+"spe": 32
+},
+"item": "きあいのタスキ",
+"moves": [
+"トリックフラワー",
+"はたきおとす",
+"トリプルアクセル",
+"ふいうち"
+],
+"ability": "しんりょく",
+"mega": null,
+"mega_ability": null,
+"teams": [
+"62a1379fa5459b3f"
 ]
 }
 ],
@@ -7593,7 +7680,30 @@
 "mega": null,
 "mega_ability": null,
 "teams": [
-"1621f25e509eef8b"
+"1621f25e509eef8b",
+"62a1379fa5459b3f"
+]
+},
+{
+"nature": "わんぱく",
+"ap": {
+"hp": 30,
+"def": 17,
+"spd": 17,
+"spe": 2
+},
+"item": "ハバンのみ",
+"moves": [
+"じしん",
+"ドラゴンテール",
+"がんせきふうじ",
+"ステルスロック"
+],
+"ability": "さめはだ",
+"mega": null,
+"mega_ability": null,
+"teams": [
+"e8ac262d07dc1206"
 ]
 }
 ],
@@ -7998,7 +8108,8 @@
 "mega": "メガグソクムシャ",
 "mega_ability": "かたいツメ",
 "teams": [
-"a5a7ffa32a198ed3"
+"a5a7ffa32a198ed3",
+"e8ac262d07dc1206"
 ]
 },
 {
@@ -9316,6 +9427,28 @@
 "mega_ability": null,
 "teams": [
 "9d403568e53b0d54"
+]
+},
+{
+"nature": "ずぶとい",
+"ap": {
+"hp": 32,
+"def": 10,
+"spa": 1,
+"spd": 23
+},
+"item": "たべのこし",
+"moves": [
+"なみのり",
+"じこさいせい",
+"くろいきり",
+"どくどく"
+],
+"ability": "さいせいりょく",
+"mega": null,
+"mega_ability": null,
+"teams": [
+"62a1379fa5459b3f"
 ]
 }
 ],
@@ -10988,6 +11121,28 @@
 "teams": [
 "6b5813bfddb4c425"
 ]
+},
+{
+"nature": "ひかえめ",
+"ap": {
+"hp": 10,
+"def": 6,
+"spa": 32,
+"spe": 18
+},
+"item": "フラエッテナイト",
+"moves": [
+"ムーンフォース",
+"めいそう",
+"みがわり",
+"ドレインキッス"
+],
+"ability": "フラワーベール",
+"mega": "メガフラエッテ",
+"mega_ability": "フェアリーオーラ",
+"teams": [
+"62a1379fa5459b3f"
+]
 }
 ],
 "ゴリランダー": [
@@ -11880,6 +12035,27 @@
 "mega_ability": null,
 "teams": [
 "627a5e6626679e36"
+]
+},
+{
+"nature": "わんぱく",
+"ap": {
+"hp": 32,
+"def": 32,
+"spd": 2
+},
+"item": "ひかりのねんど",
+"moves": [
+"ソウルクラッシュ",
+"リフレクター",
+"ひかりのかべ",
+"すてゼリフ"
+],
+"ability": "いたずらごころ",
+"mega": null,
+"mega_ability": null,
+"teams": [
+"e8ac262d07dc1206"
 ]
 }
 ],
@@ -16081,6 +16257,27 @@
 "mega_ability": null,
 "teams": [
 "def9f56d68b5e52f"
+]
+},
+{
+"nature": "おくびょう",
+"ap": {
+"hp": 30,
+"def": 17,
+"spe": 19
+},
+"item": "オボンのみ",
+"moves": [
+"ほのおのまい",
+"むしのさざめき",
+"ギガドレイン",
+"ちょうのまい"
+],
+"ability": "ほのおのからだ",
+"mega": null,
+"mega_ability": null,
+"teams": [
+"e8ac262d07dc1206"
 ]
 }
 ],
