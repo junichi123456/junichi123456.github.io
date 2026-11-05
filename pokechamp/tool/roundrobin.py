@@ -3341,6 +3341,406 @@ def cmd_pb_selftest(a):
         raise SystemExit(1)
 
 
+# ================================================================ sched3（SPEC_SCHED3.md）
+S3_VERSION = 's3v1'
+S3_DEPTH = (5, 5)
+S3_DENY = (True, True)
+S3_LH = 'db0baa2843d2bd4b'
+
+
+def s3_paths(out_dir=None):
+    d = out_dir or DEF_OUT
+    return {'dir': d, 'plan': os.path.join(d, 's3_plan.json'), 'games': os.path.join(d, 's3_games.json'),
+            'logs': os.path.join(d, 's3_logs.jsonl'), 'md': os.path.join(d, 's3_report.md')}
+
+
+def s3_order(ids):
+    """強さに依らない並び: sha256("s3"+id) の昇順。"""
+    return sorted(ids, key=lambda i: hashlib.sha256(('s3' + i).encode()).hexdigest())
+
+
+def s3_graph(N):
+    """位置の辺リスト（環→対角→追加）。assert で自己辺・重複辺なしを確認。"""
+    if N % 2 == 0 and N < 4 or N % 2 == 1 and N < 7:
+        raise SystemExit(f'構築数 {N} は少なすぎます（偶数は4以上、奇数は7以上）')
+    m = N // 2
+    ed = [(i, (i + 1) % N) for i in range(N)]
+    ed += [(i, i + m) for i in range(m)]
+    if N % 2:
+        ed.append((N - 1, m - 1))
+    seen = set()
+    for x, y in ed:
+        assert x != y, ('自己辺', x)
+        k = (min(x, y), max(x, y))
+        assert k not in seen, ('重複辺', k)
+        seen.add(k)
+    return ed
+
+
+def s3_edges(ids):
+    """ids（ハッシュ順）から辺 dict のリストを作る。"""
+    out = []
+    for e, (x, y) in enumerate(s3_graph(len(ids))):
+        a, b = pair_ab(ids[x], ids[y])
+        X, Y = (a, b) if e % 2 == 0 else (b, a)
+        out.append({'e': e, 'a': a, 'b': b, 'X': X, 'Y': Y, 'seed': zlib.crc32(f's3{a}{b}'.encode()), 'key': f's3:{a}|{b}'})
+    return out
+
+
+def s3_degree(ids, edges):
+    d = {i: 0 for i in ids}
+    for ed in edges:
+        d[ed['a']] += 1
+        d[ed['b']] += 1
+    return d
+
+
+def s3_build(test_ids=None):
+    """cmd_plan と同じ構築の組み立て（rr_team→sort_key、R11）。返り値 (rr, orig)。"""
+    rts = [(rr_team(t), t) for t in raw_teams() if len(t['team']) == 6 and all(B._base(m['name']) in POKE for m in t['team'])]
+    rts.sort(key=lambda x: sort_key(x[0]))
+    orig = {rt['id']: t for rt, t in rts}
+    rr = {rt['id']: rt for rt, _ in rts}
+    rr['R11'] = r11_team()
+    if test_ids:
+        want = test_ids.split(',')
+        miss = [i for i in want if i not in rr]
+        if miss:
+            raise SystemExit(f'--test-ids に未知の構築: {miss}')
+        rr = {i: rr[i] for i in want}
+    return rr, orig
+
+
+def s3_apply_all(rr):
+    """全構築に rr_apply を試す。失敗は (id, 理由) のリスト。"""
+    bad = []
+    for i, rt in list(rr.items()):
+        try:
+            rr_apply(rt)
+        except Exception as ex:
+            bad.append({'id': i, 'reason': f'{type(ex).__name__}: {ex}'[:200]})
+    return bad
+
+
+def s3_sec_avg(games):
+    ss = [g['sec'] for g in (games or {}).get('games', {}).values() if g.get('sec') and g.get('res') is not None]
+    return (sum(ss) / len(ss), True) if ss else (65.0, False)
+
+
+def s3_estimate(plan, games, procs):
+    ne = len(plan['edges'])
+    gm = (games or {}).get('games', {})
+    left = sum(1 for ed in plan['edges'] if not (gm.get(ed['key']) and gm[ed['key']]['res'] is not None))
+    sec, real = s3_sec_avg(games)
+    nsel = sum(1 for ed in plan['edges'] for k in (f"{ed['X']}|{ed['Y']}", f"{ed['Y']}|{ed['X']}") if k not in plan['sel'])
+    g_min = left * sec / procs / 60
+    s_min = nsel * 7 / procs / 60
+    return (f"時間見積り: 残り{left}/{ne}戦 × {sec:.0f}秒({'実測平均' if real else '想定50〜80秒の中央'}) / {procs}プロセス ≈ {g_min:.0f}分"
+            f"（想定幅 {left * 50 / procs / 60:.0f}〜{left * 80 / procs / 60:.0f}分）、未計算の選出 {nsel}件 ≈ {s_min:.0f}分")
+
+
+def cmd_s3_plan(a):
+    P = s3_paths(a.out_dir)
+    os.makedirs(P['dir'], exist_ok=True)
+    rr, orig = s3_build(getattr(a, 'test_ids', None))
+    excluded = s3_apply_all(rr)
+    for x in excluded:
+        rr.pop(x['id'], None)
+    ids = s3_order(list(rr))
+    edges = s3_edges(ids)
+    sig = hashlib.sha256((json.dumps([rr[i] for i in sorted(ids)], ensure_ascii=False, sort_keys=True) + S3_VERSION
+                          + f'{S3_DEPTH[0]},{S3_DEPTH[1]}').encode()).hexdigest()
+    plan = None
+    if os.path.exists(P['plan']):
+        old = json.load(open(P['plan'], encoding='utf-8'))
+        if old.get('sig') == sig:
+            plan = old
+        elif not a.force:
+            raise SystemExit('s3_plan.json の sig が違います（--force で退避して作り直し）')
+        else:
+            os.replace(P['plan'], P['plan'][:-5] + time.strftime('.%Y%m%d_%H%M%S.json'))
+    deg = s3_degree(ids, edges)
+    extra4 = next((i for i, n in deg.items() if n == 4), None)
+    if plan is None:
+        plan = {'version': S3_VERSION, 'created': time.strftime('%Y-%m-%d %H:%M:%S'), 'depth': list(S3_DEPTH), 'deny': list(S3_DENY),
+                'sig': sig, 'ids': ids, 'excluded': excluded, 'teams': {}, 'edges': edges, 'degree': deg, 'extra4': extra4, 'sel': {}}
+    if len(plan['teams']) < len(rr):
+        t0 = time.time()
+        print(f'静的スコア計算（{len(rr)}構築、{a.procs}プロセス）...', flush=True)
+        _rr_init_main(rr)
+        with make_pool(a.procs, rr) as pool:
+            ws = dict(pool.imap_unordered(_job_static, list(rr)))
+        ov = json.load(open(GUIDE_OVERRIDES, encoding='utf-8')) if os.path.exists(GUIDE_OVERRIDES) else None
+        _worker_init(rr)
+        for i, rt in rr.items():
+            info = build_candidates(rt, orig.get(i), ws[i], ov)
+            plan['teams'][i] = {**rt, **info, 'static': ws[i]}
+        print(f'  {time.time() - t0:.0f}秒', flush=True)
+        save_plan(P, plan)
+    pairs = []
+    for ed in edges:
+        for x, y in ((ed['X'], ed['Y']), (ed['Y'], ed['X'])):
+            if f'{x}|{y}' not in plan['sel'] and (x, y) not in pairs:
+                pairs.append((x, y))
+    cmd_select(P, plan, 0, a.procs, pairs)
+    save_plan(P, plan)
+    dist = collections.Counter(plan['degree'].values())
+    print(f"N={len(plan['ids'])}、総試合数 {len(plan['edges'])}、次数分布 {dict(sorted(dist.items()))}、extra4={plan['extra4']}、除外 {len(plan['excluded'])}件")
+    print(s3_estimate(plan, None, a.procs))
+    return plan
+
+
+def _job_s3(a):
+    key, X, Y, selX, selY, seed, deny, depth = a
+    t0 = time.time()
+    try:
+        rr_apply(_TEAMS[X])
+        r = R.blind_play((None, Y, selX, selY, seed, depth[0], depth[1], False, None, False, (X,), deny) + _pb_args(X, Y))
+    except Exception:
+        r = {'res': None, 'error': traceback.format_exc()[-800:]}
+    r['key'] = key
+    r['sec'] = round(time.time() - t0, 2)
+    return r
+
+
+def s3_record(job, r):
+    key, X, Y, selX, selY, seed, deny, depth = job
+    a, b = key[3:].split('|')
+    res = r.get('res')
+    w = None if res is None else (X if res == 1 else (Y if res == -1 else None))
+    rec = {'a': a, 'b': b, 'side0': X, 'side1': Y, 'sel0': selX, 'sel1': selY, 'seed': seed, 'res': res, 'winner': w,
+           'judged': r.get('judged'), 'turns': r.get('turns'), 'left': r.get('left'), 'faints': r.get('faints'),
+           'sec': r.get('sec'), 'error': r.get('error')}
+    if r.get('deny_stats') is not None:
+        rec['deny_stats'] = r['deny_stats']
+    if r.get('pb'):
+        rec['pb'] = r['pb']
+    return rec
+
+
+def s3_jobs(plan):
+    out = []
+    for ed in plan['edges']:
+        X, Y = ed['X'], ed['Y']
+        if f'{X}|{Y}' not in plan['sel'] or f'{Y}|{X}' not in plan['sel']:
+            raise SystemExit(f'選出がありません: {X}|{Y}（plan を再実行してください）')
+        out.append((ed['key'], X, Y, plan['sel'][f'{X}|{Y}']['order'], plan['sel'][f'{Y}|{X}']['order'], ed['seed'],
+                    tuple(plan.get('deny', S3_DENY)), tuple(plan.get('depth', S3_DEPTH))))
+    return out
+
+
+def s3_load_games(P, plan):
+    if os.path.exists(P['games']):
+        g = json.load(open(P['games'], encoding='utf-8'))
+        if g.get('plan_sig') != plan['sig']:
+            raise SystemExit('s3_games.json の plan_sig が s3_plan.json と違います')
+        return g
+    return {'version': S3_VERSION, 'plan_sig': plan['sig'], 'depth': plan['depth'], 'deny': plan['deny'],
+            'playbook': _pb_sig(), 'games': {}}
+
+
+def cmd_s3_run(a):
+    P = s3_paths(a.out_dir)
+    plan = load_plan(P)
+    games = s3_load_games(P, plan)
+    pb_guard(games)
+    jobs = s3_jobs(plan)
+    todo = [j for j in jobs if not done_game(games, j[0], a.retry_errors)]
+    tot = len(jobs)
+    base = tot - len(todo)
+    if a.max_games:
+        todo = todo[:a.max_games]
+    print(f'全体 {tot}戦、済み {base}、今回 {len(todo)}戦', flush=True)
+    print(s3_estimate(plan, games, a.procs), flush=True)
+    if not todo:
+        return 0
+    t0 = time.time()
+    n = 0
+    with make_pool(a.procs, plan['teams']) as pool:
+        for r in pool.imap_unordered(_job_s3, todo, chunksize=1):
+            n += 1
+            job = next(j for j in todo if j[0] == r['key'])
+            games['games'][r['key']] = s3_record(job, r)
+            safeio.write_json(P['games'], games)
+            if r.get('log') is not None:
+                append_log(P, r['key'], r['log'])
+            mark = '例外' if r.get('res') is None else ('勝' if r['res'] == 1 else '負')
+            el = (time.time() - t0) / 60
+            rem = el / n * (len(todo) - n)
+            print(f"[{base + n}/{tot}] {r['key']} {job[1][:8]}側{mark} {r.get('turns')}手 {r['sec']:.0f}秒 経過{el:.1f}分 残り約{rem:.1f}分", flush=True)
+    return n
+
+
+def s3_stats(plan, games):
+    st = {i: {'w': 0.0, 'n': 0, 'exc': 0, 'hp': 0, 'games': []} for i in plan['ids']}
+    for key, g in games['games'].items():
+        for s in (0, 1):
+            i = g[f'side{s}']
+            if i not in st:
+                continue
+            o = g[f'side{1 - s}']
+            if g['res'] is None:
+                st[i]['exc'] += 1
+                continue
+            sc = 0.5 if g['res'] == 0 else (1.0 if (g['res'] == 1) == (s == 0) else 0.0)
+            lf = g.get('left')
+            hp = (sum(h for _, h in lf[s]) - sum(h for _, h in lf[1 - s])) if lf else 0
+            st[i]['w'] += sc
+            st[i]['n'] += 1
+            st[i]['hp'] += hp
+            st[i]['games'].append({'opp': o, 'first': s == 0, 'score': sc, 'turns': g.get('turns'), 'judged': bool(g.get('judged'))})
+    return st
+
+
+def s3_rating(plan, i):
+    t = plan['teams'].get(i) or {}
+    if i == 'R11' or (t.get('final') is None and t.get('peak') is None):
+        return None
+    return max(t.get('final') or 0, t.get('peak') or 0)
+
+
+def cmd_s3_report(a):
+    P = s3_paths(a.out_dir)
+    plan = load_plan(P)
+    games = s3_load_games(P, plan)
+    st = s3_stats(plan, games)
+    rate = lambda i: st[i]['w'] / st[i]['n'] if st[i]['n'] else 0.0
+    rk = sorted(plan['ids'], key=lambda i: (-rate(i), -(st[i]['hp'] / st[i]['n'] if st[i]['n'] else 0),
+                                           s3_rating(plan, i) is None, -(s3_rating(plan, i) or 0), i))
+    pos = {i: n for n, i in enumerate(rk, 1)}
+    title = lambda i: (plan['teams'][i].get('title') or i)
+    ties = lambda i: sum(1 for j in plan['ids'] if st[j]['n'] and abs(rate(j) - rate(i)) < 1e-9)
+    gs = list(games['games'].values())
+    nj = sum(1 for g in gs if g.get('judged'))
+    nx = sum(1 for g in gs if g['res'] is None)
+    N, ne = len(plan['ids']), len(plan['edges'])
+    L = ['# sched3: 各構築3戦・5手読みブラインドテスト', '']
+    for i, lab in (('R11', 'R11'), (S3_LH, 'リザホーク')):
+        if i in pos:
+            L.append(f"- **{lab}（{i}）の順位: {pos[i]}位 / {N}**（勝率 {rate(i) * 100:.0f}%・{st[i]['n']}戦、同率の構築 {ties(i)}件）")
+        else:
+            L.append(f'- {lab}: 対象外')
+    L += ['', '## 1. 前提', '',
+          f"- 構築数 N={N}、総戦数 {ne}（完了 {sum(1 for g in gs if g['res'] is not None)}）、深さ {tuple(plan['depth'])}、ケア deny {tuple(plan['deny'])}、"
+          f"プレイブック {'オン' if games.get('playbook') else 'オフ'}、ブラインド",
+          '- 並び: sha256("s3"+id) 昇順（rating 非使用）。対戦: 環＋対角（奇数は追加1本）。種 = crc32("s3{a}{b}")、先後は辺番号の偶奇で入れ替え',
+          f"- 除外: {plan['excluded'] or 'なし'}",
+          f"- 次数4の構築（extra4）: {plan['extra4'] or 'なし'}" + (f"（{title(plan['extra4'])}）" if plan['extra4'] else ''),
+          f'- 判定決着 {nj}戦、例外 {nx}戦', '',
+          '## 2. ランキング', '', '| 順位 | 構築 | 勝/戦 | 勝率 | 95%区間 | 平均残HP差 | rating | 例外 |', '|---|---|---|---|---|---|---|---|']
+    for i in rk:
+        s = st[i]
+        lo, hi = wilson(s['w'], s['n'])
+        r = s3_rating(plan, i)
+        L.append(f"| {pos[i]} | {title(i)[:24]}（{i[:8]}） | {s['w']:g}/{s['n']} | {rate(i) * 100:.0f}% | {lo * 100:.0f}〜{hi * 100:.0f}% | "
+                 f"{(s['hp'] / s['n'] if s['n'] else 0):+.0f} | {'-' if r is None else r} | {s['exc']} |")
+    L += ['', '## 3. 上位10の対戦内訳', '']
+    for i in rk[:10]:
+        L.append(f"- {pos[i]}位 {title(i)[:24]}（{i[:8]}）")
+        for g in st[i]['games']:
+            L.append(f"  - vs {title(g['opp'])[:10]} {'先' if g['first'] else '後'} {'勝' if g['score'] == 1 else ('分' if g['score'] == 0.5 else '負')} "
+                     f"{g['turns']}手 {'判定' if g['judged'] else '決着'}")
+    L += ['', '## 注意', '',
+          '1構築3戦のみで誤差が非常に大きい（3戦全勝でも95%区間は約44〜100%）。上位は偶然の可能性が高く、順位は参考値。確かめるには上位同士の追加対戦が必要。']
+    txt = '\n'.join(L) + '\n'
+    os.makedirs(P['dir'], exist_ok=True)
+    with open(P['md'], 'w', encoding='utf-8') as f:
+        f.write(txt)
+    print(txt)
+    print(f"書きました: {P['md']}")
+
+
+def cmd_s3_selftest(a):
+    import tempfile, shutil, random
+    ng = []
+
+    def chk(name, ok, info=''):
+        print(('OK ' if ok else 'NG ') + name + (f' {info}' if info and not ok else ''), flush=True)
+        if not ok:
+            ng.append(name)
+    before = _sha_all()
+    # 1. グラフ
+    ok = True
+    for N in [n for n in range(4, 41) if n != 5]:   # N=5 は仕様上エラー（奇数は7以上）
+        ids = [f't{i:03d}' for i in range(N)]
+        try:
+            hs = s3_order(ids)
+            ed = s3_edges(hs)
+            deg = s3_degree(hs, ed)
+            dv = collections.Counter(deg.values())
+            cond = len(ed) == -(-3 * N // 2) and (dv == {3: N} if N % 2 == 0 else dv == {3: N - 1, 4: 1})
+            ok = ok and cond and ed == s3_edges(s3_order(ids))
+            sh = ids[:]
+            random.Random(N).shuffle(sh)
+            ok = ok and {(e['a'], e['b']) for e in ed} == {(e['a'], e['b']) for e in s3_edges(s3_order(sh))}
+            if not cond:
+                print('  NG graph N=', N, dict(dv), len(ed))
+        except AssertionError as ex:
+            ok = False
+            print('  assert', N, ex)
+    chk('1 グラフ N=4..40', ok)
+    for N in (1, 2, 3, 5):
+        try:
+            s3_graph(N)
+            chk(f'1b N={N} はエラー', False)
+        except SystemExit:
+            pass
+    chk('1b 小さすぎる N はエラー', True)
+    # 2. 全構築 apply
+    rr, _ = s3_build(None)
+    bad = s3_apply_all(rr)
+    for x in bad:
+        print('  apply 失敗', x['id'], x['reason'])
+    chk(f'2 全構築 apply（{len(rr)}構築）', not bad)
+    # 3. 小規模実戦
+    tmp = tempfile.mkdtemp(prefix='s3test_')
+    old_depth = globals()['S3_DEPTH']
+    try:
+        globals()['S3_DEPTH'] = (1, 1)
+        base = [i for i in rr if i != 'R11'][:3] + ['R11']
+        ns = argparse.Namespace(procs=2, force=False, test_ids=','.join(base), out_dir=tmp, max_games=2, retry_errors=False)
+        plan = cmd_s3_plan(ns)
+        chk('3 plan: 4構築・6戦・全員次数3・除外0', len(plan['ids']) == 4 and len(plan['edges']) == 6 and set(plan['degree'].values()) == {3}
+            and not plan['excluded'] and len(plan['sel']) == 12 and plan['depth'] == [1, 1], (len(plan['sel']), plan['depth']))
+        P = s3_paths(tmp)
+        cmd_s3_run(ns)
+        g1 = json.load(open(P['games'], encoding='utf-8'))
+        chk('3 run --max-games 2 で2戦', len(g1['games']) == 2, len(g1['games']))
+        ns.max_games = 0
+        cmd_s3_run(ns)
+        g2 = json.load(open(P['games'], encoding='utf-8'))
+        chk('3 再実行で6戦・先の2戦は不変（再開）', len(g2['games']) == 6 and all(g2['games'][k] == v for k, v in g1['games'].items()))
+        ok = True
+        for ed in plan['edges']:
+            g = g2['games'][ed['key']]
+            ok = ok and g['seed'] == zlib.crc32(f"s3{ed['a']}{ed['b']}".encode()) and (g['side0'], g['side1']) == (
+                (ed['a'], ed['b']) if ed['e'] % 2 == 0 else (ed['b'], ed['a']))
+        chk('3 種=crc32・左右が偶奇で入れ替わり', ok)
+        ns.retry_errors = True
+        cmd_s3_run(ns)
+        chk('3 plan 再実行で選出再利用', cmd_s3_plan(ns)['sel'] == plan['sel'])
+        # 4. report
+        import io
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            cmd_s3_report(argparse.Namespace(out_dir=tmp))
+        t = buf.getvalue()
+        chk('4 report に R11 行と注意書き', 'R11' in t and '順位は参考値' in t and os.path.exists(P['md']))
+    finally:
+        globals()['S3_DEPTH'] = old_depth
+        shutil.rmtree(tmp, ignore_errors=True)
+    # 5. sha
+    chk('5 既存ファイル sha256 不変', _sha_all() == before)
+    if ng:
+        print('NG:', ng)
+        raise SystemExit(1)
+    print('sched3 selftest 全項目 OK')
+
+
+def cmd_sched3(a):
+    {'plan': cmd_s3_plan, 'run': cmd_s3_run, 'report': cmd_s3_report, 'selftest': cmd_s3_selftest}[a.what](a)
+
+
 def main():
     ap = argparse.ArgumentParser()
     sp = ap.add_subparsers(dest='cmd', required=True)
@@ -3402,11 +3802,19 @@ def main():
     p.add_argument('--games', type=int, default=4)
     p.add_argument('--procs', type=int, default=4)
     p.add_argument('--out-dir')
-    for nm in ('run', 'deny', 'adapt', 'counter'):
+    p = sp.add_parser('sched3')
+    p.add_argument('what', choices=['plan', 'run', 'report', 'selftest'])
+    p.add_argument('--procs', type=int, default=4)
+    p.add_argument('--force', action='store_true')
+    p.add_argument('--test-ids')
+    p.add_argument('--max-games', type=int, default=0)
+    p.add_argument('--retry-errors', action='store_true')
+    p.add_argument('--out-dir')
+    for nm in ('run', 'deny', 'adapt', 'counter', 'sched3'):
         sp.choices[nm].add_argument('--no-playbook', action='store_true')
     a = ap.parse_args()
     _PB_FLAG['on'] = not getattr(a, 'no_playbook', False)
-    {'playbook': cmd_playbook, 'counter': cmd_counter, 'adapt': cmd_adapt, 'deny': cmd_deny, 'plan': cmd_plan, 'run': cmd_run, 'report': cmd_report, 'selftest': cmd_selftest, 'show': cmd_show}[a.cmd](a)
+    {'sched3': cmd_sched3, 'playbook': cmd_playbook, 'counter': cmd_counter, 'adapt': cmd_adapt, 'deny': cmd_deny, 'plan': cmd_plan, 'run': cmd_run, 'report': cmd_report, 'selftest': cmd_selftest, 'show': cmd_show}[a.cmd](a)
 
 
 if __name__ == '__main__':
