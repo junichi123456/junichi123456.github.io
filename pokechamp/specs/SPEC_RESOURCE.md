@@ -7,15 +7,20 @@
 
 ## 1. 「軸が全相手を倒せる」条件 `axis_cover(st, i, axis)`（search.py に新規）
 - **軸**: `RES_AXIS = {'M8_6': ('リザードン', 'ガブリアス')}`（roundrobin.py に置く。照合は `Mon.name`＝元種族名）。M8_6 では軸以外の自分の手持ち（ミミッキュ・イダイトウ・ドドゲザン・シャワーズのうち選出された者）が**取り巻き**。
-- **入力の局面**: その側が読みに使う belief 局面（相手の型は `refine.belief` の推測。真の型は見ない＝ブラインド条件を守る）。
-- **相手の候補 C**: belief 局面の相手側で、まだ倒れていない全員（見えていない選出も含む。従来の探索と同じ情報量）。
+- **ブラインド条件**: 相手の**実際の選出は使わない**（実戦では見えない）。使ってよいのは、相手の6体の種族（見せ合いで見える）、場に出た相手、見えた技、倒れた相手だけ。型は推測。
+- **相手の6体 `opp6`**: roundrobin 側で相手構築 `teams[X]['mons']`（rr_team 由来、s3_plan/rr_plan の6体）の `species`（メガは元種族名と mega の有無）を、M8_6 と反対側の6体として blind_play に渡す（§3 の args[13]）。
+- **候補の型**: `refine._templates(opp6, B.opp_sets, 相手側)` で6体分の推測型を作る（t_opp と同じ使用率ベース・同じ `_OPP_CACHE.clear()`／`match_known` 無効化の手順の中で、t_opp の直後に1回だけ作る）。**場に出たことがある**相手（blind_play で側ごとに「一度でも場に出た索引」の集合を持つ）は、belief 局面のその個体（現在HP・状態・見えた技入りの推測型）を使う。まだ場に出ていない相手は、選出に入っていても入っていなくても、`_templates` の型・満タンHP・ランク0 で扱う（＝選出の有無が条件に漏れない）。
+- **相手の候補 C（残り人数の数え方）**: `opp6` から「倒れた相手（選出3体のうち倒れたもの。種族名で照合）」を除いた全員。**未出の選出外3体は常に候補に残る**。場に出た相手の数は C を減らさない（倒れた分だけ減る）。
 - **1対1判定 `beats(A, c)`**（ロールアウトはしない。damage 推定だけ）:
-  - `_swap_view` で A と c を場に出した複製を作り、`est` で各自の最善技の1発の割合（最も出やすい乱数）を出す。安全側に A の与ダメ×0.9、c の与ダメ×1.1。
+  - 局面の複製で、A を自分の場に、c（局面に無い未出の候補なら推測型の Mon の複製）を相手の場の個体と差し替えて置き（`_swap_view` 相当。元の局面は変えない）、`est` で各自の最善技の1発の割合（最も出やすい乱数）を出す。安全側に A の与ダメ×0.9、c の与ダメ×1.1。
   - `nA = ceil(c の残りHP割合 / dA)`、`nC = ceil(A の残りHP割合 / dC)`（ダメージ0なら∞）。きあいのタスキ（満タン）・ばけのかわ（未発動）なら `nA += 1`。
   - 勝ち = `nA <= 3` かつ（`nA < nC`、または `nA == nC` で A が素早さで真に先手）。ランクは場に出ている者の現在値のみ、控えは0。積み技・先制技は考えない（保守側）。
   - **メガ**: 軸は2体ともメガ枠でメガは1回だけ。メガ未使用なら「A をメガ・B を通常」と「A を通常・B をメガ」の2通りを評価し、**どちらか一方の割り当てで全候補が覆えれば成立**。メガ済みなら現在の姿で評価。メガ姿は belief と同じ方法（form=mega_form、stats=None、ability=form.ability）で複製に作る。
-- **成立条件**: 生きている軸が1体以上 ∧ 生きている取り巻きが1体以上 ∧ 全ての c ∈ C が、生きている軸の**少なくとも1体**に `beats` される。軸が1体だけでも、その1体で全員に勝てれば成立。**一部にしか勝てない場合は不成立**（取り巻きを温存＝従来どおり）。C が空なら不成立（勝負は付いている）。
-- **コスト**: 判定は**根（1手の決定）で1回だけ**。結果は `(軸/候補の id, 姿, HP を1/16に丸めた値, 持ち物, busted, mega_used)` をキーにした プロセス内 dict にキャッシュ（上限 20000 件、超えたら clear）。
+- **成立条件（既定＝厳格版。ユーザーの原則どおり）**: 生きている軸が1体以上 ∧ 生きている取り巻きが1体以上 ∧ **C の全員**が、生きている軸の**少なくとも1体**に `beats` される。軸が1体だけでも、その1体で全員に勝てれば成立。**一部にしか勝てない場合は不成立**（取り巻きを温存＝従来どおり）。C が空なら不成立。
+- **緩和版（`--resource-loose` のときだけ）**: 厳格版が不成立でも、次の両方を満たせば成立。(i) C のうち軸に `beats` される割合が **80%以上**（6体→5体、5体→4体、4体→4体、3体→3体＝実質厳格）。(ii) 軸が勝てない残りの各相手 u について、生きている取り巻き s のどれかが `beats(s, u)`（＝その取り巻きの得意相手）。このとき、u を担当する取り巻き（勝てる s のうち HP が最も高い1体）を**保護対象**として割引から外す（他の取り巻きだけ割り引く）。保護対象しか取り巻きがいなければ不成立。
+- **想定される発動の少なさ**: 厳格版では未出の選出外3体が満タンで残り続けるため、相手構築に軸の受け（例: 水・フェアリー・氷の耐久型）が1体でもいれば試合を通して成立しない。本番の発動率（成立した決定が1回以上ある試合の割合）が **10%未満**なら、report に「緩和版での再検証を推奨」と書く（緩和版の実行はユーザー判断）。
+- **コスト**: 判定は**根（1手の決定）で1回だけ**（探索木の葉では呼ばない）。1回の判定は「軸2体 × 姿（通常/メガ）≤2 × 候補≤6 ＝ 最大24組」の `beats`（＋緩和版は取り巻き≤2 × 勝てない相手≤1）。`beats` の結果は `(攻め手の名前, 姿, HP を1/16に丸めた値, ランク, 受け手の名前, 姿, HP 1/16, 持ち物, busted, 天候/場)` をキーにしたプロセス内 dict にキャッシュ（上限 20000 件、超えたら clear）。未出の相手は満タン固定なので、同じ試合内でほぼ毎回キャッシュに当たる。1試合あたり決定 ≈10回 × 最大24組の `est` は、深さ5の木（1決定あたり数千〜数万ノード）に比べて無視できる大きさで、**1.3倍以内に収まる見込み**。
+- **1.3倍を超えた場合の代案**（受け入れ条件5で超えたときだけ実装者が順に試す）: ① 軸ごと・相手ごとのメモ化を試合単位（軸のHP 1/8丸め）に粗くする。② それでも超えたら、候補を「opp6 のうち、倒れた相手を除いて相手側選出の出現率（`plan['sel1']` の相手の選出履歴ではなく、s3/rr の使用率）上位4体＋場に出た相手」に絞る。②は条件が成立しやすくなる（出にくい2体を見ない）代わりに、厳格版の「全相手」から外れるので、SPEC 外の変更として report に明記し、Opus の承認を得る。
 
 ## 2. 行動への反映（評価の割引＋根の交代ペナルティ）
 - `evaluate_resource(st, r, sats, w)`: `evaluate(st)` を呼び、resource 側 r の取り巻き（`sats`=索引の集合）について `adj = (1 - w) * Σ _mon_value(st, r, m, active)` を r の価値から引く（r=0 なら `v - adj`、r=1 なら `v + adj`）。勝敗の ±100 はそのまま。
@@ -26,31 +31,35 @@
 - **deny・プレイブックとの順序**: ① 根で axis_cover を判定 → ② 成立なら deny の有無に応じて「通常／deny の木」を**葉の評価だけ `evaluate_resource` に替えた複製関数**で読む（prune・相手の応手選び・DENY_PESS/PESS・deny_threat は従来と同じ）→ ③ 根に交代ペナルティ → ④ プレイブックはその後（`_rk` が deny の values を使う場合は resource 補正後の values）。M8_6 側はプレイブック対象外なので本番では④は起きない。
 
 ## 3. 実装箇所
-- **search.py**: `RES_W`, `RES_SW_PEN`, `axis_cover`, `evaluate_resource`, `_lookahead_res(st, i, depth, k_self, k_opp, info, deny, axis)` を追加。入口は `lookahead_action(..., mode=None, info=None, res=None)`。`res` が None なら従来と1文字も同じ経路。`res` が軸名タプルなら `_lookahead_res` へ（不成立なら中で従来関数に委譲）。info に `{'res_on': bool, 'res_sats': [...]}` を入れる。既存関数（evaluate, _lookahead_deny, lookahead_action の従来部分, prune, action_scores）は**変更しない**。
-- **refine.blind_play**: `args[13] = (res0, res1)`（各 None か軸名タプル。省略・偽なら従来）。`args[12]` が無いときは呼び出し側が None で埋める。`deny[i]` と併用可（`mode='deny'` と `res=...` を同時に渡す）。rules（args[8]）・ctx 経路との併用は ValueError。戻り値に、resource を使った側だけ `res_stats: {side: {'turns': 決定数, 'on': 成立した決定数, 'first': 最初に成立したターン, 'sw_sat_on': 成立時に取り巻きから交代した回数, 'sat_faint_on': 成立時の決定の直後のターンに倒れた取り巻き数}}` を足す（resource 無しの戻り値は従来と同一キー）。
-- **roundrobin.py m7**: `--resource` フラグ（`--party` が RES_AXIS に無ければ SystemExit）。
-  - 接頭辞: `--resource` 時の既定 prefix は `{party.lower()}r` → `m8_6r_plan.json`, `m8_6r_games.json`, `m8_6r_logs.jsonl`（logs/refine/）、md は **`logs/M8_6rRUN.md`**（`m7_paths` に md 名の上書き引数を足す。従来呼び出しの結果は不変）。
+- **search.py**: `RES_W`, `RES_SW_PEN`, `axis_cover`, `evaluate_resource`, `_lookahead_res(st, i, depth, k_self, k_opp, info, deny, axis)` を追加。入口は `lookahead_action(..., mode=None, info=None, res=None)`。`res` が None なら従来と1文字も同じ経路。`res` が dict（下記）なら `_lookahead_res` へ（不成立なら中で従来関数に委譲）。info に `{'res_on': bool, 'res_sats': [...]}` を入れる。既存関数（evaluate, _lookahead_deny, lookahead_action の従来部分, prune, action_scores）は**変更しない**。
+- **search.py の入口の追記**: `res` は軸名タプルではなく dict `{'axis': (...), 'cand': [候補 Mon …], 'loose': bool}`（cand は blind_play が毎決定で組み立てる＝§1 の C。search 側は相手の選出を見ない）。
+- **refine.blind_play**: `args[13] = (res0, res1)`。各要素は None か `{'axis': 軸名タプル, 'opp6': 反対側6体の種族名リスト, 'loose': bool}`（省略・偽なら従来）。blind_play は opp6 の推測型を t_opp の直後に作り、「場に出た索引」の集合を側ごとに持ち、毎決定で C を組み立てて search に渡す。`args[12]` が無いときは呼び出し側が None で埋める。`deny[i]` と併用可（`mode='deny'` と `res=...` を同時に渡す）。rules（args[8]）・ctx 経路との併用は ValueError。戻り値に、resource を使った側だけ `res_stats: {side: {'turns': 決定数, 'on': 成立した決定数, 'first': 最初に成立したターン, 'sw_sat_on': 成立時に取り巻きから交代した回数, 'sat_faint_on': 成立時の決定の直後のターンに倒れた取り巻き数}}` を足す（resource 無しの戻り値は従来と同一キー）。
+- **roundrobin.py m7**: `--resource` と `--resource-loose`（後者は前者を含む）フラグ（`--party` が RES_AXIS に無ければ SystemExit）。opp6 は `teams[X]['mons']` の `species`（6体）から作る。
+  - 接頭辞: `--resource` 時の既定 prefix は `{party.lower()}r` → `m8_6r_plan.json`, `m8_6r_games.json`, `m8_6r_logs.jsonl`（logs/refine/）、md は **`logs/M8_6rRUN.md`**。`--resource-loose` は `m8_6rl_*`／`logs/M8_6rlRUN.md`（`m7_paths` に md 名の上書き引数を足す。従来呼び出しの結果は不変）。
   - plan: `m8_6_plan.json` があり s3_sig が一致すれば、その内容（相手50・sel1・sig）を複製して `resource: {'axis': [...]}` を足して保存（相手と選出の前提を同一にする）。無ければ従来の plan 計算。
   - run: job に res を足し（`_job_adapt` の a[9]、省略時 None）、M8_6 の座っている側だけ軸タプル、相手側は None（相手は従来の deny＋プレイブック）。深さ (5,5)・seed=`m7_seed(X,k)`・適応選出・deny 両側は既存と同じ。games ヘッダに `resource` を記録し、違う設定の games への追記は SystemExit。`ad_record` は `res_stats` があるときだけ記録（従来レコードは不変）。
   - report: 従来の表に加えて「既存 M8_6 との比較」節（§4②）。
 
 ## 4. 検証
 - **① 単体（tool/test_resource.py、数秒〜数分）**: M8_6 と既存の蓄積構築から局面を作る。
-  - (a) 軸が全候補に勝つ局面（例: メガリザX＋ガブ 生存・相手残り2体が低HP/炎弱点）で `axis_cover` が True、相手に軸の受けを1体足すと False。
+  - (a) 軸が全候補に勝つ局面（相手の opp6 を、軸が全員に勝てる6体にした人工構築）で `axis_cover` が True。opp6 に軸の受けを1体入れると False（その受けが**選出外で未出**でも False になること＝選出が漏れないこと）。倒れた相手が C から外れること。
+  - (a') ブラインド確認: 同じ局面で相手の実際の選出だけを入れ替えても、場に出た相手が同じなら判定結果が同じ。
+  - (a'') 緩和版: 6体中5体に軸が勝ち、残り1体に取り巻きが勝つ → loose で True・厳格で False、その取り巻きが保護対象として割引から外れる。
   - (b) 軸が1体だけ残り全員に勝つ → True／メガ済みでもう一方の軸の非メガでは勝てない → 割り当て評価が正しい。
   - (c) 成立局面で場の取り巻きが不利対面のとき、従来は交代・resource は居座り/攻撃に**手が変わる**例を1つ以上示す。不成立局面では `lookahead_action(res=axis)` と従来の手・info が一致。
   - (d) blind_play を同じ seed で args[13] 無し／(None,None) で2戦ずつ回し、res・turns・log・faints が既存コードと完全一致。
-- **② 本番（Opus/ユーザーが実行）**: `python3 roundrobin.py m7 plan --party M8_6 --resource` → `m7 run --party M8_6 --resource --procs N` → `m7 report --party M8_6 --resource`。M8_6rRUN.md に:
+- **② 本番（Opus/ユーザーが実行）**: `python3 roundrobin.py m7 plan --party M8_6 --resource` → `m7 run --party M8_6 --resource --procs N` → `m7 report --party M8_6 --resource`（緩和版は同じ手順で `--resource-loose`、比較対象は既存 M8_6 と厳格版の両方）。M8_6rRUN.md に:
   - 全体勝率と95%区間 vs 既存 62.4%（312/500）。500戦の標準誤差 ±2.2%、**±4% 以内の差は誤差扱い**（同じ seed の対応比較で符号検定/McNemar も併記）。
   - 相手ごと10戦の勝数差（既存 vs resource）、同じ (相手,k) で 勝→負・負→勝 の件数。
   - 取り巻きの瀕死数/試合（`faints` の main_side 側で軸以外）と、resource 発動あり/なし別の勝率・試合数。
   - 発動率（on≥1 の試合の割合）、成立した決定の割合、取り巻きを切った回数（sat_faint_on 合計）、成立時の取り巻きからの交代回数。
   - 平均秒/試合の比（既存 57.6 秒）。
+  - 相手構築ごとの「試合中に一度でも成立したか」の一覧（厳格版で成立し得ない構築＝軸の受けを持つ構築が分かる）。発動率 10%未満なら緩和版の推奨を書く。
   - **同条件の注意**: seed・深さ・相手・plan は同じだが、適応選出は同じ run 内の過去の勝敗を使うので、結果が1つ変わるとその相手の以降の選出が変わり得る。選出（sel0/sel1）が既存と一致した試合数を出し、一致試合だけの比較も載せる。乱数は seed 固定でも分岐が変わればその後は別系列になる。
 
 ## 5. 受け入れ条件
 1. `python3 -m py_compile search.py refine.py roundrobin.py test_resource.py` が通る。
-2. `python3 test_resource.py` が全項目 OK（§4① a〜d）。(d) で従来モードの結果が完全一致。
+2. `python3 test_resource.py` が全項目 OK（§4① a, a', a'', b〜d）。(d) で従来モードの結果が完全一致。
 3. 既存の `python3 roundrobin.py m7 selftest --quick` が従来どおり通る。
 4. 既存結果ファイルの sha256 が実装前後で不変: `logs/refine/m8_6_*.json(l)`, `logs/M8_6RUN.md`, 他の `logs/refine/*.json*`, `logs/*RUN.md`（実装前に一覧を保存して比較）。新規 `m8_6r_*` / `M8_6rRUN.md` は作られていない（本番未実行）。
 5. 時間比: M8_6 の同じ seed 2戦（深さ5）で resource 有り/無しの所要時間比 ≤ 1.3（test_resource.py に任意項目 `--timing` として置く）。
