@@ -7134,7 +7134,120 @@
      "ヒスイヌメルゴン"
     ],
     "notes": "ミミッキュは選出率1位。2メガ選出時はリザードン側でメガを切れない。",
-    "date": "2026-10-16"
+    "date": "2026-10-16",
+    "play": [
+     {
+      "id": "p1",
+      "who": "メガムクホーク",
+      "when": {
+       "bad_matchup": true,
+       "foe_hp": [
+        0.0,
+        1.0
+       ]
+      },
+      "do": {
+       "move": [
+        "いのちがけ"
+       ]
+      },
+      "origin": "article",
+      "note": "不利対面はいのちがけで1匹持っていく",
+      "src": "不利対面ではいのちがけで特攻していく"
+     },
+     {
+      "id": "p2",
+      "who": "メガムクホーク",
+      "when": {
+       "bad_matchup": false
+      },
+      "do": {
+       "best_damage": true
+      },
+      "origin": "user",
+      "note": "まず一番削れる技",
+      "src": ""
+     },
+     {
+      "id": "p3",
+      "who": "ミミッキュ",
+      "when": [
+       {
+        "trickroom": false,
+        "foe_boosted": true
+       },
+       {
+        "trickroom": false,
+        "foe_faster": true
+       }
+      ],
+      "do": {
+       "move": [
+        "トリックルーム"
+       ]
+      },
+      "max": 2,
+      "origin": "article",
+      "note": "高速物理・積み技にトリルで切り返す",
+      "src": "高速物理や積み技、イエッサン絡みにトリルで切り返す枠"
+     },
+     {
+      "id": "p4",
+      "who": "ミミッキュ",
+      "when": {
+       "trickroom": true,
+       "my_hp": [
+        0.0,
+        0.5
+       ],
+       "bench_alive": [
+        "イダイトウ"
+       ],
+       "after": [
+        "p3"
+       ]
+      },
+      "do": {
+       "move": [
+        "のろい"
+       ]
+      },
+      "max": 1,
+      "origin": "user",
+      "note": "トリル後はのろいで退場してイダイトウへ",
+      "src": ""
+     },
+     {
+      "id": "r1",
+      "who": "*",
+      "phase": "replace",
+      "when": {
+       "trickroom": true
+      },
+      "do": {
+       "switch": [
+        "イダイトウ"
+       ]
+      },
+      "origin": "article",
+      "note": "トリル下はイダイトウを出す",
+      "src": "トリル下で高火力を押し付けられるイダイトウ"
+     },
+     {
+      "id": "p5",
+      "who": "イダイトウ",
+      "when": {
+       "trickroom": true
+      },
+      "do": {
+       "best_damage": true
+      },
+      "origin": "user",
+      "note": "トリル下で全抜きを狙う",
+      "src": ""
+     }
+    ],
+    "play_date": "2026-11-05"
    },
    "regulation": "mc"
   },

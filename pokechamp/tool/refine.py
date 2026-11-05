@@ -549,6 +549,10 @@ def blind_play(args):
     deny = args[11] if len(args) > 11 and args[11] else (False, False)   # (side 0 / side 1 reads in deny mode, SPEC_DENY.md)
     if deny[0] and args[8:9] and args[8] is not None:
         raise ValueError('deny and rules cannot be combined')
+    play0, play1 = (args[12] if len(args) > 12 and args[12] else (None, None))   # (side 0 / side 1 rule list or None, SPEC_PLAYBOOK.md)
+    if play0 and rules is not None:
+        raise ValueError('playbook and rules cannot be combined')
+    pb0 = pb1 = None
     import collections
     dinfo = [{}, {}]
     dstats = [collections.Counter(), collections.Counter()]
@@ -580,23 +584,50 @@ def blind_play(args):
             chooser = policy.make_chooser(ctx)
         else:
             ctx, chooser = None, S.chooser
+        if play0 or play1:
+            import playbook as PBK
+            if play0:
+                pb0 = PBK.PB(play0, 0, excl[0] if excl else 'side0')
+                chooser = pb0.chooser(chooser)
+            if play1:
+                pb1 = PBK.PB(play1, 1, kid)
+                chooser = pb1.chooser(chooser)
+
+            def _rk(bs, i, depth):
+                def fn(ex=()):
+                    if deny[i]:
+                        out = [(v, a) for a, v in (dinfo[i].get('values') or [])]
+                        for a in ex:
+                            m = next((v for v, x in out if x == ('m', a[1], True)), None)
+                            if m is not None:
+                                out.append((m, a))
+                        out.sort(key=lambda x: -x[0])
+                        return out
+                    return PBK.ranked(bs, i, depth, extra=ex)
+                return fn
         for tn in range(30):
             if st.winner is not None:
                 break
             if ctx is None:
+                bst0 = (st if know else belief(st, 1, t_opp, seen[1])) if pb0 is not None else None
                 if deny[0]:
                     dinfo[0] = {}
-                    a0 = S.lookahead_action(st if know else belief(st, 1, t_opp, seen[1]), 0, my_depth, mode='deny', info=dinfo[0])
+                    a0 = S.lookahead_action(bst0 if pb0 is not None else (st if know else belief(st, 1, t_opp, seen[1])), 0, my_depth, mode='deny', info=dinfo[0])
                 else:
-                    a0 = S.lookahead_action(st if know else belief(st, 1, t_opp, seen[1]), 0, my_depth)
+                    a0 = S.lookahead_action(bst0 if pb0 is not None else (st if know else belief(st, 1, t_opp, seen[1])), 0, my_depth)
+                if pb0 is not None:
+                    a0, _rid = pb0.decide(st, bst0, 0, a0, _rk(bst0, 0, my_depth), seen, tn + 1)
             else:
                 bst = st if know else belief(st, 1, t_opp, seen[1])
                 a0, _rid = policy.choose(st, bst, policy.ranked_root(bst, my_depth), ctx)
+            bst1 = belief(st, 0, t_me, seen[0]) if pb1 is not None else None
             if deny[1]:
                 dinfo[1] = {}
-                a1 = S.lookahead_action(belief(st, 0, t_me, seen[0]), 1, opp_depth, mode='deny', info=dinfo[1])
+                a1 = S.lookahead_action(bst1 if pb1 is not None else belief(st, 0, t_me, seen[0]), 1, opp_depth, mode='deny', info=dinfo[1])
             else:
-                a1 = S.lookahead_action(belief(st, 0, t_me, seen[0]), 1, opp_depth)
+                a1 = S.lookahead_action(bst1 if pb1 is not None else belief(st, 0, t_me, seen[0]), 1, opp_depth)
+            if pb1 is not None:
+                a1, _rid = pb1.decide(st, bst1, 1, a1, _rk(bst1, 1, opp_depth), seen, tn + 1)
             for _s in (0, 1):
                 if deny[_s] and dinfo[_s].get('threats_root'):
                     dturns[_s] += 1
@@ -634,6 +665,7 @@ def blind_play(args):
         return {'res': res, 'log': log, 'faints': faints, 'left': left, 'fired': list(ctx.fired) if ctx else [],
                 'rocks_turn': rocks_turn, 'tox': tox, 'turns': len(log), 'judged': judged,
                 **({'mv': mv} if trace else {}),
+                **({'pb': {str(_s): _p.stats() for _s, _p in ((0, pb0), (1, pb1)) if _p is not None}} if (pb0 or pb1) else {}),
                 **({'deny_stats': {_s: {'turns': dturns[_s], 'kinds': dict(dstats[_s])} for _s in (0, 1) if deny[_s]}}
                    if deny[0] or deny[1] else {})}
     except Exception:

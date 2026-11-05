@@ -2,7 +2,10 @@
 
   python study.py [--max N] [--dry]          記事の取り込み（シミュレーションはしない）
   python study.py pending                    ガイド未記入の構築（id・題名・本文ファイル）を列挙
-  python study.py note <id> <json-file>      ガイドを known_teams.json に書き込む
+  python study.py note <id> <json-file>      ガイドを known_teams.json に書き込む（play があれば検証。不合格は無保存で exit 2）
+  python study.py play <id> <json-file>      guide.play（動き方の規則。{"play":[...]} か規則リスト）だけを書き換える
+  python study.py pending-play [--n 15]      guide があり play が未記入の構築を、レート順に最大 n 件
+  python study.py check-play                 全構築の guide.play を検証（不合格があれば exit 1）
 
 1. Reads the newest team articles (https://pokesol.app/?tab=new&category=team, newest first).
 2. Keeps singles articles under our rules (current regulation per data/regulation.json, any season) whose article states a final or reached
@@ -231,7 +234,22 @@ def pending():
     return [t for t in data if not t.get('guide') and os.path.exists(os.path.join(TEXT_D, t['id'] + '.txt'))]
 
 
-GUIDE_KEYS = ('type', 'core', 'plan', 'picks', 'heavy', 'notes')
+GUIDE_KEYS = ('type', 'core', 'plan', 'picks', 'heavy', 'notes', 'play')
+
+
+def article_text(tid):
+    p = os.path.join(TEXT_D, tid + '.txt')
+    return open(p, encoding='utf-8').read() if os.path.exists(p) else None
+
+
+def _check(t, play):
+    import playbook
+    errs = playbook.validate(play, t['team'], article_text(t['id']))
+    if errs:
+        print(f"play 不合格 {t['id']}:")
+        for e in errs:
+            print('  -', e)
+        sys.exit(2)
 
 
 def note(tid, path):
@@ -240,10 +258,63 @@ def note(tid, path):
     g = {k: g[k] for k in GUIDE_KEYS if k in g}
     data = json.load(open(prep.KNOWN_P, encoding='utf-8'))
     t = next(x for x in data['teams'] if x['id'] == tid)
+    if 'play' in g:
+        _check(t, g['play'])
+        g['play_date'] = now().strftime('%Y-%m-%d')
+    elif 'play' in (t.get('guide') or {}):
+        g['play'] = t['guide']['play']
+        if 'play_date' in t['guide']:
+            g['play_date'] = t['guide']['play_date']
     g['date'] = now().strftime('%Y-%m-%d')
     t['guide'] = g
     json.dump(data, open(prep.KNOWN_P, 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
     report()
+
+
+def set_play(tid, path):
+    """guide.play と play_date だけを書き換える（他の guide キー・date は不変）。"""
+    play = json.load(open(path, encoding='utf-8'))
+    if isinstance(play, dict):
+        play = play.get('play')
+    data = json.load(open(prep.KNOWN_P, encoding='utf-8'))
+    t = next(x for x in data['teams'] if x['id'] == tid)
+    if not t.get('guide'):
+        print('guide がありません（先に note）:', tid)
+        sys.exit(2)
+    _check(t, play)
+    t['guide']['play'] = play
+    t['guide']['play_date'] = now().strftime('%Y-%m-%d')
+    json.dump(data, open(prep.KNOWN_P, 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
+    report()
+
+
+def _rank_key(t):
+    return ((t.get('rating') or {}).get('rank') or 10 ** 6,
+            -max((t.get('rating') or {}).get('final') or 0, (t.get('rating') or {}).get('peak') or 0))
+
+
+def pending_play():
+    data = json.load(open(prep.KNOWN_P, encoding='utf-8'))['teams']
+    rows = [t for t in data if t.get('guide') and 'play' not in t['guide'] and os.path.exists(os.path.join(TEXT_D, t['id'] + '.txt'))]
+    rows.sort(key=_rank_key)
+    return rows
+
+
+def check_play():
+    import playbook
+    bad = 0
+    for t in json.load(open(prep.KNOWN_P, encoding='utf-8'))['teams']:
+        g = t.get('guide') or {}
+        if 'play' not in g:
+            continue
+        errs = playbook.validate(g['play'], t['team'], article_text(t['id']))
+        if errs:
+            bad += 1
+            print(f"不合格 {t['id']} {t['title'][:30]}")
+            for e in errs:
+                print('  -', e)
+    print('check-play:', 'OK' if not bad else f'不合格 {bad} 件')
+    return bad
 
 
 ARTSETS_P = os.path.join(HERE, 'data', 'article_sets.json')
@@ -286,8 +357,7 @@ def build_article_sets(teams_extra=()):
 def report():
     data = json.load(open(prep.KNOWN_P, encoding='utf-8'))
     rows = [t for t in data['teams'] if t.get('guide')]
-    rows.sort(key=lambda t: ((t.get('rating') or {}).get('rank') or 10 ** 6,
-                             -max((t.get('rating') or {}).get('final') or 0, (t.get('rating') or {}).get('peak') or 0)))
+    rows.sort(key=_rank_key)
     L = ['# 新着構築の記録（study.py が自動生成）', '',
          'pokesol の新着構築記事（シングル・現行レギュレーション（data/regulation.json）・シーズン不問・最終/到達レート2000以上。レートの記載がない場合は最終1000位以内）の、',
          '構築の型・運用・選出基準の記録です。対戦はシミュレーションしていません。',
@@ -305,6 +375,9 @@ def report():
             L.append(f"- 重い相手: {'、'.join(g['heavy'])}")
         if g.get('notes'):
             L.append(f"- 注意: {g['notes']}")
+        if g.get('play'):
+            L.append('- 動き方:')
+            L += ['  - ' + p['note'] + ('（ユーザー実戦）' if p.get('origin') == 'user' else '') for p in g['play']]
         L.append('')
     open(REPORT_P, 'w', encoding='utf-8').write('\n'.join(L) + '\n')
 
@@ -350,6 +423,18 @@ def main():
     if a[:1] == ['note']:
         note(a[1], a[2])
         return
+    if a[:1] == ['play']:
+        set_play(a[1], a[2])
+        return
+    if a[:1] == ['pending-play']:
+        n = int(a[a.index('--n') + 1]) if '--n' in a else 15
+        rows = pending_play()
+        for t in rows[:n]:
+            print(t['id'], t['title'], os.path.join(TEXT_D, t['id'] + '.txt'))
+        print(f'残り {len(rows)} 件')
+        return
+    if a[:1] == ['check-play']:
+        sys.exit(1 if check_play() else 0)
     cands, targets = candidates()
     print(f'{len(cands)} articles (regulation {regulation.current()}, seasons {targets})', flush=True)
     data = json.load(open(prep.KNOWN_P, encoding='utf-8'))

@@ -153,10 +153,43 @@ def _rr_init(rr_teams):
     _INIT['done'] = True
 
 
-def _worker_init(teams):
-    global _TEAMS
+_PB = {}                                   # ワーカーの {構築id: 規則リスト}（SPEC_PLAYBOOK.md）。空なら従来どおり
+_PB_ONLY = [None]
+_PB_FLAG = {'on': True, 'only': None}      # main が --no-playbook で書き換える
+
+
+def _worker_init(teams, pb_on=True, pb_only=None):
+    global _TEAMS, _PB
     _TEAMS = teams
     _rr_init(teams)
+    import playbook
+    _PB = playbook.load_all() if pb_on else {}
+    _PB_ONLY[0] = pb_only
+
+
+def _pb_args(s0, s1):
+    """blind_play の args に足す末尾（deny, (play0, play1)）。プレイブックが無ければ ()（＝従来の args のまま）。"""
+    if not _PB:
+        return ()
+    only = _PB_ONLY[0]
+    p0 = _PB.get(s0) if only is None or s0 == only else None
+    p1 = _PB.get(s1) if only is None or s1 == only else None
+    return ((p0, p1),) if (p0 or p1) else ()
+
+
+def _pb_sig():
+    if not _PB_FLAG['on']:
+        return None
+    import playbook
+    return playbook.play_sig(playbook.load_all())
+
+
+def pb_guard(g):
+    """既存の結果ファイルの playbook 署名が今回と違えば止まる（キーが無い＝None）。"""
+    old, now = g.get('playbook'), _pb_sig()
+    if old != now:
+        raise SystemExit(f'既存の結果は playbook={old}。--no-playbook で続行するか --out-dir で別フォルダに出力してください')
+    g['playbook'] = now
 
 
 # ---------------------------------------------------------------- ガイドの読み取り (4)
@@ -581,7 +614,8 @@ def _job_game(a):
     t0 = time.time()
     try:
         rr_apply(_TEAMS[X])
-        r = R.blind_play((None, Y, selX, selY, seed, DEPTH[0], DEPTH[1], False, None, False, (X,)))
+        pa = _pb_args(X, Y)
+        r = R.blind_play((None, Y, selX, selY, seed, DEPTH[0], DEPTH[1], False, None, False, (X,)) + (((False, False),) + pa if pa else ()))
     except Exception:
         r = {'res': None, 'error': traceback.format_exc()[-800:]}
     r['key'] = key
@@ -589,9 +623,10 @@ def _job_game(a):
     return r
 
 
-def make_pool(procs, teams):
+def make_pool(procs, teams, pb_on=None, pb_only=None):
     ctx = mp.get_context('fork' if hasattr(os, 'fork') else 'spawn')
-    return ctx.Pool(procs, initializer=_worker_init, initargs=(teams,))
+    return ctx.Pool(procs, initializer=_worker_init, initargs=(teams, _PB_FLAG['on'] if pb_on is None else pb_on,
+                                                              _PB_FLAG['only'] if pb_only is None else pb_only))
 
 
 def game_record(job, r, rematch):
@@ -601,7 +636,7 @@ def game_record(job, r, rematch):
     w = None if res is None else (X if res == 1 else (Y if res == -1 else None))
     return {'a': a, 'b': b, 'k': int(k), 'side0': X, 'side1': Y, 'sel0': selX, 'sel1': selY, 'seed': seed, 'res': res, 'winner': w,
             'judged': r.get('judged'), 'turns': r.get('turns'), 'left': r.get('left'), 'faints': r.get('faints'),
-            'sec': r.get('sec'), 'error': r.get('error'), 'rematch': rematch}
+            'sec': r.get('sec'), 'error': r.get('error'), 'rematch': rematch, **({'pb': r['pb']} if r.get('pb') else {})}
 
 
 # ---------------------------------------------------------------- ファイル
@@ -622,7 +657,7 @@ def load_games(P, sig):
         if g.get('plan_sig') != sig:
             raise SystemExit('rr_games.json の plan_sig が rr_plan.json と違います')
         return g
-    return {'version': RR_VERSION, 'plan_sig': sig, 'depth': list(DEPTH), 'games': {}}
+    return {'version': RR_VERSION, 'plan_sig': sig, 'depth': list(DEPTH), 'games': {}, 'playbook': _pb_sig()}
 
 
 def save_games(P, g):
@@ -921,6 +956,7 @@ def cmd_run(a):
     P = paths(a.out_dir)
     plan = load_plan(P)
     games = load_games(P, plan['sig'])
+    pb_guard(games)
     t_start = time.time()
     budget = a.max_games if a.max_games else 10 ** 9
     maxt = plan.get('max_tier', 1)
@@ -1315,7 +1351,7 @@ def _job_deny(a):
     t0 = time.time()
     try:
         rr_apply(_TEAMS[X])
-        r = R.blind_play((None, Y, selX, selY, seed, DEPTH[0], DEPTH[1], False, None, False, (X,), deny))
+        r = R.blind_play((None, Y, selX, selY, seed, DEPTH[0], DEPTH[1], False, None, False, (X,), deny) + _pb_args(X, Y))
     except Exception:
         r = {'res': None, 'error': traceback.format_exc()[-800:]}
     r['key'] = key
@@ -1333,6 +1369,8 @@ def deny_record(job, r):
            'sec': r.get('sec'), 'error': r.get('error'), 'rematch': False, 'deny': list(deny)}
     if r.get('deny_stats') is not None:
         rec['deny_stats'] = r['deny_stats']
+    if r.get('pb'):
+        rec['pb'] = r['pb']
     return rec
 
 
@@ -1342,7 +1380,7 @@ def load_dgames(PD, sig):
         if g.get('plan_sig') != sig:
             raise SystemExit('rr_deny_games.json の plan_sig が rr_plan.json と違います')
         return g
-    return {'version': RR_VERSION, 'plan_sig': sig, 'depth': list(DEPTH), 'mode': 'deny', 'games': {}}
+    return {'version': RR_VERSION, 'plan_sig': sig, 'depth': list(DEPTH), 'mode': 'deny', 'games': {}, 'playbook': _pb_sig()}
 
 
 def _mk_job(plan, key, a, b, k, deny):
@@ -1417,6 +1455,7 @@ def cmd_deny_run(a, full=False):
     plan = load_plan(paths(None))
     PD = deny_paths(a.out_dir)
     games = load_dgames(PD, plan['sig'])
+    pb_guard(games)
     if full:
         run_deny_jobs(PD, plan, games, deny_jobs_full(plan), a.procs, a.retry_errors, a.max_games, 'full ')
         return
@@ -1975,7 +2014,7 @@ def _job_adapt(a):
         o1, w1 = _AD_SELECT(s1, s0, h1)
         sec_sel = round(time.time() - t0, 2)
         rr_apply(_TEAMS[s0])
-        r = _AD_PLAY((None, s1, o0, o1, ad_seed(X, k), DEPTH[0], DEPTH[1], False, None, False, (s0,), (True, True)))
+        r = _AD_PLAY((None, s1, o0, o1, ad_seed(X, k), DEPTH[0], DEPTH[1], False, None, False, (s0,), (True, True)) + _pb_args(s0, s1))
     except Exception:
         sec_sel = round(time.time() - t0, 2)
         r = {'res': None, 'error': traceback.format_exc()[-800:]}
@@ -2058,7 +2097,7 @@ def ad_load_games(P, sig):
         if g.get('plan_sig') != sig:
             raise SystemExit('ad_games.json の plan_sig が ad_plan.json と違います')
         return g
-    return {'version': AD_VERSION, 'plan_sig': sig, 'main': None, 'depth': list(DEPTH), 'deny': [True, True], 'games': {}}
+    return {'version': AD_VERSION, 'plan_sig': sig, 'main': None, 'depth': list(DEPTH), 'deny': [True, True], 'games': {}, 'playbook': _pb_sig()}
 
 
 def ad_hist(games, X, A, upto, L):
@@ -2083,6 +2122,8 @@ def ad_record(job, r, L):
            'why0': r.get('why0'), 'why1': r.get('why1'), 'sec_sel': r.get('sec_sel')}
     if r.get('deny_stats') is not None:
         rec['deny_stats'] = r['deny_stats']
+    if r.get('pb'):
+        rec['pb'] = r['pb']
     return rec
 
 
@@ -2094,6 +2135,7 @@ def cmd_adapt_run(a):
         raise SystemExit('rr_plan.json の sig が ad_plan.json と違います')
     L, opps, G = plan['main'], plan['opponents'], plan['games_per_pair']
     games = ad_load_games(P, plan['sig'])
+    pb_guard(games)
     games['main'] = L
     _AD['sel1'] = plan['sel1']
     gm = games['games']
@@ -2527,7 +2569,7 @@ def _job_ct(a):
     t0 = time.time()
     try:
         rr_apply(_TEAMS[s0])
-        r = _CT_PLAY((None, s1, o0, o1, ct_seed(X, sel, k), DEPTH[0], DEPTH[1], False, None, False, (s0,), (True, True)))
+        r = _CT_PLAY((None, s1, o0, o1, ct_seed(X, sel, k), DEPTH[0], DEPTH[1], False, None, False, (s0,), (True, True)) + _pb_args(s0, s1))
     except Exception:
         r = {'res': None, 'error': traceback.format_exc()[-800:]}
     r['key'] = key
@@ -2547,6 +2589,8 @@ def ct_record(job, r, L):
         rec['deny_stats'] = r['deny_stats']
     if r.get('echo') is not None:
         rec['echo'] = r['echo']
+    if r.get('pb'):
+        rec['pb'] = r['pb']
     return rec
 
 
@@ -2562,7 +2606,7 @@ def ct_load_games(P, sig):
         if g.get('plan_sig') != sig:
             raise SystemExit('ct_games.json の plan_sig が ct_plan.json と違います')
         return g
-    return {'version': CT_VERSION, 'plan_sig': sig, 'games': {}}
+    return {'version': CT_VERSION, 'plan_sig': sig, 'games': {}, 'playbook': _pb_sig()}
 
 
 def cmd_counter_plan(a):
@@ -2656,6 +2700,7 @@ def cmd_counter_run(a):
     rp = load_plan(paths(None))
     L, opps = plan['main'], plan['opps']
     G = ct_load_games(P, plan['sig'])
+    pb_guard(G)
     gm = G['games']
     cands = plan['candidates']
     active, n_disp, n_done = {}, 0, 0
@@ -2923,6 +2968,379 @@ def cmd_counter(a):
     {'plan': cmd_counter_plan, 'run': cmd_counter_run, 'report': cmd_counter_report, 'selftest': cmd_counter_selftest}[a.what](a)
 
 
+# ---------------------------------------------------------------- playbook (SPEC_PLAYBOOK.md)
+PB_AB_LIST = ('rr_games.json', 'rr_deny_games.json', 'ad_games.json', 'ct_games.json', 'pb_ab_games.json')
+PB_LH = 'db0baa2843d2bd4b'
+PB_AB_OUT = os.path.join(DEF_OUT, 'pb_ab')
+
+
+def pb_collect(files):
+    """files: [games.json のパス]。{(構築, 規則id): 集計}。pb を持つ記録だけ。"""
+    import playbook
+    plays = playbook.load_all()
+    st = collections.defaultdict(lambda: {'fires': 0, 'gf': 0, 'wf': 0.0, 'gn': 0, 'wn': 0.0, 'rej': collections.Counter(), 'games': 0})
+    for fp in files:
+        if not os.path.exists(fp):
+            continue
+        d = json.load(open(fp, encoding='utf-8'))
+        for g in d.get('games', {}).values():
+            if not g.get('pb') or g.get('res') is None:
+                continue
+            for sd in ('0', '1'):
+                pbs = g['pb'].get(sd)
+                if not pbs:
+                    continue
+                team = g['side0'] if sd == '0' else g['side1']
+                sc = 0.5 if g['res'] == 0 else (1.0 if (g['res'] == 1) == (sd == '0') else 0.0)
+                sel = {B._base(x) for x in ((g.get('sel0') if sd == '0' else g.get('sel1')) or [])}
+                for r in plays.get(team, []):
+                    if r.get('phase', 'turn') == 'turn' and r['who'] != '*' and B._base(r['who']) not in sel:
+                        continue
+                    a = st[(team, r['id'])]
+                    a['games'] += 1
+                    u = pbs['uses'].get(r['id'], 0)
+                    if u:
+                        a['fires'] += u
+                        a['gf'] += 1
+                        a['wf'] += sc
+                    else:
+                        a['gn'] += 1
+                        a['wn'] += sc
+                for rej in pbs.get('rejected', []):
+                    st[(team, rej[1])]['rej'][rej[2]] += 1
+    return st
+
+
+def pb_table(st):
+    pct = lambda w, n: f'{w / n * 100:.0f}% ({w:g}/{n})' if n else '-'
+    L = ['| 構築 | 規則 | 発動回数 | 発動した試合 | その勝率 | 発動しなかった試合 | その勝率 | rejected |', '|---|---|---|---|---|---|---|---|']
+    for (team, rid), a in sorted(st.items()):
+        L.append(f"| {team[:8]} | {rid} | {a['fires']} | {a['gf']} | {pct(a['wf'], a['gf'])} | {a['gn']} | {pct(a['wn'], a['gn'])} | "
+                 f"{', '.join(f'{k}:{v}' for k, v in sorted(a['rej'].items())) or '-'} |")
+    return L
+
+
+def cmd_pb_report(a):
+    d = a.out_dir or DEF_OUT
+    st = pb_collect([os.path.join(d, f) for f in PB_AB_LIST])
+    L = ['# プレイブック発動率（playbook report）', '', f'集計元: {d}', ''] + (pb_table(st) if st else ['pb を持つ記録がありません。'])
+    open(os.path.join(d, 'pb_report.md'), 'w', encoding='utf-8').write('\n'.join(L) + '\n')
+    print('\n'.join(L))
+
+
+def _job_ab(a):
+    key, X, Y, selX, selY, seed, use_pb = a
+    t0 = time.time()
+    try:
+        rr_apply(_TEAMS[X])
+        args = (None, Y, selX, selY, seed, DEPTH[0], DEPTH[1], False, None, False, (X,), (True, True))
+        r = R.blind_play(args + (_pb_args(X, Y) if use_pb else ()))
+    except Exception:
+        r = {'res': None, 'error': traceback.format_exc()[-800:]}
+    r['key'] = key
+    r['sec'] = round(time.time() - t0, 2)
+    return r
+
+
+def cmd_pb_ab(a):
+    import playbook
+    team = a.team
+    out = a.out_dir or PB_AB_OUT
+    plan = load_plan(paths(None))
+    T = plan['teams']
+    if team not in T:
+        raise SystemExit(f'rr_plan.json に {team} がありません')
+    if a.opps and a.opps != 'top5':
+        opps = a.opps.split(',')
+    else:
+        opps = [i for i, _ in sorted(((i, t.get('rank') or 10 ** 6) for i, t in T.items() if i != team), key=lambda x: x[1])[:5]]
+    for o in opps:
+        if o not in T:
+            raise SystemExit(f'rr_plan.json に {o} がありません')
+    sig = {'team': team, 'opps': opps, 'games': a.games, 'playbook': playbook.play_sig(playbook.load_all())}
+    os.makedirs(out, exist_ok=True)
+    gp = os.path.join(out, 'pb_ab_games.json')
+    if os.path.exists(gp):
+        G = json.load(open(gp, encoding='utf-8'))
+        if G.get('sig') != sig:
+            raise SystemExit('pb_ab_games.json の sig（team, opps, games, playbook）が違います。--out-dir を変えてください')
+    else:
+        G = {'version': 'pb1', 'playbook_version': playbook.PLAYBOOK_VERSION, 'sig': sig, 'playbook': sig['playbook'], 'sel': {}, 'games': {}}
+    pairs = []
+    for o in opps:
+        for x, y in ((team, o), (o, team)):
+            if f'{x}|{y}' not in plan['sel'] and f'{x}|{y}' not in G['sel']:
+                pairs.append((x, y))
+    t0 = time.time()
+    with make_pool(a.procs, T, True, team) as pool:
+        for k_, r in pool.imap_unordered(_job_decide, list(dict.fromkeys(pairs)), chunksize=1):
+            if 'error' in r:
+                raise SystemExit('選出エラー ' + k_ + r['error'][-200:])
+            G['sel'][k_] = r
+        sel = lambda x, y: (plan['sel'].get(f'{x}|{y}') or G['sel'][f'{x}|{y}'])['order']
+        jobs = []
+        for o in opps:
+            for k in range(a.games):
+                X, Y = game_sides(team, o, k)
+                for cond in ('pb', 'no'):
+                    key = f'{o}|{k}|{cond}'
+                    if key not in G['games'] or G['games'][key].get('res') is None:
+                        jobs.append((key, X, Y, sel(X, Y), sel(Y, X), game_seed(team, o, k), cond == 'pb'))
+        print(f'A/B {team[:8]} 対 {len(opps)}構築 x {a.games}局 x {{あり,なし}} = 今回 {len(jobs)}戦', flush=True)
+        meta = {j[0]: j for j in jobs}
+        n = 0
+        for r in pool.imap_unordered(_job_ab, jobs, chunksize=1):
+            n += 1
+            j = meta[r['key']]
+            o, k, cond = r['key'].split('|')
+            res = r.get('res')
+            G['games'][r['key']] = {'opp': o, 'k': int(k), 'cond': cond, 'side0': j[1], 'side1': j[2], 'sel0': j[3], 'sel1': j[4], 'seed': j[5],
+                                    'res': res, 'winner': None if res in (None, 0) else (j[1] if res == 1 else j[2]),
+                                    'judged': r.get('judged'), 'turns': r.get('turns'), 'left': r.get('left'), 'faints': r.get('faints'),
+                                    'sec': r.get('sec'), 'error': r.get('error'), 'deny': [True, True], 'main_side': 0 if j[1] == team else 1,
+                                    **({'pb': r['pb']} if r.get('pb') else {})}
+            safeio.write_json(gp, G)
+            print(f"[{n}/{len(jobs)}] {r['key']} res={res} {r.get('turns')}手 {r['sec']:.0f}秒 {(time.time() - t0) / 60:.1f}分", flush=True)
+    pb_ab_report(G, team, opps, out)
+
+
+def pb_ab_report(G, team, opps, out):
+    def sc(g):
+        if g.get('res') is None:
+            return None
+        return 0.5 if g['res'] == 0 else (1.0 if (g['res'] == 1) == (g['main_side'] == 0) else 0.0)
+    pct = lambda l: f'{sum(l) / len(l) * 100:.0f}% ({sum(l):g}/{len(l)})' if l else '-'
+    L = [f'# プレイブック A/B（{team}）', '', f"playbook={G['playbook']} 相手={len(opps)}構築 局数={G['sig']['games']}（側の入れ替えあり、同じseed・同じ選出）", '',
+         '| 相手 | あり | なし | 差 |', '|---|---|---|---|']
+    tot = {'pb': [], 'no': []}
+    for o in opps:
+        r = {c: [x for x in (sc(g) for g in G['games'].values() if g['opp'] == o and g['cond'] == c) if x is not None] for c in ('pb', 'no')}
+        for c in r:
+            tot[c] += r[c]
+        d = (sum(r['pb']) / len(r['pb']) - sum(r['no']) / len(r['no'])) * 100 if r['pb'] and r['no'] else 0
+        L.append(f"| {o[:8]} | {pct(r['pb'])} | {pct(r['no'])} | {d:+.0f}pt |")
+    d = (sum(tot['pb']) / len(tot['pb']) - sum(tot['no']) / len(tot['no'])) * 100 if tot['pb'] and tot['no'] else 0
+    L += [f"| 全体 | {pct(tot['pb'])} | {pct(tot['no'])} | {d:+.0f}pt |", '', '## 規則ごと（あり条件）', '']
+    gp = os.path.join(out, 'pb_ab_games.json')
+    st = pb_collect([gp])
+    L += pb_table(st) if st else ['発動記録なし']
+    secs = [g['sec'] for g in G['games'].values() if g.get('sec')]
+    if secs:
+        L += ['', f'1局の平均 {sum(secs) / len(secs):.0f}秒（{len(secs)}局）']
+    open(os.path.join(out, 'pb_ab_report.md'), 'w', encoding='utf-8').write('\n'.join(L) + '\n')
+    print('\n'.join(L))
+
+
+def cmd_playbook(a):
+    {'selftest': cmd_pb_selftest, 'ab': cmd_pb_ab, 'report': cmd_pb_report}[a.what](a)
+
+
+def cmd_pb_selftest(a):
+    global _PB, _AD_PLAY, _AD_SELECT, _CT_PLAY
+    import copy, tempfile, shutil
+    import playbook as PBK
+    import search as S
+    import engine as E
+    import study
+    t00 = time.time()
+    plan = load_plan(paths(None))
+    T = plan['teams']
+    _worker_init(T)
+    LH, OP = PB_LH, 'bab22dcc629688e8'
+    kt = next(t for t in json.load(open(prep.KNOWN_P, encoding='utf-8'))['teams'] if t['id'] == LH)
+    PLAY = kt['guide']['play']
+    text = study.article_text(LH)
+    res = []
+
+    def check(name, ok, info=''):
+        res.append((name, bool(ok)))
+        print(f"{'OK  ' if ok else 'NG  '}{name} {info}", flush=True)
+
+    def mk(s0=('ムクホーク', 'ミミッキュ', 'イダイトウ'), s1=('ウツボット', 'パーモット', 'イダイトウ')):
+        rr_apply(T[LH])
+        R._ctx(OP)
+        return B.engine_game(list(s0), list(s1))
+
+    def fake(st, side, best, low=None):
+        """best を最善(0.0)、low={action:値}、他は -0.1 にした作り物の ranked_fn。"""
+        def fn(extra=()):
+            acts = list(E.actions(st, side)) + [x for x in extra if x not in E.actions(st, side)]
+            out = [((low or {}).get(x, 0.0 if x == best else -0.1), x) for x in acts]
+            out.sort(key=lambda t: -t[0])
+            return out
+        return fn
+
+    def cx(st, side=0, turn=1, pb=None):
+        return PBK._Cx(st, st, side, [{}, {}], turn, pb or PBK.PB(PLAY, side, LH), True)
+
+    def hold(st, k, v, pb=None):
+        return PBK._hold1(k, v, cx(st, 0, 1, pb))
+
+    # -- T1
+    st = mk()
+    pb = PBK.PB(PLAY, 0, LH)
+    me = st.sides[0].mons[0]
+    a0 = ('m', 'bravebird', True)
+    pre = not hold(st, 'bad_matchup', True)
+    a, rid = pb.decide(st, st, 0, a0, fake(st, 0, a0), [{}, {}], 1)
+    atk = [x for x in me.moves if x in E.MOVES and E.MOVES[x].cat != 'status']
+    best = max(atk, key=lambda x: (E.estimate(st, 0, x), -list(me.moves).index(x)))
+    check('T1 best_damage(p2)', pre and rid == 'p2' and a[1] == best, f'pre={pre} rid={rid} a={a} 手計算={best}')
+    # -- T2 / T6 / T7
+    def st_bad():
+        s = mk()
+        s.sides[1].act = 1
+        s.sides[1].mons[1].moves = ('closecombat', 'doubleshock', 'nuzzle', 'revivalblessing')
+        m = s.sides[0].mons[0]
+        m.hp = round(m.maxhp * 0.2)
+        return s
+    st2 = st_bad()
+    pre = hold(st2, 'bad_matchup', True)
+    a0 = ('m', 'closecombat', True)
+    pb = PBK.PB(PLAY, 0, LH)
+    a, rid = pb.decide(st2, st2, 0, a0, fake(st2, 0, a0), [{}, {}], 1)
+    check('T2 いのちがけ(p1)', pre and rid == 'p1' and a[:2] == ('m', 'finalgambit'), f'pre={pre} rid={rid} a={a}')
+    fg = next(x for x in E.actions(st2, 0) if x[:2] == ('m', 'finalgambit'))
+    pb = PBK.PB(PLAY, 0, LH)
+    a, rid = pb.decide(st2, st2, 0, a0, fake(st2, 0, a0, {fg: -100.0}), [{}, {}], 1)
+    check('T6 guard却下', a == a0 and rid is None and any(r[2] == 'guard' for r in pb.rejected), f'a={a} rej={pb.rejected}')
+    st7 = st_bad()
+    st7.sides[0].mons[0].vol['disable'] = {'move': 'finalgambit', 'turns': 4}
+    pb = PBK.PB(PLAY, 0, LH)
+    a, rid = pb.decide(st7, st7, 0, a0, fake(st7, 0, a0), [{}, {}], 1)
+    check('T7 illegal却下', a == a0 and rid is None and any(r[2] == 'illegal' for r in pb.rejected), f'a={a} rej={pb.rejected}')
+    # -- T3 / T4
+    st3 = mk()
+    st3.sides[0].act = 1
+    st3.sides[1].mons[0].boosts['atk'] = 2
+    pb = PBK.PB(PLAY, 0, LH)
+    a0 = ('m', 'playrough', False)
+    a, rid = pb.decide(st3, st3, 0, a0, fake(st3, 0, a0), [{}, {}], 1)
+    check('T3 トリル(p3)', rid == 'p3' and a[1] == 'trickroom', f'rid={rid} a={a}')
+    st4 = mk()
+    st4.sides[0].act = 1
+    st4.pseudo['trickroom'] = 3
+    m = st4.sides[0].mons[1]
+    m.hp = round(m.maxhp * 0.4)
+    pb = PBK.PB(PLAY, 0, LH)
+    pb.uses['p3'] = 1
+    a, rid = pb.decide(st4, st4, 0, a0, fake(st4, 0, a0), [{}, {}], 2)
+    check('T4 のろい(p4)', rid == 'p4' and a[1] == 'curse', f'rid={rid} a={a}')
+    # -- T5
+    st5 = mk(('ムクホーク', 'ガブリアス', 'イダイトウ'))
+    st5.pseudo['trickroom'] = 3
+    pb = PBK.PB(PLAY, 0, LH)
+    base = lambda s_, side, opts: opts[0]
+    j = pb.chooser(base)(st5, 0, [1, 2])
+    st5.pseudo.pop('trickroom')
+    j2 = PBK.PB(PLAY, 0, LH).chooser(base)(st5, 0, [1, 2])
+    check('T5 chooser(r1)', st5.sides[0].mons[j].name == 'イダイトウ' and j2 == 1, f'{st5.sides[0].mons[j].name} / トリルなし={j2}')
+    # -- T8-T10
+    st8 = mk()
+    a0 = ('m', 'bravebird', True)
+    def rule(rid, do, until=None, when=None, **kw):
+        r = {'id': rid, 'who': '*', 'when': when or {}, 'do': do, 'origin': 'user', 'note': 'x'}
+        if until:
+            r['until'] = until
+        r.update(kw)
+        return r
+    pb = PBK.PB([rule('s1', {'switch': ['ミミッキュ']})], 0, 't')
+    ts = [t for t in range(1, 8) if pb.decide(st8, st8, 0, a0, fake(st8, 0, ('s', 1), {a0: 0.0, ('s', 1): -0.1}), [{}, {}], t)[1]]
+    check('T8 switch連続不可・最大2', ts == [1, 3] and pb.uses['s1'] == 2, f'turns={ts}')
+    pb = PBK.PB([rule('u1', {'move': ['インファイト']}, until={'turn': [3, None]})], 0, 't')
+    ts = [t for t in range(1, 7) if pb.decide(st8, st8, 0, a0, fake(st8, 0, a0), [{}, {}], t)[1]]
+    check('T9 until', ts == [1, 2] and any(r[2] == 'until' for r in pb.rejected), f'turns={ts}')
+    pb = PBK.PB([rule('k1', {'best_damage': True})], 0, 't')
+    ts = [t for t in range(1, 8) if pb.decide(st8, st8, 0, a0, fake(st8, 0, a0), [{}, {}], t)[1]]
+    check('T10 stuck', ts == [1, 2, 3] and any(r[2] == 'stuck' for r in pb.rejected), f'turns={ts}')
+    # -- T11
+    ok, info = True, []
+    for sx in (mk(), st2, st3):
+        for i in (0, 1):
+            x = PBK.ranked(sx, i, 2)[0][1]
+            y = S.lookahead_action(sx, i, 2)
+            ok &= x == y
+            info.append(x == y)
+    check('T11 ranked[0]==lookahead', ok, str(info))
+    # -- T12
+    team = kt['team']
+    errs = PBK.validate(PLAY, team, text)
+    check('T12a 7.1は合格', not errs, str(errs[:2]))
+    def bad(label, mut, want):
+        pl = copy.deepcopy(PLAY)
+        mut(pl)
+        e = PBK.validate(pl, team, text)
+        check(f'T12 {label}', any(want in x for x in e), str(e[:2]))
+    bad('未知キー', lambda p: p[0].update(zzz=1), '未知のキー')
+    bad('技構成に無い技', lambda p: p[0].__setitem__('do', {'move': ['のろい']}), '技構成にありません')
+    bad('6体に無い名前', lambda p: p[4].__setitem__('do', {'switch': ['ピカチュウ']}), '6体にいません')
+    bad('タイプ誤記', lambda p: p[0]['when'].update(foe_type=['ひこおう']), 'タイプ')
+    bad('srcが本文に無い', lambda p: p[0].__setitem__('src', '存在しない一文です'), '本文に含まれません')
+    bad('do2種', lambda p: p[0]['do'].update(best_damage=True), 'ちょうど1つ')
+    # -- T13
+    tmp = tempfile.mkdtemp()
+    old_k, old_r = prep.KNOWN_P, study.REPORT_P
+    try:
+        kp = os.path.join(tmp, 'known_teams.json')
+        shutil.copy(old_k, kp)
+        prep.KNOWN_P, study.REPORT_P = kp, os.path.join(tmp, 'STUDY.md')
+        h0 = hashlib.sha256(open(kp, 'rb').read()).hexdigest()
+        badj = os.path.join(tmp, 'bad.json')
+        json.dump({'play': [{'id': 'p1', 'who': 'メガムクホーク', 'when': {'zzz': 1}, 'do': {'move': ['いのちがけ']}, 'note': 'x', 'src': 'x'}]},
+                  open(badj, 'w', encoding='utf-8'), ensure_ascii=False)
+        code = None
+        try:
+            study.set_play(LH, badj)
+        except SystemExit as e:
+            code = e.code
+        h1 = hashlib.sha256(open(kp, 'rb').read()).hexdigest()
+        goodj = os.path.join(tmp, 'good.json')
+        json.dump({'play': PLAY[:1]}, open(goodj, 'w', encoding='utf-8'), ensure_ascii=False)
+        study.set_play(LH, goodj)
+        g0 = next(t for t in json.load(open(old_k, encoding='utf-8'))['teams'] if t['id'] == LH)['guide']
+        g1 = next(t for t in json.load(open(kp, encoding='utf-8'))['teams'] if t['id'] == LH)['guide']
+        same = all(g1[k] == v for k, v in g0.items() if k not in ('play', 'play_date')) and len(g1['play']) == 1
+        check('T13 study.py play', code == 2 and h0 == h1 and same, f'exit={code} 無変更={h0 == h1} 他キー不変={same}')
+    finally:
+        prep.KNOWN_P, study.REPORT_P = old_k, old_r
+        shutil.rmtree(tmp, ignore_errors=True)
+    # -- T14 (受け入れ 2c): job の args
+    cap = []
+    real_bp, real_pb, real_ps = R.blind_play, dict(_PB), _PB_ONLY[0]
+    rp = (_AD_PLAY, _AD_SELECT, _CT_PLAY)
+    try:
+        R.blind_play = lambda args: (cap.append(args), {'res': 0})[1]
+        _AD_PLAY = _CT_PLAY = R.blind_play
+        _AD_SELECT = lambda *x: (['a'], 'w')
+        so, sx = ['ムクホーク', 'ミミッキュ', 'イダイトウ'], ['ウツボット', 'パーモット', 'イダイトウ']
+        def run_all():
+            cap.clear()
+            _job_game(('k', LH, OP, so, sx, 7))
+            _job_deny(('k', LH, OP, so, sx, 7, (True, True)))
+            _job_adapt(('k', LH, 0, LH, OP, None, None))
+            _job_ct(('k', OP, ('a',), 0, LH, OP, so, sx, 1))
+            return list(cap)
+        _PB = {}
+        off = run_all()
+        old = [(None, OP, so, sx, 7, 4, 4, False, None, False, (LH,)), (None, OP, so, sx, 7, 4, 4, False, None, False, (LH,), (True, True))]
+        exp_len = [11, 12, 12, 12]
+        _PB = {LH: PLAY}
+        _PB_ONLY[0] = None
+        on = run_all()
+        ok = [len(x) for x in off] == exp_len and off[0] == old[0] and off[1] == old[1] and [len(x) for x in on] == [13, 13, 13, 13] and \
+            all(x[12] == (PLAY, None) for x in on)
+        check('T14 job args(あり/なし)', ok, f'なし={[len(x) for x in off]} あり={[len(x) for x in on]}')
+    finally:
+        R.blind_play = real_bp
+        _PB = real_pb
+        _PB_ONLY[0] = real_ps
+        _AD_PLAY, _AD_SELECT, _CT_PLAY = rp
+    n_ng = sum(1 for _, ok in res if not ok)
+    print(f'selftest: {len(res) - n_ng}/{len(res)} 合格 {time.time() - t00:.0f}秒', flush=True)
+    if n_ng:
+        raise SystemExit(1)
+
+
 def main():
     ap = argparse.ArgumentParser()
     sp = ap.add_subparsers(dest='cmd', required=True)
@@ -2977,8 +3395,18 @@ def main():
     p.add_argument('--retry-errors', action='store_true')
     p.add_argument('--keep', action='store_true')
     p.add_argument('--out-dir')
+    p = sp.add_parser('playbook')
+    p.add_argument('what', choices=['selftest', 'ab', 'report'])
+    p.add_argument('--team', default=PB_LH)
+    p.add_argument('--opps')
+    p.add_argument('--games', type=int, default=4)
+    p.add_argument('--procs', type=int, default=4)
+    p.add_argument('--out-dir')
+    for nm in ('run', 'deny', 'adapt', 'counter'):
+        sp.choices[nm].add_argument('--no-playbook', action='store_true')
     a = ap.parse_args()
-    {'counter': cmd_counter, 'adapt': cmd_adapt, 'deny': cmd_deny, 'plan': cmd_plan, 'run': cmd_run, 'report': cmd_report, 'selftest': cmd_selftest, 'show': cmd_show}[a.cmd](a)
+    _PB_FLAG['on'] = not getattr(a, 'no_playbook', False)
+    {'playbook': cmd_playbook, 'counter': cmd_counter, 'adapt': cmd_adapt, 'deny': cmd_deny, 'plan': cmd_plan, 'run': cmd_run, 'report': cmd_report, 'selftest': cmd_selftest, 'show': cmd_show}[a.cmd](a)
 
 
 if __name__ == '__main__':
