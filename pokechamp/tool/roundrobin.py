@@ -476,6 +476,19 @@ def build_candidates(rt, orig, w, overrides=None):
         q = min(4, len(c0))
         k1 = min(24 - q, len(c1))
         keep = {tuple(o) for o in c0[:q]} | {tuple(o) for o in c1[:k1]}
+        if nm == 2:
+            ma, mb = sorted(mg)
+            ks = [o for o in c1[:k1]]
+            cnt = lambda b: sum(1 for o in ks if b in o)
+            for lo, hi in ((ma, mb), (mb, ma)):
+                while cnt(lo) < 6:
+                    nxt = next((o for o in c1 if lo in o and o not in ks), None)
+                    drop = next((o for o in reversed(ks) if hi in o and cnt(hi) > 6), None)
+                    if nxt is None or drop is None:
+                        break
+                    ks.remove(drop)
+                    ks.append(nxt)
+            keep = {tuple(o) for o in c0[:q]} | {tuple(o) for o in ks}
         cand = [o for o in L if tuple(o) in keep]
     cs = {tuple(o) for o in cand}
     for it in gitems:
@@ -486,7 +499,8 @@ def build_candidates(rt, orig, w, overrides=None):
             rejected.append({'order': o, 'why': '枠の上限で外れた', 'when': '記事'})
     art_ok = [o for o in art if tuple(o) in cs]
     return {'candidates': cand, 'n_cand': len(cand), 'no_mega': no_mega, 'article_orders': art_ok, 'gitems': gitems,
-            'unreadable': unread, 'rejected': rejected, 'gclass': guide_class(bool(art_ok), gitems), 'n_mega': nm}
+            'unreadable': unread, 'rejected': rejected, 'gclass': guide_class(bool(art_ok), gitems), 'n_mega': nm,
+            'mega_split': {b: sum(1 for o in cand if b in o) for b in sorted(mg)} if nm == 2 else None}
 
 
 # ---------------------------------------------------------------- 選出 (5)
@@ -4162,10 +4176,15 @@ DEF_M7MD = os.path.join(HERE, '..', 'logs', 'M7RUN.md')
 _M7_CALLS = [None]          # selftest 用: 偽の対戦が seed を追記するファイル
 
 
-def m7_paths(out_dir=None):
+def m7_paths(out_dir=None, pfx='m7'):
     d = out_dir or DEF_OUT
-    return {'dir': d, 'plan': os.path.join(d, 'm7_plan.json'), 'games': os.path.join(d, 'm7_games.json'),
-            'logs': os.path.join(d, 'm7_logs.jsonl'), 'md': os.path.join(d, 'M7RUN.md') if out_dir else DEF_M7MD}
+    md = os.path.join(d, f'{pfx.upper()}RUN.md') if out_dir else os.path.join(os.path.dirname(DEF_M7MD), f'{pfx.upper()}RUN.md')
+    return {'dir': d, 'plan': os.path.join(d, f'{pfx}_plan.json'), 'games': os.path.join(d, f'{pfx}_games.json'),
+            'logs': os.path.join(d, f'{pfx}_logs.jsonl'), 'md': md}
+
+
+def _m7_pfx(a):
+    return (getattr(a, 'prefix', None) or a.party).lower()
 
 
 def m7_seed(X, k):
@@ -4179,21 +4198,29 @@ def party_team(name='M7', tid=M7_ID):
         sp = e['species']
         mega = sp in B.BASE_OF
         base = B.BASE_OF.get(sp, sp)
+        ab = e['ability']
         if mega:
             abs_ = POKE[base]['ab']
-            bab = e.get('base_ability') or (e['ability'] if e['ability'] in abs_ else abs_[0])
+            if ab in POKE[sp]['ab']:
+                bab = e.get('base_ability') or (ab if ab in abs_ else abs_[0])
+            elif ab in abs_:
+                bab = e.get('base_ability') or ab
+                ab = POKE[sp]['ab'][0]
+            else:
+                raise SystemExit(f'{name}: {sp} の特性「{ab}」がメガ側にも元種族にもありません')
         else:
-            bab = e['ability']
+            bab = ab
         mons.append({'base': base, 'species': sp, 'mega': mega, 'nature': e['nature'], 'ap': _ap(e.get('ap') or e.get('defn')),
-                     'ability': e['ability'], 'base_ability': bab, 'item': e.get('item') or '', 'moves': list(e['moves']), 'stone': False})
-    if sum(1 for m in mons if m['mega']) != 1:
-        raise SystemExit(f'{name}: メガ持ちが1体ではありません')
+                     'ability': ab, 'base_ability': bab, 'item': e.get('item') or '', 'moves': list(e['moves']), 'stone': False})
+    n_m = sum(1 for m in mons if m['mega'])
+    if not 1 <= n_m <= 2:
+        raise SystemExit(f'{name}: メガ持ちが{n_m}体です（1〜2体のみ）')
     return {'id': tid, 'title': f'{tid}（新構築案）', 'rank': None, 'final': None, 'peak': None, 'weight': 1.0, 'mons': mons}
 
 
-def m7_opponents(s3, n=50, check=True):
+def m7_opponents(s3, n=50, check=True, tid=M7_ID):
     T = s3['teams']
-    ids = sorted((i for i in s3['ids'] if i not in ('R11', M7_ID)), key=lambda i: sort_key(T[i]))
+    ids = sorted((i for i in s3['ids'] if i not in ('R11', tid)), key=lambda i: sort_key(T[i]))
     elig = [i for i in ids if T[i].get('rank') or T[i].get('final') or T[i].get('peak')]
     opps, skipped = [], []
     for i in elig:
@@ -4216,16 +4243,21 @@ def _m7_load_s3():
 
 
 def cmd_m7_plan(a, limit_sel=None):
-    P = m7_paths(a.out_dir)
+    P = m7_paths(a.out_dir, _m7_pfx(a))
     os.makedirs(P['dir'], exist_ok=True)
     s3 = _m7_load_s3()
-    if M7_ID in s3['teams']:
-        raise SystemExit('s3_plan に M7 があります')
-    rt = party_team(a.party, M7_ID)
-    teams = {**s3['teams'], M7_ID: rt}
+    tid = a.party
+    if tid in s3['teams']:
+        raise SystemExit(f's3_plan に {tid} があります')
+    if os.path.exists(P['plan']):
+        old_p = json.load(open(P['plan'], encoding='utf-8')).get('party')
+        if old_p and old_p != a.party:
+            raise SystemExit(f'この out-dir/接頭辞には {old_p} の結果があります')
+    rt = party_team(a.party, tid)
+    teams = {**s3['teams'], tid: rt}
     _rr_init_main(teams)
     _worker_init(teams)
-    opps, skipped, _ = m7_opponents(s3, 50)
+    opps, skipped, _ = m7_opponents(s3, 50, tid=tid)
     for x in skipped:
         print(f"  除外 {x['id']}: {x['why']}", flush=True)
     if len(opps) < 50:
@@ -4245,21 +4277,21 @@ def cmd_m7_plan(a, limit_sel=None):
         t0 = time.time()
         print('M7 の静的スコア計算...', flush=True)
         with make_pool(a.procs, teams) as pool:
-            ws = dict(pool.map(_job_static, [M7_ID]))
+            ws = dict(pool.map(_job_static, [tid]))
         ov = json.load(open(GUIDE_OVERRIDES, encoding='utf-8')) if os.path.exists(GUIDE_OVERRIDES) else None
-        info = build_candidates(rt, None, ws[M7_ID], ov)
+        info = build_candidates(rt, None, ws[tid], ov)
         cs = {tuple(o) for o in info['candidates']}
         mg = {m['base'] for m in rt['mons'] if m['mega']}
-        plan = {'version': M7_VERSION, 'created': time.strftime('%Y-%m-%d %H:%M:%S'), 's3_sig': s3['sig'], 'sig': sig, 'party': a.party,
+        plan = {'version': M7_VERSION, 'created': time.strftime('%Y-%m-%d %H:%M:%S'), 's3_sig': s3['sig'], 'sig': sig, 'party': a.party, 'team_id': tid,
                 'games_per_pair': 10, 'depth': list(M7_DEPTH), 'deny': [True, True], 'opponents': opps, 'skipped': skipped,
                 'candidates': info['candidates'], 'excluded_no_mega': [o for o in all_orders(rt) if not (set(o) & mg) and tuple(o) not in cs],
-                'm7_team': {**rt, **info, 'static': ws[M7_ID]}, 'sel1': {}}
+                'm7_team': {**rt, **info, 'static': ws[tid]}, 'sel1': {}}
         print(f'  {time.time() - t0:.0f}秒', flush=True)
         safeio.write_json(P['plan'], plan)
-    teams[M7_ID] = plan['m7_team']
+    teams[tid] = plan['m7_team']
     need = []
     for X in opps[:limit_sel] if limit_sel else opps:
-        for A_, B_ in ((M7_ID, X), (X, M7_ID)):
+        for A_, B_ in ((tid, X), (X, tid)):
             if f'{A_}|{B_}' not in plan['sel1']:
                 need.append((A_, B_))
     print(f'対戦相手 {len(opps)}、sel1 計算 {len(need)}', flush=True)
@@ -4278,33 +4310,36 @@ def cmd_m7_plan(a, limit_sel=None):
     return plan
 
 
-def m7_load_games(P, sig):
+def m7_load_games(P, sig, tid=M7_ID):
     if os.path.exists(P['games']):
         g = json.load(open(P['games'], encoding='utf-8'))
         if g.get('plan_sig') != sig:
             raise SystemExit('m7_games.json の plan_sig が m7_plan.json と違います')
         return g
-    return {'version': M7_VERSION, 'plan_sig': sig, 'main': M7_ID, 'depth': list(M7_DEPTH), 'deny': [True, True], 'games': {}, 'playbook': _pb_sig()}
+    return {'version': M7_VERSION, 'plan_sig': sig, 'main': tid, 'depth': list(M7_DEPTH), 'deny': [True, True], 'games': {}, 'playbook': _pb_sig()}
 
 
 def cmd_m7_run(a):
-    P = m7_paths(a.out_dir)
+    P = m7_paths(a.out_dir, _m7_pfx(a))
     if not os.path.exists(P['plan']):
         raise SystemExit(f"{P['plan']} がありません。先に m7 plan を実行してください")
     plan = json.load(open(P['plan'], encoding='utf-8'))
+    if plan.get('party', a.party) != a.party:
+        raise SystemExit(f"この out-dir/接頭辞には {plan['party']} の結果があります")
+    tid = plan.get('team_id', M7_ID)
     s3 = _m7_load_s3()
     if s3['sig'] != plan['s3_sig']:
         raise SystemExit('s3_plan.json の sig が m7_plan.json と違います')
     if _PB_FLAG['on']:
         import playbook
-        if M7_ID in playbook.load_all():
-            raise SystemExit('プレイブックに M7 があります（M7 側は対象外のはず）')
-    L, opps, G = M7_ID, plan['opponents'], plan['games_per_pair']
+        if tid in playbook.load_all():
+            raise SystemExit(f'プレイブックに {tid} があります（{tid} 側は対象外のはず）')
+    L, opps, G = tid, plan['opponents'], plan['games_per_pair']
     miss = [f'{x}|{y}' for X in opps for x, y in ((L, X), (X, L)) if f'{x}|{y}' not in plan['sel1']]
     if miss:
         raise SystemExit(f'sel1 が未計算です（{len(miss)}件）。m7 plan を完了してください')
-    teams = {**s3['teams'], M7_ID: plan['m7_team']}
-    games = m7_load_games(P, plan['sig'])
+    teams = {**s3['teams'], tid: plan['m7_team']}
+    games = m7_load_games(P, plan['sig'], tid)
     pb_guard(games)
     _AD['sel1'] = plan['sel1']
     gm = games['games']
@@ -4355,7 +4390,7 @@ def cmd_m7_run(a):
                 mark = '例外' if r.get('res') is None else ('分' if r['res'] == 0 else ('勝' if (r['res'] == 1) == (job[3] == L) else '負'))
                 el = (time.time() - t0) / 60
                 rem = el / n_done * max(0, (min(a.max_games, tot - base) if a.max_games else tot - base) - n_done)
-                print(f"[{base + n_done}/{tot}] {job[0]} M7{mark} {r.get('turns')}手 {r['sec']:.0f}秒(選出{r.get('sec_sel') or 0:.0f}) 経過{el:.1f}分 残り約{rem:.1f}分", flush=True)
+                print(f"[{base + n_done}/{tot}] {job[0]} {tid}{mark} {r.get('turns')}手 {r['sec']:.0f}秒(選出{r.get('sec_sel') or 0:.0f}) 経過{el:.1f}分 残り約{rem:.1f}分", flush=True)
             if not got:
                 time.sleep(0.05)
     return n_done
@@ -4366,12 +4401,15 @@ def _m7_base(n):
 
 
 def cmd_m7_report(a):
-    P = m7_paths(a.out_dir)
+    P = m7_paths(a.out_dir, _m7_pfx(a))
     plan = json.load(open(P['plan'], encoding='utf-8'))
+    if plan.get('party', a.party) != a.party:
+        raise SystemExit(f"この out-dir/接頭辞には {plan['party']} の結果があります")
+    tid = plan.get('team_id', M7_ID)
     T = _m7_load_s3()['teams']
-    T[M7_ID] = plan['m7_team']
-    L, opps = M7_ID, plan['opponents']
-    games = m7_load_games(P, plan['sig'])['games']
+    T[tid] = plan['m7_team']
+    L, opps = tid, plan['opponents']
+    games = m7_load_games(P, plan['sig'], tid)['games']
     recs = [g for g in games.values() if g.get('opp') in opps]
     ok_ = [g for g in recs if g['res'] is not None]
     tot = len(opps) * plan['games_per_pair']
@@ -4380,12 +4418,12 @@ def cmd_m7_report(a):
     theirs = lambda g: tuple((g['sel1'] if g['main_side'] == 0 else g['sel0']) or ())
     why = lambda g: (g['why0'] if g['main_side'] == 0 else g['why1']) or {}
     by = {X: sorted([g for g in ok_ if g['opp'] == X], key=lambda g: g['k']) for X in opps}
-    out = [f'# M7 × 蓄積構築{len(opps)} × {plan["games_per_pair"]}戦（深さ5・適応選出）', '']
+    out = [f'# {tid} × 蓄積構築{len(opps)} × {plan["games_per_pair"]}戦（深さ5・適応選出）', '']
     jd = [g for g in ok_ if g.get('judged')]
-    out += ['## 1. 全体', f'- M7 の戦績: {_rate([_lw(g, L) for g in ok_])}（完了 {len(ok_)}/{tot}、分=0.5）',
+    out += ['## 1. 全体', f'- {tid} の戦績: {_rate([_lw(g, L) for g in ok_])}（完了 {len(ok_)}/{tot}、分=0.5）',
             f'- 例外: {sum(1 for g in recs if g["res"] is None)}、判定決着: {len(jd)}戦、平均手数 {_avg([g["turns"] for g in ok_ if g.get("turns")]):.1f}', '']
     # 2
-    out += ['## 2. 相手構築ごと（M7 視点 ○勝 ●負 △分、判定は o/x、勝率昇順）', '| 構築 | id8 | rank | 10戦 | 勝率 |', '|---|---|---|---|---|']
+    out += [f'## 2. 相手構築ごと（{tid} 視点 ○勝 ●負 △分、判定は o/x、勝率昇順）', '| 構築 | id8 | rank | 10戦 | 勝率 |', '|---|---|---|---|---|']
     wr, rows = {}, []
     for X in opps:
         s, ws_ = '', 0.0
@@ -4403,7 +4441,7 @@ def cmd_m7_report(a):
     h = plan['games_per_pair'] // 2
     out += [f'- 前半(1-{h}): {_rate([_lw(g, L) for g in ok_ if g["k"] < h])} / 後半({h + 1}-{plan["games_per_pair"]}): {_rate([_lw(g, L) for g in ok_ if g["k"] >= h])}', '']
     # 4
-    out += ['## 4. M7 の選出別勝率', '### 並び（先発込み）']
+    out += [f'## 4. {tid} の選出別勝率', '### 並び（先発込み）']
     po, pt, src = collections.defaultdict(list), collections.defaultdict(list), collections.defaultdict(list)
     for g in ok_:
         po[mine(g)].append(_lw(g, L))
@@ -4447,7 +4485,7 @@ def cmd_m7_report(a):
         out.append(f'- M7 対 リザホーク（{AD_MAIN[:8]}）: {_rate([_lw(g, L) for g in by[AD_MAIN]])}')
     out.append('')
     # 7
-    out += ['## 7. M7 の個体ごと', '| 個体 | 選出 | 先発 | 出た試合の勝率 | 倒した | 倒された |', '|---|---|---|---|---|---|']
+    out += [f'## 7. {tid} の個体ごと', '| 個体 | 選出 | 先発 | 出た試合の勝率 | 倒した | 倒された |', '|---|---|---|---|---|---|']
     for m in plan['m7_team']['mons']:
         b = m['base']
         sg = [g for g in ok_ if b in mine(g)]
@@ -4462,7 +4500,7 @@ def cmd_m7_report(a):
     out += [f'- メガした試合数（faints/left に メガ名が出た試合の近似）: {mg_n}', '']
     # 8
     out += ['## 8. 設定', f'- 深さ {plan["depth"]}、deny {plan["deny"]}、プレイブック署名 {_pb_sig()}（相手側のみ）、seed=crc32("m7{{X}}{{k}}")、plan sig {plan["sig"]}',
-            f'- M7 candidates {len(plan["candidates"])}: ' + ' ; '.join(_ostr(o) for o in plan['candidates']),
+            f'- {tid} candidates {len(plan["candidates"])}（メガ別 {plan["m7_team"].get("mega_split")}）: ' + ' ; '.join(_ostr(o) for o in plan['candidates']),
             f'- 外れたメガなし並び {len(plan["excluded_no_mega"])}: ' + ' ; '.join(_ostr(o) for o in plan['excluded_no_mega'])]
     os.makedirs(os.path.dirname(P['md']), exist_ok=True)
     open(P['md'], 'w', encoding='utf-8').write('\n'.join(out) + '\n')
@@ -4489,28 +4527,32 @@ def cmd_m7_selftest(a):
     class A_:
         pass
     pa = A_()
-    pa.out_dir, pa.party, pa.procs, pa.force = D2, 'M7', a.procs, True
+    pa.out_dir, pa.party, pa.procs, pa.force, pa.prefix = D2, a.party, a.procs, True, None
+    TID = a.party
+    PF = a.party.lower()
     t0 = time.time()
     plan = cmd_m7_plan(pa, limit_sel=2 if a.quick else 3)
     print(f'   plan（静的スコア＋sel1 {len(plan["sel1"])}件）{time.time() - t0:.0f}秒', flush=True)
-    T = {**s3['teams'], M7_ID: plan['m7_team']}
+    T = {**s3['teams'], TID: plan['m7_team']}
     _worker_init(T)
     _AD['sel1'] = plan['sel1']
-    L, opps = M7_ID, plan['opponents']
+    L, opps = TID, plan['opponents']
     # a
-    rt = party_team('M7')
+    rt = party_team(a.party)
     try:
         rr_apply(rt)
         mv = B.MY.get('カイリュー')
         st = B.new_state([m['base'] for m in rt['mons']][:3], [m['base'] for m in T[opps[0]]['mons']][:3])
-        oka = (sum(m['mega'] for m in rt['mons']) == 1 and mv and mv[0].ability == 'マルチスケイル' and mv[1].species == 'メガカイリュー'
-               and st.sides[0][0].can_mega and rt['mons'][0]['base_ability'] == 'マルチスケイル')
+        oka = (1 <= sum(m['mega'] for m in rt['mons']) <= 2 and st is not None)
+        if a.party == 'M7':
+            oka = (sum(m['mega'] for m in rt['mons']) == 1 and mv and mv[0].ability == 'マルチスケイル' and mv[1].species == 'メガカイリュー'
+                   and st.sides[0][0].can_mega and rt['mons'][0]['base_ability'] == 'マルチスケイル')
     except Exception:
         oka = False
         print(traceback.format_exc()[-300:])
     ok('2a party_team / rr_apply / メガ', oka)
     # b
-    ids = sorted((i for i in s3['ids'] if i not in ('R11', M7_ID)), key=lambda i: sort_key(s3['teams'][i]))
+    ids = sorted((i for i in s3['ids'] if i not in ('R11', TID)), key=lambda i: sort_key(s3['teams'][i]))
     elig = [i for i in ids if s3['teams'][i].get('rank') or s3['teams'][i].get('final') or s3['teams'][i].get('peak')]
     try:
         for i in opps:
@@ -4518,14 +4560,18 @@ def cmd_m7_selftest(a):
         ap_ = True
     except Exception:
         ap_ = False
-    ok('2b 相手集合', len(opps) == 50 and 'R11' not in opps and M7_ID not in opps and 'db0baa2843d2bd4b' in opps and opps == elig[:50] and ap_,
+    ok('2b 相手集合', len(opps) == 50 and 'R11' not in opps and TID not in opps and 'db0baa2843d2bd4b' in opps and opps == elig[:50] and ap_,
        f'適格{len(elig)} 除外{len(plan["skipped"])}')
     # c
     cs = [tuple(o) for o in plan['candidates']]
-    ao = {tuple(o) for o in all_orders(T[M7_ID])}
-    nn = sum(1 for c in cs if 'カイリュー' not in c)
+    ao = {tuple(o) for o in all_orders(T[TID])}
+    mgs = {m['base'] for m in T[TID]['mons'] if m['mega']}
+    nn = sum(1 for c in cs if not set(c) & mgs)
+    n_nomega_all = sum(1 for o in ao if not set(o) & mgs)
     ok('2c candidates', len(cs) == 24 and set(cs) <= ao and nn <= 4 and not any(tuple(o) in set(cs) for o in plan['excluded_no_mega'])
-       and len(plan['excluded_no_mega']) == 30 - nn, f'メガなし{nn} 外れたメガなし{len(plan["excluded_no_mega"])}')
+       and len(plan['excluded_no_mega']) == n_nomega_all - nn and not any(len(set(c) & mgs) >= 2 for c in cs)
+       and all(list(c[1:]) == list(norm_order(list(c), [m['base'] for m in T[TID]['mons']])[1:]) for c in cs),
+       f'メガなし{nn} 外れたメガなし{len(plan["excluded_no_mega"])}')
     # d
     X = opps[0]
     r0, _ = adapt_select(L, X, [])
@@ -4574,28 +4620,28 @@ def cmd_m7_selftest(a):
     os.makedirs(D7, exist_ok=True)
     p7 = dict(plan)
     p7['opponents'] = opps[:3]
-    safeio.write_json(os.path.join(D7, 'm7_plan.json'), p7)
+    safeio.write_json(os.path.join(D7, f'{PF}_plan.json'), p7)
 
     class R_:
         pass
     ra = R_()
-    ra.out_dir, ra.procs, ra.max_games, ra.retry_errors = D7, 3, 2, False
+    ra.out_dir, ra.procs, ra.max_games, ra.retry_errors, ra.party, ra.prefix = D7, 3, 2, False, a.party, None
     try:
         if not set(f'{x}|{y}' for X_ in opps[:3] for x, y in ((L, X_), (X_, L))) <= set(plan['sel1']):
             p7['sel1'] = {f'{x}|{y}': {'order': list(T[x]['candidates'][0])} for X_ in opps[:3] for x, y in ((L, X_), (X_, L))}
-            safeio.write_json(os.path.join(D7, 'm7_plan.json'), p7)
+            safeio.write_json(os.path.join(D7, f'{PF}_plan.json'), p7)
         cmd_m7_run(ra)
-        n1 = len(json.load(open(os.path.join(D7, 'm7_games.json'), encoding='utf-8'))['games'])
+        n1 = len(json.load(open(os.path.join(D7, f'{PF}_games.json'), encoding='utf-8'))['games'])
         ra.max_games = 0
         cmd_m7_run(ra)
-        g7 = json.load(open(os.path.join(D7, 'm7_games.json'), encoding='utf-8'))['games']
+        g7 = json.load(open(os.path.join(D7, f'{PF}_games.json'), encoding='utf-8'))['games']
         cl = open(calls).read().split()
         seq = all(all(f'm7:{x}|{k}' in g7 for k in range(10)) for x in opps[:3])
         sd = all(g['seed'] == m7_seed(g['opp'], g['k']) and (g['side0'] == L) == (g['k'] % 2 == 0) and g['why0']['hist_len'] == g['k'] for g in g7.values())
         ok('2f 再開', n1 == 2 and len(g7) == 30 and len(cl) == 30 and len(set(cl)) == 30 and seq and sd, f'中断時{n1}戦 計算回数{len(cl)} 一意{len(set(cl))}')
         cmd_m7_report(ra)
-        md = open(os.path.join(D7, 'M7RUN.md'), encoding='utf-8').read()
-        heads = ['## 1. 全体', '## 2. 相手構築ごと', '## 3. 推移', '## 4. M7 の選出別勝率', '## 5. 最も負けた相手トップ10', '## 6. リザホーク', '## 7. M7 の個体ごと', '## 8. 設定']
+        md = open(os.path.join(D7, f'{PF.upper()}RUN.md'), encoding='utf-8').read()
+        heads = ['## 1. 全体', '## 2. 相手構築ごと', '## 3. 推移', f'## 4. {TID} の選出別勝率', '## 5. 最も負けた相手トップ10', '## 6. リザホーク', f'## 7. {TID} の個体ごと', '## 8. 設定']
         ok('2h report', all(h in md for h in heads), f'{len(md)}字')
     except SystemExit as e:
         ok('2f/2h fake', False, str(e))
@@ -4616,9 +4662,75 @@ def cmd_m7_selftest(a):
     r = _job_adapt(('m7:t|0', X, 0, L, X, [], [], M7_DEPTH, m7_seed(X, 0)))
     print(f"   実戦1戦(k=0, M7 対 {X[:8]}) res={r.get('res')} {r.get('turns')}手 全体{r['sec']}秒（選出{r['sec_sel']}秒）", flush=True)
     ok('2g 実戦1戦が完走', r.get('res') is not None or r.get('judged') is not None, str(r.get('error'))[-200:])
+    # 追加項目（SPEC_M7MEGA2 受け入れ 2〜5）
+    try:
+        okx = True
+        for nm_ in ('M8_1', 'M8_2', 'M8_3'):
+            pt = party_team(nm_)
+            rr_apply(pt)
+            okx &= 1 <= sum(m['mega'] for m in pt['mons']) <= 2
+        m83 = [m for m in party_team('M8_3')['mons'] if m['species'] == 'メガメタグロス']
+        okx &= bool(m83) and m83[0]['ability'] == 'かたいツメ' and m83[0]['base_ability'] == 'クリアボディ'
+        ok('4a M8 party_team / rr_apply / メタグロス特性', okx)
+    except Exception:
+        ok('4a M8 party_team', False, traceback.format_exc()[-300:])
+    pd0 = R.PARTY_D
+    try:
+        tmpd = tempfile.mkdtemp(prefix='m7party_')
+        base_party = json.load(open(os.path.join(pd0, 'M8_1.json'), encoding='utf-8'))
+        nomega = [e for e in base_party if e['species'] not in B.BASE_OF]
+        mega3 = nomega[:3] and [dict(nomega[0], species='メガカイリュー', ability='マルチスケイル'), dict(nomega[0], species='メガリザードンＸ', ability='かたいツメ'),
+                                  dict(nomega[0], species='メガガブリアスＺ', ability='ほのおのからだ')]
+        R.PARTY_D = tmpd
+        json.dump(nomega, open(os.path.join(tmpd, 'z0.json'), 'w', encoding='utf-8'), ensure_ascii=False)
+        json.dump(base_party[:2] + [], open(os.path.join(tmpd, 'z3.json'), 'w', encoding='utf-8'), ensure_ascii=False)
+        res = []
+        for nm_, nn_ in (('z0', 0),):
+            try:
+                party_team(nm_)
+                res.append(False)
+            except SystemExit as e:
+                res.append('0体' in str(e))
+        b3 = [e for e in base_party if e['species'] in B.BASE_OF]
+        three = b3 + [dict(nomega[0], species='メガカイリュー', ability='マルチスケイル')] if len(b3) == 2 else None
+        if three:
+            json.dump(three, open(os.path.join(tmpd, 'z3.json'), 'w', encoding='utf-8'), ensure_ascii=False)
+            try:
+                party_team('z3')
+                res.append(False)
+            except SystemExit as e:
+                res.append('3体' in str(e))
+        ok('4b メガ0体・3体で SystemExit', res and all(res), str(res))
+    except Exception:
+        ok('4b メガ0体・3体', False, traceback.format_exc()[-300:])
+    finally:
+        R.PARTY_D = pd0
+        shutil.rmtree(tmpd, ignore_errors=True)
+    try:
+        okc = True
+        for nm_ in ('M8_1', 'M8_2', 'M8_3'):
+            pt = party_team(nm_)
+            mgb = sorted(m['base'] for m in pt['mons'] if m['mega'])
+            wv = {m['base']: 1.0 for m in pt['mons']}
+            inf = build_candidates(pt, None, wv, None)
+            cs_ = [tuple(o) for o in inf['candidates']]
+            ao_ = {tuple(o) for o in all_orders(pt)}
+            bs_ = [m['base'] for m in pt['mons']]
+            n0 = sum(1 for c in cs_ if not set(c) & set(mgb))
+            okc &= (len(cs_) == 24 and len(set(cs_)) == 24 and not any(len(set(c) & set(mgb)) == 2 for c in cs_) and n0 == 4
+                    and sum(1 for c in cs_ if len(set(c) & set(mgb)) == 1) == 20 and all(sum(1 for c in cs_ if b in c) >= 6 for b in mgb)
+                    and set(cs_) <= ao_ and all(list(c) == list(norm_order(list(c), bs_)) for c in cs_) and inf['mega_split'] is not None)
+        ok('4c M8 build_candidates 24/メガ2体同時0/メガなし4/各メガ6以上', okc)
+    except Exception:
+        ok('4c build_candidates', False, traceback.format_exc()[-300:])
+    pm8, pm7 = m7_paths(None, 'm8_1'), m7_paths(None, 'm7')
+    ok('4d m7_paths', pm8['plan'].endswith('m8_1_plan.json') and pm8['games'].endswith('m8_1_games.json') and pm8['logs'].endswith('m8_1_logs.jsonl')
+       and os.path.normpath(pm8['md']) == os.path.normpath(os.path.join(HERE, '..', 'logs', 'M8_1RUN.md'))
+       and pm7['plan'] == os.path.join(DEF_OUT, 'm7_plan.json') and os.path.normpath(pm7['md']) == os.path.normpath(DEF_M7MD))
     after = _sha_all()
     ok('3 既存ファイルの sha256 不変', before == after, f'{len(before)}件')
-    ok('3b 既定の場所に m7_* / M7RUN.md が無い', not any(os.path.exists(os.path.join(DEF_OUT, f)) for f in ('m7_plan.json', 'm7_games.json', 'm7_logs.jsonl')) and not os.path.exists(DEF_M7MD))
+    ok('3b 既定の場所に新規 m8_* / M8_*RUN.md が無い', not any(os.path.exists(os.path.join(DEF_OUT, f'{p_}_{k_}')) for p_ in ('m8_1', 'm8_2', 'm8_3') for k_ in ('plan.json', 'games.json', 'logs.jsonl'))
+       and not any(os.path.exists(os.path.join(os.path.dirname(DEF_M7MD), f'{p_}RUN.md')) for p_ in ('M8_1', 'M8_2', 'M8_3')))
     print('\n結果:', 'すべて ○' if all(c for _, c in results) else '×あり: ' + ', '.join(n for n, c in results if not c))
     if not a.keep and not a.out_dir:
         shutil.rmtree(D, ignore_errors=True)
@@ -4678,7 +4790,7 @@ def main():
     p = sp.add_parser('m7')
     p.add_argument('what', choices=['plan', 'run', 'report', 'selftest'])
     p.add_argument('--party', default='M7')
-    p.add_argument('--prefix', default='m7')
+    p.add_argument('--prefix', default=None)
     p.add_argument('--procs', type=int, default=4)
     p.add_argument('--force', action='store_true')
     p.add_argument('--max-games', type=int, default=0)
