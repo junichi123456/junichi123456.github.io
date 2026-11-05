@@ -639,10 +639,12 @@ def play(st, max_turns=20, smart=False):
     return evaluate(st)
 
 
-def lookahead_action(st, i=0, depth=3, k_self=3, k_opp=2, mode=None, info=None):
+def lookahead_action(st, i=0, depth=3, k_self=3, k_opp=2, mode=None, info=None, res=None):
     """Action for side i from a `depth`-turn simultaneous-move tree (side i's best k_self actions x the other side's
     best k_opp replies at every turn, most likely outcomes, PESS mix over replies), evaluated at the leaves.
     Used for whole-game play-outs (prep.py) where both sides read ahead the same way."""
+    if res is not None:
+        return _lookahead_res(st, i, depth, k_self, k_opp, info, mode == 'deny', res)
     if mode == 'deny':
         return _lookahead_deny(st, i, depth, k_self, k_opp, info)
     acts = E.actions(st, i)
@@ -789,6 +791,185 @@ def _lookahead_deny(st, i, depth, k_self, k_opp, info=None):
         if v > bv:
             best, bv = a, v
     if info is not None:
+        info.update({'mode': 'deny', 'values': values, 'worst': worst,
+                     'threats_root': [(k, a) for _, k, a in top], 'lose_lines': lose})
+    return best
+
+
+# ---------------------------------------------------------------- resource mode (SPEC_RESOURCE.md)
+RES_W = 0.4          # weight kept on the value of the satellites (the rest is discounted: they may be cut)
+RES_SW_PEN = 0.10    # root penalty for switching a satellite out while the axis covers everyone
+RES_LOOSE = 0.8      # loose mode: share of the candidates the axis must beat
+_RC = {}
+
+
+def _res_mega(m):
+    n = m.clone()
+    n.form = m.mega_form
+    n.stats = None
+    n.ability = n.form.ability
+    n.can_mega = False
+    return n
+
+
+def _res_beats(st, i, a, c, a_active, c_active):
+    """True if `a` (side i, estimates only) beats `c` one on one: it needs fewer hits, or as many and moves first."""
+    key = (a.name, a.form.ja, round(16 * a.hp / a.maxhp), tuple(a.boosts.values()) if a_active else 0, a.item, a.moves,
+           c.name, c.form.ja, round(16 * c.hp / c.maxhp), tuple(c.boosts.values()) if c_active else 0, c.item, c.busted,
+           c.moves, st.weather, st.terrain)
+    r = _RC.get(key)
+    if r is not None:
+        return r
+    n = st.clone()
+    sa, sc = n.sides[i], n.sides[1 - i]
+    a2, c2 = a.clone(), c.clone()
+    if not a_active:
+        a2.boosts = dict.fromkeys(a2.boosts, 0)
+    if not c_active:
+        c2.boosts = dict.fromkeys(c2.boosts, 0)
+    sa.mons[sa.act], sc.mons[sc.act] = a2, c2
+    sa.owned.add(sa.act)
+    sc.owned.add(sc.act)
+    dA = 0.9 * max([est(n, i, x) for x in a2.moves if x in E.MOVES] or [0.0])
+    dC = 1.1 * max([est(n, 1 - i, x) for x in c2.moves if x in E.MOVES] or [0.0])
+    nA = math.ceil(1 / dA - 1e-9) if dA > 0 else 1e9
+    nC = math.ceil(1 / dC - 1e-9) if dC > 0 else 1e9
+    if (c.item == 'focussash' and c.hp >= c.maxhp) or (c.ability == 'disguise' and not c.busted):
+        nA += 1
+    r = nA <= 3 and (nA < nC or (nA == nC and faster(n, i) >= 1))
+    if len(_RC) > 20000:
+        _RC.clear()
+    _RC[key] = bool(r)
+    return bool(r)
+
+
+def axis_cover(st, i, axis, cand, loose=False):
+    """Does the axis of side i beat every candidate (cand: Mons of the foe's remaining six)? Returns
+    {'on': bool, 'sats': [satellite indices to discount], 'axis': [axis indices alive]}."""
+    s = st.sides[i]
+    ax = [j for j, m in enumerate(s.mons) if m.alive and m.name in axis]
+    sat = [j for j, m in enumerate(s.mons) if m.alive and m.name not in axis]
+    off = {'on': False, 'sats': [], 'axis': ax}
+    if not ax or not sat or not cand:
+        return off
+    foe = st.sides[1 - i]
+    c_act = [c is foe.mons[foe.act] for c in cand]
+    if s.mega_used:
+        plans = [()]
+    else:
+        plans = [(j,) for j in ax if s.mons[j].can_mega and s.mons[j].mega_form is not None] or [()]
+    best = None
+    for pl in plans:
+        forms = {j: (_res_mega(s.mons[j]) if j in pl else s.mons[j]) for j in ax}
+        won = [any(_res_beats(st, i, forms[j], c, j == s.act, c_act[n]) for j in ax) for n, c in enumerate(cand)]
+        if all(won):
+            return {'on': True, 'sats': sat, 'axis': ax}
+        if best is None or sum(won) > sum(best):
+            best = won
+    if not loose:
+        return off
+    for pl in plans:
+        forms = {j: (_res_mega(s.mons[j]) if j in pl else s.mons[j]) for j in ax}
+        won = [any(_res_beats(st, i, forms[j], c, j == s.act, c_act[n]) for j in ax) for n, c in enumerate(cand)]
+        if sum(won) < RES_LOOSE * len(cand) - 1e-9:
+            continue
+        prot, good = set(), True
+        for n, c in enumerate(cand):
+            if won[n]:
+                continue
+            ss = [j for j in sat if _res_beats(st, i, s.mons[j], c, j == s.act, c_act[n])]
+            if not ss:
+                good = False
+                break
+            prot.add(max(ss, key=lambda j: s.mons[j].hp / s.mons[j].maxhp))
+        rest = [j for j in sat if j not in prot]
+        if good and rest:
+            return {'on': True, 'sats': rest, 'axis': ax}
+    return off
+
+
+def evaluate_resource(st, r, sats, w=RES_W):
+    """evaluate() with the satellites (indices of side r) worth only w of their value (they may be cut)."""
+    v = evaluate(st)
+    s = st.sides[r]
+    adj = (1 - w) * sum(_mon_value(st, r, s.mons[j], j == s.act) for j in sats)
+    return v - adj if r == 0 else v + adj
+
+
+def _lookahead_res(st, i, depth, k_self, k_opp, info, deny, res):
+    """lookahead_action / _lookahead_deny with satellites discounted at the leaves when the axis covers everyone
+    (res = {'axis': names, 'cand': [Mon], 'loose': bool}); otherwise exactly the plain reads."""
+    if info is None:
+        info = {}
+    acts = E.actions(st, i)
+    cov = axis_cover(st, i, res['axis'], res['cand'], res.get('loose')) if len(acts) > 1 else None
+    if cov is None or not cov['on']:
+        info.update({'res_on': False, 'res_sats': []})
+        a = lookahead_action(st, i, depth, k_self, k_opp, mode='deny' if deny else None, info=info)
+        info.update({'res_on': False, 'res_sats': []})
+        return a
+    sats, axl = cov['sats'], cov['axis']
+    info.update({'res_on': True, 'res_sats': list(sats)})
+    sign = 1 if i == 0 else -1
+    j = 1 - i
+    allsat = {k for k, m in enumerate(st.sides[i].mons) if m.name not in res['axis']}
+
+    def leaf(s):
+        if all(s.sides[i].mons[k].alive for k in axl):
+            return evaluate_resource(s, i, sats)
+        return evaluate(s)
+
+    def val(s, d):
+        if s.winner is not None or d == 0:
+            v = sign * leaf(s)
+            if s.winner is not None:
+                v += 0.3 * sign * s.winner * d
+            elif deny:
+                v -= deny_threat(s, i)
+            return v
+        mine = prune(s, i, k_self) if E.actions(s, i) else [None]
+        if deny:
+            if E.actions(s, j):
+                h = prune(s, j, k_opp)
+                t = threat_replies(s, j, 1)
+                theirs = [h[0], t[0]] if h and t and t[0] not in h else h
+            else:
+                theirs = [None]
+            pe = DENY_PESS
+        else:
+            theirs = prune(s, j, k_opp) if E.actions(s, j) else [None]
+            pe = PESS
+        best = -1e9
+        for a in mine:
+            vs = [val(E.step(s, *((a, b) if i == 0 else (b, a)), chooser=chooser), d - 1) for b in theirs]
+            best = max(best, pe * min(vs) + (1 - pe) * sum(vs) / len(vs))
+        return best
+
+    pen_sw = st.sides[i].act in allsat
+    if deny:
+        tl = _threat_list(st, j) if E.actions(st, j) else []
+        top = tl[:DENY_ROOT_THREATS]
+        theirs = _dedupe(prune(st, j, k_opp) + [a for _, _, a in top]) if E.actions(st, j) else [None]
+        pe = DENY_PESS
+    else:
+        theirs = prune(st, j, k_opp + 1) if E.actions(st, j) else [None]
+        pe = PESS
+    best, bv = None, -1e9
+    values, worst, lose = [], {}, []
+    for a in acts:
+        vs = [val(E.step(st, *((a, b) if i == 0 else (b, a)), chooser=chooser), depth - 1) for b in theirs]
+        v = pe * min(vs) + (1 - pe) * sum(vs) / len(vs) + (front_bias(st, a) if i == 0 else 0)
+        if pen_sw and a[0] == 's':
+            v -= RES_SW_PEN
+        if deny:
+            m = min(range(len(vs)), key=lambda n: vs[n])
+            values.append((a, v))
+            worst[a] = theirs[m]
+            if vs[m] < -1.0:
+                lose.append((a, theirs[m], vs[m]))
+        if v > bv:
+            best, bv = a, v
+    if deny:
         info.update({'mode': 'deny', 'values': values, 'worst': worst,
                      'threats_root': [(k, a) for _, k, a in top], 'lose_lines': lose})
     return best

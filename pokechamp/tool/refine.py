@@ -538,6 +538,20 @@ def _trace_move(turn, my_nm, foe_nm, mid, elog):
     return [turn, my_nm, ja, tgt, r]
 
 
+def res_cand(st, bs, rx, t6k, appeared_foe, k):
+    """search.py `res` for side k (SPEC_RESOURCE.md): the foe's six minus the fallen; foes seen on the field as
+    believed now (bs), unseen ones (selected or not) full HP from the guessed set. Never looks at the foe's selection."""
+    f = bs.sides[1 - k]
+    fallen = {m.name for m in st.sides[1 - k].mons if not m.alive}
+    cand = []
+    for n, tp in zip(rx['opp6'], t6k):
+        if n in fallen:
+            continue
+        jj = next((q for q in sorted(appeared_foe) if f.mons[q].name == n), None)
+        cand.append(f.mons[jj] if jj is not None else tp)
+    return {'axis': tuple(rx['axis']), 'cand': cand, 'loose': bool(rx.get('loose'))}
+
+
 def blind_play(args):
     """One game: true sets on both sides; each side reads ahead on its own guess of the other's sets (usage data
     and the moves seen so far). We read my_depth turns ahead, they read opp_depth."""
@@ -552,8 +566,14 @@ def blind_play(args):
     play0, play1 = (args[12] if len(args) > 12 and args[12] else (None, None))   # (side 0 / side 1 rule list or None, SPEC_PLAYBOOK.md)
     if play0 and rules is not None:
         raise ValueError('playbook and rules cannot be combined')
+    resx = args[13] if len(args) > 13 and args[13] else (None, None)   # (side 0 / side 1 resource mode or None, SPEC_RESOURCE.md)
+    if (resx[0] or resx[1]) and rules is not None:
+        raise ValueError('resource and rules cannot be combined')
     pb0 = pb1 = None
     import collections
+    appeared = [set(), set()]
+    rstat = [collections.Counter(), collections.Counter()]
+    t6 = None
     dinfo = [{}, {}]
     dstats = [collections.Counter(), collections.Counter()]
     dturns = [0, 0]
@@ -569,6 +589,7 @@ def blind_play(args):
         B.set_known_context(None)
         B._OPP_CACHE.clear()
         t_opp = _templates(opp_order, B.opp_sets, 1)
+        t6 = {k: _templates(resx[k]['opp6'], B.opp_sets, 1 - k) for k in (0, 1) if resx[k]}
         B._OPP_CACHE.clear()
         t_me = _templates(my_order, B.opp_sets, 0)
         B.match_known = real_match
@@ -605,12 +626,33 @@ def blind_play(args):
                         return out
                     return PBK.ranked(bs, i, depth, extra=ex)
                 return fn
+        def _resarg(k, bs):
+            return res_cand(st, bs, resx[k], t6[k], appeared[1 - k], k)
+
+        def _resnote(k, tn, a, sat_before, before_k):
+            rinf = dinfo[k]
+            c = rstat[k]
+            c['turns'] += 1
+            on = bool(rinf.get('res_on'))
+            if on:
+                c['on'] += 1
+                c.setdefault('first', tn)
+                if a and a[0] == 's' and st.sides[k].mons[st.sides[k].act].name not in resx[k]['axis']:
+                    c['sw_sat_on'] += 1
+            return on
+
         for tn in range(30):
             if st.winner is not None:
                 break
+            for _s in (0, 1):
+                appeared[_s].add(st.sides[_s].act)
             if ctx is None:
                 bst0 = (st if know else belief(st, 1, t_opp, seen[1])) if pb0 is not None else None
-                if deny[0]:
+                if resx[0]:
+                    dinfo[0] = {}
+                    _b0 = bst0 if pb0 is not None else (st if know else belief(st, 1, t_opp, seen[1]))
+                    a0 = S.lookahead_action(_b0, 0, my_depth, mode='deny' if deny[0] else None, info=dinfo[0], res=_resarg(0, _b0))
+                elif deny[0]:
                     dinfo[0] = {}
                     a0 = S.lookahead_action(bst0 if pb0 is not None else (st if know else belief(st, 1, t_opp, seen[1])), 0, my_depth, mode='deny', info=dinfo[0])
                 else:
@@ -621,13 +663,21 @@ def blind_play(args):
                 bst = st if know else belief(st, 1, t_opp, seen[1])
                 a0, _rid = policy.choose(st, bst, policy.ranked_root(bst, my_depth), ctx)
             bst1 = belief(st, 0, t_me, seen[0]) if pb1 is not None else None
-            if deny[1]:
+            if resx[1]:
+                dinfo[1] = {}
+                _b1 = bst1 if pb1 is not None else belief(st, 0, t_me, seen[0])
+                a1 = S.lookahead_action(_b1, 1, opp_depth, mode='deny' if deny[1] else None, info=dinfo[1], res=_resarg(1, _b1))
+            elif deny[1]:
                 dinfo[1] = {}
                 a1 = S.lookahead_action(bst1 if pb1 is not None else belief(st, 0, t_me, seen[0]), 1, opp_depth, mode='deny', info=dinfo[1])
             else:
                 a1 = S.lookahead_action(bst1 if pb1 is not None else belief(st, 0, t_me, seen[0]), 1, opp_depth)
             if pb1 is not None:
                 a1, _rid = pb1.decide(st, bst1, 1, a1, _rk(bst1, 1, opp_depth), seen, tn + 1)
+            res_on = {}
+            for _s in (0, 1):
+                if resx[_s]:
+                    res_on[_s] = _resnote(_s, tn + 1, (a0, a1)[_s], None, None)
             for _s in (0, 1):
                 if deny[_s] and dinfo[_s].get('threats_root'):
                     dturns[_s] += 1
@@ -659,6 +709,8 @@ def blind_play(args):
                 for j, m in enumerate(st.sides[i].mons):
                     if before[i][j] and not m.alive:
                         faints.append((tn + 1, i, m.name, log[-1][2 if i == 0 else 0]))
+                        if resx[i] and res_on.get(i) and m.name not in resx[i]['axis']:
+                            rstat[i]['sat_faint_on'] += 1
         judged = st.winner is None
         res = st.winner if st.winner is not None else (1 if S.evaluate(st) > 0 else -1)
         left = [[(m.name, round(100 * m.hp / m.maxhp)) for m in s.mons] for s in st.sides]
@@ -667,7 +719,9 @@ def blind_play(args):
                 **({'mv': mv} if trace else {}),
                 **({'pb': {str(_s): _p.stats() for _s, _p in ((0, pb0), (1, pb1)) if _p is not None}} if (pb0 or pb1) else {}),
                 **({'deny_stats': {_s: {'turns': dturns[_s], 'kinds': dict(dstats[_s])} for _s in (0, 1) if deny[_s]}}
-                   if deny[0] or deny[1] else {})}
+                   if deny[0] or deny[1] else {}),
+                **({'res_stats': {_s: {k: rstat[_s].get(k, 0 if k != 'first' else None) for k in ('turns', 'on', 'first', 'sw_sat_on', 'sat_faint_on')}
+                                  for _s in (0, 1) if resx[_s]}} if resx[0] or resx[1] else {})}
     except Exception:
         import traceback
         return {'res': None, 'error': traceback.format_exc()[-800:]}
