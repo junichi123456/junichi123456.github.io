@@ -116,8 +116,8 @@ def items(h):
     add("G-B1", "1F", "玄関土間", "腰掛けベンチ（造作、座 H420＋クッション）", "bench", h.bench, 420, "case_ash", z0=DOMA, seat=True, front="+y", note="座る家具。要施主確認")
     add("H-S2", "1F", "ホール", "コート収納", "tall", (6250, 4200, 6700, 6000), h.ch["1F"], "case_ash")
     # ---- ジム（機器は h.equipment）
-    add("J-M1", "1F", "ジム", "鏡（突っ張り枠・飛散防止フィルム）", "mirror", (16300, 8840, 18000, 8900), 2000, "mirror", z0=FL["1F"] + 300, base="frame", stack=True)
-    add("J-K1", "1F", "ジム", "測定コーナーのカウンター（体組成計は床、血圧計は天板）", "cabinet", (17675, 7000, 18125, 7700), 900, "case_ash")
+    add("J-M1", "1F", "ジム", "鏡（突っ張り枠・飛散防止フィルム。S 壁の内面・トレッドミルの正面）", "mirror", tuple(h.spec["gym_layout"]["mirror"]), 2000, "mirror", z0=FL["1F"] + 300, base="frame", stack=True)
+    add("J-K1", "1F", "ジム", "測定コーナーのカウンター（体組成計は床、血圧計は天板）", "cabinet", tuple(h.spec["gym_layout"]["counter"]), 900, "case_ash")
     # ---- 水回り
     add("T1-W", "1F", "トイレ（手洗い付）", "タンク式便器（フチなし）", "toilet", (9425, 11300, 9925, 12000), 800, "ceramic", base="none")
     add("T1-H", "1F", "トイレ（手洗い付）", "手洗いカウンター（一体成形・浮かせ）", "counter_float", (8750, 10500, 9050, 11400), 850, "solid_surface", base="float650")
@@ -134,7 +134,7 @@ def items(h):
     add("C1-W", "1F", "ファミリークローゼット", "収納（天井まで・扉付き）西", "tall", (125, 15100, 725, 18125), h.ch["1F"], "case_ash")
     add("C1-N", "1F", "ファミリークローゼット", "収納（天井まで・扉付き）北", "tall", (725, 17525, 3900, 18125), h.ch["1F"], "case_ash")
     add("M1-A", "1F", "機械室（西系統）", "空調機・全熱交換器（簡易ボリューム）", "machine", (12250, 10800, 15100, 12000), 1900, "machine", base="none")
-    add("M2-A", "1F", "機械室（東系統）", "浄水器・ラック・蓄電池（簡易ボリューム）", "machine", (16000, 11000, 18125, 12000), 1900, "machine", base="none")
+    add("M2-A", "1F", "機械室（東系統）", "浄水器・ネットワークラック・排煙機（簡易ボリューム）", "machine", (15200, 11000, 18125, 12000), 1900, "machine", base="none")
     add("WA-S", "1F", "WIC", "棚・パイプ（突っ張りフレーム）", "tall", (14300, 12250, 18125, 12850), h.ch["1F"], "case_ash")
     add("A-B1", "1F", "居室A", "ベッド シングル 1000×2000", "bed", (14700, 16100, 15700, 18125), 520, "case_oak", base="legs260", head="+y")
     add("A-C1", "1F", "居室A", "チェスト", "cabinet", (16500, 14700, 17300, 15100), 700, "case_ash")
@@ -281,6 +281,8 @@ def check(h, its):
             for name, r, hh, kg in h.equipment:
                 if sbox(*r).intersection(p).area > 1:
                     errs.append((it.id, "ジム機器と重なる: " + name))
+            if sbox(*h.battery_room.rect).intersection(p).area > 1:
+                errs.append((it.id, "蓄電室と重なる"))
             if sbox(*h.treadmill_zone).intersection(p).area > 1:
                 errs.append((it.id, "トレッドミル後方の安全帯と重なる"))
         if it.z0 + it.h > h.fl[it.floor] + h.ch[it.floor] + 1:

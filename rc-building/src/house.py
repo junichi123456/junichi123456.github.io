@@ -12,7 +12,8 @@ import math
 from pathlib import Path
 
 import yaml
-from shapely.geometry import LineString, Point, Polygon
+from shapely.geometry import LineString, Point, Polygon, box as sbox
+from shapely.ops import unary_union
 
 from geom import Box, Opening, Room, Wall, decompose
 
@@ -978,6 +979,52 @@ class House:
                 if exterior is not None and op.exterior != exterior:
                     continue
                 yield op
+
+    # ------------------------------------------------------------------ v4.26 離隔・軌跡の判定
+    def mech_zones(self):
+        """機械室（西・東）と蓄電室の壁の面までの矩形（開口側＝ジム側の面）。壁芯 ± 厚/2 から求める。"""
+        mr = self.spec["mech_rooms"]
+        face = mr["wall_x_y"] - self.pt / 2                                  # x8,950 の壁のジム側の面（8,900）
+        bx0, by0, bx1, by1 = self.battery_room.rect
+        return dict(mech=sbox(12250, face, 18125, 12000),
+                    battery=sbox(bx0 - self.pt / 2, by0 - self.pt / 2, bx1, face))
+
+    def swing_zone(self, op, c_hinge, side):
+        """開き戸の 1/4 円の軌跡。c_hinge=(x, y) 蝶番、side=(sx, sy) 開く向き。"""
+        r = op.width
+        cx, cy = c_hinge
+        q = sbox(min(cx, cx + side[0] * r), min(cy, cy + side[1] * r), max(cx, cx + side[0] * r), max(cy, cy + side[1] * r))
+        return Point(cx, cy).buffer(r, 64).intersection(q)
+
+    def clearance_report(self):
+        """機械室・蓄電室の壁の面とジム機器・家具の離隔（施主指示 ≧800）、扉の軌跡・搬入通路・有効面積を判定する。"""
+        gl = self.spec["gym_layout"]
+        need = gl["clearance"]
+        z = self.mech_zones()
+        solid = unary_union([z["mech"], z["battery"]])
+        items = [(n, sbox(*r)) for n, r, *_ in self.equipment if n != "ストレッチマット"]
+        items.append(("J-K1 測定カウンター", sbox(*gl["counter"])))
+        items.append(("J-M1 鏡", sbox(*gl["mirror"])))
+        dist = [(n, g.distance(solid)) for n, g in items]
+        mn = min(dist, key=lambda t: t[1])
+        d = self.battery_door
+        bx0 = self.battery_room.rect[0]
+        bsw = self.swing_zone(d, (bx0 - self.pt / 2, d.u0), (-1, 1))      # 蓄電室扉: ジム側（西）へ外開き。蝶番は u0
+        bsw_hits = [n for n, g in items if g.intersects(bsw)]
+        lane_hits = [(k, n) for k, r in gl["lanes"].items() for n, g in items if g.intersection(sbox(*r)).area > 1]
+        zone = unary_union([solid.buffer(need, join_style=2)]).intersection(unary_union([sbox(*self.gym.rect), sbox(*self.gym_annex.rect)])).difference(solid)
+        usable = self.gym.area + self.gym_annex.area - zone.area / 1e6
+        # 機械室の扉（内開き）の軌跡と機器
+        mr = self.spec["mech_rooms"]
+        face = mr["wall_x_y"] + self.pt / 2
+        mech_sw = {}
+        for (did, room, op) in self.mech_doors:
+            sw = self.swing_zone(op, (op.u0, face), (1, 1))
+            mech_sw[did] = [e[2] for e in mr["equipment"] if sbox(*e[3]).intersects(sw) and e[1] == room]
+        racks = [e for e in mr["equipment"] if e[0].startswith("MB-") and "ラック" in e[2]]
+        rack_front = min(e[3][0] - (bx0 + self.pt / 2) for e in racks)
+        return dict(min=mn, items=dist, need=need, battery_swing_hits=bsw_hits, lane_hits=lane_hits, zone_area=zone.area / 1e6,
+                    usable=usable, mech_swing_hits=mech_sw, rack_front=rack_front, zone=zone, battery_swing=bsw)
 
     def building_area(self):
         """建築面積（壁芯）。庇は先端から 1m 後退した線までを算入（令2条1項2号）。v4.18: 玄関の庇も算入する。"""
