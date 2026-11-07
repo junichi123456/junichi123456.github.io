@@ -1178,7 +1178,7 @@ def energy_sheet(h, number):
             ["パーゴラの損失（被覆率70%＋影）", f"全面被覆に対し 約{en['coverage_deficit'] + en['shade_deficit']:,.0f}kWh → カーポートで{en['cp_gen'] / (en['coverage_deficit'] + en['shade_deficit']) * 100:.0f}%を補う"],
             ["合計 年間発電量", f"{en['pv_kwp']:.1f}kWp・{en['pv_gen']:,.0f} kWh（需要の {en['pv_gen'] / en['total'] * 100:.0f}%）"],
             ["拡張後（予約ゾーン RZ）", f"RZ {h.pv_reserve.area / 1e6:.0f}m² → {en['rz_kwp']:.1f}kWp・{en['rz_gen']:,.0f}kWh（影3%は推定）。合計 {en['pv_kwp_ext']:.1f}kWp・約{en['pv_gen_ext']:,.0f}kWh（需要の {en['pv_gen_ext'] / en['total'] * 100:.0f}%）"],
-            ["蓄電池（停電時）", f"{bsz['rows']['C']['kwh']:.1f}kWh/日の防災モードで7日 → 必要公称 {bsz['rows']['C']['nominal']:.0f}kWh → 200kWh級（蓄電室 4.6m²）。A年平均 {bsz['rows']['A']['nominal']:.0f}・B冬 {bsz['rows']['B']['nominal']:.0f}kWh は南半分に収まらない"]]
+            ["蓄電池（停電時）", f"{bsz['rows']['C']['kwh']:.1f}kWh/日の防災モードで7日 → 必要公称 {bsz['rows']['C']['nominal']:.0f}kWh → 200kWh級（蓄電室 {h.battery_room.area:.1f}m²）。A年平均 {bsz['rows']['A']['nominal']:.0f}・B冬 {bsz['rows']['B']['nominal']:.0f}kWh は南半分に収まらない"]]
     sh.text("(5) 必要発電量 — 日よけ付き菜園（ソーラーパーゴラ）＋3台用ソーラーカーポート", (200, y2 - 6), 2.8, "A-TEXT", paper=True)
     y2 = sh.table(200, y2 - 9, [62, 140], rows, row_h=5.0, h=2.0)
     side_panel(sh, 200, y2 - 6, [("t", "本館とは構造的に分離した独立架台（鉄骨・軒高2.8m・南向き10°）。パネルを列状にすき間をあけて並べ（被覆率70%）、光と雨を下の菜園・庭に落とす。営農型太陽光（ソーラーシェアリング）やソーラーパーゴラとして実例がある"),

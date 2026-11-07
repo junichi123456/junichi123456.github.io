@@ -69,7 +69,8 @@ def _blockers(h, its, r):
     clr = _cfg(h)["line"]["hole_clear"]
     tall = [sbox(*i.rect).buffer(clr) for i in its if i.floor == r.floor and i.room == r.name
             and i.z0 + i.h >= h.fl[r.floor] + h.ch[r.floor] - 100 and not i.stack]
-    return unary_union(tall + [p.buffer(clr) for p in holes])
+    bat = [sbox(*h.battery_room.rect).buffer(clr)] if (r.floor == "1F" and r.name == "ジム") else []      # v4.26 蓄電室には器具を置かない
+    return unary_union(tall + bat + [p.buffer(clr) for p in holes])
 
 
 # 室ごとの上書き（C-1.3 の表）: (向き, [(中心線, 端a, 端b)], lm/m)
@@ -152,6 +153,30 @@ def lines(h, its):
             out.append(dict(id=f"{r.floor}-{code}-L{len(segs) + 1}", code=code, floor=r.floor, room=r.name, p0=[9250, 13675, z], p1=[9250, 14575, z], L=900,
                             lm_per_m=1500, kind="line", axis="y", group="L"))
     return out
+
+
+def battery_lines(h):
+    """蓄電室（v4.26）の防湿 LED 2 灯（200lx、非常時は蓄電池から）。h.rooms に入れないため lines() とは別に持つ（CG・3D に出さない）。"""
+    bl = _cfg(h)["battery_room"]
+    x0, y0, x1, y1 = h.battery_room.rect
+    z = h.fl["2F"] - h.slab_t
+    xc = (x0 + x1) / 2
+    out = []
+    for n, yc in enumerate((y0 + (y1 - y0) / 4, y0 + (y1 - y0) * 3 / 4), 1):
+        out.append(dict(id=f"1F-BAT-L{n}", code="BAT", floor="1F", room="蓄電室", p0=[round(xc - bl["L"] / 2), round(yc), z], p1=[round(xc + bl["L"] / 2), round(yc), z],
+                        L=bl["L"], lm_per_m=bl["lm_per_m"], kind="line", axis="x", group="L"))
+    return out
+
+
+def battery_row(h):
+    """照度計算表（E-06）の蓄電室の行。内法 W×D、天井は RC 直（ジムと同じ階高）で光束法。"""
+    bl = _cfg(h)["battery_room"]
+    w, d = (v / 1000 for v in h.spec["battery"]["inner"])
+    Hc = (h.fl["2F"] - h.slab_t - h.fl["1F"]) / 1000
+    u = _U(w * d / (Hc * (w + d)))
+    lm = 2 * bl["L"] / 1000 * bl["lm_per_m"]
+    return dict(floor="1F", room="蓄電室（防湿LED）", area=w * d, k=w * d / (Hc * (w + d)), U=u, target=bl["target_lx"], need=bl["target_lx"] * w * d / (u * _cfg(h)["maintenance_factor"]),
+                n=2, lengths="＋".join(f"{bl['L']:,}" for _ in range(2)), lm_per_m=bl["lm_per_m"], lm=lm, E=lm * u * _cfg(h)["maintenance_factor"] / (w * d), dl=0)
 
 
 def downlights(h, its, lns=None):
@@ -279,6 +304,7 @@ def illuminance_table(h, its):
         rows.append(dict(floor=r.floor, room=r.name, area=A, k=k, U=u, target=E, need=need, n=len(rl), lengths="＋".join(f"{l['L']:,}" for l in rl),
                          lm_per_m=max(l["lm_per_m"] for l in rl), lm=lm, E=lm * u * _cfg(h)["maintenance_factor"] / A,
                          dl=sum(1 for d in dl if d["floor"] == r.floor and d["code"] == room_code(h, r))))
+    rows.append(battery_row(h))
     return rows
 
 

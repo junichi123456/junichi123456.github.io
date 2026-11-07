@@ -20,7 +20,7 @@ def lighting_curve(h):
 
 def robot_plan(h):
     """掃除ロボットの清掃範囲（床面積）。土間・浴室・機械室・階段は除く。"""
-    skip = ("玄関土間", "浴室", "シャワー", "機械室", "式台")
+    skip = ("玄関土間", "浴室", "シャワー", "機械室", "式台")   # v4.26 蓄電室は h.rooms に入らない。離隔帯 7m² はジムの一部として清掃する
     out = {}
     for f in h.spec["smart"]["robots"]["floors"]:
         rooms = [r for r in h.rooms if r.floor == f and not any(k in r.name for k in skip)]

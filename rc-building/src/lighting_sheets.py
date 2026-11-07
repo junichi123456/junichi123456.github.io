@@ -28,6 +28,8 @@ def plan_sheet(h, floor, number):
     t = T(sh, (0, 0), (52, 73))
     its = FU.items(h)
     lns = [l for l in LG.lines(h, its) if l["floor"] == floor]
+    if floor == "1F":
+        lns = lns + LG.battery_lines(h)                                   # v4.26 蓄電室 防湿 LED 2 灯
     dls = [d for d in LG.downlights(h, its) if d["floor"] == floor]
     _plan_base(h, floor, sh, t)
     room_labels(h, sh, t, floor, hgt=2.0)
