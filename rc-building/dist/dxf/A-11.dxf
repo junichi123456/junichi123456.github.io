@@ -493,7 +493,7 @@ $SKPOLY
   9
 $TDCREATE
  40
-2461352.629247685
+2461352.6591782407
   9
 $TDUCREATE
  40
@@ -501,7 +501,7 @@ $TDUCREATE
   9
 $TDUPDATE
  40
-2461352.629583333
+2461352.659513889
   9
 $TDUUPDATE
  40
@@ -933,11 +933,11 @@ $PSTYLEMODE
   9
 $FINGERPRINTGUID
   2
-{C76571F7-5F72-480E-BA58-DE4BD8BC143D}
+{04514D99-7E8E-4959-B188-7528FCEE38E8}
   9
 $VERSIONGUID
   2
-{D7FFDEC6-6108-40D6-AB30-30D04D6CBCC7}
+{CA1B264E-1FE1-46B2-ABEB-586475589527}
   9
 $EXTNAMES
 290
@@ -1327,9 +1327,9 @@ ISM
   0
 CLASS
   1
-LAYOUT
+ACDBPLACEHOLDER
   2
-AcDbLayout
+AcDbPlaceHolder
   3
 ObjectDBX Classes
  90
@@ -1343,9 +1343,9 @@ ObjectDBX Classes
   0
 CLASS
   1
-ACDBPLACEHOLDER
+LAYOUT
   2
-AcDbPlaceHolder
+AcDbLayout
   3
 ObjectDBX Classes
  90
@@ -9169,7 +9169,7 @@ AcDbText
  40
 2.1
   1
-53.9m²（1.56倍）
+54.0m²（1.56倍）
   7
 JP
  11
@@ -9419,7 +9419,7 @@ AcDbText
  40
 2.1
   1
-切り）→ジム拡張部→RC 開口 W4,835×H2,300→ジム。幅1m超の機器は分解して搬入
+切り）→ジム拡張部→RC 開口 W4,035×H2,300（815〜4,850）→ジム。幅1m超の機器は分解して搬入
   7
 JP
  11
@@ -9887,7 +9887,7 @@ AcDbText
  40
 2.1
   1
-機器 計2,545kg（平均 539N/m²）→ 設計用 5,000N/m²（提案）・浮き床・落下エリア補強
+機器 計2,545kg（平均 538N/m²）→ 設計用 5,000N/m²（提案）・浮き床・落下エリア補強
   7
 JP
  11
@@ -11387,7 +11387,7 @@ AcDbText
  40
 2.1
   1
-.1kWh 控除後 7.1日）。蓄電室 5.3m²（y≦9,125）
+.1kWh 控除後 7.1日）。蓄電室 5.2m²（y≦9,125）
   7
 JP
  11
@@ -16823,7 +16823,7 @@ DictionaryVariables
 280
 0
   1
-1.4.5 @ 2026-11-07T15:06:07.946210+00:00
+1.4.5 @ 2026-11-07T15:49:13.539969+00:00
   0
 VISUALSTYLE
   5
@@ -23385,7 +23385,7 @@ DictionaryVariables
 280
 0
   1
-1.4.5 @ 2026-11-07T15:06:36.907356+00:00
+1.4.5 @ 2026-11-07T15:49:42.605461+00:00
   0
 ENDSEC
   0

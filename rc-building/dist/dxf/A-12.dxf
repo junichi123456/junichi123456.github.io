@@ -493,7 +493,7 @@ $SKPOLY
   9
 $TDCREATE
  40
-2461352.629247685
+2461352.6591782407
   9
 $TDUCREATE
  40
@@ -501,7 +501,7 @@ $TDUCREATE
   9
 $TDUPDATE
  40
-2461352.6296180557
+2461352.659537037
   9
 $TDUUPDATE
  40
@@ -933,11 +933,11 @@ $PSTYLEMODE
   9
 $FINGERPRINTGUID
   2
-{7B9888D7-EB2A-4CB2-90F5-266A3A50D07C}
+{57B0C699-08AA-4F3C-B6D5-6BFD97C0330C}
   9
 $VERSIONGUID
   2
-{555F75EA-532A-4E51-B863-ADBC4E21381E}
+{B58C6BBC-F40E-4ACF-A991-0A39250F21F6}
   9
 $EXTNAMES
 290
@@ -1327,9 +1327,9 @@ ISM
   0
 CLASS
   1
-LAYOUT
+ACDBPLACEHOLDER
   2
-AcDbLayout
+AcDbPlaceHolder
   3
 ObjectDBX Classes
  90
@@ -1343,9 +1343,9 @@ ObjectDBX Classes
   0
 CLASS
   1
-ACDBPLACEHOLDER
+LAYOUT
   2
-AcDbPlaceHolder
+AcDbLayout
   3
 ObjectDBX Classes
  90
@@ -10297,7 +10297,7 @@ AcDbText
  40
 2.1
   1
-手口9項目を評価し対策を追加（S-04）: 門のインターホンと貫通型宅配ボックス、忍び返し、全窓 CP 防犯合わせ、玄
+手口10項目を評価し対策を追加（S-04）: 門のインターホンと貫通型宅配ボックス、忍び返し、全窓 CP 防犯合わせ、
   7
 JP
  11
@@ -10329,7 +10329,7 @@ AcDbText
  40
 2.1
   1
-関 CP 防犯扉・2ロック、非常ボタン・機械警備・LTE 予備回線、2階 WIC（主寝室） を避難室に
+玄関 CP 防犯扉・2ロック、非常ボタン・機械警備・LTE 予備回線、2階 WIC（主寝室） を避難室に
   7
 JP
  11
@@ -11887,7 +11887,7 @@ AcDbText
  40
 2.1
   1
-天井 AP 6台（PoE 有線）→ 98%（概算、竣工時に実測）
+天井 AP 6台（PoE 有線）→ 100%（概算、竣工時に実測）
   7
 JP
  11
@@ -17003,7 +17003,7 @@ DictionaryVariables
 280
 0
   1
-1.4.5 @ 2026-11-07T15:06:07.956387+00:00
+1.4.5 @ 2026-11-07T15:49:13.549908+00:00
   0
 VISUALSTYLE
   5
@@ -23565,7 +23565,7 @@ DictionaryVariables
 280
 0
   1
-1.4.5 @ 2026-11-07T15:06:39.186784+00:00
+1.4.5 @ 2026-11-07T15:49:44.719512+00:00
   0
 ENDSEC
   0
