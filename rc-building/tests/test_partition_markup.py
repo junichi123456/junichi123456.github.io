@@ -25,7 +25,7 @@ def test_room_areas():
     h = _h()
     assert abs(h.room_A.area - 20.12) < 0.01
     assert abs(_room(h, "WIC").area - 10.63) < 0.01
-    assert abs(h.gym_annex.area - 7.64) < 0.01 and abs(h.gym.daylight_area - 53.90) < 0.01
+    assert abs(h.gym_annex.area - 7.64) < 0.01 and abs(h.gym.daylight_area - 53.99) < 0.01
     assert abs(_room(h, "浴室").area - 10.16) < 0.01 and abs(_room(h, "玄関土間").area - 7.97) < 0.01
     assert abs(_room(h, "トイレ").area - 6.06) < 0.01 and abs(_room(h, "洗面・脱衣").area - 8.29) < 0.01
 
@@ -43,7 +43,7 @@ def test_daylight_margin():
 def test_x3_remnant_and_rc():
     h = _h()
     x3 = [op for w in h.walls if w.floor == "1F" and w.cat == "wall" and w.axis == "y" and w.c == h.gx[2] for op in w.openings if op.u0 < 5000 and op.kind == "door"]
-    assert [(o.u0, o.u1) for o in x3] == [(815, 5650)]
+    assert [(o.u0, o.u1) for o in x3] == [(815, 4850)]
     assert x3[0].u0 - 125 >= max(450, 0.3 * 2300)           # 南端に残る RC 壁（壁芯 125〜815 の 690）
     assert h.t == 250                                       # RC 壁厚（令78条の2 ≧150）
 

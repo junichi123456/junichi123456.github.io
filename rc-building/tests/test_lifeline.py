@@ -77,9 +77,9 @@ def test_battery_room():
     x0, y0, x1, y1 = h.battery_room.rect
     assert y1 <= h.D / 2 + 1 and abs(h.D / 2 - 9125) < 1, (y1, h.D)           # 南半分（建物中心 y=9,125 以下）
     assert sbox(*h.gym.rect).contains(sbox(*h.battery_room.rect))
-    assert abs(h.battery_room.area - 4.6) < 0.1
-    assert h.gym.area >= 44.85 and abs(h.gym.area - 46.3) < 0.1, h.gym.area
-    assert h.gym.daylight_area >= h.spec["battery"]["gym_target_m2"] and abs(h.gym.daylight_area - 53.90) < 0.05   # v4.25 拡張部 7.64m² 込み
+    assert abs(h.battery_room.area - 4.7) < 0.05
+    assert h.gym.area >= 44.85 and abs(h.gym.area - 46.35) < 0.05, h.gym.area
+    assert h.gym.daylight_area >= h.spec["battery"]["gym_target_m2"] and abs(h.gym.daylight_area - 53.99) < 0.05   # v4.25 拡張部 7.64m² 込み
     room = sbox(x0, y0, x1, y1)
     for name, r, hh, kg in h.equipment:
         assert not sbox(*r).intersects(room), name
@@ -89,7 +89,7 @@ def test_battery_room():
     for name, r, hh, kg in h.equipment:
         assert not sbox(*r).intersects(sw), name
     cc = {n: r for n, r, *_ in h.equipment}["ケーブルクロスオーバー"]
-    assert cc[0] == 12500 and cc[2] == 16000
+    assert cc[0] == 12300 and cc[2] == 15400   # v4.26 W3,100（蓄電室との離隔 800）
     # 機械室と同じ南半分の外（機械室は北）、換気用に東外壁に面する
     assert x1 == 18125
 
@@ -244,7 +244,7 @@ def test_lifeline_sheets():
 
 
 # v4.25 で更新: 間仕切り x10,600 t200（S 壁まで）・②撤去・室内窓・X3 開口 W4,835・浴室壁 t200・居室A／WIC の区画・玄関土間の縮小（意図した変更）
-GLB_V422 = ("3f32bbe4a8fc5f71", "a5956372484c02ca")      # 旧 v4.24: 739f6a23…／0d2f2ca3…。      # model.glb／model_interior.glb の SHA-256 先頭16桁。v4.22 は 9e2ddbd5…／66f2eabaf…。v4.24 で更新: ジム拡張部の LGS 間仕切り2本と式台の縮小（x12,000→10,500）が GLB に入るため（CG・3D の描画コードは不変）
+GLB_V422 = ("9263258e77804ac9", "507ff06ea261f424")      # v4.26: X3 の扉 D(9,300〜10,100) を RC で塞いだ意図した変更（旧 v4.25: 3f32bbe4…／a5956372…）。旧 v4.24: 739f6a23…／0d2f2ca3…。      # model.glb／model_interior.glb の SHA-256 先頭16桁。v4.22 は 9e2ddbd5…／66f2eabaf…。v4.24 で更新: ジム拡張部の LGS 間仕切り2本と式台の縮小（x12,000→10,500）が GLB に入るため（CG・3D の描画コードは不変）
 # v4.25: 586→588（間仕切り②−1・y14,250−1・y14,650＋1・9,550 の分割＋1・室内窓＋1・x3 開口の分割など、実測）
 A02X_COUNT = 588                                           # v4.24: +2（ジム拡張部の間仕切り2本）。 v4.22 の 561 + 予約ゾーン（外形・点ハッチ・ラベル2）・蓄電室の塗り・番号3件・凡例2行 ほか
 # v4.25: 471→474（間仕切り②−1・y14,250−1・y14,650＋1・9,550 の分割＋1・扉＋1−1・室内窓＋2 など、実測）
@@ -277,12 +277,12 @@ def test_gym_annex_geometry_and_structure():
     gd2 = [op for w in h.walls for op in w.openings if "ガラス" in op.name and w.c == h.gy[1] and w.axis == "x" and w.floor == "1F"][0]
     assert (gd2.u0, gd2.u1) == (7500, 10500) and 10450 - 8975 == 1475 and hall.rect[2] <= 10500 and h.spec["gym_annex"]["wall_x"] - h.spec["gym_annex"]["wall_t"] // 2 >= 10500
     x3 = [op for w in h.walls if w.floor == "1F" and w.cat == "wall" and w.axis == "y" and w.c == h.gx[2] for op in w.openings if op.kind == "door" and op.u0 < 5000]
-    assert [(o.u0, o.u1, o.height, o.operation) for o in x3] == [(815, 5650, 2300, "opening")]
+    assert [(o.u0, o.u1, o.height, o.operation) for o in x3] == [(815, 4850, 2300, "opening")]
     wq = house_legal.wall_quantity(h)
-    assert abs(wq[("1F", "X方向")][1] - 16.00) < 0.01 and abs(wq[("1F", "Y方向")][1] - 15.79) < 0.01
+    assert abs(wq[("1F", "X方向")][1] - 16.00) < 0.01 and abs(wq[("1F", "Y方向")][1] - 16.27) < 0.01
     import performance as PF
     se = PF.seismic(h)["stories"]
-    assert max(v["ecc"] for v in se.values()) <= 0.15 and abs(se[("1F", "Y方向")]["ecc"] - 0.056) < 0.001
+    assert max(v["ecc"] for v in se.values()) <= 0.15 and abs(se[("1F", "Y方向")]["ecc"] - 0.046) < 0.001
 
 
 def test_gym_annex_lighting_name():

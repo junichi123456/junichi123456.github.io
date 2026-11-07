@@ -53,7 +53,7 @@ def test_gym_door_unchanged():
     ssd = [(w, op) for w in h.walls for op in w.openings if op.kind == "door" and "遮音ドア" in op.name and op.floor == "1F"]
     # v4.25: 遮音ドア（Ts-40）は y3,000〜4,000 のまま、取付壁は x10,600 の LGS（t200）。X3（RC）は施主の書き込みで W4,835（815〜5,650）の開口に拡幅
     assert [(w.c, w.cat, op.u0, op.u1, op.height) for w, op in ssd] == [(10600, "partition", 3000, 4000, 2300)]
-    x3 = [op for w in h.walls if w.floor == "1F" and w.axis == "y" and w.c == h.gx[2] for op in w.openings if (op.u0, op.u1) == (815, 5650)]
+    x3 = [op for w in h.walls if w.floor == "1F" and w.axis == "y" and w.c == h.gx[2] for op in w.openings if (op.u0, op.u1) == (815, 4850)]
     assert len(x3) == 1 and x3[0].operation == "opening" and x3[0].height == 2300
 
 

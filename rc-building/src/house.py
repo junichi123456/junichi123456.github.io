@@ -315,8 +315,13 @@ class House:
         L(f, "y", 10650, 9850, 12000)
         R("機械室（西系統）", f, (12250, 9000, 15100, 12000))
         R("機械室（東系統）", f, (15200, 9000, 18125, 12000))
-        L(f, "x", 8950, 12250, 18125)                 # ジム｜機械室（遮音二重壁）
-        L(f, "y", 15150, 9000, 12000, [(10000, 10800, "swing", 1, 0)])
+        mr = self.spec["mech_rooms"]                  # v4.26 3室ともジムへ扉1か所だけ（内開き・蝶番は西）。x15,150 の扉は廃止
+        w89 = L(f, "x", mr["wall_x_y"], 12250, 18125, [(d["u"][0], d["u"][1], "swing", 1, 0) for d in mr["doors"]])
+        self.mech_doors = []
+        for d, op in zip(mr["doors"], w89.openings):
+            op.name = d["name"]
+            self.mech_doors.append((d["id"], d["room"], op))
+        L(f, "y", 15150, 9000, 12000)
         R("ランドリー・室内干し", f, (125, 12250, 6000, 15000), label=(2400, 13600))
         R("ファミリークローゼット", f, (125, 15100, 3900, 18125))
         L(f, "x", 15050, 125, 3950, [(1000, 1800, "sliding")])
@@ -374,8 +379,12 @@ class House:
         R("主寝室", f, (12250, 12250, 18125, 18125), True)
 
     def _gym_equipment(self):
-        """ジム機器（エニタイムフィットネス等の商業ジム相当）。(名称, 矩形, 高さ, 重量kg の目安)"""
-        self.equipment = [
+        """ジム機器（エニタイムフィットネス等の商業ジム相当）。(名称, 矩形, 高さ, 重量kg の目安)。
+        v4.26: 配置は spec の gym_layout（機械室・蓄電室との離隔 800）。3D 用の従来配置は _battery_room で equipment_cg に残す。"""
+        self.equipment = [(n, tuple(r), hh, kg) for n, r, hh, kg in self.spec["gym_layout"]["equipment"]]
+        self.equipment.append(("ストレッチマット", tuple(self.spec["gym_annex"]["mat"]), 20, 5))
+        self.treadmill_zone = (14700, 2400, 17000, 4400)
+        self.equipment_cg = [
             ("パワーラック＋デッドリフト台", (12300, 300, 14500, 2700), 2300, 350),
             ("トレッドミル", (14700, 300, 15600, 2400), 1500, 200),
             ("トレッドミル", (16000, 300, 16900, 2400), 1500, 200),
@@ -387,29 +396,25 @@ class House:
             ("ケーブルクロスオーバー", (12600, 7700, 16100, 8500), 2300, 450),
             ("ストレッチマット", tuple(self.spec["gym_annex"]["mat"]), 20, 5),
         ]
-        self.treadmill_zone = (14700, 2400, 17000, 4400)
 
     def _battery_room(self):
         """蓄電室（v4.23、1階南半分・ジムの北東角）。CG・3D・他の図面を変えないため、h.rooms／h.walls には入れず
         h.battery_room・h.battery_walls（LGS＋強化PB 1時間耐火、扉は防火設備）として別に持つ（A-03 だけが描く）。
-        ジムの面積は area_override で差し引き、ケーブルクロスオーバーを西へ寄せる。3D 用には従来の機器配置を equipment_cg に残す。"""
+        ジムの面積は area_override で差し引き、機器は spec の gym_layout（離隔 800）。南の壁は y6,125（Y2 通り）の x16,250〜17,800、東端は Y2 の RC 壁端部に突き付ける。3D 用には従来の機器配置を equipment_cg に残す。"""
         b = self.spec["battery"]
         x0, y0, x1, y1 = b["rect"]
         f = "1F"
         z0 = self.fl[f]
         z1 = self.fl["2F"] - self.slab_t
-        self.equipment_cg = list(self.equipment)
-        dx = b["gym_crossover_dx"]
-        self.equipment = [(n, ((r[0] + dx, r[1], r[2] + dx, r[3]) if n == "ケーブルクロスオーバー" else r), hh, kg) for n, r, hh, kg in self.equipment]
         iw, idp = b["inner"]
         self.battery_room = Room("蓄電室", f, (x0, y0, x1, y1), False, ((x0 + x1) / 2, (y0 + y1) / 2), 0, area_override=iw * idp / 1e6)
         self.gym.area_override = self.gym.area - (x1 - x0) * (y1 - y0) / 1e6
         self.gym.label_at = (14200, 7000)
         self.gym.daylight_area = self.gym.area + self.gym_annex.area
-        ws = Wall("x", y0, x0, x1, self.pt, z0, z1, "partition", "lgs", floor=f, side="I")
+        ws = Wall("x", y0, x0, x1 - 325, self.pt, z0, z1, "partition", "lgs", floor=f, side="I")
         wd = Wall("y", b["fire_door"]["wall"], y0, y1, self.pt, z0, z1, "partition", "lgs", floor=f, side="I")
         u0, u1 = b["fire_door"]["u"]
-        self.battery_door = wd.add(Opening("door", u0, u1, z0, z0 + 2000, f, "I", "防火設備（自閉・ジム側へ外開き）", "swing", swing=-1, hinge=0))
+        self.battery_door = wd.add(Opening("door", u0, u1, z0, z0 + 2000, f, "I", self.spec["mech_rooms"]["battery_door_name"], "swing", swing=-1, hinge=0))
         self.battery_walls = [ws, wd]
 
     def _door(self, lv, wname, u0, u1, name="木製片開き戸", op="swing", swing=1, hinge=0, h=2000, fire=False):
@@ -460,7 +465,6 @@ class House:
         G("1F", "X3", xo[0], xo[1], h=xo[2], name="開口（ジム↔拡張部）")
         G("1F", "X2", 6400, 7700, name="開口（キッチン↔ホール）")
         D("1F", "X2", 12500, 13400, op="sliding", name="木製引戸")
-        D("1F", "X3", 9300, 10100, swing=1, hinge=0)
         D("1F", "X3", 13000, 13800, swing=1, hinge=1)
         G("1F", "Y2", 1800, 5800, name="開口（ダイニング↔キッチン）")
         self._glass_door("GD-2", "1F", "Y2", 7500, 10500, "ガラスFIX＋上吊り引戸（合わせ強化）", +1)  # 正面（北）: ホール・階段1 側の面に取付
