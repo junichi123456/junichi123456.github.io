@@ -79,7 +79,7 @@ def test_battery_room():
     assert sbox(*h.gym.rect).contains(sbox(*h.battery_room.rect))
     assert abs(h.battery_room.area - 4.6) < 0.1
     assert h.gym.area >= 44.85 and abs(h.gym.area - 46.3) < 0.1, h.gym.area
-    assert h.gym.daylight_area >= h.spec["battery"]["gym_target_m2"] and abs(h.gym.daylight_area - 51.72) < 0.05   # v4.24 拡張部込み
+    assert h.gym.daylight_area >= h.spec["battery"]["gym_target_m2"] and abs(h.gym.daylight_area - 53.90) < 0.05   # v4.25 拡張部 7.64m² 込み
     room = sbox(x0, y0, x1, y1)
     for name, r, hh, kg in h.equipment:
         assert not sbox(*r).intersects(room), name
@@ -243,9 +243,12 @@ def test_lifeline_sheets():
     assert t2.count("要確認") >= 10 and "推定" in t2
 
 
-GLB_V422 = ("739f6a2325c5ef73", "0d2f2ca39b808e3f")      # model.glb／model_interior.glb の SHA-256 先頭16桁。v4.22 は 9e2ddbd5…／66f2eabaf…。v4.24 で更新: ジム拡張部の LGS 間仕切り2本と式台の縮小（x12,000→10,500）が GLB に入るため（CG・3D の描画コードは不変）
-A02X_COUNT = 586                                           # v4.24: +2（ジム拡張部の間仕切り2本）。 v4.22 の 561 + 予約ゾーン（外形・点ハッチ・ラベル2）・蓄電室の塗り・番号3件・凡例2行 ほか
-A03_COUNT = 471                                            # v4.22 の 411 + 蓄電室（間仕切り・扉・ラック・PCS・束壁・室名）と拡大詳細 52 = 463。v4.24: 463→471（+8。ジム拡張部の間仕切り2・移設した遮音ドア・拡張部の室名と面積・要確認の注記・框ラベルの移動、H-S1 撤去とマット移動を差し引いた実測値）
+# v4.25 で更新: 間仕切り x10,600 t200（S 壁まで）・②撤去・室内窓・X3 開口 W4,835・浴室壁 t200・居室A／WIC の区画・玄関土間の縮小（意図した変更）
+GLB_V422 = ("3f32bbe4a8fc5f71", "a5956372484c02ca")      # 旧 v4.24: 739f6a23…／0d2f2ca3…。      # model.glb／model_interior.glb の SHA-256 先頭16桁。v4.22 は 9e2ddbd5…／66f2eabaf…。v4.24 で更新: ジム拡張部の LGS 間仕切り2本と式台の縮小（x12,000→10,500）が GLB に入るため（CG・3D の描画コードは不変）
+# v4.25: 586→588（間仕切り②−1・y14,250−1・y14,650＋1・9,550 の分割＋1・室内窓＋1・x3 開口の分割など、実測）
+A02X_COUNT = 588                                           # v4.24: +2（ジム拡張部の間仕切り2本）。 v4.22 の 561 + 予約ゾーン（外形・点ハッチ・ラベル2）・蓄電室の塗り・番号3件・凡例2行 ほか
+# v4.25: 471→474（間仕切り②−1・y14,250−1・y14,650＋1・9,550 の分割＋1・扉＋1−1・室内窓＋2 など、実測）
+A03_COUNT = 474                                            # v4.22 の 411 + 蓄電室（間仕切り・扉・ラック・PCS・束壁・室名）と拡大詳細 52 = 463。v4.24: 463→471（+8。ジム拡張部の間仕切り2・移設した遮音ドア・拡張部の室名と面積・要確認の注記・框ラベルの移動、H-S1 撤去とマット移動を差し引いた実測値）
 
 
 if __name__ == "__main__":
@@ -259,11 +262,11 @@ if __name__ == "__main__":
 
 
 def test_gym_annex_geometry_and_structure():
-    """v4.24 ジム拡張部: 面積・重なり・通路・GD-2・RC（壁量・偏心率）は不変。"""
+    """v4.25 ジム拡張部: 面積 7.64m²・重なり・通路・GD-2・X3 開口 W4,835（壁量 15.79・偏心率 ≦0.15）。"""
     from shapely.geometry import box as sb
     h = _get()["h"]
     a = h.gym_annex
-    assert abs(a.area - 5.46) < 0.01 and h.gym.daylight_area >= 51.6
+    assert abs(a.area - 7.64) < 0.01 and h.gym.daylight_area >= 51.6
     g = h.genkan
     for k in ("doma", "shikidai"):
         assert not sb(*a.rect).intersection(sb(*g[k])).area > 0, k
@@ -272,11 +275,14 @@ def test_gym_annex_geometry_and_structure():
     assert hall.rect[2] - 6700 >= 1300                       # H-S2 から間仕切りまで（通路 ≧1,300）
     assert (hall.rect[2] - hall.rect[0]) == 4250 and abs(hall.area - 15.3) < 0.01
     gd2 = [op for w in h.walls for op in w.openings if "ガラス" in op.name and w.c == h.gy[1] and w.axis == "x" and w.floor == "1F"][0]
-    assert (gd2.u0, gd2.u1) == (7500, 10500) and 10450 - 8975 == 1475 and hall.rect[2] <= 10500 and h.spec["gym_annex"]["wall_x"] - 50 >= 10500
+    assert (gd2.u0, gd2.u1) == (7500, 10500) and 10450 - 8975 == 1475 and hall.rect[2] <= 10500 and h.spec["gym_annex"]["wall_x"] - h.spec["gym_annex"]["wall_t"] // 2 >= 10500
     x3 = [op for w in h.walls if w.floor == "1F" and w.cat == "wall" and w.axis == "y" and w.c == h.gx[2] for op in w.openings if op.kind == "door" and op.u0 < 5000]
-    assert [(o.u0, o.u1, o.height, o.operation) for o in x3] == [(3000, 4000, 2300, "opening")]
+    assert [(o.u0, o.u1, o.height, o.operation) for o in x3] == [(815, 5650, 2300, "opening")]
     wq = house_legal.wall_quantity(h)
-    assert abs(wq[("1F", "X方向")][1] - 16.00) < 0.01 and abs(wq[("1F", "Y方向")][1] - 16.97) < 0.01
+    assert abs(wq[("1F", "X方向")][1] - 16.00) < 0.01 and abs(wq[("1F", "Y方向")][1] - 15.79) < 0.01
+    import performance as PF
+    se = PF.seismic(h)["stories"]
+    assert max(v["ecc"] for v in se.values()) <= 0.15 and abs(se[("1F", "Y方向")]["ecc"] - 0.056) < 0.001
 
 
 def test_gym_annex_lighting_name():

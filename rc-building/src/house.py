@@ -257,10 +257,10 @@ class House:
         self.rooms.append(r)
         return r
 
-    def _lgs(self, floor, axis, c, a, b_, doors=(), cat="partition"):
+    def _lgs(self, floor, axis, c, a, b_, doors=(), cat="partition", t=None):
         z0 = self.fl[floor]
         z1 = self.fl["2F" if floor == "1F" else "RF"] - self.slab_t
-        w = Wall(axis, c, a, b_, self.pt, z0, z1, cat, "lgs", floor=floor, side="I")
+        w = Wall(axis, c, a, b_, self.pt if t is None else t, z0, z1, cat, "lgs", floor=floor, side="I")
         for d in doors:
             u0, u1 = d[0], d[1]
             op = d[2] if len(d) > 2 else "swing"
@@ -285,25 +285,29 @@ class House:
         kit = R("キッチン", f, (125, 6250, 6000, 12000), False)
         self.ldk.daylight_area = self.ldk.area + kit.area
         self.ldk.daylight_name = "LDK（キッチン含む）"
-        R("玄関土間", f, (6250, 125, 12000, 2000), label=(9400, 1100))
+        dx1 = self.spec["genkan"]["doma_x1"]                     # v4.25 土間の東端（旧 12,000 → 10,500。施主の書き込みでジムに取り込み）
+        R("玄関土間", f, (6250, 125, dx1, 2000), label=(8400, 1100))
         R("式台（框1）", f, (6250, 2000, 10500, 2400), label=(8400, 2200))
         R("ホール", f, (6250, 2400, 10500, 6000), label=(8400, 4600))
-        self.genkan = dict(doma=(6250, 125, 12000, 2000), shikidai=(6250, 2000, 10500, 2400), step=180)
+        self.genkan = dict(doma=(6250, 125, dx1, 2000), shikidai=(6250, 2000, 10500, 2400), step=180)
         self.shoe = (6250, 125, 6700, 2000)          # 下足入れ（造作）
-        self.bench = (11300, 125, 12000, 1500)       # 腰掛けベンチ
+        self.bench = tuple(self.spec["genkan"]["bench"])       # 腰掛けベンチ
         self.gym = R("ジム", f, (12250, 125, 18125, 8900), True, label=(17300, 7600))
         # v4.24 ジム拡張部（ホール東側 1.4m を LGS 遮音二重壁で仕切る）。名前に「ホール」を含めない（lighting の部分一致対策）
         ga = self.spec["gym_annex"]
-        self.gym_annex = R("ジム（拡張部）", f, tuple(ga["rect"]), False, label=(11300, 2650))
+        self.gym_annex = R("ジム（拡張部）", f, tuple(ga["rect"]), False, label=tuple(ga["label"]))
         self.gym_annex.label_name = "ジム拡張部"                            # 図面の室名（幅 1.4m に収める）
         self.gym.daylight_area = self.gym.area + self.gym_annex.area       # 後で蓄電室分を引いた area を使うため _battery_room で再計算
         self.gym.daylight_name = "ジム（拡張部含む）"
         wx, wy = ga["wall_x"], ga["wall_y"]
         z0 = self.fl[f]
-        wpx = L(f, "y", wx, 2000, 6000)                                    # ①ホールとの境（遮音二重壁）
-        L(f, "x", wy, 10500, 12000)                                        # ②土間との境
+        wpx = L(f, "y", wx, ga["wall_y0"], 6000, t=ga["wall_t"])           # ①ホールとの境（独立間柱の遮音二重壁 t200。v4.25 S 壁まで延長）
+        assert wy is None                                                  # ②（土間との境）は撤去
         u0, u1 = ga["door_u"]
-        self.gym_door = wpx.add(Opening("door", u0, u1, z0, z0 + ga["door_h"], f, "I", "遮音ドア（Ts-35・搬入兼用）", "swing", swing=1, hinge=0))
+        self.gym_door = wpx.add(Opening("door", u0, u1, z0, z0 + ga["door_h"], f, "I", ga["door_name"], "swing", swing=1, hinge=0))
+        wd_ = ga["window"]                                                 # 緑線: ホール↔ジムの室内窓（FIX・合わせ複層。遮音は house_legal で確認）
+        self.gym_window = wpx.add(Opening("window", wd_["u"][0], wd_["u"][1], z0 + wd_["sill"], z0 + wd_["head"], f, "I", "室内窓（遮音FIX・合わせ複層）", "fixed"))
+        self.gym_window.glass = True
         R("ホール・階段1", f, (6250, 6250, 12000, 9800), label=(10000, 7600))
         R("トイレ（手洗い付）", f, (8750, 9900, 10600, 12000))
         L(f, "x", 9850, 8750, 10650, [(9200, 10000, "swing", 1, 0)])
@@ -318,17 +322,21 @@ class House:
         L(f, "x", 15050, 125, 3950, [(1000, 1800, "sliding")])
         L(f, "y", 3950, 15100, 18125)
         R("洗面・脱衣", f, (6250, 12250, 9500, 14800))
-        R("浴室", f, (6250, 14900, 9500, 18125))
+        bw = self.spec["bath_wall"]
+        R("浴室", f, (6250, bw["y"][0] + 50, bw["c"] - bw["t"] // 2, 18125))
         R("廊下", f, (9600, 12250, 12000, 15500))
         R("トイレ", f, (9600, 15600, 12000, 18125))
-        L(f, "y", 9550, 12250, 18125, [(12500, 13300, "sliding")])
+        L(f, "y", 9550, 12250, bw["y"][0], [(12500, 13300, "sliding")])
+        L(f, "y", bw["c"], bw["y"][0], bw["y"][1], t=bw["t"])                # v4.25 浴室の範囲だけ t200（トイレ側の面 9,600 は不変）
         L(f, "x", 14850, 6250, 9500, [(7000, 7800, "sliding")])
         L(f, "x", 15550, 9600, 12000, [(10300, 11100, "swing", 1, 0)])
-        self.room_A = R("居室A", f, (13600, 14300, 18125, 18125), True)
-        R("WIC", f, (13600, 12250, 18125, 14200))
-        R("廊下", f, (12250, 12250, 13500, 18125))
-        L(f, "y", 13550, 12250, 18125, [(15500, 16300, "swing", 1, 0), (12800, 13600, "sliding")])
-        L(f, "x", 14250, 13600, 18125)
+        ra = self.spec["room_a"]                                              # v4.25 居室A／WIC の区画（施主の書き込み）
+        wy_a = ra["wall_y"]
+        self.room_A = R("居室A", f, (12250, wy_a + 50, 18125, 18125), True)
+        R("WIC", f, (13600, 12250, 18125, wy_a - 50))
+        R("廊下", f, (12250, 12250, 13500, wy_a - 50))
+        L(f, "y", 13550, 12250, wy_a - 50, [(12800, 13600, "sliding")])
+        L(f, "x", wy_a, 12250, 18125, [(ra["door_u"][0], ra["door_u"][1], "swing", 1, 0)])
         # ================= 2F
         f = "2F"
         R("居室B", f, (125, 125, 2800, 4800), True)
@@ -448,7 +456,8 @@ class House:
         # ---------------- 1F
         self.entrance = self._ext_door("1F", "S", 8600, 9600, 2300, "玄関ドア（断熱・防犯CP）")
         self._glass_door("GD-1", "1F", "X2", 2800, 4000, "ガラス上吊り引戸（合わせ強化）", -1)      # 左（西）: LDK 側の面に取付
-        G("1F", "X3", 3000, 4000, h=2300, name="開口（ジム↔拡張部）")
+        xo = self.spec["gym_annex"]["x3_opening"]               # v4.25 W4,835（施主の書き込み。南端 215 戻し）
+        G("1F", "X3", xo[0], xo[1], h=xo[2], name="開口（ジム↔拡張部）")
         G("1F", "X2", 6400, 7700, name="開口（キッチン↔ホール）")
         D("1F", "X2", 12500, 13400, op="sliding", name="木製引戸")
         D("1F", "X3", 9300, 10100, swing=1, hinge=0)
@@ -463,7 +472,8 @@ class House:
         self._window("1F", "W", cw["W"][0], cw["W"][1], cw["sill"], cw["head"] - cw["sill"], "FIX窓（LDK角窓・西）")
         self._window("1F", "E", 700, 2900, 2000, 650, "FIX高窓（ジム）")
         self._window("1F", "E", 3400, 5600, 2000, 650, "FIX高窓（ジム）")
-        self._window("1F", "E", 15500, 16700, 1000, 800, "FIX窓（居室）")
+        wu = self.spec["room_a"]["window_u"]
+        self._window("1F", "E", wu[0], wu[1], 1000, 800, "FIX窓（居室）")
         # ---------------- 2F
         D("2F", "X2", 6400, 7300, swing=-1)
         D("2F", "X2", 5000, 5900, swing=-1)
@@ -800,7 +810,7 @@ class House:
                     op.label = ""
                     continue
                 if op.kind == "window":
-                    prefix = "AW"
+                    prefix = "AW" if op.exterior else "IW"      # IW＝室内窓（v4.25 ホール↔ジム）
                 elif "ガラス" in op.name and op.glass is True:
                     prefix = "GD"
                 elif "玄関" in op.name or "点検" in op.name:

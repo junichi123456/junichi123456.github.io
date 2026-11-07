@@ -223,7 +223,7 @@ def fittings_sheet(b, number):
             sh.pline(tri, "A-ALT", closed=True)
         sh.dim((x_, by - 4 * S), (x_ + w, by - 4 * S), (x_, by - 4 * S), 0, text=f"{f['w']:,}")
         sh.dim((x_ - 3 * S, by), (x_ - 3 * S, by + h), (x_ - 3 * S, by), 90, text=f"{f['h']:,}")
-        mat = {"AW": "樹脂（アルミ樹脂複合）", "AD": "アルミ製 自動", "SD": "鋼製（断熱）", "WD": "木製", "SS": "鋼製 遮音", "GD": "アルミ框・合わせ強化ガラス"}[f["label"][:2]]
+        mat = {"AW": "樹脂（アルミ樹脂複合）", "AD": "アルミ製 自動", "SD": "鋼製（断熱）", "WD": "木製", "SS": "鋼製 遮音", "GD": "アルミ框・合わせ強化ガラス", "IW": "木・アルミ独立2層枠（遮音）"}[f["label"][:2]]
         if f["name"].startswith("EV"):
             mat = "EV メーカー標準"
         glass = ""
@@ -232,6 +232,8 @@ def fittings_sheet(b, number):
         spec = [f"名称: {f['name']}", f"材質: {mat}", f"W{f['w']:,}×H{f['h']:,}", f"数量: {f['count']}か所（{'・'.join(f['floors'])}）"]
         if glass:
             spec.append(f"ガラス: {glass}")
+        if f["label"].startswith("IW"):
+            spec.append("ガラス: 合わせ6.8＋中空100（独立枠）＋合わせ6.8、FIX。衝突防止の帯2本。Rw50（推定）")
         if f["label"].startswith("GD"):
             spec.append("ガラス: 合わせ強化（強化5＋5、衝突防止の乳白帯2本）")
         if f["fire"]:

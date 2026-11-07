@@ -96,6 +96,21 @@ def window_table(h):
     return out
 
 
+def gym_sound(h):
+    """ジム↔ホール間仕切り（x10,600 二重壁）の合成透過損失（推定）。面積加重の透過率平均。"""
+    import math
+    ga = h.spec["gym_annex"]
+    sd = ga["sound"]
+    w = next(w for w in h.walls if w.floor == "1F" and w.axis == "y" and w.c == ga["wall_x"])
+    gross = (w.b - w.a) * (w.z1 - w.z0) / 1e6
+    awin = h.gym_window.width * h.gym_window.height / 1e6
+    ad = h.gym_door.width * h.gym_door.height / 1e6
+    aw = gross - awin - ad
+    rw_win = ga["window"]["rw"]
+    tau = aw * 10 ** (-sd["wall_rw"] / 10) + ad * 10 ** (-sd["door_rw"] / 10) + awin * 10 ** (-rw_win / 10)
+    return dict(aw=aw, ad=ad, awin=awin, gross=gross, rw_win=rw_win, tl=-10 * math.log10(tau / gross), target=sd["target_db"])
+
+
 def gym_envelope(h):
     """ジム外皮の開口部: 改善前（腰窓2か所＋南面搬入扉）と改善後（高窓2か所）の比較。"""
     before = dict(win=2 * 1.5 * 1.0, door=1.8 * 2.4)
@@ -133,7 +148,10 @@ def checks(h):
     eq = h.equipment
     wmax = min(min(r[2] - r[0], r[3] - r[1]) for _, r, _, _ in eq)
     add("ブリーフ", "ジムの搬入", "施主指示（v3.3）", "玄関から搬入、框を上がって右折でジム",
-        "外部階段（4段）→玄関 W1,000×H2,300→土間→二重框→ホールで右折→遮音ドア W1,000×H2,300（LGS 間仕切り）→ジム拡張部→RC 開口 W1,000×H2,300→ジム。幅1m超の機器は分解して搬入", OK)
+        "外部階段（4段）→玄関 W1,000×H2,300→土間→二重框→ホールで右折→遮音ドア Ts-40 W1,000×H2,300（LGS 間仕切り）→ジム拡張部→RC 開口 W4,835×H2,300→ジム。幅1m超の機器は分解して搬入", OK)
+    snd = gym_sound(h)
+    add("遮音", "ジム↔ホール（遮音ドア・室内窓を含む合成）", "推定（Rw 合成。要確認）", f"現行同等 {snd['target']:.0f}dB 以上",
+        f"壁 D-55 {snd['aw']:.1f}m²＋遮音ドア Ts-40 {snd['ad']:.1f}m²＋室内窓 Rw{snd['rw_win']:.0f} {snd['awin']:.1f}m² → 約 {snd['tl']:.1f}dB", judge(snd["tl"] >= snd["target"] - 0.5))
     load = sum(kg for *_, kg in eq) * 9.8 / h.gym.area
     add("構造", "ジム床の積載荷重", "令85条（実況による）", "商業ジム相当の機器＋利用者",
         f"機器 計{sum(kg for *_, kg in eq):,}kg（平均 {load:,.0f}N/m²）→ 設計用 5,000N/m²（提案）・浮き床・落下エリア補強", CHK)
