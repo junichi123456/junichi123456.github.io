@@ -410,7 +410,7 @@ class House:
         iw, idp = b["inner"]
         self.battery_room = Room("蓄電室", f, (x0, y0, x1, y1), False, ((x0 + x1) / 2, (y0 + y1) / 2), 0, area_override=iw * idp / 1e6)
         self.gym.area_override = self.gym.area - (x1 - x0) * (y1 - y0) / 1e6
-        self.gym.label_at = (14200, 7000)
+        self.gym.label_at = (16500, 5000)
         self.gym.daylight_area = self.gym.area + self.gym_annex.area
         ws = Wall("x", y0, x0, x1 - 325, self.pt, z0, z1, "partition", "lgs", floor=f, side="I")
         wd = Wall("y", b["fire_door"]["wall"], y0, y1, self.pt, z0, z1, "partition", "lgs", floor=f, side="I")

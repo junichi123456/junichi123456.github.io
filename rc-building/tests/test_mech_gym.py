@@ -75,3 +75,13 @@ def test_battery_not_in_gym_furniture_and_no_ap():
     bat = sb(*h.battery_room.rect)
     for n, rc, *_ in h.equipment:
         assert not sb(*rc).intersects(bat), n
+
+
+def test_a03_detail_does_not_overlap_notes():
+    import house_sheets as hs
+    h = _h()
+    sh = hs.floor_plan(h, "1F", "A-03")                      # 内部の assert: 詳細の下端が表題欄の上端から 3mm 以上離れる
+    btm, notes_bottom = sh.detail_frame
+    assert btm >= sh.MARGIN + sh.TB[1] + 3
+    assert notes_bottom - 4 - 8 + 8 > btm + 70                 # 詳細の枠（上端 = 注記欄の下端−4−5）が注記欄より下にある
+    assert btm < notes_bottom - 4
