@@ -493,7 +493,7 @@ $SKPOLY
   9
 $TDCREATE
  40
-2461348.4492476853
+2461352.629247685
   9
 $TDUCREATE
  40
@@ -501,7 +501,7 @@ $TDUCREATE
   9
 $TDUPDATE
  40
-2461348.4499074076
+2461352.629571759
   9
 $TDUUPDATE
  40
@@ -933,11 +933,11 @@ $PSTYLEMODE
   9
 $FINGERPRINTGUID
   2
-{45C9ECAF-2F0F-4FF6-9F97-4E8679A0891D}
+{205307EA-8AD7-4DF5-913D-F353FF144DDC}
   9
 $VERSIONGUID
   2
-{6CFEA788-6497-485D-8060-E0F9019ACAD4}
+{44A7F588-5FFF-494C-A55A-C792C14DC2E5}
   9
 $EXTNAMES
 290
@@ -1327,9 +1327,9 @@ ISM
   0
 CLASS
   1
-ACDBPLACEHOLDER
+LAYOUT
   2
-AcDbPlaceHolder
+AcDbLayout
   3
 ObjectDBX Classes
  90
@@ -1343,9 +1343,9 @@ ObjectDBX Classes
   0
 CLASS
   1
-LAYOUT
+ACDBPLACEHOLDER
   2
-AcDbLayout
+AcDbPlaceHolder
   3
 ObjectDBX Classes
  90
@@ -8765,7 +8765,7 @@ AcDbText
  40
 2.0
   1
-51.7
+53.9
   7
 JP
  11
@@ -8797,7 +8797,7 @@ AcDbText
  40
 2.0
   1
-7.91
+8.24
   7
 JP
  11
@@ -8893,7 +8893,7 @@ AcDbText
  40
 2.0
   1
-1.08倍
+1.04倍
   7
 JP
  11
@@ -9015,7 +9015,7 @@ AcDbText
  40
 2.0
   1
-17.3
+20.1
   7
 JP
  11
@@ -9047,7 +9047,7 @@ AcDbText
  40
 2.0
   1
-2.65
+3.08
   7
 JP
  11
@@ -9079,7 +9079,7 @@ AcDbText
  40
 2.0
   1
-0.96
+1.04
   7
 JP
  11
@@ -9111,7 +9111,7 @@ AcDbText
  40
 2.0
   1
-2.88
+3.12
   7
 JP
  11
@@ -9143,7 +9143,7 @@ AcDbText
  40
 2.0
   1
-1.09倍
+1.01倍
   7
 JP
  11
@@ -11297,7 +11297,7 @@ AcDbText
  40
 2.0
   1
-51.7
+53.9
   7
 JP
  11
@@ -11425,7 +11425,7 @@ AcDbText
  40
 2.0
   1
-1.03m²
+1.08m²
   7
 JP
  11
@@ -11547,7 +11547,7 @@ AcDbText
  40
 2.0
   1
-17.3
+20.1
   7
 JP
  11
@@ -11643,7 +11643,7 @@ AcDbText
  40
 2.0
   1
-3.0m
+3.4m
   7
 JP
  11
@@ -11675,7 +11675,7 @@ AcDbText
  40
 2.0
   1
-0.35m²
+0.40m²
   7
 JP
  11
@@ -13451,7 +13451,7 @@ AcDbText
  40
 2.0
   1
-51.7m²
+53.9m²
   7
 JP
  11
@@ -17289,7 +17289,7 @@ DictionaryVariables
 280
 0
   1
-1.4.5 @ 2026-11-03T10:46:55.432738+00:00
+1.4.5 @ 2026-11-07T15:06:07.932852+00:00
   0
 VISUALSTYLE
   5
@@ -23851,7 +23851,7 @@ DictionaryVariables
 280
 0
   1
-1.4.5 @ 2026-11-03T10:47:52.909520+00:00
+1.4.5 @ 2026-11-07T15:06:35.655772+00:00
   0
 ENDSEC
   0

@@ -493,7 +493,7 @@ $SKPOLY
   9
 $TDCREATE
  40
-2461348.449363426
+2461352.6293055555
   9
 $TDUCREATE
  40
@@ -501,7 +501,7 @@ $TDUCREATE
   9
 $TDUPDATE
  40
-2461348.450277778
+2461352.6297685187
   9
 $TDUUPDATE
  40
@@ -933,11 +933,11 @@ $PSTYLEMODE
   9
 $FINGERPRINTGUID
   2
-{851CD6A7-C351-4C5B-BFE4-D91A50552F96}
+{8A83DBAA-1161-4EF6-88B2-80AB8372E9AE}
   9
 $VERSIONGUID
   2
-{062786C0-4638-4CFE-9419-C0FF2C56F365}
+{8ED32018-5909-4073-832A-D9BE6F04B6B2}
   9
 $EXTNAMES
 290
@@ -1327,9 +1327,9 @@ ISM
   0
 CLASS
   1
-ACDBPLACEHOLDER
+LAYOUT
   2
-AcDbPlaceHolder
+AcDbLayout
   3
 ObjectDBX Classes
  90
@@ -1343,9 +1343,9 @@ ObjectDBX Classes
   0
 CLASS
   1
-LAYOUT
+ACDBPLACEHOLDER
   2
-AcDbLayout
+AcDbPlaceHolder
   3
 ObjectDBX Classes
  90
@@ -8515,7 +8515,7 @@ AcDbText
  40
 1.9
   1
-48m³
+56m³
   7
 JP
  11
@@ -8547,7 +8547,7 @@ AcDbText
  40
 1.9
   1
-24m³/h
+28m³/h
   7
 JP
  11
@@ -8579,7 +8579,7 @@ AcDbText
  40
 1.9
   1
-998ppm
+917ppm
   7
 JP
  11
@@ -8611,7 +8611,7 @@ AcDbText
  40
 1.9
   1
-37m³/h（0.76回/h）
+37m³/h（0.65回/h）
   7
 JP
  11
@@ -9893,7 +9893,7 @@ AcDbText
  40
 2.1
   1
-寝室ごとに CO2 センサーで換気量を自動で増やす（需要制御）。必要量は1人 約37m³/h。増える換気は合計 約65m³/h で、全熱交換で
+寝室ごとに CO2 センサーで換気量を自動で増やす（需要制御）。必要量は1人 約37m³/h。増える換気は合計 約61m³/h で、全熱交換で
   7
 JP
  11
@@ -9925,7 +9925,7 @@ AcDbText
  40
 2.1
   1
-回収するため冷暖房の増加は年 約137kWh
+回収するため冷暖房の増加は年 約129kWh
   7
 JP
  11
@@ -13861,7 +13861,7 @@ DictionaryVariables
 280
 0
   1
-1.4.5 @ 2026-11-03T10:47:05.510710+00:00
+1.4.5 @ 2026-11-07T15:06:12.308713+00:00
   0
 VISUALSTYLE
   5
@@ -20423,7 +20423,7 @@ DictionaryVariables
 280
 0
   1
-1.4.5 @ 2026-11-03T10:48:24.678304+00:00
+1.4.5 @ 2026-11-07T15:06:52.430368+00:00
   0
 ENDSEC
   0
