@@ -212,7 +212,7 @@ def _pick_dark(h, rp, edges, z0, z1, D):
         e = edges[i]
         if rp.get("stair") and e["ax"] == "x":              # 階段の上り口・下り口の正面（階段に直交する面）には暗い壁を置かない
             continue
-        ivs = [(e["u0"], e["u1"])]
+        ivs = _subtract((e["u0"], e["u1"]), [(a, b) for (a, za, b, zb, op) in e["ops"]])      # 暗い壁は開口（窓・戸）のない壁の区間に置く
         if rp.get("circ"):
             cuts = [(e["u0"], e["u0"] + safe), (e["u1"] - safe, e["u1"])]
             cuts += [(a - safe, b + safe) for (a, za, b, zb, op) in e["ops"] if op.kind == "door"]
@@ -221,7 +221,7 @@ def _pick_dark(h, rp, edges, z0, z1, D):
                     cuts.append((hy0 - 900, hy1 + 900))
                 if e["ax"] == "x" and hy0 - 900 <= e["k"] <= hy1 + 900:
                     cuts.append((hx0 - safe, hx1 + safe))
-            ivs = _subtract(ivs[0], cuts)
+            ivs = [x for iv in ivs for x in _subtract(iv, cuts)]
         for (a, b) in sorted(ivs, key=lambda t: t[0] - t[1]):
             if rem <= 0 or b - a < 300:
                 continue

@@ -1,14 +1,14 @@
 {
- "total_seconds": 1052.4,
- "glb_export_seconds": 2.2,
- "asset_fetch_seconds": 0.0,
- "blender_setup_seconds": 1015.4,
+ "total_seconds": 1037.3,
+ "glb_export_seconds": 1.4,
+ "asset_fetch_seconds": 3.6,
+ "blender_setup_seconds": 1000.4,
  "cuts": [
   {
    "id": "I01",
    "file": "/home/user/junichi123456.github.io/rc-building/dist/render/interior/I01_ldk_south.png",
-   "seconds": 255.5,
-   "render_seconds": 255.4,
+   "seconds": 251.6,
+   "render_seconds": 251.0,
    "samples": 64,
    "time_limit": 240,
    "res": [
@@ -45,8 +45,8 @@
   {
    "id": "I02",
    "file": "/home/user/junichi123456.github.io/rc-building/dist/render/interior/I02_ldk_kitchen_side.png",
-   "seconds": 253.9,
-   "render_seconds": 253.8,
+   "seconds": 248.2,
+   "render_seconds": 248.0,
    "samples": 64,
    "time_limit": 240,
    "res": [
@@ -83,8 +83,8 @@
   {
    "id": "I03",
    "file": "/home/user/junichi123456.github.io/rc-building/dist/render/interior/I03_kitchen.png",
-   "seconds": 253.0,
-   "render_seconds": 252.8,
+   "seconds": 248.7,
+   "render_seconds": 248.6,
    "samples": 64,
    "time_limit": 240,
    "res": [
@@ -121,8 +121,8 @@
   {
    "id": "I14",
    "file": "/home/user/junichi123456.github.io/rc-building/dist/render/interior/I14_ldk_corner.png",
-   "seconds": 250.4,
-   "render_seconds": 250.3,
+   "seconds": 249.0,
+   "render_seconds": 248.9,
    "samples": 64,
    "time_limit": 240,
    "res": [
@@ -199,7 +199,7 @@
    "nearest": "wall"
   }
  },
- "palette_checked": 74,
+ "palette_checked": 78,
  "palette_mismatch": [],
  "settings": {
   "resolution": [
@@ -281,7 +281,7 @@
    "previous_seconds": 251.2
   }
  ],
- "previous_run_total_seconds": 1042.3,
+ "previous_run_total_seconds": 1052.4,
  "rerendered": {
   "cuts": [
    "I01",
@@ -290,6 +290,7 @@
    "I14"
   ],
   "when": "2026-03-21T14:00",
-  "version": "v4.19"
+  "version": "v4.29",
+  "note": "内装の配色（v4.29）で再レンダー。I04〜I13 は旧配色のまま（再レンダーしていない）。bpy 5.2.3。palette_mismatch=0"
  }
 }

@@ -167,7 +167,35 @@ def _font(size):
     raise FileNotFoundError("IPA ゴシックが見つかりません")
 
 
-def annotate(path, cut, spec, band=36):
+def accent_note(h, cut):
+    """そのカットに写る暗い面（アクセント壁・腰）の色と位置の注記。カメラのいる室と、目標点のある室の全高の暗い面で、水平画角に入るもの。"""
+    import interior_shell as IS
+    cx, cy, cz = cut["cam_mm"]
+    tx, ty, _ = cut["target_mm"]
+    fl = "2F" if cz > h.fl["2F"] else "1F"
+    view = math.atan2(ty - cy, tx - cx)
+    half = math.atan(18.0 / cut["lens"])                  # 35mm 判の水平画角の半分
+    found = {}
+    for ent in IS.wall_plan(h):
+        c = ent["cell"]
+        if c.floor != fl or not any(r[0] <= px <= r[2] and r[1] <= py <= r[3] for px, py in ((cx, cy), (tx, ty)) for r in [c.rect]):
+            continue
+        for e in ent["edges"]:
+            for (ua, ub, kd) in e["spans"]:
+                if kd not in ("dark", "band"):
+                    continue
+                mx, my = ((ua + ub) / 2, e["k"]) if e["ax"] == "x" else (e["k"], (ua + ub) / 2)
+                d = math.atan2(my - cy, mx - cx) - view
+                d = (d + math.pi) % (2 * math.pi) - math.pi
+                if abs(d) <= half and math.hypot(mx - cx, my - cy) > 300:
+                    side = ("南" if e["s"] > 0 else "北") if e["ax"] == "x" else ("西" if e["s"] > 0 else "東")
+                    found.setdefault(ent["rp"]["dark"], set()).add(side + ("の面" if kd == "dark" else "の腰"))
+    if not found:
+        return "アクセント壁：このカットには写っていない"
+    return "アクセント壁：" + "・".join(f"{k}（{'・'.join(sorted(v))}）" for k, v in sorted(found.items()))
+
+
+def annotate(path, cut, spec, band=36, note=""):
     """メタデータを残さず保存し直し、下端に仮置きの注記の帯を足す（画素として入れる）。"""
     from PIL import Image, ImageDraw
     im = Image.open(path)
@@ -180,10 +208,13 @@ def annotate(path, cut, spec, band=36):
     fs = max(10, int(band * 0.5))
     f = _font(fs)
     mo, da, hh, mm = int(cut["when"][5:7]), int(cut["when"][8:10]), cut["when"][11:13], cut["when"][14:16]
-    left = f"家具は仮置き（後日差し替え）・指定商品の寸法と色は仮定・色はいずれも仮定・屋外の樹木は添景"
+    left = f"家具は仮置き（後日差し替え）・指定商品の寸法と色は仮定・色はいずれも仮定・屋外の樹木は添景" + (f"　{note}" if note else "")
     chn = cut["ch"]
     lt = f"主照明 {chn['L'][0]:,}K・{chn['L'][1]:.0f}%" if chn["L"][1] > 0 else f"主照明 消灯・補助灯 {chn['D'][0]:,}K・{chn['D'][1]:.0f}%"
     right = f"{cut['title']}　{mo}月{da}日 {hh}:{mm}　{lt}"
+    while fs > 9 and d.textlength(left, font=f) + d.textlength(right, font=f) + fs * 3 > W:      # 注記が増えたら収まるまで小さくする
+        fs -= 1
+        f = _font(fs)
     ty = H + (band - fs) // 2 - 1
     d.text((int(fs * 0.8), ty), left, font=f, fill=(60, 56, 50))
     tw = d.textlength(right, font=f)
@@ -242,7 +273,7 @@ def main(args):
     for r in raw["cuts"]:
         RC.post_process(r["file"])
         if not args.preview and ic.get("annotation_band", 0):
-            annotate(r["file"], by_id[r["id"]], spec, ic["annotation_band"])
+            annotate(r["file"], by_id[r["id"]], spec, ic["annotation_band"], accent_note(h, by_id[r["id"]]))
         r["time_limit_hit"] = r["render_seconds"] >= by_id[r["id"]]["time_limit"] - 3
     # 材質の色の照合（H8: リニア値が interior_palette と ±0.002 で一致）
     pal_mismatch = []
