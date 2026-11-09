@@ -25,7 +25,7 @@ def robot_plan(h):
     for f in h.spec["smart"]["robots"]["floors"]:
         rooms = [r for r in h.rooms if r.floor == f and not any(k in r.name for k in skip)]
         out[f] = dict(area=sum(r.area for r in rooms), rooms=len(rooms),
-                      dock="ランドリー・室内干し" if f == "1F" else "ファミリークローゼット")
+                      dock="ランドリー・室内干し" if f == "1F" else "廊下（北）")
     return out
 
 
@@ -34,7 +34,7 @@ ROBOT_RULES = [
     "床に配線を這わせない（コンセントは家具の高さ・床コンセントなし）",
     "家具は台輪で床まで塞ぐか、脚下 250mm 以上（ロボットが入れ、子どもの頭が挟まらない寸法）",
     "黒い床・敷物は避ける（段差センサーの誤作動）。ラグは毛足の短いものを固定",
-    "ドック: 1階 ランドリー、2階 ファミリークローゼット。自動ゴミ収集・給排水直結で水拭きの水替え不要",
+    "ドック: 1階 ランドリー、2階 廊下（北）の西端（脱衣所の給排水から壁越しに直結）。自動ゴミ収集・給排水直結で水拭きの水替え不要",
     "清掃時は bot が上吊り引戸を開けた状態を確認してから走らせる（戸は手動・自動とも可）",
 ]
 

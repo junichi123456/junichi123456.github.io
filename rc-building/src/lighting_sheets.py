@@ -10,7 +10,7 @@ from furniture_sheets import _plan_base
 from house_sheets import frame, legend, room_labels, tp
 from sheetlib import T, side_panel
 
-SENSOR_PIR = ("廊下", "トイレ", "WIC", "クローゼット", "洗面", "ランドリー", "機械室", "玄関土間", "ホール", "階段", "浴室", "シャワー", "収納")
+SENSOR_PIR = ("廊下", "トイレ", "WIC", "クローゼット", "洗面", "脱衣", "ランドリー", "機械室", "玄関土間", "ホール", "階段", "浴室", "シャワー", "収納")
 SENSOR_PRES = ("リビング", "図書室", "ジム", "居室", "主寝室", "シアター", "キッチン")
 
 
@@ -45,6 +45,13 @@ def plan_sheet(h, floor, number):
         mid = ((a[0] + b[0]) / 2, (a[1] + b[1]) / 2)
         off = 1.6 * sh.S
         sh.text(l["id"].split("-", 1)[1], (mid[0] + (off if vert else 0), mid[1] + (0 if vert else off)), 1.0, "A-TEXT", "MIDDLE_CENTER", rot=90 if vert else 0)
+    fps, fmk = LG.footlines(h, its)               # v4.28 廊下・ホールの足元灯（連続ライン）と死角の印
+    for d in [d for d in fps if d["floor"] == floor]:
+        a = t(d["p0"][0] + 70 * d["n"][0], d["p0"][1] + 70 * d["n"][1])
+        b = t(d["p1"][0] + 70 * d["n"][0], d["p1"][1] + 70 * d["n"][1])
+        sh.pline([a, b], "E-FOOTL", lineweight=100 if d["warn"] else 50)
+    for m_ in [m_ for m_ in fmk if m_["floor"] == floor]:
+        sh.circle(t(m_["p"][0], m_["p"][1]), 1.6 * sh.S, "E-WARN")
     if floor == "1F":
         for f in LG.footlights(h):
             c = t(f["p"][0] + 120 * f["n"][0] * -1, f["p"][1])
@@ -65,7 +72,8 @@ def plan_sheet(h, floor, number):
     sh.text(f"{floor[:-1]}FL = 設計GL+{h.fl[floor]:,}（TP+{tp(h, h.fl[floor]):.2f}）／天井高 CH={h.ch[floor]:,}／製品未確定・仮定値", (24, 15), 2.4, "A-TEXT", paper=True)
     cy = side_panel(sh, 284, 282, [("h", "凡例")])
     cy = legend(sh, 285, cy - 1, [("E-LINE", "直付ライン LED（主照明・天井面に直付け）", "line"), ("E-LITE", "埋込ダウンライト（弱い補助灯 最大250lm）○", "line"),
-                                   ("E-FOOT", "階段の足元灯（踏面から300）▼", "line"), ("E-SENS", "人感／在室センサー ◇", "line")])
+                                   ("E-FOOT", "階段の足元灯（踏面から300）▼", "line"),
+                                   ("E-FOOTL", "廊下・ホールの足元灯（壁 床上300 の連続ライン。太線＝死角の警告区間）", "line"), ("E-WARN", "死角（曲がり角・戸口・階段口）の印 ○", "line"), ("E-SENS", "人感／在室センサー ◇", "line")])
     rows = [["器具 ID", "長さ", "lm/m", "器具数"]] + [[l["id"], f"{l['L']:,}", f"{l['lm_per_m']:,}", str(LG.device_count(l))] for l in lns]
     if len(rows) > 38:
         rows = rows[:38] + [["…", "", "", f"（全{len(lns)}列は E-06）"]]
@@ -74,6 +82,9 @@ def plan_sheet(h, floor, number):
              ("t", "ライン列は室の長手方向に平行。階段の吹抜け・天井まで届く家具の範囲は 150 離して切る。ダウンライトはライン軸から 450 以上・壁から 400 以上"),
              ("t", "六角形の連結照明は実在するが壁用・装飾用で天井の主照明に適さないため不採用（E-06）。製品は未確定で、数値は仮定値"),
              ("t", "センサー: 人感（PIR）は廊下・水回り・収納・ホール・階段、在室（ミリ波）は居室・LDK・ジム・図書室・シアター")]
+    fl_ = [d for d in fps if d["floor"] == floor]
+    wl = [d for d in fl_ if d["warn"]]
+    notes.append(("t", f"足元灯（廊下・ホール）: {len(fl_)}区間・計 {sum(d['L'] for d in fl_) / 1000:.1f}m（うち警告区間 {len(wl)}・{sum(d['L'] for d in wl) / 1000:.1f}m）。壁の面に埋め込み、床上300・突出2以下。死角 {len([m_ for m_ in fmk if m_['floor'] == floor])}か所（○）の前後を明るい区間にする。夜間のみ点灯・停電時は内蔵電池（仮定）。要確認"))
     if floor == "1F":
         notes.append(("t", "階段の足元灯は壁（LGS の手すり壁の両面・踊場の間仕切）に埋込。停電時は内蔵電池で自動点灯（30分以上と仮定）"))
     yy = side_panel(sh, 284, cy - 3, notes, width=118)
@@ -89,6 +100,7 @@ def schedule_sheet(h, number):
     lns = LG.lines(h, its)
     dls = LG.downlights(h, its, lns)
     ft = LG.footlights(h)
+    fp, fmk = LG.footlines(h, its)
     ln = cfg["line"]
     tot_lm = sum(l["L"] / 1000 * l["lm_per_m"] for l in lns)
     tot_m = sum(l["L"] for l in lns) / 1000
@@ -98,7 +110,9 @@ def schedule_sheet(h, number):
              f"{len([l for l in lns])}列・約{tot_m:.0f}m・計{tot_lm / 10000:.1f}万lm", f"出力区分 {ln['classes_lm_per_m'][0]}〜{ln['classes_lm_per_m'][-1]} lm/m、効率 {cfg['efficacy_lm_per_w']} lm/W、全点灯 約{tot_lm / cfg['efficacy_lm_per_w'] / 1000:.1f}kW"],
             ["ダウンライト（弱）", f"φ75〜100 グレアレス、最大{cfg['downlight']['max_lm']}lm、{cfg['downlight']['kelvin'][0]}〜{cfg['downlight']['kelvin'][1]}K、Ra{cfg['downlight']['ra']}", f"{len(dls)}台", "夕方〜夜の補助灯（昼は消灯）"],
             ["足元灯", f"壁埋込 プレート{cfg['foot']['plate'][0]}×{cfg['foot']['plate'][1]}（出っ張り{cfg['foot']['protrude']}以下）、約{cfg['foot']['lm']}lm、{cfg['foot']['kelvin']}K、人感＋時刻、停電時自動点灯",
-             f"{len(ft)}台（階段1・2 各9台）", f"踏面から{cfg['foot']['height_from_tread']}、2段おき＋踊場"]]
+             f"{len(ft)}台（階段1・2 各9台）", f"踏面から{cfg['foot']['height_from_tread']}、2段おき＋踊場"],
+            ["足元灯ライン（廊下・ホール）", f"v4.28 壁埋込の連続ライン（遠藤照明 Linear series 第一候補・型番／DALI／防塵は要確認）、通常 {cfg['foot_line']['base_lm_per_m']}lm/m・警告区間 {cfg['foot_line']['warn_lm_per_m']}lm/m、{cfg['foot']['kelvin']}K、床上{cfg['foot_line']['height']}・突出2以下（上面の埃溜まりなし）",
+             f"{len(fp)}区間・約{sum(d['L'] for d in fp) / 1000:.0f}m・{sum(d['L'] / 1000 * d['lm_per_m'] for d in fp) / cfg['efficacy_lm_per_w']:.0f}W", f"夜間のみ・停電時は内蔵電池（仮定）。床面照度 {cfg['foot_line']['target_lx'][0]}〜{cfg['foot_line']['target_lx'][1]}lx（仮定）"]]
     y = sh.table(12, 268, [26, 100, 40, 40], rows, row_h=5.0, h=1.7)
     sh.text("(2) 照度計算（光束法 E = Φ×U×M/A、M=0.8、床面平均。JIS Z 9110 を参考にした仮定の目標値）", (12, y - 5), 2.8, "A-TEXT", paper=True)
     rows = [["階", "室", "m²", "目標lx", "U", "列数", "器具長さ(mm)", "lm/m", "計画lx", "ダウン"]]

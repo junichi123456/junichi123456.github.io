@@ -39,6 +39,8 @@ LAYERS = {
     "E-EXLT": (6, "Continuous", 18, "外構照明（● φ1.2mm）"),
     "E-LINE": (4, "Continuous", 70, "直付ライン照明（棒状 LED・主照明）"),
     "E-FOOT": (6, "Continuous", 25, "階段の足元灯（▼）"),
+    "E-FOOTL": (6, "Continuous", 50, "廊下・ホールの足元灯（連続ライン・壁 床上300）"),
+    "E-WARN": (1, "Continuous", 25, "死角の印（曲がり角・戸口・階段口の前後は警告区間）"),
     "E-SENS": (3, "Continuous", 18, "人感・在室センサー（◇）"),
     "A-HIDDEN": (8, "HIDDEN", 13, "隠れ線（破線）"),
     "A-GLAZ": (5, "Continuous", 18, "建具・ガラス"),

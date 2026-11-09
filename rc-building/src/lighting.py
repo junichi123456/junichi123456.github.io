@@ -16,7 +16,7 @@ from shapely.geometry import LineString, Point, box as sbox
 from shapely.ops import unary_union
 
 CODE = {"リビング・ダイニング": "LDK", "キッチン": "KIT", "玄関土間": "GEN", "ホール・階段1": "HS1", "ホール・階段2": "HS2", "ホール": "HAL",
-        "ジム": "GYM", "ランドリー・室内干し": "LDY", "ファミリークローゼット": "FCL", "洗面・脱衣": "WSH", "浴室": "BTH", "シャワー": "SHW", "居室": "RM",
+        "ジム": "GYM", "ランドリー・室内干し": "LDY", "ファミリークローゼット": "FCL", "洗面・脱衣": "WSH", "脱衣所": "WSH", "居室E": "BDE", "浴室": "BTH", "シャワー": "SHW", "居室": "RM",
         "WIC（主寝室）": "MWC", "WIC": "WIC", "シアター": "THR", "前室（音響ロック）": "ANT", "図書室": "LIB", "主寝室": "MBR", "廊下": "COR", "トイレ（手洗い付）": "TLH",
         "トイレ": "TLT", "機械室（西系統）": "MCW", "機械室（東系統）": "MCE"}
 
@@ -149,9 +149,13 @@ def lines(h, its):
             p0, p1 = ([a, c, z], [b, c, z]) if ax == "x" else ([c, a, z], [c, b, z])
             out.append(dict(id=f"{r.floor}-{code}-L{n}", code=code, floor=r.floor, room=r.name, p0=[round(v) for v in p0], p1=[round(v) for v in p1],
                             L=round(b - a), lm_per_m=cls, kind="line", axis=ax, group="L"))
-        if "洗面" in r.name:                              # 鏡の上（カウンター W1-C の上の壁際）にも 1 本（鏡前 300lx 以上）
-            out.append(dict(id=f"{r.floor}-{code}-L{len(segs) + 1}", code=code, floor=r.floor, room=r.name, p0=[9250, 13675, z], p1=[9250, 14575, z], L=900,
-                            lm_per_m=1500, kind="line", axis="y", group="L"))
+        if "洗面" in r.name or "脱衣" in r.name:         # 鏡の上（カウンターの上の壁際）にも 1 本（鏡前 300lx 以上）
+            if r.floor == "1F":                          # W1-C（x8950〜9500・東壁沿い）
+                p0, p1, ax, ln_ = [9250, 13675, z], [9250, 14575, z], "y", 900
+            else:                                        # v4.28 W2-C（y13,800〜14,250・脱衣所の南壁沿い）
+                p0, p1, ax, ln_ = [8300, 14025, z], [9900, 14025, z], "x", 1600
+            out.append(dict(id=f"{r.floor}-{code}-L{len(segs) + 1}", code=code, floor=r.floor, room=r.name, p0=p0, p1=p1, L=ln_,
+                            lm_per_m=1500, kind="line", axis=ax, group="L"))
     return out
 
 
@@ -248,6 +252,105 @@ def footlights(h):
     return out
 
 
+def _is_corridor(r):
+    return any(k in r.name for k in ("廊下", "ホール"))
+
+
+def footlines(h, its=None):
+    """v4.28 すべての廊下・ホールの壁（床上 300）に付ける連続ラインの足元灯。
+    壁の面に沿って連続させ（戸口・家具の前は切る）、人が前を横切ると光が遮られて存在が分かるようにする。
+    死角（曲がり角・T字／出会い頭の戸口・階段口）の前後は警告として明るい区間（warn）にする。
+    戻り値: (pieces, markers)。pieces=[dict(id, floor, room, code, p0, p1, L, lm_per_m, warn, n)]、markers=[dict(kind, p, floor)]。"""
+    from shapely.geometry import MultiLineString
+    import furniture as FU
+    fc = _cfg(h)["foot_line"]
+    its = its if its is not None else FU.items(h)
+    pieces, markers = [], []
+    for r in h.rooms:
+        if not _is_corridor(r):
+            continue
+        fl = r.floor
+        z = h.fl[fl] + fc["height"]
+        x0, y0, x1, y1 = r.rect
+        walls = unary_union(FU.wall_rects(h, fl)).buffer(8)
+        ops = []
+        for w in h.walls:
+            if w.floor != fl or w.cat not in ("wall", "partition"):
+                continue
+            for op in w.openings:
+                if op.kind != "door":
+                    continue
+                q = (op.u0, w.c - w.t / 2, op.u1, w.c + w.t / 2) if w.axis == "x" else (w.c - w.t / 2, op.u0, w.c + w.t / 2, op.u1)
+                ops.append((sbox(*q), op))
+        room_poly = sbox(x0, y0, x1, y1)
+        door_cut = unary_union([q.buffer(fc["door_margin"]) for q, _ in ops]) if ops else None
+        items = [sbox(*i.rect).buffer(30) for i in its if i.floor == fl and i.z0 < z + 50 and i.z0 + i.h > z - 50]
+        block = unary_union(items) if items else None
+        edges = [("x", y0, x0, x1, (0, 1)), ("x", y1, x0, x1, (0, -1)), ("y", x0, y0, y1, (1, 0)), ("y", x1, y0, y1, (-1, 0))]
+        code = room_code(h, r)
+        # 死角
+        mk = []
+        for (cx, cy) in ((x0, y0), (x1, y0), (x0, y1), (x1, y1)):
+            # 曲がり角: 角のどちらか一方の辺が壁で、もう一方が開いている（廊下がそこで折れて続く）
+            px = cx + (300 if cx == x0 else -300)
+            py = cy + (300 if cy == y0 else -300)
+            wx, wy = walls.contains(Point(px, cy)), walls.contains(Point(cx, py))
+            if wx != wy:
+                mk.append(("角", (cx, cy), fc["warn_radius"]["corner"]))
+        for q, op in ops:
+            c = q.centroid
+            if room_poly.buffer(12).intersects(q) and room_poly.intersection(q).area < 1:
+                mk.append(("戸口", (c.x, c.y), op.width / 2 + fc["warn_radius"]["door_extra"]))
+        for st in h.stairs:
+            if fl != "2F":
+                continue
+            hx0, hy0, hx1, hy1 = st.hole
+            hb = sbox(hx0, hy0, hx1, hy1)
+            if room_poly.buffer(150).intersects(hb):
+                inter = room_poly.buffer(150).intersection(hb.boundary)
+                if not inter.is_empty:
+                    c = inter.centroid
+                    mk.append(("階段口", (c.x, c.y), fc["warn_radius"]["stair"]))
+        for kind, p, rad in mk:
+            markers.append(dict(kind=kind, p=[round(p[0]), round(p[1])], floor=fl, room=r.name, radius=rad))
+        zones = unary_union([Point(*p).buffer(rad) for _, p, rad in mk]) if mk else None
+        for ax, c, a, b, n in edges:
+            ln = LineString([(a, c), (b, c)] if ax == "x" else [(c, a), (c, b)])
+            seg = ln.intersection(walls)
+            if door_cut is not None:
+                seg = seg.difference(door_cut)
+            if block is not None:
+                seg = seg.difference(block)
+            for g in getattr(seg, "geoms", [seg]):
+                if g.is_empty or g.length < fc["min_piece"]:
+                    continue
+                parts = [(g, False)]
+                if zones is not None:
+                    wz, bz = g.intersection(zones), g.difference(zones)
+                    parts = [(q_, True) for q_ in getattr(wz, "geoms", [wz]) if not q_.is_empty and q_.length >= 1] + \
+                            [(q_, False) for q_ in getattr(bz, "geoms", [bz]) if not q_.is_empty and q_.length >= 1]
+                for q_, warn in parts:
+                    for g2 in getattr(q_, "geoms", [q_]):
+                        if g2.length < 100:
+                            continue
+                        (xa, ya), (xb, yb) = g2.coords[0], g2.coords[-1]
+                        if (xa, ya) > (xb, yb):
+                            (xa, ya), (xb, yb) = (xb, yb), (xa, ya)
+                        pieces.append(dict(floor=fl, room=r.name, code=code, p0=[round(xa), round(ya), round(z)], p1=[round(xb), round(yb), round(z)],
+                                           L=round(g2.length), lm_per_m=fc["warn_lm_per_m"] if warn else fc["base_lm_per_m"], warn=warn, n=list(n), axis=ax))
+    for fl in ("1F", "2F"):
+        for i, d in enumerate([d for d in pieces if d["floor"] == fl], 1):
+            d["id"] = f"{fl}-FL{i:02d}"
+    return pieces, markers
+
+
+def footline_floor_lx(fc, lm_per_m, x_mm):
+    """壁の面から x（mm）離れた床の点の水平面照度の概算（無限長の一様線光源・片側拡散・床向きの割合 floor_fraction）。"""
+    x, hh = x_mm / 1000.0, fc["height"] / 1000.0
+    r2 = x * x + hh * hh
+    return fc["floor_fraction"] * lm_per_m / 2 * x * hh * math.pi / (2 * r2 ** 1.5)
+
+
 def tread_top(h, f):
     """足元灯のある段（踊場は床）の踏面の上面の高さ（絶対 z）。"""
     s = next(s for s in h.stairs if s.name == f["stair"])
@@ -320,6 +423,7 @@ def dali_groups(h, its):
     lns = lines(h, its)
     dl = downlights(h, its, lns)
     ft = footlights(h)
+    fp, _ = footlines(h, its)
     out = []
     for fl in ("1F", "2F"):
         groups = []
@@ -336,6 +440,9 @@ def dali_groups(h, its):
                 groups.append((f"{code}-棚下", "L", n_s))
             if n_d:
                 groups.append((f"{code}-D", "D", n_d))
+        for code in sorted({d["code"] for d in fp if d["floor"] == fl}):
+            n_f = sum(device_count(d) for d in fp if d["floor"] == fl and d["code"] == code)
+            groups.append((f"{code}-足元", "F", n_f))
         if fl == "1F":
             for s in h.stairs:
                 groups.append((f"{s.name}-F", "F", sum(1 for f in ft if f["stair"] == s.name)))

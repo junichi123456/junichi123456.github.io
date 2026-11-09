@@ -16,7 +16,7 @@ import furniture_shapes as FS
 from geom import decompose
 
 # ---------------------------------------------------------------- 室名 → 仕上げ（C.3）
-FLOOR_OF = [("浴室", "floor_sheet"), ("シャワー", "floor_sheet"), ("トイレ", "floor_sheet"), ("洗面", "floor_sheet"), ("ランドリー", "floor_sheet"),
+FLOOR_OF = [("浴室", "floor_sheet"), ("シャワー", "floor_sheet"), ("トイレ", "floor_sheet"), ("洗面", "floor_sheet"), ("脱衣所", "floor_sheet"), ("ランドリー", "floor_sheet"),
             ("玄関土間", "floor_tile_genkan"), ("ジム", "floor_rubber"), ("シアター", "floor_carpet"), ("前室", "floor_carpet"),
             ("機械室", "floor_machine")]
 FLOOR_PRIORITY = ["floor_sheet", "floor_tile_genkan", "floor_rubber", "floor_carpet", "floor_machine", "floor_oak"]
@@ -39,7 +39,7 @@ def lining_of(name, ch):
     """(材質, 高さ) のリスト。上に壁塗装（ライニングなし）が続く場合は高さが ch より低い。"""
     if "浴室" in name or "シャワー" in name:
         return [("wet_panel", ch)]
-    if "洗面" in name or "ランドリー" in name:
+    if "洗面" in name or "脱衣" in name or "ランドリー" in name:
         return [("wet_panel", ch)]
     if "トイレ" in name or "玄関土間" in name:
         return [("wainscot", 1000)]
