@@ -1,0 +1,1222 @@
+{
+ "cuts": {
+  "Z1-11a": {
+   "id": "Z1-11a",
+   "zone": "Z1-11",
+   "room": "リビング・ダイニング",
+   "dir": "南",
+   "cam": [
+    3000,
+    4600,
+    3100
+   ],
+   "target": [
+    3000.0,
+    1600.0,
+    3100
+   ],
+   "eye_mm": 1600,
+   "when": "2026-03-21T15:30",
+   "sun": {
+    "el": 27.84,
+    "az": 247.71
+   },
+   "hdri_sun": [
+    145.8,
+    47.9,
+    -157.7
+   ],
+   "lens": 26,
+   "hfov": 69.4,
+   "exposure": -0.5,
+   "channels": {
+    "L": [
+     4531,
+     100.0
+    ],
+    "D": [
+     2200,
+     0.0
+    ],
+    "F": [
+     2200,
+     0.0
+    ]
+   },
+   "spp": 64,
+   "res": [
+    1280,
+    720
+   ],
+   "render_seconds": 158.8,
+   "time_limit": 150,
+   "time_limit_hit": true,
+   "clearance": 1468,
+   "front_mm": 4585,
+   "metrics": {
+    "black": 0.0016,
+    "white": 0.0,
+    "mean": 88.1785,
+    "std": 46.9741,
+    "window_area": 0.3764,
+    "window_ratio": 0.8846,
+    "window_std": 27.9964
+   },
+   "status": "flag",
+   "issues": [
+    "窓の外が見えない（窓領域の平均は画像平均の 0.88 倍・標準偏差 28.0）"
+   ],
+   "def_hash": "0f82129f8e43"
+  },
+  "Z1-11b": {
+   "id": "Z1-11b",
+   "zone": "Z1-11",
+   "room": "リビング・ダイニング",
+   "dir": "北",
+   "cam": [
+    3000,
+    4600,
+    3100
+   ],
+   "target": [
+    3000.0,
+    7600.0,
+    3100
+   ],
+   "eye_mm": 1600,
+   "when": "2026-03-21T15:30",
+   "sun": {
+    "el": 27.84,
+    "az": 247.71
+   },
+   "hdri_sun": [
+    145.8,
+    47.9,
+    -157.7
+   ],
+   "lens": 26,
+   "hfov": 69.4,
+   "exposure": -1.0,
+   "channels": {
+    "L": [
+     4531,
+     100.0
+    ],
+    "D": [
+     2200,
+     0.0
+    ],
+    "F": [
+     2200,
+     0.0
+    ]
+   },
+   "spp": 64,
+   "res": [
+    1280,
+    720
+   ],
+   "render_seconds": 156.1,
+   "time_limit": 150,
+   "time_limit_hit": true,
+   "clearance": 1468,
+   "front_mm": 7400,
+   "metrics": {
+    "black": 0.0004,
+    "white": 0.0044,
+    "mean": 171.2785,
+    "std": 48.4257,
+    "window_area": 0.0
+   },
+   "status": "ok",
+   "issues": [],
+   "def_hash": "7b5441e2b1d1"
+  },
+  "Z1-21a": {
+   "id": "Z1-21a",
+   "zone": "Z1-21",
+   "room": "ホール",
+   "dir": "南",
+   "cam": [
+    8600,
+    3800,
+    3100
+   ],
+   "target": [
+    8600.0,
+    800.0,
+    3100
+   ],
+   "eye_mm": 1600,
+   "when": "2026-03-21T15:30",
+   "sun": {
+    "el": 27.84,
+    "az": 247.71
+   },
+   "hdri_sun": [
+    145.8,
+    47.9,
+    -157.7
+   ],
+   "lens": 26,
+   "hfov": 69.4,
+   "exposure": -0.5,
+   "channels": {
+    "L": [
+     4531,
+     100.0
+    ],
+    "D": [
+     2200,
+     0.0
+    ],
+    "F": [
+     2200,
+     0.0
+    ]
+   },
+   "spp": 64,
+   "res": [
+    1280,
+    720
+   ],
+   "render_seconds": 155.6,
+   "time_limit": 150,
+   "time_limit_hit": true,
+   "clearance": 1580,
+   "front_mm": 3675,
+   "metrics": {
+    "black": 0.0024,
+    "white": 0.0,
+    "mean": 158.9564,
+    "std": 64.8963,
+    "window_area": 0.0
+   },
+   "status": "ok",
+   "issues": [],
+   "def_hash": "00711d31d194"
+  },
+  "Z1-21b": {
+   "id": "Z1-21b",
+   "zone": "Z1-21",
+   "room": "ホール",
+   "dir": "北",
+   "cam": [
+    8600,
+    3800,
+    3100
+   ],
+   "target": [
+    8600.0,
+    6800.0,
+    3100
+   ],
+   "eye_mm": 1600,
+   "when": "2026-03-21T15:30",
+   "sun": {
+    "el": 27.84,
+    "az": 247.71
+   },
+   "hdri_sun": [
+    145.8,
+    47.9,
+    -157.7
+   ],
+   "lens": 26,
+   "hfov": 69.4,
+   "exposure": -0.5,
+   "channels": {
+    "L": [
+     4531,
+     100.0
+    ],
+    "D": [
+     2200,
+     0.0
+    ],
+    "F": [
+     2200,
+     0.0
+    ]
+   },
+   "spp": 64,
+   "res": [
+    1280,
+    720
+   ],
+   "render_seconds": 158.0,
+   "time_limit": 150,
+   "time_limit_hit": true,
+   "clearance": 1580,
+   "front_mm": 2320,
+   "metrics": {
+    "black": 0.0,
+    "white": 0.0,
+    "mean": 157.2542,
+    "std": 54.6066,
+    "window_area": 0.0
+   },
+   "status": "ok",
+   "issues": [],
+   "def_hash": "c71641229a99"
+  },
+  "Z1-31a": {
+   "id": "Z1-31a",
+   "zone": "Z1-31",
+   "room": "ジム",
+   "dir": "東",
+   "cam": [
+    15200,
+    3600,
+    3100
+   ],
+   "target": [
+    18200.0,
+    3600.0,
+    3100
+   ],
+   "eye_mm": 1600,
+   "when": "2026-03-21T15:30",
+   "sun": {
+    "el": 27.84,
+    "az": 247.71
+   },
+   "hdri_sun": [
+    145.8,
+    47.9,
+    -157.7
+   ],
+   "lens": 26,
+   "hfov": 69.4,
+   "exposure": -0.5,
+   "channels": {
+    "L": [
+     4531,
+     100.0
+    ],
+    "D": [
+     2200,
+     0.0
+    ],
+    "F": [
+     2200,
+     0.0
+    ]
+   },
+   "spp": 64,
+   "res": [
+    1280,
+    720
+   ],
+   "render_seconds": 131.7,
+   "time_limit": 150,
+   "time_limit_hit": false,
+   "clearance": 1140,
+   "front_mm": 2875,
+   "metrics": {
+    "black": 0.0,
+    "white": 0.0001,
+    "mean": 122.3112,
+    "std": 63.6331,
+    "window_area": 0.0
+   },
+   "status": "ok",
+   "issues": [],
+   "def_hash": "715a8c5c037b"
+  },
+  "Z1-31b": {
+   "id": "Z1-31b",
+   "zone": "Z1-31",
+   "room": "ジム",
+   "dir": "西",
+   "cam": [
+    15200,
+    3600,
+    3100
+   ],
+   "target": [
+    12200.0,
+    3600.0,
+    3100
+   ],
+   "eye_mm": 1600,
+   "when": "2026-03-21T15:30",
+   "sun": {
+    "el": 27.84,
+    "az": 247.71
+   },
+   "hdri_sun": [
+    145.8,
+    47.9,
+    -157.7
+   ],
+   "lens": 26,
+   "hfov": 69.4,
+   "exposure": -0.5,
+   "channels": {
+    "L": [
+     4531,
+     100.0
+    ],
+    "D": [
+     2200,
+     0.0
+    ],
+    "F": [
+     2200,
+     0.0
+    ]
+   },
+   "spp": 64,
+   "res": [
+    1280,
+    720
+   ],
+   "render_seconds": 154.5,
+   "time_limit": 150,
+   "time_limit_hit": true,
+   "clearance": 1140,
+   "front_mm": 4500,
+   "metrics": {
+    "black": 0.013,
+    "white": 0.0,
+    "mean": 157.9735,
+    "std": 79.1699,
+    "window_area": 0.0
+   },
+   "status": "ok",
+   "issues": [],
+   "def_hash": "fd9baa5c6de2"
+  },
+  "Z1-12a": {
+   "id": "Z1-12a",
+   "zone": "Z1-12",
+   "room": "キッチン",
+   "dir": "北",
+   "cam": [
+    3200,
+    8100,
+    3100
+   ],
+   "target": [
+    3200.0,
+    11100.0,
+    3100
+   ],
+   "eye_mm": 1600,
+   "when": "2026-03-21T15:30",
+   "sun": {
+    "el": 27.84,
+    "az": 247.71
+   },
+   "hdri_sun": [
+    145.8,
+    47.9,
+    -157.7
+   ],
+   "lens": 26,
+   "hfov": 69.4,
+   "exposure": -0.5,
+   "channels": {
+    "L": [
+     4531,
+     100.0
+    ],
+    "D": [
+     2200,
+     0.0
+    ],
+    "F": [
+     2200,
+     0.0
+    ]
+   },
+   "spp": 64,
+   "res": [
+    1280,
+    720
+   ],
+   "render_seconds": 157.8,
+   "time_limit": 150,
+   "time_limit_hit": true,
+   "clearance": 1180,
+   "front_mm": 3900,
+   "metrics": {
+    "black": 0.0,
+    "white": 0.0,
+    "mean": 171.6019,
+    "std": 64.3333,
+    "window_area": 0.0
+   },
+   "status": "ok",
+   "issues": [],
+   "def_hash": "115d3bbac6e7"
+  },
+  "Z1-12b": {
+   "id": "Z1-12b",
+   "zone": "Z1-12",
+   "room": "キッチン",
+   "dir": "南",
+   "cam": [
+    3200,
+    8100,
+    3100
+   ],
+   "target": [
+    3200.0,
+    5100.0,
+    3100
+   ],
+   "eye_mm": 1600,
+   "when": "2026-03-21T15:30",
+   "sun": {
+    "el": 27.84,
+    "az": 247.71
+   },
+   "hdri_sun": [
+    145.8,
+    47.9,
+    -157.7
+   ],
+   "lens": 26,
+   "hfov": 69.4,
+   "exposure": -0.5,
+   "channels": {
+    "L": [
+     4531,
+     100.0
+    ],
+    "D": [
+     2200,
+     0.0
+    ],
+    "F": [
+     2200,
+     0.0
+    ]
+   },
+   "spp": 64,
+   "res": [
+    1280,
+    720
+   ],
+   "render_seconds": 157.6,
+   "time_limit": 150,
+   "time_limit_hit": true,
+   "clearance": 1180,
+   "front_mm": 8085,
+   "metrics": {
+    "black": 0.0003,
+    "white": 0.0053,
+    "mean": 140.3553,
+    "std": 66.3061,
+    "window_area": 0.2472,
+    "window_ratio": 0.7721,
+    "window_std": 59.2893
+   },
+   "status": "flag",
+   "issues": [
+    "窓の外が見えない（窓領域の平均は画像平均の 0.77 倍・標準偏差 59.3）"
+   ],
+   "def_hash": "7402b8583358"
+  },
+  "Z1-22a": {
+   "id": "Z1-22a",
+   "zone": "Z1-22",
+   "room": "ホール・階段1",
+   "dir": "西",
+   "cam": [
+    10000,
+    7600,
+    3100
+   ],
+   "target": [
+    7000.0,
+    7600.0,
+    3100
+   ],
+   "eye_mm": 1600,
+   "when": "2026-03-21T15:30",
+   "sun": {
+    "el": 27.84,
+    "az": 247.71
+   },
+   "hdri_sun": [
+    145.8,
+    47.9,
+    -157.7
+   ],
+   "lens": 26,
+   "hfov": 69.4,
+   "exposure": -0.5,
+   "channels": {
+    "L": [
+     4531,
+     100.0
+    ],
+    "D": [
+     2200,
+     0.0
+    ],
+    "F": [
+     2200,
+     0.0
+    ]
+   },
+   "spp": 64,
+   "res": [
+    1280,
+    720
+   ],
+   "render_seconds": 155.5,
+   "time_limit": 150,
+   "time_limit_hit": true,
+   "clearance": 1440,
+   "front_mm": 9875,
+   "metrics": {
+    "black": 0.0,
+    "white": 0.0002,
+    "mean": 165.7033,
+    "std": 45.0805,
+    "window_area": 0.0
+   },
+   "status": "ok",
+   "issues": [],
+   "def_hash": "247d7541170a"
+  },
+  "Z1-22b": {
+   "id": "Z1-22b",
+   "zone": "Z1-22",
+   "room": "ホール・階段1",
+   "dir": "北",
+   "cam": [
+    10000,
+    7600,
+    3100
+   ],
+   "target": [
+    10000.0,
+    10600.0,
+    3100
+   ],
+   "eye_mm": 1600,
+   "when": "2026-03-21T15:30",
+   "sun": {
+    "el": 27.84,
+    "az": 247.71
+   },
+   "hdri_sun": [
+    145.8,
+    47.9,
+    -157.7
+   ],
+   "lens": 26,
+   "hfov": 69.4,
+   "exposure": -0.5,
+   "channels": {
+    "L": [
+     4531,
+     100.0
+    ],
+    "D": [
+     2200,
+     0.0
+    ],
+    "F": [
+     2200,
+     0.0
+    ]
+   },
+   "spp": 64,
+   "res": [
+    1280,
+    720
+   ],
+   "render_seconds": 157.4,
+   "time_limit": 150,
+   "time_limit_hit": true,
+   "clearance": 1440,
+   "front_mm": 2200,
+   "metrics": {
+    "black": 0.0,
+    "white": 0.0,
+    "mean": 159.311,
+    "std": 45.2401,
+    "window_area": 0.0
+   },
+   "status": "ok",
+   "issues": [],
+   "def_hash": "e04ba1c9ee04"
+  },
+  "Z1-32a": {
+   "id": "Z1-32a",
+   "zone": "Z1-32",
+   "room": "ジム",
+   "dir": "南",
+   "cam": [
+    15200,
+    7050,
+    3100
+   ],
+   "target": [
+    15200.0,
+    4050.0,
+    3100
+   ],
+   "eye_mm": 1600,
+   "when": "2026-03-21T15:30",
+   "sun": {
+    "el": 27.84,
+    "az": 247.71
+   },
+   "hdri_sun": [
+    145.8,
+    47.9,
+    -157.7
+   ],
+   "lens": 26,
+   "hfov": 69.4,
+   "exposure": -0.5,
+   "channels": {
+    "L": [
+     4531,
+     100.0
+    ],
+    "D": [
+     2200,
+     0.0
+    ],
+    "F": [
+     2200,
+     0.0
+    ]
+   },
+   "spp": 64,
+   "res": [
+    1280,
+    720
+   ],
+   "render_seconds": 146.9,
+   "time_limit": 150,
+   "time_limit_hit": false,
+   "clearance": 650,
+   "front_mm": 6875,
+   "metrics": {
+    "black": 0.0024,
+    "white": 0.0019,
+    "mean": 113.6496,
+    "std": 67.6039,
+    "window_area": 0.0
+   },
+   "status": "ok",
+   "issues": [],
+   "def_hash": "ab144712bae4"
+  },
+  "Z1-32b": {
+   "id": "Z1-32b",
+   "zone": "Z1-32",
+   "room": "機械室（西系統）",
+   "dir": "東",
+   "cam": [
+    13200,
+    10050,
+    3100
+   ],
+   "target": [
+    16200.0,
+    10050.0,
+    3100
+   ],
+   "eye_mm": 1600,
+   "when": "2026-03-21T15:30",
+   "sun": {
+    "el": 27.84,
+    "az": 247.71
+   },
+   "hdri_sun": [
+    145.8,
+    47.9,
+    -157.7
+   ],
+   "lens": 24,
+   "hfov": 73.7,
+   "exposure": 0.0,
+   "channels": {
+    "L": [
+     4531,
+     100.0
+    ],
+    "D": [
+     2200,
+     0.0
+    ],
+    "F": [
+     2200,
+     0.0
+    ]
+   },
+   "spp": 64,
+   "res": [
+    1280,
+    720
+   ],
+   "render_seconds": 110.2,
+   "time_limit": 150,
+   "time_limit_hit": false,
+   "clearance": 750,
+   "front_mm": 1900,
+   "metrics": {
+    "black": 0.0,
+    "white": 0.0,
+    "mean": 88.2084,
+    "std": 49.6908,
+    "window_area": 0.0
+   },
+   "status": "ok",
+   "issues": [],
+   "def_hash": "1b765ba78dd1"
+  },
+  "Z1-13a": {
+   "id": "Z1-13a",
+   "zone": "Z1-13",
+   "room": "ランドリー・室内干し",
+   "dir": "南",
+   "cam": [
+    3000,
+    14400,
+    3100
+   ],
+   "target": [
+    3000.0,
+    11400.0,
+    3100
+   ],
+   "eye_mm": 1600,
+   "when": "2026-03-21T15:30",
+   "sun": {
+    "el": 27.84,
+    "az": 247.71
+   },
+   "hdri_sun": [
+    145.8,
+    47.9,
+    -157.7
+   ],
+   "lens": 24,
+   "hfov": 73.7,
+   "exposure": -0.5,
+   "channels": {
+    "L": [
+     4531,
+     100.0
+    ],
+    "D": [
+     2200,
+     0.0
+    ],
+    "F": [
+     2200,
+     0.0
+    ]
+   },
+   "spp": 64,
+   "res": [
+    1280,
+    720
+   ],
+   "render_seconds": 157.3,
+   "time_limit": 150,
+   "time_limit_hit": true,
+   "clearance": 600,
+   "front_mm": 2150,
+   "metrics": {
+    "black": 0.0,
+    "white": 0.0,
+    "mean": 156.1196,
+    "std": 81.7221,
+    "window_area": 0.0
+   },
+   "status": "ok",
+   "issues": [],
+   "def_hash": "6894ce308731"
+  },
+  "Z1-13b": {
+   "id": "Z1-13b",
+   "zone": "Z1-13",
+   "room": "ランドリー・室内干し",
+   "dir": "東",
+   "cam": [
+    3000,
+    14400,
+    3100
+   ],
+   "target": [
+    6000.0,
+    14400.0,
+    3100
+   ],
+   "eye_mm": 1600,
+   "when": "2026-03-21T15:30",
+   "sun": {
+    "el": 27.84,
+    "az": 247.71
+   },
+   "hdri_sun": [
+    145.8,
+    47.9,
+    -157.7
+   ],
+   "lens": 24,
+   "hfov": 73.7,
+   "exposure": -1.0,
+   "channels": {
+    "L": [
+     4531,
+     100.0
+    ],
+    "D": [
+     2200,
+     0.0
+    ],
+    "F": [
+     2200,
+     0.0
+    ]
+   },
+   "spp": 64,
+   "res": [
+    1280,
+    720
+   ],
+   "render_seconds": 158.0,
+   "time_limit": 150,
+   "time_limit_hit": true,
+   "clearance": 600,
+   "front_mm": 3000,
+   "metrics": {
+    "black": 0.0003,
+    "white": 0.0,
+    "mean": 160.129,
+    "std": 32.0553,
+    "window_area": 0.0
+   },
+   "status": "ok",
+   "issues": [],
+   "def_hash": "04400dc29cd1"
+  },
+  "Z1-23a": {
+   "id": "Z1-23a",
+   "zone": "Z1-23",
+   "room": "洗面・脱衣",
+   "dir": "北",
+   "cam": [
+    7700,
+    13300,
+    3100
+   ],
+   "target": [
+    7700.0,
+    16300.0,
+    3100
+   ],
+   "eye_mm": 1600,
+   "when": "2026-03-21T15:30",
+   "sun": {
+    "el": 27.84,
+    "az": 247.71
+   },
+   "hdri_sun": [
+    145.8,
+    47.9,
+    -157.7
+   ],
+   "lens": 24,
+   "hfov": 73.7,
+   "exposure": -1.0,
+   "channels": {
+    "L": [
+     4531,
+     100.0
+    ],
+    "D": [
+     2200,
+     0.0
+    ],
+    "F": [
+     2200,
+     0.0
+    ]
+   },
+   "spp": 64,
+   "res": [
+    1280,
+    720
+   ],
+   "render_seconds": 156.0,
+   "time_limit": 150,
+   "time_limit_hit": true,
+   "clearance": 600,
+   "front_mm": 1525,
+   "metrics": {
+    "black": 0.0001,
+    "white": 0.0,
+    "mean": 158.7681,
+    "std": 43.6847,
+    "window_area": 0.0
+   },
+   "status": "ok",
+   "issues": [],
+   "def_hash": "5d0160543ad5",
+   "open_doors": {
+    "x7400y14850": 1.0
+   }
+  },
+  "Z1-23b": {
+   "id": "Z1-23b",
+   "zone": "Z1-23",
+   "room": "洗面・脱衣",
+   "dir": "東",
+   "cam": [
+    7700,
+    13300,
+    3100
+   ],
+   "target": [
+    10700.0,
+    13300.0,
+    3100
+   ],
+   "eye_mm": 1600,
+   "when": "2026-03-21T15:30",
+   "sun": {
+    "el": 27.84,
+    "az": 247.71
+   },
+   "hdri_sun": [
+    145.8,
+    47.9,
+    -157.7
+   ],
+   "lens": 24,
+   "hfov": 73.7,
+   "exposure": -0.5,
+   "channels": {
+    "L": [
+     4531,
+     100.0
+    ],
+    "D": [
+     2200,
+     0.0
+    ],
+    "F": [
+     2200,
+     0.0
+    ]
+   },
+   "spp": 64,
+   "res": [
+    1280,
+    720
+   ],
+   "render_seconds": 154.9,
+   "time_limit": 150,
+   "time_limit_hit": true,
+   "clearance": 600,
+   "front_mm": 1800,
+   "metrics": {
+    "black": 0.0,
+    "white": 0.0,
+    "mean": 166.5955,
+    "std": 58.7721,
+    "window_area": 0.0
+   },
+   "status": "ok",
+   "issues": [],
+   "def_hash": "0d5c28e668a8"
+  },
+  "Z1-33a": {
+   "id": "Z1-33a",
+   "zone": "Z1-33",
+   "room": "居室A",
+   "dir": "東",
+   "cam": [
+    16300,
+    16300,
+    3100
+   ],
+   "target": [
+    19300.0,
+    16300.0,
+    3100
+   ],
+   "eye_mm": 1600,
+   "when": "2026-03-21T15:30",
+   "sun": {
+    "el": 27.84,
+    "az": 247.71
+   },
+   "hdri_sun": [
+    145.8,
+    47.9,
+    -157.7
+   ],
+   "lens": 26,
+   "hfov": 69.4,
+   "exposure": -0.5,
+   "channels": {
+    "L": [
+     4531,
+     100.0
+    ],
+    "D": [
+     2200,
+     0.0
+    ],
+    "F": [
+     2200,
+     0.0
+    ]
+   },
+   "spp": 64,
+   "res": [
+    1280,
+    720
+   ],
+   "render_seconds": 159.8,
+   "time_limit": 150,
+   "time_limit_hit": true,
+   "clearance": 1235,
+   "front_mm": 1935,
+   "metrics": {
+    "black": 0.0001,
+    "white": 0.0,
+    "mean": 159.115,
+    "std": 60.9946,
+    "window_area": 0.2574,
+    "window_ratio": 0.3796,
+    "window_std": 27.4218
+   },
+   "status": "flag",
+   "issues": [
+    "窓の外が見えない（窓領域の平均は画像平均の 0.38 倍・標準偏差 27.4）"
+   ],
+   "def_hash": "dff81067a848"
+  },
+  "Z1-33b": {
+   "id": "Z1-33b",
+   "zone": "Z1-33",
+   "room": "居室A",
+   "dir": "西",
+   "cam": [
+    16300,
+    16300,
+    3100
+   ],
+   "target": [
+    13300.0,
+    16300.0,
+    3100
+   ],
+   "eye_mm": 1600,
+   "when": "2026-03-21T15:30",
+   "sun": {
+    "el": 27.84,
+    "az": 247.71
+   },
+   "hdri_sun": [
+    145.8,
+    47.9,
+    -157.7
+   ],
+   "lens": 26,
+   "hfov": 69.4,
+   "exposure": -0.5,
+   "channels": {
+    "L": [
+     4531,
+     100.0
+    ],
+    "D": [
+     2200,
+     0.0
+    ],
+    "F": [
+     2200,
+     0.0
+    ]
+   },
+   "spp": 64,
+   "res": [
+    1280,
+    720
+   ],
+   "render_seconds": 154.9,
+   "time_limit": 150,
+   "time_limit_hit": true,
+   "clearance": 1235,
+   "front_mm": 4050,
+   "metrics": {
+    "black": 0.0,
+    "white": 0.0,
+    "mean": 137.6715,
+    "std": 65.074,
+    "window_area": 0.0
+   },
+   "status": "ok",
+   "issues": [],
+   "def_hash": "6fd69a6b025c"
+  }
+ },
+ "settings": {
+  "resolution": [
+   1280,
+   720
+  ],
+  "samples": 64,
+  "adaptive_threshold": 0.05,
+  "time_limit": 150,
+  "jpeg_quality": 85
+ },
+ "version": "v4.30",
+ "palette_mismatch": [],
+ "order": [
+  "Z1-11a",
+  "Z1-11b",
+  "Z1-21a",
+  "Z1-21b",
+  "Z1-31a",
+  "Z1-31b",
+  "Z1-12a",
+  "Z1-12b",
+  "Z1-22a",
+  "Z1-22b",
+  "Z1-32a",
+  "Z1-32b",
+  "Z1-13a",
+  "Z1-13b",
+  "Z1-23a",
+  "Z1-23b",
+  "Z1-33a",
+  "Z1-33b",
+  "Z2-11a",
+  "Z2-11b",
+  "Z2-21a",
+  "Z2-21b",
+  "Z2-31a",
+  "Z2-31b",
+  "Z2-12a",
+  "Z2-12b",
+  "Z2-22a",
+  "Z2-22b",
+  "Z2-32a",
+  "Z2-32b",
+  "Z2-13a",
+  "Z2-13b",
+  "Z2-23a",
+  "Z2-23b",
+  "Z2-33a",
+  "Z2-33b"
+ ],
+ "total_seconds": 2753.8
+}
