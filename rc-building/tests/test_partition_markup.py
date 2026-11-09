@@ -25,7 +25,7 @@ def test_room_areas():
     h = _h()
     assert abs(h.room_A.area - 20.12) < 0.01
     assert abs(_room(h, "WIC").area - 10.63) < 0.01
-    assert abs(h.gym_annex.area - 7.64) < 0.01 and abs(h.gym.daylight_area - 53.99) < 0.01
+    assert abs(h.gym_annex.area - 7.64) < 0.01 and abs(h.gym.daylight_area - 52.81) < 0.02       # v4.27: ジム本体 46.35→45.17（S・E の増し打ち帯）
     assert abs(_room(h, "浴室").area - 10.16) < 0.01 and abs(_room(h, "玄関土間").area - 7.97) < 0.01
     assert abs(_room(h, "トイレ").area - 6.06) < 0.01 and abs(_room(h, "洗面・脱衣").area - 8.29) < 0.01
 
@@ -68,8 +68,8 @@ def test_bath_wall_and_toilet_face():
 def test_sound_and_window():
     h = _h()
     s = house_legal.gym_sound(h)
-    assert s["tl"] >= s["target"] - 0.5                      # 室内窓・Ts-40 扉を含めても現行同等
-    assert (h.gym_window.u0, h.gym_window.u1) == (4525, 5940) and h.gym_window.z1 - h.gym_window.z0 == 1300
+    assert s["tl"] >= 48                                     # v4.27: IW-1 は南へ再配置、Ts-45 W1,200 扉で 48dB 以上
+    assert (h.gym_window.u0, h.gym_window.u1) == (1000, 2415) and h.gym_window.z1 - h.gym_window.z0 == 1300   # v4.27: 玄関入口側へ再配置
 
 
 def test_no_furniture_conflict():

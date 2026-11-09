@@ -305,10 +305,12 @@ class House:
         wpx = L(f, "y", wx, ga["wall_y0"], 6000, t=ga["wall_t"])           # ①ホールとの境（独立間柱の遮音二重壁 t200。v4.25 S 壁まで延長）
         assert wy is None                                                  # ②（土間との境）は撤去
         u0, u1 = ga["door_u"]
-        self.gym_door = wpx.add(Opening("door", u0, u1, z0, z0 + ga["door_h"], f, "I", ga["door_name"], "swing", swing=1, hinge=0))
-        wd_ = ga["window"]                                                 # 緑線: ホール↔ジムの室内窓（FIX・合わせ複層。遮音は house_legal で確認）
-        self.gym_window = wpx.add(Opening("window", wd_["u"][0], wd_["u"][1], z0 + wd_["sill"], z0 + wd_["head"], f, "I", "室内窓（遮音FIX・合わせ複層）", "fixed"))
-        self.gym_window.glass = True
+        self.gym_door = wpx.add(Opening("door", u0, u1, z0, z0 + ga["door_h"], f, "I", ga["door_name"], "swing", swing=1, hinge=ga.get("door_hinge", 0)))
+        wd_ = ga.get("window")                                             # v4.25 緑線の室内窓。v4.27 で撤去（window: null）
+        self.gym_window = None
+        if wd_:
+            self.gym_window = wpx.add(Opening("window", wd_["u"][0], wd_["u"][1], z0 + wd_["sill"], z0 + wd_["head"], f, "I", "室内窓（遮音FIX・合わせ複層）", "fixed"))
+            self.gym_window.glass = True
         R("ホール・階段1", f, (6250, 6250, 12000, 9800), label=(10000, 7600))
         R("トイレ（手洗い付）", f, (8750, 9900, 10600, 12000))
         L(f, "x", 9850, 8750, 10650, [(9200, 10000, "swing", 1, 0)])
@@ -409,7 +411,18 @@ class House:
         z1 = self.fl["2F"] - self.slab_t
         iw, idp = b["inner"]
         self.battery_room = Room("蓄電室", f, (x0, y0, x1, y1), False, ((x0 + x1) / 2, (y0 + y1) / 2), 0, area_override=iw * idp / 1e6)
-        self.gym.area_override = self.gym.area - (x1 - x0) * (y1 - y0) / 1e6
+        # v4.27: 面積 ＝ 矩形 − 蓄電室 − 増し打ちの帯（S・E の local_thick。w.extra から求める）
+        bands = []
+        ws_, we_ = self.rc_walls["1F"]["S"], self.rc_walls["1F"]["E"]
+        gx0, gy0, gx1, gy1 = self.gym.rect
+        for (e0, e1, te, sg) in ws_.extra:
+            bands.append(sbox(max(e0, gx0), gy0, min(e1, gx1), gy0 + te))
+        for (e0, e1, te, sg) in we_.extra:
+            bands.append(sbox(gx1 - te, max(e0, gy0), gx1, min(e1, gy1)))
+        gsh = sbox(gx0, gy0, gx1, gy1).difference(sbox(x0, y0, x1, y1))
+        if bands:
+            gsh = gsh.difference(unary_union(bands))
+        self.gym.area_override = gsh.area / 1e6
         self.gym.label_at = (16500, 5000)
         self.gym.daylight_area = self.gym.area + self.gym_annex.area
         ws = Wall("x", y0, x0, x1 - 325, self.pt, z0, z1, "partition", "lgs", floor=f, side="I")

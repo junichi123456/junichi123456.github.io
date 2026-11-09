@@ -59,7 +59,7 @@ def test_clearance_800_and_swing():
     assert not r["battery_swing_hits"] and not r["lane_hits"]
     assert not any(r["mech_swing_hits"].values())                                    # 分電盤・機器が扉の軌跡に入らない
     assert r["usable"] >= 44.85, r["usable"]
-    assert abs(h.gym.area - 46.35) < 0.05 and abs(h.gym.daylight_area - 53.99) < 0.05
+    assert abs(h.gym.area - 45.17) < 0.05 and abs(h.gym.daylight_area - 52.81) < 0.05
     assert r["rack_front"] >= h.spec["mech_rooms"]["rack_front_min"]
     z = h.mech_zones()
     for n, rc, *_ in h.equipment:
