@@ -800,3 +800,12 @@ gym_layout:                               # v4.27: S・E 壁の増し打ち（�
     R2: [15400, 2750, 16200, 8100]
   counter: [17625, 4500, 18075, 5200]     # J-K1 測定カウンター
   mirror: [14700, 175, 16900, 235]        # J-M1 鏡（S 壁の内面）
+
+laundry:         # v4.28（8.webp 追加指示）2階のランドリーは設けない。1階ランドリーで乾燥まで完結し、北西の1階ファミクロへしまう
+  floor: 1F
+  route: ランドリー・室内干し（1F）→ 隣のファミリークローゼット（1F、引戸 u1,000〜1,800）。階段は使わない
+  load_kg_per_day: 10          # 6 人×1.5kg＋タオル・寝具
+  machines: {name: ヒートポンプ式ドラム式洗濯乾燥機（洗12kg／乾6kg）, qty: 2, dry_kg_per_cycle: 6, cycle_h: 3, circuits: 2}
+  backup: {poles: 2, kg: 5, dehumidifier_l_per_day: 18, vent_m3h: 100, rh_alarm: 65}
+  quiet_until: 22
+  note: 要確認 Q5（1階ファミクロ 約11.4m² の容量）。2階にランドリー・洗濯機置場・物干しは置かない
