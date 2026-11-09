@@ -57,7 +57,8 @@ v4.16: 内装の仮置きと内装CG。リビングのチェアは「ペッパ�
 - `model.glb`：3Dモデル。建物、RC塀、Dotcon+ 舗装、カーポート、周辺建物、地形を含む
 - `render/*.png`：外観CG 7カット（v4.17 時点の画像。v4.18 では描き直していない）（C01 門まわり／C01b 南東角／C02 南東上空／C03 玄関／C04 パーゴラ／C05 東側道路／C06 夕景）。1920×1080（C01b は 1600×900）
 - `model_interior.glb`：内装CG 用の3Dモデル（家具・天井・床仕上げ・内壁仕上げ・扉・照明器具を加えたもの。ビューアは従来どおり `model.glb`）
-- `render/interior/*.png`：内装CG 14カット（v4.19 で描き直したのは I01・I02（I02_ldk_kitchen_side に改名）・I03・I14 の 4 カット・3/21 14:00 のみ。ほかは v4.17 時点の画像のまま。I01 LDK／I02 LDK キッチン側／I03 キッチン／I04 玄関／I05 階段／I06 ジム／I07 シアター／I08 図書室／I09 主寝室／I10 洗面・浴室／I11 ランドリー）。1600×900＋注記の帯
+- `render/interior/zones/*.jpg`（v4.30）：内装CG 18区画×2方向の36カット（3/21 15:30・視点 FL+1,600・1280×720・注記帯つき JPEG）、`render_log_zones.json`、`sheets/`（区画ごとの2枚並べ18枚）。階ごとの3×3コンタクトシートは `render/interior/contact_zones_1F.jpg`・`contact_zones_2F.jpg`（`docs/cg_zones_1F.jpg`・`docs/cg_zones_2F.jpg` に同じもの）。定義は `data/interior_zones.yaml`、ブリーフ38章。
+- `render/interior/*.png`：**I04〜I13 は参考（旧・v4.17）。** 内装CG 14カット（v4.19 で描き直したのは I01・I02（I02_ldk_kitchen_side に改名）・I03・I14 の 4 カット・3/21 14:00 のみ。ほかは v4.17 時点の画像のまま。I01 LDK／I02 LDK キッチン側／I03 キッチン／I04 玄関／I05 階段／I06 ジム／I07 シアター／I08 図書室／I09 主寝室／I10 洗面・浴室／I11 ランドリー）。1600×900＋注記の帯
 - `LEGAL_CHECK.md`：法規チェック 102項目。不適合0、要確認15（用途地域・防火指定・採光補正係数・2階の排煙・構造計算など）
 - ビューア: [`index.html`](index.html)。3D表示、断面表示、図面一覧、法規チェック表を見られます
 
@@ -72,6 +73,9 @@ python3 -m venv .venv-bpy && .venv-bpy/bin/pip install bpy==5.2.3   # 初回の�
 python3 src/render_cg.py            # 全カット（--preview で構図確認、--only C03 で1カット）
 python3 tests/test_colors.py        # 色・材質・外壁比率の試験
 python3 src/render_cg.py --interior # 内装CG 14カット（約1時間。--preview で構図確認、--only I01,I02 で一部）
+python3 src/render_zones.py --check            # 区画CG 36カットの定義・離隔の検査（Blender 不要）
+python3 src/render_zones.py --floor 1F         # 区画CG 1階18カット（約46分。6カットずつ・既存はスキップ。2F も同様。--preview で 480×270、--only Z1-23a --force で撮り直し）
+python3 src/zone_sheets.py                     # 区画CGのコンタクトシート（モンタージュ2枚・区画シート18枚）
 python3 tests/test_furniture.py     # 家具の干渉・チェアの総数・すき間・GLB の試験
 python3 tests/test_kitchen.py       # キッチン（棚 ≦1,550・通路 ≧1,300・パントリー撤去）
 python3 tests/test_ldk_window.py    # LDK 角窓・構造・結露
