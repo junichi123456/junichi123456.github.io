@@ -579,6 +579,7 @@ interior_color_plan:   # v4.29 内装の配色（施主指定 2026-11）。外�
 lighting:       # 製品未確定・仮定値。目標照度は JIS Z 9110 を参考にした仮定の目標値（規格本文は未参照）
   policy: 主照明は天井直付けの棒状（ライン）LED、埋込ダウンライトは弱い補助灯（溝・コーブ・吊りなし）
   maintenance_factor: 0.8
+  refl_table: {IV1: 0.880, IV2: 0.854, C2: 0.912, W1: 0.003, W2: 0.022, W3: 0.069, W4: 0.056, W5: 0.043, F1: 0.189, F2: 0.792, F3: 0.682, F4: 0.576, F5: 0.360}   # v4.29 配色の反射率（sRGB の相対輝度 Y＝LRV。lighting.refl_factor が palette から同じ値を求める）
   efficacy_lm_per_w: 120
   line: {width: 50, height: 60, drop: 60, classes_lm_per_m: [600, 800, 1000, 1200, 1600, 2000, 2500, 3000, 3500], kelvin: [2200, 5000], ra: 90, dimming: DALI-2 DT8（製品未確定）, row_pitch: 2000, end_clear: 500, hole_clear: 150, cut_unit: 300}
   downlight: {max_lm: 250, kelvin: [2200, 3000], ra: 90, min_from_line: 450, min_from_wall: 400, pitch: 1800}

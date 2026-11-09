@@ -22,7 +22,63 @@ CODE = {"リビング・ダイニング": "LDK", "キッチン": "KIT", "玄関�
 
 # 光束法の利用率 U（直付・乳白拡散、反射率 天井0.7/壁0.5/床0.2 を仮定した概略値）
 _UT = [(0.6, .33), (0.8, .40), (1.0, .45), (1.25, .50), (1.5, .54), (2.0, .59), (2.5, .63), (3.0, .66), (4.0, .70), (5.0, .72)]
-DARK = {"シアター": 0.6}      # 暗色仕上げの補正
+BASE_REFL = (0.7, 0.5, 0.2)      # 上の _UT が仮定する反射率（天井, 壁, 床）
+DARK = {"シアター": 0.6}      # v4.28 までの暗色補正。選定（lm/m の段階）にだけ使い、光束は変えない（v4.29）
+
+
+def lrv(hx):
+    """sRGB 16進の相対輝度 Y（反射率とみなす）。"""
+    out = 0.0
+    for i, w in zip((1, 3, 5), (0.2126, 0.7152, 0.0722)):
+        c = int(hx[i:i + 2], 16) / 255
+        out += w * (c / 12.92 if c <= 0.04045 else ((c + 0.055) / 1.055) ** 2.4)
+    return out
+
+
+def _fpar(x, y):
+    t1 = math.log(math.sqrt((1 + x * x) * (1 + y * y) / (1 + x * x + y * y)))
+    t2 = x * math.sqrt(1 + y * y) * math.atan(x / math.sqrt(1 + y * y))
+    t3 = y * math.sqrt(1 + x * x) * math.atan(y / math.sqrt(1 + x * x))
+    t4 = -x * math.atan(x) - y * math.atan(y)
+    return 2 / (math.pi * x * y) * (t1 + t2 + t3 + t4)
+
+
+def _util(k, rc, rw, rf, up=0.05):
+    """天井・壁・床の3面の相互反射を解く簡易モデル（正方形の室に換算、乳白の器具は完全拡散）。床面に入る光束の割合。"""
+    import numpy as np
+    a = 2 * k
+    A, Aw = a * a, 4 * a
+    fcf = _fpar(a, a)
+    fcw = 1 - fcf
+    fwc = A * fcw / Aw
+    F = np.array([[0, fcf, fcw], [fcf, 0, fcw], [fwc, fwc, 1 - 2 * fwc]])
+    r = np.array([rc, rf, rw])
+    e0 = np.array([up, (1 - up) * fcf, (1 - up) * fcw])
+    M = np.linalg.solve(np.eye(3) - np.diag(r) @ F.T, r * e0)
+    return float(e0[1] + M @ F[:, 1])
+
+
+def refl_factor(h, r):
+    """室の実際の反射率（天井・壁の面積加重・床）で U を補正する係数。BASE_REFL のとき 1。"""
+    import interior_shell as IS
+    pal = h.spec["interior_palette"]
+    ents = [e for e in IS.wall_plan(h) if e["cell"].floor == r.floor and e["cell"].name == r.name]
+    if not ents:
+        return 1.0
+    rp = ents[0]["rp"]
+    cm = h.spec["interior_color_plan"]["materials"]
+    A = sum(e["total"] for e in ents)
+    Ad = sum(e["dark"] for e in ents)
+    lt = lrv(pal[cm[rp["light"]]]["color"])
+    dk = lrv(pal[cm[rp["dark"]]]["color"])
+    rw = ((A - Ad) * lt + Ad * dk) / A
+    rc = lrv(pal[IS.ceiling_mat(r.name)]["color"])
+    rf = lrv(pal[IS.floor_mat(r.name)]["color"])
+    x0, y0, x1, y1 = r.rect
+    w, d = (x1 - x0) / 1000, (y1 - y0) / 1000
+    Hc = (h.fl["2F"] - h.slab_t - h.fl["1F"] if r.name == "ジム" else h.ch[r.floor]) / 1000
+    k = w * d / (Hc * (w + d))
+    return _util(k, rc, rw, rf) / _util(k, *BASE_REFL)
 
 
 def _U(k):
@@ -119,9 +175,10 @@ def _room_need(h, r):
     A = w * d
     Hc = (h.fl["2F"] - h.slab_t - h.fl["1F"] if r.name == "ジム" else h.ch[r.floor]) / 1000
     k = A / (Hc * (w + d))
-    u = _U(k) * DARK.get(next((kk for kk in DARK if kk in r.name), ""), 1.0)
+    u = _U(k) * refl_factor(h, r)
+    u0 = _U(k) * DARK.get(next((kk for kk in DARK if kk in r.name), ""), 1.0)       # 器具の段階の選定は v4.28 までと同じ（光束は増やさない）
     E = target_lx(h, r.name)
-    return A, k, u, E, E * A / (u * _cfg(h)["maintenance_factor"])
+    return A, k, u, E, E * A / (u0 * _cfg(h)["maintenance_factor"])
 
 
 def lines(h, its):

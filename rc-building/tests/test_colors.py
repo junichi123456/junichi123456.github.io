@@ -344,9 +344,20 @@ def test_contrast_floor_ceiling_stairs():
     assert tread - _lrv(pal["nosing"]["color"]) >= 30 and tread - _lrv(pal["stair_riser"]["color"]) >= 30
 
 
-def test_exterior_unchanged():
-    """(f) 外観の色は不変。"""
-    assert house().spec["colors"]["base"] == "#F5EFE3"
+def test_exterior_unchanged_and_refl():
+    """(f) 外観の色は不変。refl_table の反射率は palette の LRV と一致し、全室で照度が目標以上。"""
+    import lighting
+    h = house()
+    assert h.spec["colors"]["base"] == "#F5EFE3"
+    cp = h.spec["interior_color_plan"]
+    allc = {**cp["walls_dark"], **cp["floors"], **cp["light"], "C2": cp["ceiling"]["C2"]}
+    for k, v in h.spec["lighting"]["refl_table"].items():
+        assert abs(lighting.lrv(allc[k]) - v) < 0.0015, k
+    import interior_shell as IS
+    assert all(lighting.refl_factor(h, r) > 0 for r in h.rooms)
+    import furniture
+    rows = lighting.illuminance_table(h, furniture.items(h))
+    assert all(r["E"] >= r["target"] for r in rows if r.get("target") and r["E"]), [r["room"] for r in rows if r.get("target") and r["E"] and r["E"] < r["target"]]
 
 
 if __name__ == "__main__":
