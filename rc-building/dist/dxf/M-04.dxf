@@ -493,7 +493,7 @@ $SKPOLY
   9
 $TDCREATE
  40
-2461354.585740741
+2461354.6216550926
   9
 $TDUCREATE
  40
@@ -501,7 +501,7 @@ $TDUCREATE
   9
 $TDUPDATE
  40
-2461354.586273148
+2461354.6222916665
   9
 $TDUUPDATE
  40
@@ -553,7 +553,7 @@ $SPLINESEGS
   9
 $HANDSEED
   5
-17D
+187
   9
 $SURFTAB1
  70
@@ -933,11 +933,11 @@ $PSTYLEMODE
   9
 $FINGERPRINTGUID
   2
-{766817BD-8D6D-49A7-A755-EDABE4240C37}
+{6256A881-A23E-4CDD-8516-34CB1640032C}
   9
 $VERSIONGUID
   2
-{05A87080-AFC8-42C4-9BC6-4818F2AB8E0E}
+{AF90FFD0-EF04-4519-85B0-3CEAA8EE2035}
   9
 $EXTNAMES
 290
@@ -2237,7 +2237,7 @@ LAYER
 100
 AcDbSymbolTable
  70
-62
+64
   0
 LAYER
   5
@@ -3019,6 +3019,66 @@ AcDbSymbolTableRecord
 100
 AcDbLayerTableRecord
   2
+E-FOOTL
+ 70
+0
+ 62
+6
+  6
+Continuous
+370
+50
+390
+13
+347
+21
+1001
+AcAecLayerStandard
+1000
+
+1000
+廊下・ホールの足元灯（連続ライン・壁 床上300）
+  0
+LAYER
+  5
+A5
+330
+1
+100
+AcDbSymbolTableRecord
+100
+AcDbLayerTableRecord
+  2
+E-WARN
+ 70
+0
+ 62
+1
+  6
+Continuous
+370
+25
+390
+13
+347
+21
+1001
+AcAecLayerStandard
+1000
+
+1000
+死角の印（曲がり角・戸口・階段口の前後は警告区間）
+  0
+LAYER
+  5
+A6
+330
+1
+100
+AcDbSymbolTableRecord
+100
+AcDbLayerTableRecord
+  2
 E-SENS
  70
 0
@@ -3041,7 +3101,7 @@ AcAecLayerStandard
   0
 LAYER
   5
-A5
+A7
 330
 1
 100
@@ -3071,7 +3131,7 @@ AcAecLayerStandard
   0
 LAYER
   5
-A6
+A8
 330
 1
 100
@@ -3101,7 +3161,7 @@ AcAecLayerStandard
   0
 LAYER
   5
-A7
+A9
 330
 1
 100
@@ -3131,7 +3191,7 @@ AcAecLayerStandard
   0
 LAYER
   5
-A8
+AA
 330
 1
 100
@@ -3161,7 +3221,7 @@ AcAecLayerStandard
   0
 LAYER
   5
-A9
+AB
 330
 1
 100
@@ -3191,7 +3251,7 @@ AcAecLayerStandard
   0
 LAYER
   5
-AA
+AC
 330
 1
 100
@@ -3221,7 +3281,7 @@ AcAecLayerStandard
   0
 LAYER
   5
-AB
+AD
 330
 1
 100
@@ -3251,7 +3311,7 @@ AcAecLayerStandard
   0
 LAYER
   5
-AC
+AE
 330
 1
 100
@@ -3281,7 +3341,7 @@ AcAecLayerStandard
   0
 LAYER
   5
-AD
+AF
 330
 1
 100
@@ -3311,7 +3371,7 @@ AcAecLayerStandard
   0
 LAYER
   5
-AE
+B0
 330
 1
 100
@@ -3341,7 +3401,7 @@ AcAecLayerStandard
   0
 LAYER
   5
-AF
+B1
 330
 1
 100
@@ -3371,7 +3431,7 @@ AcAecLayerStandard
   0
 LAYER
   5
-B0
+B2
 330
 1
 100
@@ -3401,7 +3461,7 @@ AcAecLayerStandard
   0
 LAYER
   5
-B1
+B3
 330
 1
 100
@@ -3431,7 +3491,7 @@ AcAecLayerStandard
   0
 LAYER
   5
-B2
+B4
 330
 1
 100
@@ -3461,7 +3521,7 @@ AcAecLayerStandard
   0
 LAYER
   5
-B3
+B5
 330
 1
 100
@@ -3491,7 +3551,7 @@ AcAecLayerStandard
   0
 LAYER
   5
-B4
+B6
 330
 1
 100
@@ -3521,7 +3581,7 @@ AcAecLayerStandard
   0
 LAYER
   5
-B5
+B7
 330
 1
 100
@@ -3551,7 +3611,7 @@ AcAecLayerStandard
   0
 LAYER
   5
-B6
+B8
 330
 1
 100
@@ -3581,7 +3641,7 @@ AcAecLayerStandard
   0
 LAYER
   5
-B7
+B9
 330
 1
 100
@@ -3611,7 +3671,7 @@ AcAecLayerStandard
   0
 LAYER
   5
-B8
+BA
 330
 1
 100
@@ -3641,7 +3701,7 @@ AcAecLayerStandard
   0
 LAYER
   5
-B9
+BB
 330
 1
 100
@@ -3671,7 +3731,7 @@ AcAecLayerStandard
   0
 LAYER
   5
-BA
+BC
 330
 1
 100
@@ -3701,7 +3761,7 @@ AcAecLayerStandard
   0
 LAYER
   5
-BB
+BD
 330
 1
 100
@@ -3731,7 +3791,7 @@ AcAecLayerStandard
   0
 LAYER
   5
-BC
+BE
 330
 1
 100
@@ -3761,7 +3821,7 @@ AcAecLayerStandard
   0
 LAYER
   5
-BD
+BF
 330
 1
 100
@@ -3791,7 +3851,7 @@ AcAecLayerStandard
   0
 LAYER
   5
-BE
+C0
 330
 1
 100
@@ -3821,7 +3881,7 @@ AcAecLayerStandard
   0
 LAYER
   5
-BF
+C1
 330
 1
 100
@@ -3851,7 +3911,7 @@ AcAecLayerStandard
   0
 LAYER
   5
-C0
+C2
 330
 1
 100
@@ -3881,7 +3941,7 @@ AcAecLayerStandard
   0
 LAYER
   5
-C1
+C3
 330
 1
 100
@@ -3911,7 +3971,7 @@ AcAecLayerStandard
   0
 LAYER
   5
-C2
+C4
 330
 1
 100
@@ -3941,7 +4001,7 @@ AcAecLayerStandard
   0
 LAYER
   5
-C3
+C5
 330
 1
 100
@@ -3971,7 +4031,7 @@ AcAecLayerStandard
   0
 LAYER
   5
-C4
+C6
 330
 1
 100
@@ -4001,7 +4061,7 @@ AcAecLayerStandard
   0
 LAYER
   5
-C5
+C7
 330
 1
 100
@@ -4031,7 +4091,7 @@ AcAecLayerStandard
   0
 LAYER
   5
-C6
+C8
 330
 1
 100
@@ -4061,7 +4121,7 @@ AcAecLayerStandard
   0
 LAYER
   5
-C7
+C9
 330
 1
 100
@@ -4931,7 +4991,7 @@ AcAecLayerStandard
   0
 APPID
   5
-17A
+184
 330
 3
 100
@@ -4945,7 +5005,7 @@ HATCHBACKGROUNDCOLOR
   0
 APPID
   5
-17B
+185
 330
 3
 100
@@ -6637,7 +6697,7 @@ EZ_CURVED
   0
 DIMSTYLE
 105
-C8
+CA
 330
 4
 100
@@ -6769,7 +6829,7 @@ JIS
 340
 8A
 342
-17D
+187
 371
 13
 372
@@ -6891,7 +6951,7 @@ _CLOSEDBLANK
   0
 BLOCK_RECORD
   5
-17D
+187
 330
 9
 100
@@ -7211,9 +7271,9 @@ AcDbBlockEnd
   0
 BLOCK
   5
-17E
+188
 330
-17D
+187
 100
 AcDbEntity
   8
@@ -7237,9 +7297,9 @@ _DOT
   0
 LINE
   5
-180
+18A
 330
-17D
+187
 100
 AcDbEntity
   8
@@ -7265,9 +7325,9 @@ AcDbLine
   0
 LWPOLYLINE
   5
-181
+18B
 330
-17D
+187
 100
 AcDbEntity
   8
@@ -7299,9 +7359,9 @@ AcDbPolyline
   0
 ENDBLK
   5
-17F
+189
 330
-17D
+187
 100
 AcDbEntity
   8
@@ -7317,7 +7377,7 @@ ENTITIES
   0
 LWPOLYLINE
   5
-C9
+CB
 330
 17
 100
@@ -7351,7 +7411,7 @@ AcDbPolyline
   0
 LWPOLYLINE
   5
-CA
+CC
 330
 17
 100
@@ -7383,7 +7443,7 @@ AcDbPolyline
   0
 LWPOLYLINE
   5
-CB
+CD
 330
 17
 100
@@ -7417,54 +7477,6 @@ AcDbPolyline
   0
 LINE
   5
-CC
-330
-17
-100
-AcDbEntity
-  8
-G-TITLE
-100
-AcDbLine
- 10
-220.0
- 20
-38.0
- 30
-0.0
- 11
-410.0
- 21
-38.0
- 31
-0.0
-  0
-LINE
-  5
-CD
-330
-17
-100
-AcDbEntity
-  8
-G-TITLE
-100
-AcDbLine
- 10
-220.0
- 20
-27.0
- 30
-0.0
- 11
-410.0
- 21
-27.0
- 31
-0.0
-  0
-LINE
-  5
 CE
 330
 17
@@ -7477,6 +7489,54 @@ AcDbLine
  10
 220.0
  20
+38.0
+ 30
+0.0
+ 11
+410.0
+ 21
+38.0
+ 31
+0.0
+  0
+LINE
+  5
+CF
+330
+17
+100
+AcDbEntity
+  8
+G-TITLE
+100
+AcDbLine
+ 10
+220.0
+ 20
+27.0
+ 30
+0.0
+ 11
+410.0
+ 21
+27.0
+ 31
+0.0
+  0
+LINE
+  5
+D0
+330
+17
+100
+AcDbEntity
+  8
+G-TITLE
+100
+AcDbLine
+ 10
+220.0
+ 20
 19.0
  30
 0.0
@@ -7489,7 +7549,7 @@ AcDbLine
   0
 LINE
   5
-CF
+D1
 330
 17
 100
@@ -7513,7 +7573,7 @@ AcDbLine
   0
 TEXT
   5
-D0
+D2
 330
 17
 100
@@ -7545,7 +7605,7 @@ AcDbText
   0
 TEXT
   5
-D1
+D3
 330
 17
 100
@@ -7577,7 +7637,7 @@ AcDbText
   0
 TEXT
   5
-D2
+D4
 330
 17
 100
@@ -7609,7 +7669,7 @@ AcDbText
   0
 TEXT
   5
-D3
+D5
 330
 17
 100
@@ -7641,7 +7701,7 @@ AcDbText
   0
 TEXT
   5
-D4
+D6
 330
 17
 100
@@ -7673,7 +7733,7 @@ AcDbText
   0
 LINE
   5
-D5
+D7
 330
 17
 100
@@ -7697,7 +7757,7 @@ AcDbLine
   0
 TEXT
   5
-D6
+D8
 330
 17
 100
@@ -7729,7 +7789,7 @@ AcDbText
   0
 TEXT
   5
-D7
+D9
 330
 17
 100
@@ -7761,7 +7821,7 @@ AcDbText
   0
 LINE
   5
-D8
+DA
 330
 17
 100
@@ -7785,7 +7845,7 @@ AcDbLine
   0
 TEXT
   5
-D9
+DB
 330
 17
 100
@@ -7817,7 +7877,7 @@ AcDbText
   0
 TEXT
   5
-DA
+DC
 330
 17
 100
@@ -7849,7 +7909,7 @@ AcDbText
   0
 LINE
   5
-DB
+DD
 330
 17
 100
@@ -7873,7 +7933,7 @@ AcDbLine
   0
 TEXT
   5
-DC
+DE
 330
 17
 100
@@ -7905,7 +7965,7 @@ AcDbText
   0
 TEXT
   5
-DD
+DF
 330
 17
 100
@@ -7937,7 +7997,7 @@ AcDbText
   0
 TEXT
   5
-DE
+E0
 330
 17
 100
@@ -7969,7 +8029,7 @@ AcDbText
   0
 TEXT
   5
-DF
+E1
 330
 17
 100
@@ -8001,7 +8061,7 @@ AcDbText
   0
 LINE
   5
-E0
+E2
 330
 17
 100
@@ -8025,7 +8085,7 @@ AcDbLine
   0
 TEXT
   5
-E1
+E3
 330
 17
 100
@@ -8057,7 +8117,7 @@ AcDbText
   0
 TEXT
   5
-E2
+E4
 330
 17
 100
@@ -8093,7 +8153,7 @@ AcDbText
   0
 TEXT
   5
-E3
+E5
 330
 17
 100
@@ -8125,7 +8185,7 @@ AcDbText
   0
 TEXT
   5
-E4
+E6
 330
 17
 100
@@ -8157,7 +8217,7 @@ AcDbText
   0
 LWPOLYLINE
   5
-E5
+E7
 330
 17
 100
@@ -8183,7 +8243,7 @@ AcDbPolyline
   0
 TEXT
   5
-E6
+E8
 330
 17
 100
@@ -8215,7 +8275,7 @@ AcDbText
   0
 TEXT
   5
-E7
+E9
 330
 17
 100
@@ -8247,7 +8307,7 @@ AcDbText
   0
 TEXT
   5
-E8
+EA
 330
 17
 100
@@ -8279,7 +8339,7 @@ AcDbText
   0
 TEXT
   5
-E9
+EB
 330
 17
 100
@@ -8311,7 +8371,7 @@ AcDbText
   0
 TEXT
   5
-EA
+EC
 330
 17
 100
@@ -8343,7 +8403,7 @@ AcDbText
   0
 TEXT
   5
-EB
+ED
 330
 17
 100
@@ -8375,7 +8435,7 @@ AcDbText
   0
 TEXT
   5
-EC
+EE
 330
 17
 100
@@ -8407,7 +8467,7 @@ AcDbText
   0
 LWPOLYLINE
   5
-ED
+EF
 330
 17
 100
@@ -8433,7 +8493,7 @@ AcDbPolyline
   0
 TEXT
   5
-EE
+F0
 330
 17
 100
@@ -8465,7 +8525,7 @@ AcDbText
   0
 TEXT
   5
-EF
+F1
 330
 17
 100
@@ -8497,7 +8557,7 @@ AcDbText
   0
 TEXT
   5
-F0
+F2
 330
 17
 100
@@ -8529,7 +8589,7 @@ AcDbText
   0
 TEXT
   5
-F1
+F3
 330
 17
 100
@@ -8561,7 +8621,7 @@ AcDbText
   0
 TEXT
   5
-F2
+F4
 330
 17
 100
@@ -8593,7 +8653,7 @@ AcDbText
   0
 TEXT
   5
-F3
+F5
 330
 17
 100
@@ -8625,7 +8685,7 @@ AcDbText
   0
 TEXT
   5
-F4
+F6
 330
 17
 100
@@ -8657,7 +8717,7 @@ AcDbText
   0
 LWPOLYLINE
   5
-F5
+F7
 330
 17
 100
@@ -8683,7 +8743,7 @@ AcDbPolyline
   0
 TEXT
   5
-F6
+F8
 330
 17
 100
@@ -8715,7 +8775,7 @@ AcDbText
   0
 TEXT
   5
-F7
+F9
 330
 17
 100
@@ -8747,7 +8807,7 @@ AcDbText
   0
 TEXT
   5
-F8
+FA
 330
 17
 100
@@ -8779,7 +8839,7 @@ AcDbText
   0
 TEXT
   5
-F9
+FB
 330
 17
 100
@@ -8811,7 +8871,7 @@ AcDbText
   0
 TEXT
   5
-FA
+FC
 330
 17
 100
@@ -8843,7 +8903,7 @@ AcDbText
   0
 TEXT
   5
-FB
+FD
 330
 17
 100
@@ -8875,7 +8935,7 @@ AcDbText
   0
 TEXT
   5
-FC
+FE
 330
 17
 100
@@ -8907,7 +8967,7 @@ AcDbText
   0
 LWPOLYLINE
   5
-FD
+FF
 330
 17
 100
@@ -8933,7 +8993,7 @@ AcDbPolyline
   0
 TEXT
   5
-FE
+100
 330
 17
 100
@@ -8965,7 +9025,7 @@ AcDbText
   0
 TEXT
   5
-FF
+101
 330
 17
 100
@@ -8997,7 +9057,7 @@ AcDbText
   0
 TEXT
   5
-100
+102
 330
 17
 100
@@ -9029,7 +9089,7 @@ AcDbText
   0
 TEXT
   5
-101
+103
 330
 17
 100
@@ -9061,7 +9121,7 @@ AcDbText
   0
 TEXT
   5
-102
+104
 330
 17
 100
@@ -9093,7 +9153,7 @@ AcDbText
   0
 TEXT
   5
-103
+105
 330
 17
 100
@@ -9125,7 +9185,7 @@ AcDbText
   0
 TEXT
   5
-104
+106
 330
 17
 100
@@ -9157,7 +9217,7 @@ AcDbText
   0
 LWPOLYLINE
   5
-105
+107
 330
 17
 100
@@ -9183,7 +9243,7 @@ AcDbPolyline
   0
 TEXT
   5
-106
+108
 330
 17
 100
@@ -9215,7 +9275,7 @@ AcDbText
   0
 TEXT
   5
-107
+109
 330
 17
 100
@@ -9247,7 +9307,7 @@ AcDbText
   0
 TEXT
   5
-108
+10A
 330
 17
 100
@@ -9279,7 +9339,7 @@ AcDbText
   0
 TEXT
   5
-109
+10B
 330
 17
 100
@@ -9311,7 +9371,7 @@ AcDbText
   0
 TEXT
   5
-10A
+10C
 330
 17
 100
@@ -9343,7 +9403,7 @@ AcDbText
   0
 TEXT
   5
-10B
+10D
 330
 17
 100
@@ -9375,7 +9435,7 @@ AcDbText
   0
 TEXT
   5
-10C
+10E
 330
 17
 100
@@ -9407,7 +9467,7 @@ AcDbText
   0
 LWPOLYLINE
   5
-10D
+10F
 330
 17
 100
@@ -9433,7 +9493,7 @@ AcDbPolyline
   0
 TEXT
   5
-10E
+110
 330
 17
 100
@@ -9451,7 +9511,7 @@ AcDbText
  40
 1.9
   1
-主寝室
+居室E
   7
 JP
  11
@@ -9465,7 +9525,7 @@ AcDbText
   0
 TEXT
   5
-10F
+111
 330
 17
 100
@@ -9497,70 +9557,6 @@ AcDbText
   0
 TEXT
   5
-110
-330
-17
-100
-AcDbEntity
-  8
-A-TEXT
-100
-AcDbText
- 10
-45.0
- 20
-239.9
- 30
-0.0
- 40
-1.9
-  1
-97m³
-  7
-JP
- 11
-45.0
- 21
-239.9
- 31
-0.0
-100
-AcDbText
-  0
-TEXT
-  5
-111
-330
-17
-100
-AcDbEntity
-  8
-A-TEXT
-100
-AcDbText
- 10
-63.0
- 20
-239.9
- 30
-0.0
- 40
-1.9
-  1
-48m³/h
-  7
-JP
- 11
-63.0
- 21
-239.9
- 31
-0.0
-100
-AcDbText
-  0
-TEXT
-  5
 112
 330
 17
@@ -9571,7 +9567,7 @@ A-TEXT
 100
 AcDbText
  10
-93.0
+45.0
  20
 239.9
  30
@@ -9579,11 +9575,11 @@ AcDbText
  40
 1.9
   1
-710ppm
+55m³
   7
 JP
  11
-93.0
+45.0
  21
 239.9
  31
@@ -9603,7 +9599,7 @@ A-TEXT
 100
 AcDbText
  10
-117.0
+63.0
  20
 239.9
  30
@@ -9611,11 +9607,11 @@ AcDbText
  40
 1.9
   1
-48m³/h（0.50回/h）
+27m³/h
   7
 JP
  11
-117.0
+63.0
  21
 239.9
  31
@@ -9635,6 +9631,70 @@ A-TEXT
 100
 AcDbText
  10
+93.0
+ 20
+239.9
+ 30
+0.0
+ 40
+1.9
+  1
+929ppm
+  7
+JP
+ 11
+93.0
+ 21
+239.9
+ 31
+0.0
+100
+AcDbText
+  0
+TEXT
+  5
+115
+330
+17
+100
+AcDbEntity
+  8
+A-TEXT
+100
+AcDbText
+ 10
+117.0
+ 20
+239.9
+ 30
+0.0
+ 40
+1.9
+  1
+37m³/h（0.67回/h）
+  7
+JP
+ 11
+117.0
+ 21
+239.9
+ 31
+0.0
+100
+AcDbText
+  0
+TEXT
+  5
+116
+330
+17
+100
+AcDbEntity
+  8
+A-TEXT
+100
+AcDbText
+ 10
 159.0
  20
 239.9
@@ -9643,7 +9703,7 @@ AcDbText
  40
 1.9
   1
-710ppm
+800ppm
   7
 JP
  11
@@ -9657,7 +9717,7 @@ AcDbText
   0
 LWPOLYLINE
   5
-115
+117
 330
 17
 100
@@ -9681,55 +9741,7 @@ AcDbPolyline
  20
 238.0
   0
-LWPOLYLINE
-  5
-116
-330
-17
-100
-AcDbEntity
-  8
-G-TABLE
-100
-AcDbPolyline
- 90
-2
- 70
-0
- 10
-12.0
- 20
-268.0
- 10
-12.0
- 20
-238.0
-  0
-LWPOLYLINE
-  5
-117
-330
-17
-100
-AcDbEntity
-  8
-G-TABLE
-100
-AcDbPolyline
- 90
-2
- 70
-0
- 10
-34.0
- 20
-268.0
- 10
-34.0
- 20
-238.0
-  0
-LWPOLYLINE
+TEXT
   5
 118
 330
@@ -9737,23 +9749,31 @@ LWPOLYLINE
 100
 AcDbEntity
   8
-G-TABLE
+A-TEXT
 100
-AcDbPolyline
- 90
-2
- 70
-0
+AcDbText
  10
-44.0
+13.0
  20
-268.0
- 10
-44.0
- 20
-238.0
+234.9
+ 30
+0.0
+ 40
+1.9
+  1
+主寝室
+  7
+JP
+ 11
+13.0
+ 21
+234.9
+ 31
+0.0
+100
+AcDbText
   0
-LWPOLYLINE
+TEXT
   5
 119
 330
@@ -9761,23 +9781,31 @@ LWPOLYLINE
 100
 AcDbEntity
   8
-G-TABLE
+A-TEXT
 100
-AcDbPolyline
- 90
-2
- 70
-0
+AcDbText
  10
-62.0
+35.0
  20
-268.0
- 10
-62.0
- 20
-238.0
+234.9
+ 30
+0.0
+ 40
+1.9
+  1
+2F
+  7
+JP
+ 11
+35.0
+ 21
+234.9
+ 31
+0.0
+100
+AcDbText
   0
-LWPOLYLINE
+TEXT
   5
 11A
 330
@@ -9785,23 +9813,31 @@ LWPOLYLINE
 100
 AcDbEntity
   8
-G-TABLE
+A-TEXT
 100
-AcDbPolyline
- 90
-2
- 70
-0
+AcDbText
  10
-92.0
+45.0
  20
-268.0
- 10
-92.0
- 20
-238.0
+234.9
+ 30
+0.0
+ 40
+1.9
+  1
+97m³
+  7
+JP
+ 11
+45.0
+ 21
+234.9
+ 31
+0.0
+100
+AcDbText
   0
-LWPOLYLINE
+TEXT
   5
 11B
 330
@@ -9809,23 +9845,31 @@ LWPOLYLINE
 100
 AcDbEntity
   8
-G-TABLE
+A-TEXT
 100
-AcDbPolyline
- 90
-2
- 70
-0
+AcDbText
  10
-116.0
+63.0
  20
-268.0
- 10
-116.0
- 20
-238.0
+234.9
+ 30
+0.0
+ 40
+1.9
+  1
+48m³/h
+  7
+JP
+ 11
+63.0
+ 21
+234.9
+ 31
+0.0
+100
+AcDbText
   0
-LWPOLYLINE
+TEXT
   5
 11C
 330
@@ -9833,23 +9877,31 @@ LWPOLYLINE
 100
 AcDbEntity
   8
-G-TABLE
+A-TEXT
 100
-AcDbPolyline
- 90
-2
- 70
-0
+AcDbText
  10
-158.0
+93.0
  20
-268.0
- 10
-158.0
- 20
-238.0
+234.9
+ 30
+0.0
+ 40
+1.9
+  1
+710ppm
+  7
+JP
+ 11
+93.0
+ 21
+234.9
+ 31
+0.0
+100
+AcDbText
   0
-LWPOLYLINE
+TEXT
   5
 11D
 330
@@ -9857,21 +9909,29 @@ LWPOLYLINE
 100
 AcDbEntity
   8
-G-TABLE
+A-TEXT
 100
-AcDbPolyline
- 90
-2
- 70
-0
+AcDbText
  10
-182.0
+117.0
  20
-268.0
- 10
-182.0
- 20
-238.0
+234.9
+ 30
+0.0
+ 40
+1.9
+  1
+48m³/h（0.50回/h）
+  7
+JP
+ 11
+117.0
+ 21
+234.9
+ 31
+0.0
+100
+AcDbText
   0
 TEXT
   5
@@ -9885,337 +9945,29 @@ A-TEXT
 100
 AcDbText
  10
-13.0
+159.0
  20
-234.0
+234.9
  30
 0.0
  40
-2.1
+1.9
   1
-寝室ごとに CO2 センサーで換気量を自動で増やす（需要制御）。必要量は1人 約37m³/h。増える換気は合計 約61m³/h で、全熱交換で
+710ppm
   7
 JP
  11
-13.0
+159.0
  21
-234.0
+234.9
  31
 0.0
 100
 AcDbText
   0
-TEXT
+LWPOLYLINE
   5
 11F
-330
-17
-100
-AcDbEntity
-  8
-A-TEXT
-100
-AcDbText
- 10
-13.0
- 20
-230.2
- 30
-0.0
- 40
-2.1
-  1
-回収するため冷暖房の増加は年 約129kWh
-  7
-JP
- 11
-13.0
- 21
-230.2
- 31
-0.0
-100
-AcDbText
-  0
-TEXT
-  5
-120
-330
-17
-100
-AcDbEntity
-  8
-A-TEXT
-100
-AcDbText
- 10
-13.0
- 20
-225.39999999999998
- 30
-0.0
- 40
-2.1
-  1
-全熱交換の給気フィルター ePM1 70%以上（PM2.5 を除去）、CO2・PM2.5・VOC センサーを各寝室と LDK に
-  7
-JP
- 11
-13.0
- 21
-225.39999999999998
- 31
-0.0
-100
-AcDbText
-  0
-TEXT
-  5
-121
-330
-17
-100
-AcDbEntity
-  8
-A-TEXT
-100
-AcDbText
- 10
-12.0
- 20
-212.0
- 30
-0.0
- 40
-2.8
-  1
-(2) 睡眠・水・測定
-  7
-JP
- 11
-12.0
- 21
-212.0
- 31
-0.0
-100
-AcDbText
-  0
-LWPOLYLINE
-  5
-122
-330
-17
-100
-AcDbEntity
-  8
-G-TABLE
-370
-35
-100
-AcDbPolyline
- 90
-2
- 70
-0
- 10
-12.0
- 20
-209.0
- 10
-194.0
- 20
-209.0
-  0
-TEXT
-  5
-123
-330
-17
-100
-AcDbEntity
-  8
-A-TEXT
-100
-AcDbText
- 10
-13.0
- 20
-205.9
- 30
-0.0
- 40
-1.9
-  1
-項目
-  7
-JP
- 11
-13.0
- 21
-205.9
- 31
-0.0
-100
-AcDbText
-  0
-TEXT
-  5
-124
-330
-17
-100
-AcDbEntity
-  8
-A-TEXT
-100
-AcDbText
- 10
-37.0
- 20
-205.9
- 30
-0.0
- 40
-1.9
-  1
-計画
-  7
-JP
- 11
-37.0
- 21
-205.9
- 31
-0.0
-100
-AcDbText
-  0
-LWPOLYLINE
-  5
-125
-330
-17
-100
-AcDbEntity
-  8
-G-TABLE
-370
-35
-100
-AcDbPolyline
- 90
-2
- 70
-0
- 10
-12.0
- 20
-204.0
- 10
-194.0
- 20
-204.0
-  0
-TEXT
-  5
-126
-330
-17
-100
-AcDbEntity
-  8
-A-TEXT
-100
-AcDbText
- 10
-13.0
- 20
-200.9
- 30
-0.0
- 40
-1.9
-  1
-睡眠
-  7
-JP
- 11
-13.0
- 21
-200.9
- 31
-0.0
-100
-AcDbText
-  0
-TEXT
-  5
-127
-330
-17
-100
-AcDbEntity
-  8
-A-TEXT
-100
-AcDbText
- 10
-37.0
- 20
-200.9
- 30
-0.0
- 40
-1.9
-  1
-寝室の外付けスクリーンは完全遮光の生地（開口率0%）。室ごとに温度を設定（初期値は全室目標の下限 = 夏25℃・冬20℃、±
-  7
-JP
- 11
-37.0
- 21
-200.9
- 31
-0.0
-100
-AcDbText
-  0
-TEXT
-  5
-128
-330
-17
-100
-AcDbEntity
-  8
-A-TEXT
-100
-AcDbText
- 10
-37.0
- 20
-198.145
- 30
-0.0
- 40
-1.9
-  1
-2℃の範囲で変更可）。夜（22〜6時）は照明 2200K・10% 以下、寝室の Wi-Fi AP は表示灯を消し電波を止める
-  7
-JP
- 11
-37.0
- 21
-198.145
- 31
-0.0
-100
-AcDbText
-  0
-LWPOLYLINE
-  5
-129
 330
 17
 100
@@ -10233,11 +9985,267 @@ AcDbPolyline
  10
 12.0
  20
-196.69
+233.0
  10
-194.0
+182.0
  20
-196.69
+233.0
+  0
+LWPOLYLINE
+  5
+120
+330
+17
+100
+AcDbEntity
+  8
+G-TABLE
+100
+AcDbPolyline
+ 90
+2
+ 70
+0
+ 10
+12.0
+ 20
+268.0
+ 10
+12.0
+ 20
+233.0
+  0
+LWPOLYLINE
+  5
+121
+330
+17
+100
+AcDbEntity
+  8
+G-TABLE
+100
+AcDbPolyline
+ 90
+2
+ 70
+0
+ 10
+34.0
+ 20
+268.0
+ 10
+34.0
+ 20
+233.0
+  0
+LWPOLYLINE
+  5
+122
+330
+17
+100
+AcDbEntity
+  8
+G-TABLE
+100
+AcDbPolyline
+ 90
+2
+ 70
+0
+ 10
+44.0
+ 20
+268.0
+ 10
+44.0
+ 20
+233.0
+  0
+LWPOLYLINE
+  5
+123
+330
+17
+100
+AcDbEntity
+  8
+G-TABLE
+100
+AcDbPolyline
+ 90
+2
+ 70
+0
+ 10
+62.0
+ 20
+268.0
+ 10
+62.0
+ 20
+233.0
+  0
+LWPOLYLINE
+  5
+124
+330
+17
+100
+AcDbEntity
+  8
+G-TABLE
+100
+AcDbPolyline
+ 90
+2
+ 70
+0
+ 10
+92.0
+ 20
+268.0
+ 10
+92.0
+ 20
+233.0
+  0
+LWPOLYLINE
+  5
+125
+330
+17
+100
+AcDbEntity
+  8
+G-TABLE
+100
+AcDbPolyline
+ 90
+2
+ 70
+0
+ 10
+116.0
+ 20
+268.0
+ 10
+116.0
+ 20
+233.0
+  0
+LWPOLYLINE
+  5
+126
+330
+17
+100
+AcDbEntity
+  8
+G-TABLE
+100
+AcDbPolyline
+ 90
+2
+ 70
+0
+ 10
+158.0
+ 20
+268.0
+ 10
+158.0
+ 20
+233.0
+  0
+LWPOLYLINE
+  5
+127
+330
+17
+100
+AcDbEntity
+  8
+G-TABLE
+100
+AcDbPolyline
+ 90
+2
+ 70
+0
+ 10
+182.0
+ 20
+268.0
+ 10
+182.0
+ 20
+233.0
+  0
+TEXT
+  5
+128
+330
+17
+100
+AcDbEntity
+  8
+A-TEXT
+100
+AcDbText
+ 10
+13.0
+ 20
+229.0
+ 30
+0.0
+ 40
+2.1
+  1
+寝室ごとに CO2 センサーで換気量を自動で増やす（需要制御）。必要量は1人 約37m³/h。増える換気は合計 約70m³/h で、全熱交換で
+  7
+JP
+ 11
+13.0
+ 21
+229.0
+ 31
+0.0
+100
+AcDbText
+  0
+TEXT
+  5
+129
+330
+17
+100
+AcDbEntity
+  8
+A-TEXT
+100
+AcDbText
+ 10
+13.0
+ 20
+225.2
+ 30
+0.0
+ 40
+2.1
+  1
+回収するため冷暖房の増加は年 約148kWh
+  7
+JP
+ 11
+13.0
+ 21
+225.2
+ 31
+0.0
+100
+AcDbText
   0
 TEXT
   5
@@ -10253,19 +10261,19 @@ AcDbText
  10
 13.0
  20
-193.59
+220.39999999999998
  30
 0.0
  40
-1.9
+2.1
   1
-水
+全熱交換の給気フィルター ePM1 70%以上（PM2.5 を除去）、CO2・PM2.5・VOC センサーを各寝室と LDK に
   7
 JP
  11
 13.0
  21
-193.59
+220.39999999999998
  31
 0.0
 100
@@ -10283,21 +10291,21 @@ A-TEXT
 100
 AcDbText
  10
-37.0
+12.0
  20
-193.59
+207.0
  30
 0.0
  40
-1.9
+2.8
   1
-家全体の浄水フィルター（機械室）＋台所に逆浸透膜（RO）浄水器
+(2) 睡眠・水・測定
   7
 JP
  11
-37.0
+12.0
  21
-193.59
+207.0
  31
 0.0
 100
@@ -10313,7 +10321,7 @@ AcDbEntity
   8
 G-TABLE
 370
-18
+35
 100
 AcDbPolyline
  90
@@ -10323,11 +10331,11 @@ AcDbPolyline
  10
 12.0
  20
-191.69
+204.0
  10
 194.0
  20
-191.69
+204.0
   0
 TEXT
   5
@@ -10343,19 +10351,19 @@ AcDbText
  10
 13.0
  20
-188.59
+200.9
  30
 0.0
  40
 1.9
   1
-運動・測定
+項目
   7
 JP
  11
 13.0
  21
-188.59
+200.9
  31
 0.0
 100
@@ -10375,19 +10383,19 @@ AcDbText
  10
 37.0
  20
-188.59
+200.9
  30
 0.0
  40
 1.9
   1
-ジムに測定コーナー（体組成計・血圧計）、睡眠・活動の記録を bot に集約。エピゲノム検査は小平の医療機関で定期測定
+計画
   7
 JP
  11
 37.0
  21
-188.59
+200.9
  31
 0.0
 100
@@ -10403,7 +10411,7 @@ AcDbEntity
   8
 G-TABLE
 370
-18
+35
 100
 AcDbPolyline
  90
@@ -10413,11 +10421,11 @@ AcDbPolyline
  10
 12.0
  20
-186.69
+199.0
  10
 194.0
  20
-186.69
+199.0
   0
 TEXT
   5
@@ -10433,19 +10441,19 @@ AcDbText
  10
 13.0
  20
-183.59
+195.9
  30
 0.0
  40
 1.9
   1
-温冷浴
+睡眠
   7
 JP
  11
 13.0
  21
-183.59
+195.9
  31
 0.0
 100
@@ -10465,13 +10473,225 @@ AcDbText
  10
 37.0
  20
+195.9
+ 30
+0.0
+ 40
+1.9
+  1
+寝室の外付けスクリーンは完全遮光の生地（開口率0%）。室ごとに温度を設定（初期値は全室目標の下限 = 夏25℃・冬20℃、±
+  7
+JP
+ 11
+37.0
+ 21
+195.9
+ 31
+0.0
+100
+AcDbText
+  0
+TEXT
+  5
+132
+330
+17
+100
+AcDbEntity
+  8
+A-TEXT
+100
+AcDbText
+ 10
+37.0
+ 20
+193.145
+ 30
+0.0
+ 40
+1.9
+  1
+2℃の範囲で変更可）。夜（22〜6時）は照明 2200K・10% 以下、寝室の Wi-Fi AP は表示灯を消し電波を止める
+  7
+JP
+ 11
+37.0
+ 21
+193.145
+ 31
+0.0
+100
+AcDbText
+  0
+LWPOLYLINE
+  5
+133
+330
+17
+100
+AcDbEntity
+  8
+G-TABLE
+370
+18
+100
+AcDbPolyline
+ 90
+2
+ 70
+0
+ 10
+12.0
+ 20
+191.69
+ 10
+194.0
+ 20
+191.69
+  0
+TEXT
+  5
+134
+330
+17
+100
+AcDbEntity
+  8
+A-TEXT
+100
+AcDbText
+ 10
+13.0
+ 20
+188.59
+ 30
+0.0
+ 40
+1.9
+  1
+水
+  7
+JP
+ 11
+13.0
+ 21
+188.59
+ 31
+0.0
+100
+AcDbText
+  0
+TEXT
+  5
+135
+330
+17
+100
+AcDbEntity
+  8
+A-TEXT
+100
+AcDbText
+ 10
+37.0
+ 20
+188.59
+ 30
+0.0
+ 40
+1.9
+  1
+家全体の浄水フィルター（機械室）＋台所に逆浸透膜（RO）浄水器
+  7
+JP
+ 11
+37.0
+ 21
+188.59
+ 31
+0.0
+100
+AcDbText
+  0
+LWPOLYLINE
+  5
+136
+330
+17
+100
+AcDbEntity
+  8
+G-TABLE
+370
+18
+100
+AcDbPolyline
+ 90
+2
+ 70
+0
+ 10
+12.0
+ 20
+186.69
+ 10
+194.0
+ 20
+186.69
+  0
+TEXT
+  5
+137
+330
+17
+100
+AcDbEntity
+  8
+A-TEXT
+100
+AcDbText
+ 10
+13.0
+ 20
 183.59
  30
 0.0
  40
 1.9
   1
-サウナは設けない（施主判断）
+運動・測定
+  7
+JP
+ 11
+13.0
+ 21
+183.59
+ 31
+0.0
+100
+AcDbText
+  0
+TEXT
+  5
+138
+330
+17
+100
+AcDbEntity
+  8
+A-TEXT
+100
+AcDbText
+ 10
+37.0
+ 20
+183.59
+ 30
+0.0
+ 40
+1.9
+  1
+ジムに測定コーナー（体組成計・血圧計）、睡眠・活動の記録を bot に集約。エピゲノム検査は小平の医療機関で定期測定
   7
 JP
  11
@@ -10485,7 +10705,7 @@ AcDbText
   0
 LWPOLYLINE
   5
-132
+139
 330
 17
 100
@@ -10509,81 +10729,171 @@ AcDbPolyline
  20
 181.69
   0
-LWPOLYLINE
+TEXT
   5
-133
+13A
 330
 17
 100
 AcDbEntity
   8
-G-TABLE
+A-TEXT
 100
-AcDbPolyline
- 90
-2
- 70
-0
+AcDbText
  10
-12.0
+13.0
  20
-209.0
- 10
-12.0
- 20
-181.69
-  0
-LWPOLYLINE
-  5
-134
-330
-17
+178.59
+ 30
+0.0
+ 40
+1.9
+  1
+温冷浴
+  7
+JP
+ 11
+13.0
+ 21
+178.59
+ 31
+0.0
 100
-AcDbEntity
-  8
-G-TABLE
-100
-AcDbPolyline
- 90
-2
- 70
-0
- 10
-36.0
- 20
-209.0
- 10
-36.0
- 20
-181.69
-  0
-LWPOLYLINE
-  5
-135
-330
-17
-100
-AcDbEntity
-  8
-G-TABLE
-100
-AcDbPolyline
- 90
-2
- 70
-0
- 10
-194.0
- 20
-209.0
- 10
-194.0
- 20
-181.69
+AcDbText
   0
 TEXT
   5
-136
+13B
+330
+17
+100
+AcDbEntity
+  8
+A-TEXT
+100
+AcDbText
+ 10
+37.0
+ 20
+178.59
+ 30
+0.0
+ 40
+1.9
+  1
+サウナは設けない（施主判断）
+  7
+JP
+ 11
+37.0
+ 21
+178.59
+ 31
+0.0
+100
+AcDbText
+  0
+LWPOLYLINE
+  5
+13C
+330
+17
+100
+AcDbEntity
+  8
+G-TABLE
+370
+18
+100
+AcDbPolyline
+ 90
+2
+ 70
+0
+ 10
+12.0
+ 20
+176.69
+ 10
+194.0
+ 20
+176.69
+  0
+LWPOLYLINE
+  5
+13D
+330
+17
+100
+AcDbEntity
+  8
+G-TABLE
+100
+AcDbPolyline
+ 90
+2
+ 70
+0
+ 10
+12.0
+ 20
+204.0
+ 10
+12.0
+ 20
+176.69
+  0
+LWPOLYLINE
+  5
+13E
+330
+17
+100
+AcDbEntity
+  8
+G-TABLE
+100
+AcDbPolyline
+ 90
+2
+ 70
+0
+ 10
+36.0
+ 20
+204.0
+ 10
+36.0
+ 20
+176.69
+  0
+LWPOLYLINE
+  5
+13F
+330
+17
+100
+AcDbEntity
+  8
+G-TABLE
+100
+AcDbPolyline
+ 90
+2
+ 70
+0
+ 10
+194.0
+ 20
+204.0
+ 10
+194.0
+ 20
+176.69
+  0
+TEXT
+  5
+140
 330
 17
 100
@@ -10615,7 +10925,7 @@ AcDbText
   0
 LWPOLYLINE
   5
-137
+141
 330
 17
 100
@@ -10641,7 +10951,7 @@ AcDbPolyline
   0
 TEXT
   5
-138
+142
 330
 17
 100
@@ -10673,7 +10983,7 @@ AcDbText
   0
 TEXT
   5
-139
+143
 330
 17
 100
@@ -10705,7 +11015,7 @@ AcDbText
   0
 TEXT
   5
-13A
+144
 330
 17
 100
@@ -10737,7 +11047,7 @@ AcDbText
   0
 TEXT
   5
-13B
+145
 330
 17
 100
@@ -10769,7 +11079,7 @@ AcDbText
   0
 TEXT
   5
-13C
+146
 330
 17
 100
@@ -10801,7 +11111,7 @@ AcDbText
   0
 LWPOLYLINE
   5
-13D
+147
 330
 17
 100
@@ -10827,7 +11137,7 @@ AcDbPolyline
   0
 TEXT
   5
-13E
+148
 330
 17
 100
@@ -10859,7 +11169,7 @@ AcDbText
   0
 TEXT
   5
-13F
+149
 330
 17
 100
@@ -10891,7 +11201,7 @@ AcDbText
   0
 TEXT
   5
-140
+14A
 330
 17
 100
@@ -10923,7 +11233,7 @@ AcDbText
   0
 TEXT
   5
-141
+14B
 330
 17
 100
@@ -10955,7 +11265,7 @@ AcDbText
   0
 TEXT
   5
-142
+14C
 330
 17
 100
@@ -10987,7 +11297,7 @@ AcDbText
   0
 LWPOLYLINE
   5
-143
+14D
 330
 17
 100
@@ -11013,7 +11323,7 @@ AcDbPolyline
   0
 TEXT
   5
-144
+14E
 330
 17
 100
@@ -11045,7 +11355,7 @@ AcDbText
   0
 TEXT
   5
-145
+14F
 330
 17
 100
@@ -11077,7 +11387,7 @@ AcDbText
   0
 TEXT
   5
-146
+150
 330
 17
 100
@@ -11109,7 +11419,7 @@ AcDbText
   0
 TEXT
   5
-147
+151
 330
 17
 100
@@ -11141,7 +11451,7 @@ AcDbText
   0
 TEXT
   5
-148
+152
 330
 17
 100
@@ -11173,7 +11483,7 @@ AcDbText
   0
 LWPOLYLINE
   5
-149
+153
 330
 17
 100
@@ -11199,7 +11509,7 @@ AcDbPolyline
   0
 LWPOLYLINE
   5
-14A
+154
 330
 17
 100
@@ -11223,7 +11533,7 @@ AcDbPolyline
   0
 LWPOLYLINE
   5
-14B
+155
 330
 17
 100
@@ -11247,7 +11557,7 @@ AcDbPolyline
   0
 LWPOLYLINE
   5
-14C
+156
 330
 17
 100
@@ -11271,7 +11581,7 @@ AcDbPolyline
   0
 LWPOLYLINE
   5
-14D
+157
 330
 17
 100
@@ -11295,7 +11605,7 @@ AcDbPolyline
   0
 LWPOLYLINE
   5
-14E
+158
 330
 17
 100
@@ -11319,7 +11629,7 @@ AcDbPolyline
   0
 LWPOLYLINE
   5
-14F
+159
 330
 17
 100
@@ -11343,7 +11653,7 @@ AcDbPolyline
   0
 LWPOLYLINE
   5
-150
+15A
 330
 17
 100
@@ -11369,7 +11679,7 @@ AcDbPolyline
   0
 TEXT
   5
-151
+15B
 330
 17
 100
@@ -11401,7 +11711,7 @@ AcDbText
   0
 TEXT
   5
-152
+15C
 330
 17
 100
@@ -11433,7 +11743,7 @@ AcDbText
   0
 LWPOLYLINE
   5
-153
+15D
 330
 17
 100
@@ -11459,7 +11769,7 @@ AcDbPolyline
   0
 TEXT
   5
-154
+15E
 330
 17
 100
@@ -11491,7 +11801,7 @@ AcDbText
   0
 TEXT
   5
-155
+15F
 330
 17
 100
@@ -11523,7 +11833,7 @@ AcDbText
   0
 TEXT
   5
-156
+160
 330
 17
 100
@@ -11555,7 +11865,7 @@ AcDbText
   0
 LWPOLYLINE
   5
-157
+161
 330
 17
 100
@@ -11581,7 +11891,7 @@ AcDbPolyline
   0
 TEXT
   5
-158
+162
 330
 17
 100
@@ -11613,7 +11923,7 @@ AcDbText
   0
 TEXT
   5
-159
+163
 330
 17
 100
@@ -11645,7 +11955,7 @@ AcDbText
   0
 LWPOLYLINE
   5
-15A
+164
 330
 17
 100
@@ -11671,7 +11981,7 @@ AcDbPolyline
   0
 TEXT
   5
-15B
+165
 330
 17
 100
@@ -11703,7 +12013,7 @@ AcDbText
   0
 TEXT
   5
-15C
+166
 330
 17
 100
@@ -11735,7 +12045,7 @@ AcDbText
   0
 LWPOLYLINE
   5
-15D
+167
 330
 17
 100
@@ -11761,7 +12071,7 @@ AcDbPolyline
   0
 LWPOLYLINE
   5
-15E
+168
 330
 17
 100
@@ -11785,7 +12095,7 @@ AcDbPolyline
   0
 LWPOLYLINE
   5
-15F
+169
 330
 17
 100
@@ -11809,7 +12119,7 @@ AcDbPolyline
   0
 LWPOLYLINE
   5
-160
+16A
 330
 17
 100
@@ -11833,7 +12143,7 @@ AcDbPolyline
   0
 TEXT
   5
-161
+16B
 330
 17
 100
@@ -11865,7 +12175,7 @@ AcDbText
   0
 HATCH
   5
-162
+16C
 330
 17
 100
@@ -11963,7 +12273,7 @@ NET
   0
 LWPOLYLINE
   5
-163
+16D
 330
 17
 100
@@ -11997,7 +12307,7 @@ AcDbPolyline
   0
 LWPOLYLINE
   5
-164
+16E
 330
 17
 100
@@ -12029,7 +12339,7 @@ AcDbPolyline
   0
 LWPOLYLINE
   5
-165
+16F
 330
 17
 100
@@ -12061,7 +12371,7 @@ AcDbPolyline
   0
 LWPOLYLINE
   5
-166
+170
 330
 17
 100
@@ -12095,7 +12405,7 @@ AcDbPolyline
   0
 LWPOLYLINE
   5
-167
+171
 330
 17
 100
@@ -12127,7 +12437,7 @@ AcDbPolyline
   0
 TEXT
   5
-168
+172
 330
 17
 100
@@ -12159,7 +12469,7 @@ AcDbText
   0
 TEXT
   5
-169
+173
 330
 17
 100
@@ -12191,7 +12501,7 @@ AcDbText
   0
 TEXT
   5
-16A
+174
 330
 17
 100
@@ -12223,7 +12533,7 @@ AcDbText
   0
 HATCH
   5
-16B
+175
 330
 17
 100
@@ -12309,7 +12619,7 @@ ANSI31
   0
 LWPOLYLINE
   5
-16C
+176
 330
 17
 100
@@ -12343,7 +12653,7 @@ AcDbPolyline
   0
 LWPOLYLINE
   5
-16D
+177
 330
 17
 100
@@ -12375,7 +12685,7 @@ AcDbPolyline
   0
 LWPOLYLINE
   5
-16E
+178
 330
 17
 100
@@ -12407,7 +12717,7 @@ AcDbPolyline
   0
 LWPOLYLINE
   5
-16F
+179
 330
 17
 100
@@ -12441,7 +12751,7 @@ AcDbPolyline
   0
 LWPOLYLINE
   5
-170
+17A
 330
 17
 100
@@ -12473,7 +12783,7 @@ AcDbPolyline
   0
 TEXT
   5
-171
+17B
 330
 17
 100
@@ -12505,7 +12815,7 @@ AcDbText
   0
 TEXT
   5
-172
+17C
 330
 17
 100
@@ -12537,7 +12847,7 @@ AcDbText
   0
 TEXT
   5
-173
+17D
 330
 17
 100
@@ -12569,7 +12879,7 @@ AcDbText
   0
 TEXT
   5
-174
+17E
 330
 17
 100
@@ -12601,7 +12911,7 @@ AcDbText
   0
 TEXT
   5
-175
+17F
 330
 17
 100
@@ -12633,7 +12943,7 @@ AcDbText
   0
 TEXT
   5
-176
+180
 330
 17
 100
@@ -12665,7 +12975,7 @@ AcDbText
   0
 TEXT
   5
-177
+181
 330
 17
 100
@@ -12697,7 +13007,7 @@ AcDbText
   0
 TEXT
   5
-178
+182
 330
 17
 100
@@ -12729,7 +13039,7 @@ AcDbText
   0
 TEXT
   5
-179
+183
 330
 17
 100
@@ -13849,7 +14159,7 @@ CREATED_BY_EZDXF
   3
 WRITTEN_BY_EZDXF
 350
-17C
+186
   0
 DICTIONARYVAR
   5
@@ -13861,7 +14171,7 @@ DictionaryVariables
 280
 0
   1
-1.4.5 @ 2026-11-09T14:03:28.685171+00:00
+1.4.5 @ 2026-11-09T14:55:11.706110+00:00
   0
 VISUALSTYLE
   5
@@ -20415,7 +20725,7 @@ strokes_ogs.tif
   0
 DICTIONARYVAR
   5
-17C
+186
 330
 2D
 100
@@ -20423,7 +20733,7 @@ DictionaryVariables
 280
 0
   1
-1.4.5 @ 2026-11-09T14:04:14.571975+00:00
+1.4.5 @ 2026-11-09T14:56:06.888415+00:00
   0
 ENDSEC
   0
