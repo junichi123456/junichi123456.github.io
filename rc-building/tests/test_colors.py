@@ -242,6 +242,113 @@ def test_stage2_preview():
     assert im.size == (960, 540) and not im.info, im.info
 
 
+# ---------------------------------------------------------------- 9. 内装の配色（v4.29）
+OWNER_WALLS = {"W1": "#080C0F", "W2": "#212A31", "W3": "#3E4C58", "W4": "#43433F", "W5": "#383B3D"}
+OWNER_FLOORS = {"F1": "#917440", "F2": "#F7E4C4", "F3": "#CED9E2", "F4": "#C2C9CC", "F5": "#9BA3A8"}
+
+
+def _lrv(hx):
+    out = 0.0
+    for i, w in zip((1, 3, 5), (0.2126, 0.7152, 0.0722)):
+        c = int(hx[i:i + 2], 16) / 255
+        out += w * (c / 12.92 if c <= 0.04045 else ((c + 0.055) / 1.055) ** 2.4)
+    return out * 100
+
+
+def _lstar(hx):
+    y = _lrv(hx) / 100
+    f = y ** (1 / 3) if y > 216 / 24389 else (24389 / 27 * y + 16) / 116
+    return 116 * f - 16
+
+
+def test_interior_colors_as_specified():
+    """(a) 施主の10色・明るい壁 IV1／IV2・天井 C2 が spec にそのままある。"""
+    h = house()
+    cp, pal = h.spec["interior_color_plan"], h.spec["interior_palette"]
+    assert cp["walls_dark"] == OWNER_WALLS and cp["floors"] == OWNER_FLOORS
+    assert cp["light"] == {"IV1": "#F5F1E6", "IV2": "#F3EEDD"} and cp["ceiling"]["C2"] == "#F6F5F1"
+    for code, hx in OWNER_WALLS.items():
+        assert pal[cp["materials"][code]]["color"] == hx, code
+    assert pal["wall_paint"]["color"] == "#F5F1E6" and pal["wall_iv2"]["color"] == "#F3EEDD" and pal["ceiling_paint"]["color"] == "#F6F5F1"
+    assert pal["stair_riser"]["color"] == OWNER_WALLS["W5"] and pal["nosing"]["color"] == OWNER_FLOORS["F1"] and pal["ceiling_theater"]["color"] == OWNER_WALLS["W2"]
+    assert {pal[k]["color"] for k in ("floor_oak", "floor_sheet", "floor_tile_genkan", "floor_rubber", "floor_carpet", "floor_machine")} == set(OWNER_FLOORS.values())
+
+
+def test_all_ten_colors_used():
+    """(b) 暗い壁5色はどこかの室で使われ、床5色はどこかの床に敷かれている。"""
+    import interior_shell as IS
+    h = house()
+    cp, pal = h.spec["interior_color_plan"], h.spec["interior_palette"]
+    used_w = {e["rp"]["dark"] for e in IS.wall_plan(h)}
+    assert used_w == set(OWNER_WALLS), used_w
+    used_f = {pal[c.fmat]["color"] for c in IS.cells(h)}
+    assert used_f == set(OWNER_FLOORS.values()), used_f
+    assert {e["rp"]["light"] for e in IS.wall_plan(h)} == {"IV1", "IV2"}
+
+
+def test_light_wall_share_50_to_70():
+    """(c) 明るい壁（アイボリー・オフホワイト系）の正味面積の割合が、各室・全体で 50〜70%。全体は 60±5%。"""
+    import interior_shell as IS
+    rows = IS.wall_color_table(house())
+    bad = [(r["floor"], r["room"], round(r["share"], 3)) for r in rows if not (0.5 - 1e-6 <= r["share"] <= 0.7 + 1e-6)]
+    assert not bad, bad
+    assert 0.55 <= rows[-1]["share"] <= 0.65, rows[-1]["share"]
+    assert all(r["ok"] for r in rows)
+
+
+def test_dark_walls_keep_clear_of_corners_doors_stairs():
+    """(d) 廊下・ホール・階段室の全高の暗い壁は、角・戸口・階段口から 600 以上離す（不足分は H1,400 以下の腰で補う）。"""
+    import interior_shell as IS
+    h = house()
+    m = h.spec["interior_color_plan"]["safe_mm"]
+    n = 0
+    for ent in IS.wall_plan(h):
+        if not ent["rp"].get("circ"):
+            continue
+        assert ent.get("band_top", ent["z0"]) - ent["z0"] <= 1400 + 1
+        for e in ent["edges"]:
+            for (a, b, kd) in e["spans"]:
+                if kd != "dark":
+                    continue
+                n += 1
+                assert a >= e["u0"] + m - 1 and b <= e["u1"] - m + 1, (ent["cell"].name, a, b)
+                for (x0, za, x1, zb, op) in e["ops"]:
+                    if op.kind == "door":
+                        assert b <= x0 - m + 1 or a >= x1 + m - 1, (ent["cell"].name, "door", a, b, x0, x1)
+                for (hx0, hy0, hx1, hy1) in [s.hole for s in h.stairs]:
+                    if e["ax"] == "y" and hx0 - 1 <= e["k"] <= hx1 + 1:
+                        assert b <= hy0 - m + 1 or a >= hy1 + m - 1
+                    if ent["rp"].get("stair"):
+                        assert e["ax"] == "y"             # 階段に直交する面（上り口・下り口の正面）には置かない
+    assert n > 0
+
+
+def test_contrast_floor_ceiling_stairs():
+    """(e) 床と巾木（なければ明るい壁）の LRV 差 30 以上（ユニットバスは近似色で要確認）、踏面と段鼻・蹴込みの差 30 以上、床の L* 40 以上、天井の LRV 85 以上（シアターを除く）。"""
+    import interior_shell as IS
+    h = house()
+    pal = h.spec["interior_palette"]
+    cm = h.spec["interior_color_plan"]["materials"]
+    for e in IS.wall_plan(h):
+        c = e["cell"]
+        fl = pal[c.fmat]["color"]
+        assert _lstar(fl) >= 40, (c.name, _lstar(fl))
+        sk = IS.SKIRT_OF.get(c.fmat)
+        lower = pal[cm[e["rp"]["dark"] if e["rp"]["mode"] == "wainscot" else e["rp"]["light"]]]["color"]       # 壁の下端の色（腰があれば腰）
+        edge = pal[sk[0]]["color"] if sk and pal[sk[0]]["color"] != fl else lower
+        if "浴室" not in c.name and "シャワー" not in c.name:
+            assert abs(_lrv(fl) - _lrv(edge)) >= 30, (c.name, _lrv(fl), _lrv(edge))
+        if "シアター" not in c.name:
+            assert _lrv(pal[c.cmat]["color"]) >= 85, c.name
+    tread = _lrv(pal["floor_oak"]["color"])
+    assert tread - _lrv(pal["nosing"]["color"]) >= 30 and tread - _lrv(pal["stair_riser"]["color"]) >= 30
+
+
+def test_exterior_unchanged():
+    """(f) 外観の色は不変。"""
+    assert house().spec["colors"]["base"] == "#F5EFE3"
+
+
 if __name__ == "__main__":
     fails = 0
     for name, fn in sorted(globals().items()):

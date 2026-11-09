@@ -20,7 +20,7 @@ FLOOR_OF = [("浴室", "floor_sheet"), ("シャワー", "floor_sheet"), ("トイ
             ("玄関土間", "floor_tile_genkan"), ("ジム", "floor_rubber"), ("シアター", "floor_carpet"), ("前室", "floor_carpet"),
             ("機械室", "floor_machine")]
 FLOOR_PRIORITY = ["floor_sheet", "floor_tile_genkan", "floor_rubber", "floor_carpet", "floor_machine", "floor_oak"]
-SKIRT_OF = {"floor_oak": ("skirt", 60), "floor_sheet": ("floor_sheet", 100), "floor_rubber": ("floor_rubber", 100), "floor_carpet": ("skirt_theater", 60),
+SKIRT_OF = {"floor_oak": ("skirt", 60), "floor_sheet": ("skirt", 100), "floor_rubber": ("floor_rubber", 100), "floor_carpet": ("skirt_theater", 60),
             "floor_machine": None, "floor_tile_genkan": None}
 
 
@@ -36,17 +36,9 @@ def ceiling_mat(name):
 
 
 def lining_of(name, ch):
-    """(材質, 高さ) のリスト。上に壁塗装（ライニングなし）が続く場合は高さが ch より低い。"""
-    if "浴室" in name or "シャワー" in name:
+    """(材質, 高さ) のリスト（v4.29 から配色計画 wall_plan が決める。互換のため残す）。"""
+    if "浴室" in name or "シャワー" in name or "洗面" in name or "脱衣" in name or "ランドリー" in name:
         return [("wet_panel", ch)]
-    if "洗面" in name or "脱衣" in name or "ランドリー" in name:
-        return [("wet_panel", ch)]
-    if "トイレ" in name or "玄関土間" in name:
-        return [("wainscot", 1000)]
-    if "ジム" in name:
-        return [("wainscot_gym", 1200)]
-    if "シアター" in name or "前室" in name:
-        return [("wall_theater", ch)]
     return []
 
 
@@ -162,6 +154,177 @@ def _holes_for_edge(faces, axis, k, u0, u1, zmax=None):
     return holes
 
 
+# ---------------------------------------------------------------- 配色計画（v4.29）: 面ごとの明るい壁・暗い壁
+def room_plan(h, name):
+    for r in h.spec["interior_color_plan"]["rooms"]:
+        if r["key"] in name:
+            return r
+    raise KeyError(name)
+
+
+def color_mat(h, code):
+    return h.spec["interior_color_plan"]["materials"][code]
+
+
+def _net(holes, ua, ub, z0, z1):
+    """区間 [ua,ub]×[z0,z1] の面積（mm²）から開口 (a,za,b,zb) を引いた正味。"""
+    a = (ub - ua) * (z1 - z0)
+    for (h0, hz0, h1, hz1) in holes:
+        w = min(ub, h1) - max(ua, h0)
+        hh = min(z1, hz1) - max(z0, hz0)
+        if w > 0 and hh > 0:
+            a -= w * hh
+    return a
+
+
+def _subtract(iv, cuts):
+    out = [iv]
+    for (c0, c1) in cuts:
+        nxt = []
+        for (a, b) in out:
+            if c1 <= a or c0 >= b:
+                nxt.append((a, b))
+                continue
+            if c0 > a:
+                nxt.append((a, c0))
+            if c1 < b:
+                nxt.append((c1, b))
+        out = nxt
+    return [(a, b) for (a, b) in out if b - a > 1]
+
+
+def _wall_top(h, c):
+    return h.fl["2F"] - h.slab_t if c.name == "ジム" else h.fl[c.floor] + h.ch[c.floor]
+
+
+def _dark_span_w(e, a, b, z0, z1):
+    return _net(e["dholes"], a, b, z0, z1)
+
+
+def _pick_dark(h, rp, edges, z0, z1, D):
+    """暗い壁の区間 [(辺の番号, ua, ub)]。D（mm²）に達するまで、開口の少ない面・長い面の順に取る。"""
+    safe = h.spec["interior_color_plan"]["safe_mm"]
+    stairs = [s.hole for s in h.stairs]
+    order = sorted(range(len(edges)), key=lambda i: (round((1 - _net(edges[i]["holes"], edges[i]["u0"], edges[i]["u1"], z0, z1) / max(1, (edges[i]["u1"] - edges[i]["u0"]) * (z1 - z0))) / 0.1),
+                                                        -(edges[i]["u1"] - edges[i]["u0"])))
+    picks, rem = [], D
+    for i in order:
+        e = edges[i]
+        if rp.get("stair") and e["ax"] == "x":              # 階段の上り口・下り口の正面（階段に直交する面）には暗い壁を置かない
+            continue
+        ivs = [(e["u0"], e["u1"])]
+        if rp.get("circ"):
+            cuts = [(e["u0"], e["u0"] + safe), (e["u1"] - safe, e["u1"])]
+            cuts += [(a - safe, b + safe) for (a, za, b, zb, op) in e["ops"] if op.kind == "door"]
+            for (hx0, hy0, hx1, hy1) in stairs:
+                if e["ax"] == "y" and hx0 - 1 <= e["k"] <= hx1 + 1:
+                    cuts.append((hy0 - 900, hy1 + 900))
+                if e["ax"] == "x" and hy0 - 900 <= e["k"] <= hy1 + 900:
+                    cuts.append((hx0 - safe, hx1 + safe))
+            ivs = _subtract(ivs[0], cuts)
+        for (a, b) in sorted(ivs, key=lambda t: t[0] - t[1]):
+            if rem <= 0 or b - a < 300:
+                continue
+            full = _dark_span_w(e, a, b, z0, z1)
+            if full <= rem + 1:
+                picks.append((i, a, b))
+                rem -= full
+            else:
+                mid = (a + b) / 2
+                lo, hi = 0.0, float(b - a)
+                for _ in range(40):
+                    w = (lo + hi) / 2
+                    if _dark_span_w(e, mid - w / 2, mid + w / 2, z0, z1) < rem:
+                        lo = w
+                    else:
+                        hi = w
+                picks.append((i, mid - hi / 2, mid + hi / 2))
+                rem = 0
+        if rem <= 0:
+            break
+    return picks
+
+
+def wall_plan(h):
+    """[dict(cell, poly, rp, edges, z0, z1, total, dark)]  辺ごとに spans=[(ua, ub, 'light'|'dark'|'band')]。面積は mm²の正味（開口を引く）。"""
+    if getattr(h, "_wall_plan", None) is not None:
+        return h._wall_plan
+    faces = {fl: wall_faces(h, fl) for fl in ("1F", "2F")}
+    out = []
+    for c, fp, cp in cell_polys(h):
+        if c.extra:
+            continue
+        rp = room_plan(h, c.name)
+        pol = unary_union(_polys(fp)) if not fp.is_empty else Polygon()
+        z0, z1 = c.z, _wall_top(h, c)
+        for p in _polys(pol):
+            edges = []
+            for (ax, k, u0, u1, s) in room_edges(h, c.floor, p):
+                hs = _holes_for_edge(faces[c.floor], ax, k, u0, u1)
+                holes = [(a, za, b, zb) for (a, za, b, zb, op) in hs]
+                dholes = [(a, za, b, (z1 if op.kind == "door" and zb > z0 + 1000 else zb)) for (a, za, b, zb, op) in hs]      # 戸の上の小壁は明るい色
+                edges.append(dict(ax=ax, k=k, u0=u0, u1=u1, s=s, holes=holes, dholes=dholes, ops=hs, spans=[]))
+            total = sum(_net(e["holes"], e["u0"], e["u1"], z0, z1) for e in edges)
+            ent = dict(cell=c, rp=rp, edges=edges, z0=z0, z1=z1, total=total, dark=0.0)
+            if rp["mode"] == "wainscot":
+                zb_ = min(z0 + rp["h"], z1)
+                for e in edges:
+                    e["spans"] = [(e["u0"], e["u1"], "band")]
+                    ent["dark"] += _net(e["dholes"], e["u0"], e["u1"], z0, zb_)
+                ent["band_top"] = zb_
+            else:
+                picks = _pick_dark(h, rp, edges, z0, z1, (1 - rp["light_share"]) * total)
+                for i, e in enumerate(edges):
+                    cuts = sorted((a, b) for (j, a, b) in picks if j == i)
+                    spans, u = [], e["u0"]
+                    for (a, b) in cuts:
+                        if a > u + 1:
+                            spans.append((u, a, "light"))
+                        spans.append((a, b, "dark"))
+                        u = b
+                    if u < e["u1"] - 1:
+                        spans.append((u, e["u1"], "light"))
+                    e["spans"] = spans
+                    ent["dark"] += sum(_net(e["dholes"], a, b, z0, z1) for (a, b, kd) in spans if kd == "dark")
+                rem = (1 - rp["light_share"]) * total - ent["dark"]
+                if rp.get("circ") and rem > 0.01 * total:
+                    # 戸口・角の両脇 600 を避けると暗い面が足りない動線室は、残りの明るい面に暗い腰（lband。H は不足分に合わせる。上限 1,400）を足す。全高の暗い壁は 600 の外だけ
+                    lights = [(e, a, b) for e in edges for (a, b, kd) in e["spans"] if kd == "light"]
+                    f = lambda hb: sum(_net(e["dholes"], a, b, z0, min(z1, z0 + hb)) for (e, a, b) in lights)
+                    lo, hi = 0.0, 1400.0
+                    for _ in range(40):
+                        m = (lo + hi) / 2
+                        if f(m) < rem:
+                            lo = m
+                        else:
+                            hi = m
+                    hb = min(1400.0, round(hi / 10 + 0.5) * 10)
+                    ent["band_top"] = min(z1, z0 + hb)
+                    for e in edges:
+                        e["spans"] = [(a, b, "lband" if kd == "light" else kd) for (a, b, kd) in e["spans"]]
+                    ent["dark"] += f(hb)
+            out.append(ent)
+    h._wall_plan = out
+    return out
+
+
+def wall_color_table(h):
+    """室（空気側ポリゴン）ごとの [dict(floor, room, faces, area, light, share, ok)]。最後の行が全体。面積は m²（開口を引いた正味）。"""
+    sh = h.spec["interior_color_plan"]["share"]
+    rows = []
+    for ent in wall_plan(h):
+        c = ent["cell"]
+        A = ent["total"] / 1e6
+        L = A - ent["dark"] / 1e6
+        rows.append(dict(floor=c.floor, room=c.name, faces=len(ent["edges"]), area=A, light=L, share=L / A if A else 1.0, dark_code=ent["rp"]["dark"], light_code=ent["rp"]["light"],
+                         ok=sh["min"] - 1e-6 <= (L / A if A else 1.0) <= sh["max"] + 1e-6))
+    A = sum(r["area"] for r in rows)
+    L = sum(r["light"] for r in rows)
+    rows.append(dict(floor="全体", room="全室の合計", faces=sum(r["faces"] for r in rows), area=A, light=L, share=L / A, dark_code="", light_code="",
+                     ok=sh["min"] - 1e-6 <= L / A <= sh["max"] + 1e-6))
+    return rows
+
+
 # ---------------------------------------------------------------- 本体
 def interior_parts(h, its):
     """{(グループ, 階, 材質キー): MB}  ID なしの内装（階・材質ごとに 1 ノード）と、個別ノード用の {(グループ, 階, 材質キー, ID): MB}。"""
@@ -208,38 +371,45 @@ def interior_parts(h, its):
             q = (op.u0, w.c - w.t / 2, op.u1, w.c + w.t / 2) if w.axis == "x" else (w.c - w.t / 2, op.u0, w.c + w.t / 2, op.u1)
             MBfor(G, op.floor, mat).box(mat, q[0], q[1], op.z0, q[2], q[3], op.z0 + 2)
 
-    # ---------------- ライニング（特殊仕上げ）と巾木
-    for c, fp, cp in cp_all:
-        if c.extra:
-            continue
+    # ---------------- 壁の面ごとの配色（v4.29: 明るい壁 IV1/IV2 と暗い壁 W1〜W5 のアクセント・腰）と巾木
+    for ent in wall_plan(h):
+        c, rp = ent["cell"], ent["rp"]
         fl = c.floor
-        ch = h.ch[fl]
-        pol = unary_union(_polys(fp)) if not fp.is_empty else Polygon()
-        # 室の空気側ポリゴンは「壁の面まで」。床 z の違う玄関土間などは z 基準を c.z にする
-        lin = lining_of(c.name, ch)
+        zf, ztop = ent["z0"], ent["z1"]
+        dmat = color_mat(h, rp["dark"])
+        lmat = rp.get("panel") or (color_mat(h, rp["light"]) if rp["light"] != "IV1" else None)      # 明るい面に張る材（IV1 の塗装は下地のまま）
+        band = ent.get("band_top", ztop)
         sk = None if ("浴室" in c.name or "シャワー" in c.name) else SKIRT_OF.get(c.fmat)
-        for p in _polys(pol):
-            for (ax, k, u0, u1, s) in room_edges(h, fl, p):
-                zf = c.z
-                for (mat, hh) in lin:
-                    top = zf + hh if hh < ch else h.fl[fl] + ch
-                    holes = [(a, b, e, f_) for (a, b, e, f_, op) in _holes_for_edge(faces[fl], ax, k, u0, u1)]
-                    for (ua, za, ub, zb_) in decompose((u0, zf, u1, top), holes):
-                        t = 3
-                        if ax == "x":
-                            MBfor(G, fl, mat).box(mat, ua, k if s > 0 else k - t, za, ub, k + t if s > 0 else k, zb_)
-                        else:
-                            MBfor(G, fl, mat).box(mat, k if s > 0 else k - t, ua, za, k + t if s > 0 else k, ub, zb_)
-                if sk:
-                    mat, hh = sk
-                    holes = [(a, b, e, f_) for (a, b, e, f_, op) in _holes_for_edge(faces[fl], ax, k, u0, u1) if b < zf + 150]
-                    for (ua, za, ub, zb_) in decompose((u0, zf + 2, u1, zf + hh), holes):
-                        t = 8
-                        d0 = 3 if lin else 0               # ライニングの前に出る
-                        if ax == "x":
-                            MBfor(G, fl, mat).box(mat, ua, (k + d0) if s > 0 else k - d0 - t, za, ub, (k + d0 + t) if s > 0 else k - d0, zb_)
-                        else:
-                            MBfor(G, fl, mat).box(mat, (k + d0) if s > 0 else k - d0 - t, ua, za, (k + d0 + t) if s > 0 else k - d0, ub, zb_)
+        lined = bool(lmat) or any(kd != "light" for e in ent["edges"] for (_, _, kd) in e["spans"])
+        for e in ent["edges"]:
+            ax, k, u0, u1, s = e["ax"], e["k"], e["u0"], e["u1"], e["s"]
+            hs = _holes_for_edge(faces[fl], ax, k, u0, u1)
+            plain = [(a, za, b, zb) for (a, za, b, zb, op) in hs]
+            for (ua, ub, kd) in e["spans"]:
+                if kd == "dark":
+                    mat, zt, holes = dmat, ztop, [(a, za, b, (ztop if op.kind == "door" and zb > zf + 1000 else zb)) for (a, za, b, zb, op) in hs]      # 戸の上の小壁は明るい色
+                elif kd in ("band", "lband"):
+                    mat, zt, holes = dmat, band, plain
+                elif lmat:
+                    mat, zt, holes = lmat, ztop, plain
+                else:
+                    continue
+                for (xa, za, xb, zb_) in decompose((ua, zf, ub, zt), [x for x in holes if x[0] < ub and x[2] > ua]):
+                    t = 3
+                    if ax == "x":
+                        MBfor(G, fl, mat).box(mat, xa, k if s > 0 else k - t, za, xb, k + t if s > 0 else k, zb_)
+                    else:
+                        MBfor(G, fl, mat).box(mat, k if s > 0 else k - t, xa, za, k + t if s > 0 else k, xb, zb_)
+            if sk:
+                mat, hh = sk
+                holes = [(a, za, b, zb) for (a, za, b, zb, op) in hs if za < zf + 150]
+                for (ua, za, ub, zb_) in decompose((u0, zf + 2, u1, zf + hh), holes):
+                    t = 8
+                    d0 = 3 if lined else 0               # ライニングの前に出る
+                    if ax == "x":
+                        MBfor(G, fl, mat).box(mat, ua, (k + d0) if s > 0 else k - d0 - t, za, ub, (k + d0 + t) if s > 0 else k - d0, zb_)
+                    else:
+                        MBfor(G, fl, mat).box(mat, (k + d0) if s > 0 else k - d0 - t, ua, za, (k + d0 + t) if s > 0 else k - d0, ub, zb_)
 
     # ---------------- 框（玄関の二重框）と縦手すり
     g = h.genkan
@@ -356,6 +526,16 @@ def stair_parts(h, s, MBfor, G):
         yb = s.y_turn - d * (j - 1) * T                      # 先端（下り側ではなく登る側の端）
         y0, y1 = (yb - 30, yb) if d > 0 else (yb, yb + 30)
         mn.box("nosing", xb0, y0, zt, xb1, y1, zt + 0.6)
+    # --- 蹴込み板（v4.29: W5。各段の手前の鉛直面に厚 3 を足す。踏面 F2・段鼻 F1 との差を保つ）
+    mr = MBfor(G, "1F", "stair_riser")
+    for i in range(1, half):
+        zt = z0 + i * r
+        ya = s.y_entry + d * (i - 1) * T
+        mr.box("stair_riser", xa0, min(ya - d * 3, ya), zt - r + 0.6, xa1, max(ya - d * 3, ya), zt)
+    for j in range(1, s.n - half):
+        zt = zl + j * r
+        yb = s.y_turn - d * (j - 1) * T
+        mr.box("stair_riser", xb0, min(yb, yb + d * 3), zt - r + 0.6, xb1, max(yb, yb + d * 3), zt)
     # --- 段裏の斜めの板（各段の箱の下端を結ぶ。t20、天井塗装）
     ms = MBfor(G, "1F", "ceiling_paint")
 

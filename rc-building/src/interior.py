@@ -47,6 +47,18 @@ def finish_of(name):
     return FINISH_RULES[-1][1]
 
 
+def color_of(h, name):
+    """室の配色（v4.29）: dict(light, dark, floor, ceiling, mode, text)。材料の文字列（finish_of）は変えない。"""
+    import interior_shell as IS
+    cp = h.spec["interior_color_plan"]
+    rp = IS.room_plan(h, name)
+    fm = IS.floor_mat(name)
+    fcode = next((k for k, v in cp["floors"].items() if v.upper() == h.spec["interior_palette"][fm]["color"].upper()), "")
+    ceil = "W2" if "シアター" in name else "C2"
+    how = f"腰 H{rp['h']:,}" if rp["mode"] == "wainscot" else "アクセント壁"
+    return dict(light=rp["light"], dark=rp["dark"], floor=fcode, ceiling=ceil, mode=rp["mode"], text=f"{rp['light']}＋{rp['dark']}（{how}）／床 {fcode}／天井 {ceil}")
+
+
 def finish_schedule(h):
     """室名・階でまとめた内装仕上表。"""
     rows = {}

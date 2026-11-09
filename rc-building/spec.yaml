@@ -422,22 +422,29 @@ furniture:         # 家具の仮置き（後日差し替え）。座標・寸�
     school_chair: {name: "ペッパー スクールチェア チャコールブラウン", w: 420, d: 480, h: 780, seat_h: 450, pipe: 22, wood: "#4A3F38", frame: "#2B2622", assumed: true}
 
 interior_palette:  # 内装の色（sRGB 16進。いずれも仮定）。tex は interior_cg.textures のキー、tile_m はテクスチャ1枚の実寸（m）
-  wall_paint:        {color: "#F1EDE4", roughness: 0.90}
-  ceiling_paint:     {color: "#F4F2EC", roughness: 0.95}
-  floor_oak:         {color: "#BFA383", roughness: 0.45, coat: 0.15, tex: floor, tile_m: 1.70, bump: 0.15}
-  floor_sheet:       {color: "#D6D0C3", roughness: 0.50, tex: marble, tile_m: 1.50, var: 0.03}
-  floor_tile_genkan: {color: "#B9B2A4", roughness: 0.70}
-  floor_rubber:      {color: "#7C7970", roughness: 0.85, tex: rubber, tile_m: 2.00, var: 0.06}
-  floor_carpet:      {color: "#77705F", roughness: 1.00}
-  floor_machine:     {color: "#9A9890", roughness: 0.60}
-  wall_theater:      {color: "#5A554D", roughness: 1.00}
-  ceiling_theater:   {color: "#45423D", roughness: 1.00}
-  wainscot_gym:      {color: "#DAD4C6", roughness: 0.60}
-  wainscot:          {color: "#E3DCCD", roughness: 0.50}
-  wet_panel:         {color: "#F3F0EA", roughness: 0.35}
+  wall_paint:        {color: "#F5F1E6", roughness: 0.90}
+  ceiling_paint:     {color: "#F6F5F1", roughness: 0.95}
+  floor_oak:         {color: "#F7E4C4", roughness: 0.45, coat: 0.15, tex: floor, tile_m: 1.70, bump: 0.15}
+  floor_sheet:       {color: "#CED9E2", roughness: 0.50, tex: marble, tile_m: 1.50, var: 0.03}
+  floor_tile_genkan: {color: "#9BA3A8", roughness: 0.70}
+  floor_rubber:      {color: "#9BA3A8", roughness: 0.85, tex: rubber, tile_m: 2.00, var: 0.06}
+  floor_carpet:      {color: "#917440", roughness: 1.00}
+  floor_machine:     {color: "#C2C9CC", roughness: 0.60}
+  wall_iv2:          {color: "#F3EEDD", roughness: 0.90}                                             # v4.29 アイボリー副（寝室・主寝室・図書室・シアター）
+  wall_w1:           {color: "#080C0F", roughness: 0.92}                                             # v4.29 施主指定の暗い壁 W1〜W5（アクセント壁・腰・蹴込み）
+  wall_w2:           {color: "#212A31", roughness: 0.92}
+  wall_w3:           {color: "#3E4C58", roughness: 0.92}
+  wall_w4:           {color: "#43433F", roughness: 0.92}
+  wall_w5:           {color: "#383B3D", roughness: 0.92}
+  stair_riser:       {color: "#383B3D", roughness: 0.70}                                             # v4.29 蹴込み板（W5）
+  wall_theater:      {color: "#080C0F", roughness: 1.00}
+  ceiling_theater:   {color: "#212A31", roughness: 1.00}
+  wainscot_gym:      {color: "#383B3D", roughness: 0.60}
+  wainscot:          {color: "#43433F", roughness: 0.50}
+  wet_panel:         {color: "#F5F1E6", roughness: 0.35}
   door_oak:          {color: "#C8B394", roughness: 0.55, tex: oak, tile_m: 1.83}
   kamachi:           {color: "#E9E3D6", roughness: 0.35}
-  nosing:            {color: "#7A6650", roughness: 0.50}
+  nosing:            {color: "#917440", roughness: 0.50}
   handrail:          {color: "#B08A5E", roughness: 0.50, tex: oak, tile_m: 1.83}
   case_ash:          {color: "#DCCFB9", roughness: 0.55, tex: ash, tile_m: 1.00}
   case_oak:          {color: "#C2A07A", roughness: 0.50, tex: oak, tile_m: 1.83}
@@ -446,7 +453,7 @@ interior_palette:  # 内装の色（sRGB 16進。いずれも仮定）。tex は
   countertop:        {color: "#ECE7DD", roughness: 0.30}
   solid_surface:     {color: "#EEEAE2", roughness: 0.30}
   sill_oak:          {color: "#B89670", roughness: 0.45, coat: 0.25, tex: oak, tile_m: 1.83, bump: 0.1}   # v4.19 窓辺の台の天板（オーク無垢積層 t40）
-  sill_panel:        {color: "#E6E0D4", roughness: 0.85}                                              # v4.19 窓辺の台の前面（巾木 skirt と同色・艶消し）
+  sill_panel:        {color: "#383B3D", roughness: 0.85}                                              # v4.19 窓辺の台の前面（巾木 skirt と同色・艶消し）
   osb:               {color: "#C9A878", roughness: 0.45, coat: 0.30, tex: osb, tile_m: 2.51, bump: 0.25}
   stainless_paint:   {color: "#B8B8B4", roughness: 0.35, metallic: 0.6}
   steel_black:       {color: "#1F1E1C", roughness: 0.45, coat: 0.20}
@@ -480,8 +487,8 @@ interior_palette:  # 内装の色（sRGB 16進。いずれも仮定）。tex は
   gym_pad:           {color: "#56603A", roughness: 0.70}
   zip_fabric:        {color: "#4A4F3E", roughness: 0.95, open_ratio: 0.05}
   zip_blackout:      {color: "#3E423A", roughness: 0.95}
-  skirt:             {color: "#E6E0D4", roughness: 0.80}
-  skirt_theater:     {color: "#5A554D", roughness: 1.00}
+  skirt:             {color: "#383B3D", roughness: 0.80}
+  skirt_theater:     {color: "#F3EEDD", roughness: 1.00}
   joint:             {color: "#8A7F70", roughness: 0.80}
   theater_case:      {color: "#4E4A44", roughness: 0.60}
   screen:            {color: "#F4F4F2", roughness: 1.00}
@@ -534,6 +541,41 @@ interior_cg:       # 内装CG（src/render_cg.py --interior）。14カット（v
     I13: {file: I13_stair_night,  title: 階段1 の足元灯（夜）,           cam: [7000, 6650, 3050], target: [7000, 12000, 3700], lens: 18, when: "2026-10-24T22:30", exposure: 2.5, wb: 3500, shift_y: 0, pitch: 0, screens: down, lights: {L: [2200, 0], D: [2200, 10], F: [2200, 30]}}
 
 # ---------------------------------------------------------------- v4.17: 照明の再構成・透明扉・キッチン全露出（施主指示 2026-10-25）
+interior_color_plan:   # v4.29 内装の配色（施主指定 2026-11）。外観 colors・平面は変えない。壁面積の割合は interior_shell.wall_color_table が開口を引いた正味で求める
+  owner_order: "壁の50%〜70%において、アイボリー、オフホワイト系の色味を使用すること"
+  walls_dark: {W1: "#080C0F", W2: "#212A31", W3: "#3E4C58", W4: "#43433F", W5: "#383B3D"}
+  floors:     {F1: "#917440", F2: "#F7E4C4", F3: "#CED9E2", F4: "#C2C9CC", F5: "#9BA3A8"}
+  light:      {IV1: "#F5F1E6", IV2: "#F3EEDD"}      # 補完した明るい壁（主・副）
+  ceiling:    {C2: "#F6F5F1", theater: W2}          # 天井は補完（シアターだけ W2）
+  materials:  {IV1: wall_paint, IV2: wall_iv2, W1: wall_w1, W2: wall_w2, W3: wall_w3, W4: wall_w4, W5: wall_w5}
+  share: {min: 0.50, max: 0.70, target: 0.60, target_tol: 0.05}   # 明るい壁の割合（各室・全体）
+  safe_mm: 600            # 角・戸口・階段口の両脇は明るい色（廊下・ホール。lighting.foot_line.warn_radius と同じ値）
+  rooms:                  # 室名のキーワード（上から最初に一致）。mode: faces=面ごと（dark を面・部分幅で）／wainscot=腰（h は高さ mm）。light_share は明るい壁の割合の狙い
+    - {key: 玄関土間,   light: IV1, dark: W4, mode: wainscot, h: 1000, floor: F5}
+    - {key: 式台,       light: IV1, dark: W4, mode: wainscot, h: 1000, floor: F2}
+    - {key: トイレ,     light: IV1, dark: W4, mode: wainscot, h: 1000, floor: F3}
+    - {key: ジム,       light: IV1, dark: W5, mode: wainscot, h: 1200, floor: F5}
+    - {key: 階段,       light: IV1, dark: W3, mode: faces, circ: true, stair: true, light_share: 0.63, floor: F2}
+    - {key: ホール,     light: IV1, dark: W3, mode: faces, circ: true, light_share: 0.63, floor: F2}
+    - {key: 廊下,       light: IV1, dark: W3, mode: faces, circ: true, light_share: 0.63, floor: F2}
+    - {key: 機械室,     light: IV1, dark: W3, mode: faces, light_share: 0.67, floor: F4}
+    - {key: ランドリー, light: IV1, dark: W5, mode: faces, panel: wet_panel, light_share: 0.67, floor: F3}
+    - {key: 洗面,       light: IV1, dark: W5, mode: faces, panel: wet_panel, light_share: 0.67, floor: F3}
+    - {key: 脱衣所,     light: IV1, dark: W5, mode: faces, panel: wet_panel, light_share: 0.67, floor: F3}
+    - {key: 浴室,       light: IV1, dark: W5, mode: faces, panel: wet_panel, light_share: 0.60, floor: F3}
+    - {key: シャワー,   light: IV1, dark: W5, mode: faces, panel: wet_panel, light_share: 0.60, floor: F3}
+    - {key: WIC,        light: IV1, dark: W4, mode: faces, light_share: 0.63, floor: F2}
+    - {key: ファミリー, light: IV1, dark: W4, mode: faces, light_share: 0.63, floor: F2}
+    - {key: 収納,       light: IV1, dark: W4, mode: faces, light_share: 0.63, floor: F2}
+    - {key: シアター,   light: IV2, dark: W1, mode: faces, light_share: 0.52, floor: F1}
+    - {key: 前室,       light: IV1, dark: W1, mode: faces, light_share: 0.62, floor: F1}
+    - {key: 主寝室,     light: IV2, dark: W2, mode: faces, light_share: 0.58, floor: F2}
+    - {key: 図書室,     light: IV2, dark: W3, mode: faces, light_share: 0.53, floor: F2}
+    - {key: 居室,       light: IV2, dark: W4, mode: faces, light_share: 0.62, floor: F2}
+    - {key: キッチン,   light: IV1, dark: W4, mode: faces, light_share: 0.60, floor: F2}
+    - {key: リビング,   light: IV1, dark: W3, mode: faces, light_share: 0.58, floor: F2}
+    - {key: "",         light: IV1, dark: W4, mode: faces, light_share: 0.62, floor: F2}
+
 lighting:       # 製品未確定・仮定値。目標照度は JIS Z 9110 を参考にした仮定の目標値（規格本文は未参照）
   policy: 主照明は天井直付けの棒状（ライン）LED、埋込ダウンライトは弱い補助灯（溝・コーブ・吊りなし）
   maintenance_factor: 0.8
