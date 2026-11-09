@@ -25,7 +25,7 @@ def test_room_areas():
     h = _h()
     assert abs(h.room_A.area - 20.12) < 0.01
     assert abs(_room(h, "WIC").area - 10.63) < 0.01
-    assert abs(h.gym_annex.area - 7.64) < 0.01 and abs(h.gym.daylight_area - 52.81) < 0.02       # v4.27: ジム本体 46.35→45.17（S・E の増し打ち帯）
+    assert abs(h.gym_annex.area - 7.64) < 0.01 and abs(h.gym.daylight_area - 53.40) < 0.02       # v4.27: ジム本体 46.35→45.76（S・E の増し打ち帯）
     assert abs(_room(h, "浴室").area - 10.16) < 0.01 and abs(_room(h, "玄関土間").area - 7.97) < 0.01
     assert abs(_room(h, "トイレ").area - 6.06) < 0.01 and abs(_room(h, "洗面・脱衣").area - 8.29) < 0.01
 

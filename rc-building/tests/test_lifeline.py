@@ -78,8 +78,8 @@ def test_battery_room():
     assert y1 <= h.D / 2 + 1 and abs(h.D / 2 - 9125) < 1, (y1, h.D)           # 南半分（建物中心 y=9,125 以下）
     assert sbox(*h.gym.rect).contains(sbox(*h.battery_room.rect))
     assert abs(h.battery_room.area - 4.7) < 0.05
-    assert h.gym.area >= 44.85 and abs(h.gym.area - 45.17) < 0.05, h.gym.area
-    assert h.gym.daylight_area >= h.spec["battery"]["gym_target_m2"] and abs(h.gym.daylight_area - 52.81) < 0.05   # v4.25 拡張部 7.64m² 込み
+    assert h.gym.area >= 44.85 and abs(h.gym.area - 45.76) < 0.05, h.gym.area
+    assert h.gym.daylight_area >= h.spec["battery"]["gym_target_m2"] and abs(h.gym.daylight_area - 53.40) < 0.05   # v4.25 拡張部 7.64m² 込み
     room = sbox(x0, y0, x1, y1)
     for name, r, hh, kg in h.equipment:
         assert not sbox(*r).intersects(room), name
@@ -244,7 +244,7 @@ def test_lifeline_sheets():
 
 
 # v4.25 で更新: 間仕切り x10,600 t200（S 壁まで）・②撤去・室内窓・X3 開口 W4,835・浴室壁 t200・居室A／WIC の区画・玄関土間の縮小（意図した変更）
-GLB_V422 = ("4ab35909831b1dbc", "b2a39b6aefde7433")      # v4.27 意図した変更: 扉を x10,600 の u4,550〜5,750 へ移動（SSD-2 を塞ぎ IW-1 を撤去）・ジムの S・E 壁の増し打ち（local_thick を 3D が描く）・照明/機器の移動。直前: ("9263258e77804ac9", "1a5daf7157595946")      # v4.26: 室内 GLB はさらに、ジムの照明ラインから蓄電室の矩形を除いたため変化（外観 GLB は 9263258e…のまま）。 X3 の扉 D(9,300〜10,100) を RC で塞いだ意図した変更（旧 v4.25: 3f32bbe4…／a5956372…）。旧 v4.24: 739f6a23…／0d2f2ca3…。      # model.glb／model_interior.glb の SHA-256 先頭16桁。v4.22 は 9e2ddbd5…／66f2eabaf…。v4.24 で更新: ジム拡張部の LGS 間仕切り2本と式台の縮小（x12,000→10,500）が GLB に入るため（CG・3D の描画コードは不変）
+GLB_V422 = ("dba61049f6cebf79", "6fb2bc39bf8ad262")      # v4.27 意図した変更: 扉を x10,600 の u4,550〜5,750 へ移動（SSD-2 を塞ぎ IW-1 を撤去）・ジムの S・E 壁の増し打ち（local_thick を 3D が描く）・照明/機器の移動。直前: ("9263258e77804ac9", "1a5daf7157595946")      # v4.26: 室内 GLB はさらに、ジムの照明ラインから蓄電室の矩形を除いたため変化（外観 GLB は 9263258e…のまま）。 X3 の扉 D(9,300〜10,100) を RC で塞いだ意図した変更（旧 v4.25: 3f32bbe4…／a5956372…）。旧 v4.24: 739f6a23…／0d2f2ca3…。      # model.glb／model_interior.glb の SHA-256 先頭16桁。v4.22 は 9e2ddbd5…／66f2eabaf…。v4.24 で更新: ジム拡張部の LGS 間仕切り2本と式台の縮小（x12,000→10,500）が GLB に入るため（CG・3D の描画コードは不変）
 # v4.25: 586→588（間仕切り②−1・y14,250−1・y14,650＋1・9,550 の分割＋1・室内窓＋1・x3 開口の分割など、実測）
 A02X_COUNT = 588                                           # v4.24: +2（ジム拡張部の間仕切り2本）。 v4.22 の 561 + 予約ゾーン（外形・点ハッチ・ラベル2）・蓄電室の塗り・番号3件・凡例2行 ほか
 # v4.25: 471→474（間仕切り②−1・y14,250−1・y14,650＋1・9,550 の分割＋1・扉＋1−1・室内窓＋2 など、実測）
@@ -283,7 +283,7 @@ def test_gym_annex_geometry_and_structure():
     assert abs(wq[("1F", "X方向")][1] - 16.00) < 0.01 and abs(wq[("1F", "Y方向")][1] - 16.27) < 0.01
     import performance as PF
     se = PF.seismic(h)["stories"]
-    assert max(v["ecc"] for v in se.values()) <= 0.15 and abs(se[("1F", "Y方向")]["ecc"] - 0.034) < 0.001 and abs(se[("1F", "X方向")]["ecc"] - 0.085) < 0.001      # v4.27: 0.132/0.046 → 0.085/0.034
+    assert max(v["ecc"] for v in se.values()) <= 0.15 and abs(se[("1F", "Y方向")]["ecc"] - 0.040) < 0.001 and abs(se[("1F", "X方向")]["ecc"] - 0.108) < 0.001      # v4.27: 0.132/0.046 → 0.108/0.040（t300）
 
 
 def test_gym_annex_lighting_name():

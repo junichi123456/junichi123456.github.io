@@ -46,7 +46,7 @@ def test_structure():
         assert v["wall_rate"] >= 12, (f, d)
         assert v["耐震等級3（Co=0.3）"]["ratio"] >= 1.0
         assert v["ecc"] <= 0.15, (f, d, v["ecc"])
-    assert abs(se["stories"][("1F", "X方向")]["ecc"] - 0.131) < 0.005
+    assert abs(se["stories"][("1F", "X方向")]["ecc"] - 0.108) < 0.005     # v4.27: ジムの S・E t300 の増し打ちで 0.131→0.108（意図した変更）
     assert max(h.H.values()) <= 3500
     assert 250 >= max(150, max(h.H.values()) / 22)
     assert PF.corner_post(h)["ratio"] < 1.0
