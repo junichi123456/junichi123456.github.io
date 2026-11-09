@@ -164,6 +164,22 @@ def furniture_plan(h, floor, number):
         for f in LG.footlights(h):
             c = t(f["p"][0], f["p"][1])
             sh.pline([(c[0] - 0.8 * sh.S, c[1] + 0.8 * sh.S), (c[0] + 0.8 * sh.S, c[1] + 0.8 * sh.S), (c[0], c[1] - 0.8 * sh.S)], "E-FOOT", closed=True)
+    # アクセント壁（v4.29: 暗い壁の位置。太線=全高、細線=腰。壁の面から 60 室内側）
+    import interior_shell as IS
+    for ent in IS.wall_plan(h):
+        if ent["cell"].floor != floor:
+            continue
+        code = ent["rp"]["dark"]
+        for e in ent["edges"]:
+            for (ua, ub, kd) in e["spans"]:
+                if kd == "light":
+                    continue
+                o = e["k"] + e["s"] * 60
+                pts = [t(ua, o), t(ub, o)] if e["ax"] == "x" else [t(o, ua), t(o, ub)]
+                sh.pline(pts, "A-ACCENT", lineweight=90 if kd == "dark" else 40)
+                if kd == "dark":
+                    mid = (ua + ub) / 2
+                    sh.text(code, t(mid, o + e["s"] * 250) if e["ax"] == "x" else t(o + e["s"] * 250, mid), 1.1, "A-TEXT", "MIDDLE_CENTER")
     # 家具
     for it in its:
         draw_item(sh, t, it, h)
@@ -199,7 +215,7 @@ def furniture_plan(h, floor, number):
     cy = side_panel(sh, 284, 282, [("h", "凡例・注記")])
     # 凡例
     from house_sheets import legend
-    cy = legend(sh, 285, cy - 1, [("A-FURN", "家具（外形・細線）", "line"), ("A-FURN", "チェア（外形を塗り）", "line"), ("E-LITE", "埋込ダウンライト（弱）φ100", "line"), ("E-LINE", "直付ライン LED（主照明）", "line"), ("E-FOOT", "階段の足元灯（踏面+300）", "line"),
+    cy = legend(sh, 285, cy - 1, [("A-FURN", "家具（外形・細線）", "line"), ("A-FURN", "チェア（外形を塗り）", "line"), ("E-LITE", "埋込ダウンライト（弱）φ100", "line"), ("E-LINE", "直付ライン LED（主照明）", "line"), ("E-FOOT", "階段の足元灯（踏面+300）", "line"), ("A-ACCENT", "アクセント壁（暗い壁 W1〜W5。太線=全高、細線=腰）", "line"),
                                    ("A-HIDDEN", "テーブルの脚位置・物干しパイプ", "line"), ("A-DOOR", "開き戸の軌跡", "line")])
     notes = [("h", "仮置きの前提"),
              ("t", NOTE),
@@ -220,14 +236,18 @@ def furniture_plan(h, floor, number):
 
 # ===================================================================== I-05 家具表・内装色彩計画
 PALETTE_ROWS = [
-    ("wall_paint", "壁", "PB＋耐汚染塗装（拭き取り可）"), ("ceiling_paint", "天井", "PB＋EP（フラット・溝なし）＋直付ライン LED（主）・埋込 LED（弱）"),
-    ("floor_oak", "床 居室・LDK・キッチン・図書室・階段", "複合フローリング（ノンワックス・ややつや）"), ("floor_sheet", "床 トイレ・洗面・ランドリー・浴室", "塩ビシームレスシート（石目調）"),
-    ("floor_tile_genkan", "床 玄関土間", "大判磁器タイル 600角・細目地"), ("floor_rubber", "床 ジム", "ゴムシート t15（灰色。黒にしない）"),
-    ("floor_carpet", "床 シアター・前室", "タイルカーペット（暗すぎない）"), ("wall_theater", "壁 シアター・前室", "PET 吸音ボード"),
-    ("ceiling_theater", "天井 シアター", "吸音 PB（映写のため暗め）"), ("wainscot_gym", "腰 ジム H1,200", "耐衝撃化粧パネル"),
-    ("wainscot", "腰 トイレ・玄関 H1,000", "化粧パネル"), ("wet_panel", "壁 洗面・ランドリー・浴室", "耐水化粧パネル（目地なし）"),
+    ("wall_paint", "壁 明るい（IV1・主）", "PB＋耐汚染塗装（拭き取り可）。壁の50〜70%"), ("wall_iv2", "壁 明るい（IV2・副）居室・主寝室・図書室・シアター", "PB＋耐汚染塗装"),
+    ("wall_w1", "壁 暗い W1（アクセント）シアター・前室", "PET 吸音ボード／耐汚染塗装（艶消し）"), ("wall_w2", "壁 暗い W2 主寝室、天井 シアター", "耐汚染塗装（艶消し）"),
+    ("wall_w3", "壁 暗い W3 LDK・動線・図書室・機械室", "耐汚染塗装（艶消し）"), ("wall_w4", "壁 暗い W4 キッチン・居室・WIC・収納、腰 トイレ・玄関 H1,000", "耐汚染塗装／化粧パネル"),
+    ("wall_w5", "壁 暗い W5 水回り（ユニットバスは近似色）、腰 ジム H1,200、巾木、窓台前面", "耐汚染塗装／耐衝撃化粧パネル"),
+    ("ceiling_paint", "天井（C2）", "PB＋EP（フラット・溝なし）＋直付ライン LED（主）・埋込 LED（弱）"), ("ceiling_theater", "天井 シアター（W2）", "吸音 PB（映写のため暗め）"),
+    ("floor_oak", "床 F2 居室・LDK・キッチン・図書室・階段の踏面", "複合フローリング（ノンワックス・ややつや）"), ("floor_sheet", "床 F3 トイレ・洗面・ランドリー・浴室", "塩ビシームレスシート（石目調）"),
+    ("floor_tile_genkan", "床 F5 玄関土間", "大判磁器タイル 600角・細目地"), ("floor_rubber", "床 F5 ジム", "ゴムシート t15（灰色。黒にしない）"),
+    ("floor_carpet", "床 F1 シアター・前室", "タイルカーペット（暗すぎない）"), ("floor_machine", "床 F4 機械室", "防塵塗装"),
+    ("stair_riser", "階段の蹴込み板（W5）", "踏面 F2・段鼻 F1 との LRV 差 60 以上"), ("skirt", "巾木・窓台前面（W5）", "薄型ソフト巾木 H60／床シート立上げ H100"),
+    ("skirt_theater", "巾木 シアター・前室（IV2）", "ソフト巾木 H60（暗い壁と暗い床の境を見せる）"), ("wet_panel", "壁 洗面・ランドリー・浴室の明るい面（IV1）", "耐水化粧パネル（目地なし）"),
     ("door_oak", "内部建具", "オーク突板（現行 #73614D を置き換える提案）"), ("kamachi", "框・窓台", "人造大理石"),
-    ("nosing", "段鼻の色差", "階段・框に幅30"), ("handrail", "手すり", "オーク φ35"),
+    ("nosing", "段鼻の色差（F1）", "階段・框に幅30"), ("handrail", "手すり", "オーク φ35"),
     ("case_ash", "造作収納の扉", "アッシュ突板"), ("case_oak", "本棚・ベッド・ベンチ", "オーク"),
     ("olive_case", "アイランドの扉", "オリーブ色（外観のアソートに合わせる）"), ("sofa_olive", "ソファ・ジムのパッド", "布張り（オリーブ）"),
     ("osb", "指定: テーブル天板", "OSB t30 クリア塗装（仮定）"), ("steel_black", "指定: テーブル脚", "鋼管 □40 黒の粉体塗装（仮定）"),

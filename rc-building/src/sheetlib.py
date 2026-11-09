@@ -247,6 +247,7 @@ def fittings_sheet(b, number):
             sh.text(line, (x0 + 2, yy), 2.0, "A-TEXT", paper=True)
             yy -= 4.0
     sh.text("姿図は W2,600 を超えるものを 1:100、その他を 1:50 で表示", (12, 46), 2.2, "A-TEXT", paper=True)
+    sh.text("v4.29 色: 扉 door_oak #C8B394 は明るい壁 IV1（LRV 差 42）・暗い壁（差 39）のどちらでも見分けられる。巾木 W5。GD-1・GD-2 の乳白の帯は、玄関ホールから見える正面の壁を W3 にするか、帯の縁に W3 の細線（幅5）を印刷（要確認）", (12, 41), 2.2, "A-TEXT", paper=True)
     return sh
 
 

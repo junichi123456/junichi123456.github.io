@@ -31,6 +31,7 @@ LAYERS = {
     "A-WATER": (5, "Continuous", 18, "水路"),
     "A-TERRAIN": (30, "Continuous", 25, "地形断面（DEM）"),
     "A-FLOOD": (5, "DASHDOT", 25, "想定浸水深"),
+    "A-ACCENT": (1, "Continuous", 90, "アクセント壁（暗い壁 W1〜W5）の位置（太線=全高、細線=腰）"),
     "A-FLOW": (6, "DASHED", 35, "動線（回遊・家事・搬入）"),
     "A-COLOR": (8, "Continuous", 9, "仕上げ色の塗り（立面・色見本）"),
     "A-VIS": (7, "Continuous", 18, "見え掛り（細線）"),

@@ -1435,14 +1435,74 @@ def sbox_(sh, x0, y0, x1, y1):
     return sbox(a[0], a[1], b[0], b[1])
 
 
+def color_sheet(h, number):
+    """内装配色・壁面積の検証（v4.29）: 明るい壁（アイボリー・オフホワイト系 IV1・IV2）の割合は開口（窓・扉・室内窓）を引いた正味。施主の命令は 50〜70%。"""
+    import interior_shell as IS
+    sh = frame(h, number, "内装配色・壁面積の検証", 1, label="—")
+    sh.text("内装配色・壁面積の検証 — 施主の命令「壁の50%〜70%において、アイボリー、オフホワイト系の色味を使用すること」", (12, 280), 3.6, "A-TEXT", paper=True)
+    cp = h.spec["interior_color_plan"]
+    rows = IS.wall_color_table(h)
+    agg = {}
+    for r in rows[:-1]:
+        a = agg.setdefault((r["floor"], r["room"]), [0, 0.0, 0.0, r["light_code"], r["dark_code"]])
+        a[0] += r["faces"]
+        a[1] += r["area"]
+        a[2] += r["light"]
+    body = [["階", "室", "壁面積 m²", "明るい m²", "割合", "明/暗", "判定"]]
+    for (f, n), (nf, A, L, lc, dc) in agg.items():
+        body.append([f, n, f"{A:.1f}", f"{L:.1f}", f"{100 * L / A:.1f}%", f"{lc}/{dc}", "OK" if 0.5 - 1e-6 <= L / A <= 0.7 + 1e-6 else "NG"])
+    t = rows[-1]
+    body.append(["全体", "全室の合計（目標 60±5%）", f"{t['area']:.1f}", f"{t['light']:.1f}", f"{100 * t['share']:.1f}%", "", "OK" if t["ok"] else "NG"])
+    half = (len(body) + 1) // 2
+    cols = [9, 56, 20, 20, 15, 18, 10]
+    sh.text("(1) 壁面積の検証（室＝階・室名ごと。開口を引いた正味）", (12, 273), 2.4, "A-TEXT", paper=True)
+    y1 = sh.table(12, 270, cols, body[:half], row_h=3.6, h=1.3)
+    y2 = sh.table(12 + sum(cols) + 6, 270, cols, [body[0]] + body[half:], row_h=3.6, h=1.3)
+    yy = min(y1, y2) - 6
+    sh.text("(2) 色の割当（sRGB。LRV＝相対輝度 Y×100）", (12, yy), 2.4, "A-TEXT", paper=True)
+    import lighting as LG
+    pal = h.spec["interior_palette"]
+    cm = cp["materials"]
+    crow = [["記号", "色", "LRV", "使い方", "見本"]]
+    use = {"IV1": "明るい壁（主）。LDK・キッチン・動線・水回り・WIC・機械室・前室・ジム上部", "IV2": "明るい壁（副）。居室・主寝室・図書室・シアター",
+           "W1": "シアター・前室のアクセント壁", "W2": "主寝室のアクセント壁、シアターの天井", "W3": "LDK・動線・図書室・機械室のアクセント壁",
+           "W4": "キッチン・居室・WIC・収納のアクセント壁、トイレ・玄関土間の腰 H1,000", "W5": "水回りのアクセント壁、ジムの腰 H1,200、巾木、蹴込み板、窓台前面"}
+    for k in ("IV1", "IV2", "W1", "W2", "W3", "W4", "W5"):
+        hx = cp["light"][k] if k in cp["light"] else cp["walls_dark"][k]
+        crow.append([k, hx, f"{LG.lrv(hx) * 100:.1f}", use[k], ""])
+    fuse = {"F1": "シアター・前室の床、段鼻", "F2": "居室・LDK・キッチン・動線・図書室・階段の踏面", "F3": "水回りの床（トイレ・洗面・脱衣・ランドリー・浴室）", "F4": "機械室の床", "F5": "玄関土間・ジムの床"}
+    for k, hx in cp["floors"].items():
+        crow.append([k, hx, f"{LG.lrv(hx) * 100:.1f}", fuse[k], ""])
+    crow.append(["C2", cp["ceiling"]["C2"], f"{LG.lrv(cp['ceiling']['C2']) * 100:.1f}", "天井（シアターだけ W2）", ""])
+    ccols = [14, 18, 12, 140, 10]
+    yb = sh.table(12, yy - 3, ccols, crow, row_h=3.8, h=1.35)
+    for ri, row in enumerate(crow):
+        if ri == 0:
+            continue
+        top, bot = sh.last_table_rows[ri]
+        x0 = 12 + sum(ccols[:4]) + 1.5
+        sh.hatch_polys([sbox_(sh, x0, bot + 0.4, x0 + 7, top - 0.4)], layer="A-COLOR", solid=True, rgb=_hex_rgb(row[1]))
+    notes = ["暗い壁（アクセント壁）の位置は I-03・I-04 家具配置図に太線（全高）・細線（腰）で示す。暗い壁は耐汚染の艶消し仕上げ（無機顔料系の塗料は要確認）",
+             "動線室（廊下・ホール・階段室）の全高の暗い壁は、角・戸口・階段口から 600 以上離し、階段に直交する面（上り口・下り口の正面）には置かない。不足分は H1,400 以下の腰で補う",
+             "反射率は相対輝度 Y（LRV）。照度は天井・壁（面積加重）・床の相互反射で利用率を補正して求め（lighting.refl_factor）、光束は変えない。全室で目標以上",
+             "CG は I01・I02・I03・I14 の4カットのみ新配色で再レンダー。I04〜I13 は旧配色のまま（ブリーフ37章・README・render_log に明記）"]
+    yn = yb - 6
+    for n_ in notes:
+        sh.text("・" + n_, (14, yn), 2.0, "A-TEXT", paper=True)
+        yn -= 4.2
+    print(f"  {number} 下端 y: {min(y1, y2):.0f} / {yb:.0f} / {yn:.0f}")
+    return sh
+
+
 def finish_sheet(h, number):
     import interior as IN
     sh = frame(h, number, "内装仕上表", 1, label="—")
     sh.text("内装仕上表 — 安全で、掃除と手入れが簡単な仕上げに統一", (12, 280), 3.6, "A-TEXT", paper=True)
-    rows = [["階", "室名", "面積", "床", "巾木", "壁", "天井", "安全・清掃の要点"]]
+    rows = [["階", "室名", "面積", "床", "巾木", "壁", "天井", "配色（v4.29）", "安全・清掃の要点"]]
     for f, n, c, a, (fl, sk, wa, ce, note) in IN.finish_schedule(h):
-        rows.append([f, n + (f" ×{c}" if c > 1 else ""), f"{a:.1f}", fl, sk, wa, ce, note])
-    y = sh.table(12, 272, [8, 32, 10, 72, 44, 64, 36, 126], rows, row_h=4.4, h=1.65)
+        col = IN.color_of(h, n)["text"] if n != "蓄電室" else "IV1＋W3（アクセント壁）／床 F4／天井 C2"
+        rows.append([f, n + (f" ×{c}" if c > 1 else ""), f"{a:.1f}", fl, sk, wa, ce, col, note])
+    y = sh.table(12, 272, [8, 28, 9, 60, 34, 54, 30, 66, 103], rows, row_h=3.6, h=1.35)
     sh.text("共通: 出隅 R10（手の届く高さ）、コンセントはシャッター付き、床の段差5mm以下（掃除ロボット走行）、照明は調光・調色 LED、家具は突っ張り式（RC 壁に固定しない）。数量・品番は実施設計で決める",
             (12, y - 5), 2.2, "A-TEXT", paper=True)
     exterior_finish_table(h, sh, y - 14)
