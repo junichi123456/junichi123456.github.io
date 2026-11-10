@@ -277,3 +277,96 @@ def test_bpy_missing_is_skipped(h, tmp_path, monkeypatch):
     monkeypatch.setattr(blender, "find_python", lambda: None)
     mf = export_all(h, tmp_path, only=[], with_blend=True)
     assert mf.skipped and "bpy" in mf.skipped[0]["reason"] and not list(tmp_path.glob("*.blend"))
+
+
+# ------------------------------------------------------------------ 段階4: CSV/XLSX と GeoJSON/KML
+def test_csv_headers_and_rows(h, outdir):
+    import csv
+    from export import tables
+    d, _ = outdir
+    exp = {"室": len(h.rooms), "建具": 54, "建具表": len(h.fittings), "設備": 21, "家具": 68, "壁量": 5}
+    for name, hd in tables.HEADERS.items():
+        p = d / "csv" / f"{tables.CSV_NAMES[name]}.csv"
+        raw = p.read_bytes()
+        assert raw.startswith(b"\xef\xbb\xbf"), name                     # UTF-8 BOM
+        rows = list(csv.reader(raw.decode("utf-8-sig").splitlines()))
+        assert rows[0] == hd and all(len(r) == len(hd) for r in rows), name
+        if name in exp:
+            assert len(rows) - 1 == exp[name], name
+    import furniture as FU
+    import lighting as LI
+    its = FU.items(h)
+    lns = LI.lines(h, its)
+    n_light = len(lns) + len(LI.downlights(h, its, lns)) + len(LI.footlights(h)) + len(LI.footlines(h, its)[0])
+    n = len(list(csv.reader((d / "csv" / "lights.csv").read_bytes().decode("utf-8-sig").splitlines()))) - 1
+    assert n == n_light == 269
+
+
+def test_xlsx_matches_csv_and_summary(h, outdir):
+    import csv
+    import openpyxl
+    from export import tables
+    d, _ = outdir
+    wb = openpyxl.load_workbook(d / "schedules.xlsx")
+    assert wb.sheetnames == list(tables.HEADERS)
+    for name in tables.HEADERS:
+        ws = wb[name]
+        rows = list(csv.reader((d / "csv" / f"{tables.CSV_NAMES[name]}.csv").read_bytes().decode("utf-8-sig").splitlines()))
+        assert ws.max_row == len(rows) and [c.value for c in ws[1]] == rows[0]
+    # 面積合計が index.json の summary と一致
+    sm = json.loads((ROOT / "dist" / "index.json").read_text(encoding="utf-8"))["summary"]
+    leg = {r[0].value: r[1].value for r in wb["凡例"].iter_rows(min_row=2)}
+    assert abs(leg["延べ面積m2"] - sm["total"]) < 0.001 and abs(leg["建築面積m2"] - sm["building_area"]) < 0.001 and abs(leg["敷地面積m2"] - sm["site_area"]) < 0.001
+    rooms = list(wb["室"].iter_rows(min_row=2, values_only=True))
+    assert abs(sum(r[2] for r in rooms) - sum(r.area for r in h.rooms)) < 0.001
+    # 家具・照度の値が図面の表と同じ関数の値
+    import furniture as FU
+    fr = FU.schedule_rows(h, FU.items(h))
+    assert [r[0] for r in wb["家具"].iter_rows(min_row=2, values_only=True)] == [r[0] for r in fr]
+    assert [r[2] for r in wb["家具"].iter_rows(min_row=2, values_only=True)] == [r[2] for r in fr]
+
+
+def _lonlat_to_local(h, lon, lat):
+    """GeoJSON の経緯度 → 局所 ENU → 建物 mm（common.enu_to_lonlat の逆）。"""
+    import math
+    lat0, lon0 = h.gsi["meta"]["origin_latlon"]
+    R = 6378137.0
+    n = math.radians(lat - lat0) * R
+    e = math.radians(lon - lon0) * R * math.cos(math.radians(lat0))
+    return h.m2mm(e, n)
+
+
+def test_geojson_valid_and_areas(h, outdir):
+    from shapely.geometry import shape, Polygon
+    d, _ = outdir
+    g = json.loads((d / "site.geojson").read_text(encoding="utf-8"))
+    assert g["type"] == "FeatureCollection" and len(g["features"]) >= 15
+    by = {f["properties"]["名称"]: f for f in g["features"]}
+    for f in g["features"]:
+        s = shape(f["geometry"])
+        assert s.is_valid and not s.is_empty
+        lon, lat = s.representative_point().x, s.representative_point().y
+        assert 139.33 < lon < 139.35 and 35.66 < lat < 35.68
+        if f["geometry"]["type"] == "Polygon":
+            ring = f["geometry"]["coordinates"][0]
+            assert Polygon(ring).exterior.is_ccw                            # RFC 7946 の右手則
+            loc = Polygon([_lonlat_to_local(h, *p) for p in ring])           # ENU に戻して面積を照合
+            assert abs(loc.area / 1e6 - f["properties"]["面積m2"]) < 0.001 * f["properties"]["面積m2"] + 0.02
+    assert abs(by["新敷地境界（塀の外面）"]["properties"]["面積m2"] - 2426.42) < 0.01
+    assert abs(by["寄付地（塀外の帯・要確認）"]["properties"]["面積m2"] - 203.14) < 0.5
+    assert by["寄付地（塀外の帯・要確認）"]["properties"]["要確認"] is True
+
+
+def test_kml_matches_geojson(outdir):
+    import xml.etree.ElementTree as ET
+    d, _ = outdir
+    g = json.loads((d / "site.geojson").read_text(encoding="utf-8"))
+    ns = {"k": "http://www.opengis.net/kml/2.2"}
+    root = ET.parse(d / "site.kml").getroot()
+    pms = root.findall(".//k:Placemark", ns)
+    assert len(pms) == len(g["features"])
+    names = {p.find("k:name", ns).text for p in pms}
+    assert names == {f["properties"]["名称"] for f in g["features"]}
+    first = pms[0].find(".//k:coordinates", ns).text.split()[0].split(",")
+    c0 = g["features"][0]["geometry"]["coordinates"][0][0]
+    assert abs(float(first[0]) - c0[0]) < 1e-8 and abs(float(first[1]) - c0[1]) < 1e-8
