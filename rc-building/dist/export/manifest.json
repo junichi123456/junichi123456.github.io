@@ -1,0 +1,223 @@
+{
+ "version": "v4.31",
+ "total_bytes": 14605748,
+ "files": [
+  {
+   "file": "kawazanyo_IFC4.ifc",
+   "format": "IFC4",
+   "size": 2278087,
+   "sha256": "3ca7212518c6979755a8b7661ec5dc32ddd5c8b2a391215f20fc7cd9b32daa5b",
+   "version": "v4.31",
+   "coordinates": "建物ローカル（原点=X1・Y1 壁芯交点、z=0=設計GL、mm、Z上）。真北は TrueNorth と IfcMapConversion",
+   "note": "壁74・窓14・扉40・室43・家具68・照明269"
+  },
+  {
+   "file": "model_exterior_obj.zip",
+   "format": "OBJ+MTL",
+   "size": 343519,
+   "sha256": "ce769755e80bc0dde566e488fd97eb3ae5b67d1afd194662a226559f7240400d",
+   "version": "v4.31",
+   "coordinates": "真北ワールド（建物中心まわりに回転、m、Y上、-Z=真北、+X=東）",
+   "note": "157 objects, 21117 vertices, 34507 faces"
+  },
+  {
+   "file": "model_interior_obj.zip",
+   "format": "OBJ+MTL",
+   "size": 892904,
+   "sha256": "b9e63089bd7bca9abf6419075e23e3f6733c03f7a0772b40abb9a1a7e0859894",
+   "version": "v4.31",
+   "coordinates": "真北ワールド（建物中心まわりに回転、m、Y上、-Z=真北、+X=東）",
+   "note": "673 objects, 60641 vertices, 100527 faces"
+  },
+  {
+   "file": "csv/rooms.csv",
+   "format": "CSV(UTF-8 BOM)",
+   "size": 13521,
+   "sha256": "cf6ab26b797ffad7a398fda4195ea58d750d2f30e9c5950c051fc5cee8a410c6",
+   "version": "v4.31",
+   "coordinates": "座標なし（表）",
+   "note": "43 行"
+  },
+  {
+   "file": "csv/openings.csv",
+   "format": "CSV(UTF-8 BOM)",
+   "size": 7678,
+   "sha256": "5759af6c1a63069e63680afd39203536e9189d4249c753407fa7490aa67a671d",
+   "version": "v4.31",
+   "coordinates": "座標なし（表）",
+   "note": "54 行"
+  },
+  {
+   "file": "csv/fittings_schedule.csv",
+   "format": "CSV(UTF-8 BOM)",
+   "size": 2088,
+   "sha256": "8946d89109c443a391e71d2253c597631dc65df0af12907060e95916732c6d67",
+   "version": "v4.31",
+   "coordinates": "座標なし（表）",
+   "note": "35 行"
+  },
+  {
+   "file": "csv/finishes.csv",
+   "format": "CSV(UTF-8 BOM)",
+   "size": 13427,
+   "sha256": "b6fd54b88577b04d63839593530e66eb841e0efe05e374f7dd7bc489a2614ec1",
+   "version": "v4.31",
+   "coordinates": "座標なし（表）",
+   "note": "41 行"
+  },
+  {
+   "file": "csv/equipment.csv",
+   "format": "CSV(UTF-8 BOM)",
+   "size": 1852,
+   "sha256": "5c34bcd251ba5f4c5e39d2ea024be7df61e5fcc8f88c6afca149176e4b2c19db",
+   "version": "v4.31",
+   "coordinates": "座標なし（表）",
+   "note": "21 行"
+  },
+  {
+   "file": "csv/lifeline.csv",
+   "format": "CSV(UTF-8 BOM)",
+   "size": 2606,
+   "sha256": "8d29cf9beb9fdcaf61df439cd6955c55791986f6a76995cc1952592176c842d8",
+   "version": "v4.31",
+   "coordinates": "座標なし（表）",
+   "note": "14 行"
+  },
+  {
+   "file": "csv/lights.csv",
+   "format": "CSV(UTF-8 BOM)",
+   "size": 38481,
+   "sha256": "6f3ab486b6b037c775671ed8598c4b6bcdce5e67073324ac3609f551ea060d80",
+   "version": "v4.31",
+   "coordinates": "座標なし（表）",
+   "note": "269 行"
+  },
+  {
+   "file": "csv/illuminance.csv",
+   "format": "CSV(UTF-8 BOM)",
+   "size": 2769,
+   "sha256": "6a76e0c50ea6c7ac6a5cef4e169a1b07b31f93aa4bf629fe3e1fe9df27112d7e",
+   "version": "v4.31",
+   "coordinates": "座標なし（表）",
+   "note": "43 行"
+  },
+  {
+   "file": "csv/furniture.csv",
+   "format": "CSV(UTF-8 BOM)",
+   "size": 14381,
+   "sha256": "0841a3072ab24ca48d84b8a6e02a34bbf07345e28a845b54e260300ebde57410",
+   "version": "v4.31",
+   "coordinates": "座標なし（表）",
+   "note": "68 行"
+  },
+  {
+   "file": "csv/wall_quantity.csv",
+   "format": "CSV(UTF-8 BOM)",
+   "size": 252,
+   "sha256": "9474b257fbe788fd87ec3b1098488af75372968ad73de2669df3480fcf12f215",
+   "version": "v4.31",
+   "coordinates": "座標なし（表）",
+   "note": "5 行"
+  },
+  {
+   "file": "csv/legal_checks.csv",
+   "format": "CSV(UTF-8 BOM)",
+   "size": 31116,
+   "sha256": "f0b0891e3df2cc59267a643aa5d8f2d9db1e4739becea5e3cade1152a13a2a7c",
+   "version": "v4.31",
+   "coordinates": "座標なし（表）",
+   "note": "129 行"
+  },
+  {
+   "file": "csv/legend.csv",
+   "format": "CSV(UTF-8 BOM)",
+   "size": 1359,
+   "sha256": "5e1442ae8e91cfa08019a76c1450f60bcdf72cdee8c4e4c36f340a3f2a69577d",
+   "version": "v4.31",
+   "coordinates": "座標なし（表）",
+   "note": "35 行"
+  },
+  {
+   "file": "schedules.xlsx",
+   "format": "XLSX",
+   "size": 82744,
+   "sha256": "66d87ee711df00122a00c3c87eed78e6f74738981ae91c744144dac3195d409c",
+   "version": "v4.31",
+   "coordinates": "座標なし（表）",
+   "note": "12 シート"
+  },
+  {
+   "file": "site.geojson",
+   "format": "GeoJSON",
+   "size": 14658,
+   "sha256": "d84b82f15065aa5f11e1f1efaff9afc7fa6907310461bffc1a84d905f22b485b",
+   "version": "v4.31",
+   "coordinates": "WGS84 経緯度（局所 ENU 近似）",
+   "note": "18 地物"
+  },
+  {
+   "file": "site.kml",
+   "format": "KML",
+   "size": 29290,
+   "sha256": "86a4b7766fbb7d96bad8c6f5a421a0d20f6d71c635bdb12e9d45205c0713e684",
+   "version": "v4.31",
+   "coordinates": "WGS84 経緯度（局所 ENU 近似）",
+   "note": "18 地物"
+  },
+  {
+   "file": "model_3d.dxf",
+   "format": "3D DXF(MESH, R2010)",
+   "size": 1285235,
+   "sha256": "0976a02ea80286e1580b544ea34c8af8c035172ca2e428c084de6fbbbe38677a",
+   "version": "v4.31",
+   "coordinates": "建物ローカル（原点=X1・Y1 壁芯交点、z=0=設計GL、mm、Z上）。既存の平面 DXF と同じ原点・向き",
+   "note": "112 MESH, 43 レイヤー"
+  },
+  {
+   "file": "kawazanyo_exterior.blend",
+   "format": "Blender .blend",
+   "size": 1223232,
+   "sha256": "53e3f19f48c9ff79e8b0e613889b569c0866039cf77bb76410da5411b17e5e52",
+   "version": "v4.31",
+   "coordinates": "真北ワールド（建物中心まわりに回転、m、Y上、-Z=真北、+X=東）",
+   "note": "カメラ7"
+  },
+  {
+   "file": "kawazanyo_interior.blend",
+   "format": "Blender .blend",
+   "size": 2171395,
+   "sha256": "b843c8aba0b12b88f2e2740fa1d3f7369ced26c840a69e6fc67f4c4f0b9a3995",
+   "version": "v4.31",
+   "coordinates": "真北ワールド（建物中心まわりに回転、m、Y上、-Z=真北、+X=東）",
+   "note": "カメラ36"
+  },
+  {
+   "file": "model_exterior.fbx",
+   "format": "FBX",
+   "size": 1137340,
+   "sha256": "874c8f5310282d9637052c90284112dd1a69720dbc50fff485f5498519fa1759",
+   "version": "v4.31",
+   "coordinates": "真北ワールド（建物中心まわりに回転、m、Y上、-Z=真北、+X=東）",
+   "note": ""
+  },
+  {
+   "file": "model_interior.fbx",
+   "format": "FBX",
+   "size": 3467532,
+   "sha256": "ef8d50e906e7802f066b188cf53cf63d497b4efebf20fe1cb22d1f58b8f247ae",
+   "version": "v4.31",
+   "coordinates": "真北ワールド（建物中心まわりに回転、m、Y上、-Z=真北、+X=東）",
+   "note": ""
+  },
+  {
+   "file": "model_exterior.usdz",
+   "format": "USDZ",
+   "size": 1550282,
+   "sha256": "215b628f415bcfafaeddaaeb082e9a5b0046a2e95b2ac698afff6bf7c32a41a3",
+   "version": "v4.31",
+   "coordinates": "真北ワールド（建物中心まわりに回転、m、Y上、-Z=真北、+X=東）",
+   "note": ""
+  }
+ ],
+ "skipped": []
+}

@@ -1110,3 +1110,35 @@ GLB の SHA-256: model.glb `a34272db8aa00b43e5e9f118b704dccba0a712b6f9a0d74cd2c6
 
 ### 38.5 旧カットの扱い
 - I04〜I13 は「参考（旧・v4.17）」として残す（階高・配色が現行と異なる）。区画カットで置き換えられるが、削除は施主の判断。
+
+## 39. 操作可能なデータ形式（v4.31）
+
+施主の依頼「何かしらのアプリケーションおよびソフトウェアで操作可能な形式で出力してください」に対し、既存の House モデルから既製ソフトで開いて回転・計測・編集・再利用できるデータを `dist/export/` に書き出す。図面（`dist/dxf`・PDF・PNG）と GLB の出力は変えない（試験で sha256 を固定）。
+
+### 39.1 出力した形式
+| 形式 | ファイル | 主な対応ソフト |
+|---|---|---|
+| IFC4 | `kawazanyo_IFC4.ifc` | Revit・ArchiCAD・FreeCAD・BlenderBIM(Bonsai)・BIMvision・Solibri |
+| OBJ+MTL | `model_exterior_obj.zip`・`model_interior_obj.zip` | Blender・Rhino・SketchUp Pro・3ds Max・MeshLab・Windows 3D ビューア |
+| Blender | `kawazanyo_exterior.blend`（カメラ 7）・`kawazanyo_interior.blend`（カメラ 36） | Blender |
+| FBX / USDZ | `model_exterior.fbx`・`model_interior.fbx`・`model_exterior.usdz` | Unity・Unreal・Maya・3ds Max／Mac・iPhone のクイックルック |
+| CSV / XLSX | `schedules.xlsx`・`csv/*.csv`（12 表） | Excel・Numbers・LibreOffice・Google スプレッドシート |
+| GeoJSON / KML | `site.geojson`・`site.kml` | QGIS・geojson.io／Google Earth |
+| 3D DXF | `model_3d.dxf`（MESH、R2010） | AutoCAD・FreeCAD・BricsCAD（Jw_cad・LibreCAD は 3D 非対応） |
+
+不採用：Rhino .3dm（Rhino は IFC/OBJ/FBX を読める）、SketchUp .skp（SDK が Win/Mac 限定）、Shapefile（QGIS は GeoJSON を開ける）、IFC2X3（要望時に検討）。
+
+### 39.2 約束
+- 座標：IFC・3D DXF は建物ローカル mm、メッシュ系は真北ワールド m（GLB と同じ）。真北は `IfcGeometricRepresentationContext.TrueNorth` と `IfcMapConversion`。階の標高は FDN −350・1FL +1,500・2FL +4,900・RFL +8,300。
+- 名前：`グループ|階|材質キー|ID`、IFC は Name = 記号・室名。色・材質は `material_table` が唯一の出典。
+- 要確認・仮置き：`data/export_flags.yaml`（ブリーフ 35・36 章の Q1〜Q7、家具 v4.16 仮置き、足元灯の仮定値、塀の北・東辺、寄付地）。IFC の `Pset_Kawazanyo`、表の ○ 列に出る。
+- IFC：h.walls 1 本 = 1 IfcWall（RC・間仕切・パラペット・外断熱）、窓・扉は IfcOpeningElement＋IfcRelFillsElement、室 43、階 4（基礎・1F・2F・RF）、階段 2＋外部階段、家具 68、照明 269、塀・舗装・パーゴラ・カーポート・PV・地形・敷地境界。形状は h.boxes の矩形押出しで GLB と体積が一致。
+
+### 39.3 検証（`tests/test_export.py`）
+IFC を ifcopenshell で読み戻し（階 4・壁数・室数・建具 54 の開口とホスト壁・記号集合 = A-09、体積差 0.5% 以内、室面積 ±0.01m²、スキーマ検証エラー 0）、OBJ・FBX・USDZ を GLB と比較（ノード名・材質・頂点数・境界箱 ±1mm）、.blend のカメラ数（7＋36）、CSV の列名・行数と XLSX の一致・summary との面積一致、GeoJSON の妥当性と面積（新境界 2,426.42m²、寄付地 約 203m²）、3D DXF のレイヤー名・体積、既存出力（平面 DXF・GLB・index.json）の sha256 不変、追加ファイル合計 50MB 以下。
+
+### 39.4 要確認・制限
+- 施主の使うソフトが分かれば案内を絞る（既定は無料で開ける IFC・OBJ・XLSX・GeoJSON）。引継ぎ目的なら IFC を最上位に。
+- 目視確認は ifcopenshell・Blender 5.2・trimesh などの読み戻しまで。FreeCAD・BIMvision・Revit・ArchiCAD・AutoCAD・QGIS・Google Earth・SketchUp は未確認（`docs/export_howto.md`）。
+- 敷地座標は局所 ENU＋経緯度（測量前）。測量後に平面直角座標系（IX 系、EPSG:6677）へ置換。
+- 詳細は `docs/export_howto.md`。

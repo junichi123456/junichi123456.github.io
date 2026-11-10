@@ -1,0 +1,933 @@
+<?xml version='1.0' encoding='utf-8'?>
+<kml xmlns="http://www.opengis.net/kml/2.2">
+  <Document>
+    <name>河沿要（仮称） 敷地 v4.31</name>
+    <Style id="s0">
+      <LineStyle>
+        <color>ff4f5b2f</color>
+        <width>2</width>
+      </LineStyle>
+      <PolyStyle>
+        <color>554f5b2f</color>
+      </PolyStyle>
+    </Style>
+    <Style id="s1">
+      <LineStyle>
+        <color>ff2b39c0</color>
+        <width>2</width>
+      </LineStyle>
+      <PolyStyle>
+        <color>552b39c0</color>
+      </PolyStyle>
+    </Style>
+    <Style id="s2">
+      <LineStyle>
+        <color>ff227ee6</color>
+        <width>2</width>
+      </LineStyle>
+      <PolyStyle>
+        <color>55227ee6</color>
+      </PolyStyle>
+    </Style>
+    <Style id="s3">
+      <LineStyle>
+        <color>ff2a5b4f</color>
+        <width>2</width>
+      </LineStyle>
+      <PolyStyle>
+        <color>552a5b4f</color>
+      </PolyStyle>
+    </Style>
+    <Style id="s4">
+      <LineStyle>
+        <color>ff8d8d8d</color>
+        <width>2</width>
+      </LineStyle>
+      <PolyStyle>
+        <color>558d8d8d</color>
+      </PolyStyle>
+    </Style>
+    <Style id="s5">
+      <LineStyle>
+        <color>ff8d8d8d</color>
+        <width>2</width>
+      </LineStyle>
+      <PolyStyle>
+        <color>558d8d8d</color>
+      </PolyStyle>
+    </Style>
+    <Style id="s6">
+      <LineStyle>
+        <color>ff8d8d8d</color>
+        <width>2</width>
+      </LineStyle>
+      <PolyStyle>
+        <color>558d8d8d</color>
+      </PolyStyle>
+    </Style>
+    <Style id="s7">
+      <LineStyle>
+        <color>ff8d8d8d</color>
+        <width>2</width>
+      </LineStyle>
+      <PolyStyle>
+        <color>558d8d8d</color>
+      </PolyStyle>
+    </Style>
+    <Style id="s8">
+      <LineStyle>
+        <color>ff8d8d8d</color>
+        <width>2</width>
+      </LineStyle>
+      <PolyStyle>
+        <color>558d8d8d</color>
+      </PolyStyle>
+    </Style>
+    <Style id="s9">
+      <LineStyle>
+        <color>ffa8c9d8</color>
+        <width>2</width>
+      </LineStyle>
+      <PolyStyle>
+        <color>55a8c9d8</color>
+      </PolyStyle>
+    </Style>
+    <Style id="s10">
+      <LineStyle>
+        <color>ffa8c9d8</color>
+        <width>2</width>
+      </LineStyle>
+      <PolyStyle>
+        <color>55a8c9d8</color>
+      </PolyStyle>
+    </Style>
+    <Style id="s11">
+      <LineStyle>
+        <color>ffa8c9d8</color>
+        <width>2</width>
+      </LineStyle>
+      <PolyStyle>
+        <color>55a8c9d8</color>
+      </PolyStyle>
+    </Style>
+    <Style id="s12">
+      <LineStyle>
+        <color>ffa8c9d8</color>
+        <width>2</width>
+      </LineStyle>
+      <PolyStyle>
+        <color>55a8c9d8</color>
+      </PolyStyle>
+    </Style>
+    <Style id="s13">
+      <LineStyle>
+        <color>ff2d89b8</color>
+        <width>2</width>
+      </LineStyle>
+      <PolyStyle>
+        <color>552d89b8</color>
+      </PolyStyle>
+    </Style>
+    <Style id="s14">
+      <LineStyle>
+        <color>ff2d89b8</color>
+        <width>2</width>
+      </LineStyle>
+      <PolyStyle>
+        <color>552d89b8</color>
+      </PolyStyle>
+    </Style>
+    <Style id="s15">
+      <LineStyle>
+        <color>ffa4904a</color>
+        <width>2</width>
+      </LineStyle>
+      <PolyStyle>
+        <color>55a4904a</color>
+      </PolyStyle>
+    </Style>
+    <Style id="s16">
+      <LineStyle>
+        <color>ff527ca6</color>
+        <width>2</width>
+      </LineStyle>
+      <PolyStyle>
+        <color>55527ca6</color>
+      </PolyStyle>
+    </Style>
+    <Style id="s17">
+      <LineStyle>
+        <color>ff999999</color>
+        <width>2</width>
+      </LineStyle>
+      <PolyStyle>
+        <color>55999999</color>
+      </PolyStyle>
+    </Style>
+    <Folder>
+      <name>敷地</name>
+      <Placemark>
+        <name>新敷地境界（塀の外面）</name>
+        <styleUrl>#s0</styleUrl>
+        <description>要確認: True
+仮置き: False
+根拠: 敷地は地図からの推定（±5%）
+標高TP_m: 109.0
+備考: 新境界 2,426.42 m2（地図からの推定 ±5%）
+面積m2: 2426.42</description>
+        <ExtendedData>
+          <Data name="区分">
+            <value>敷地</value>
+          </Data>
+          <Data name="名称">
+            <value>新敷地境界（塀の外面）</value>
+          </Data>
+          <Data name="要確認">
+            <value>True</value>
+          </Data>
+          <Data name="仮置き">
+            <value>False</value>
+          </Data>
+          <Data name="根拠">
+            <value>敷地は地図からの推定（±5%）</value>
+          </Data>
+          <Data name="標高TP_m">
+            <value>109.0</value>
+          </Data>
+          <Data name="備考">
+            <value>新境界 2,426.42 m2（地図からの推定 ±5%）</value>
+          </Data>
+          <Data name="面積m2">
+            <value>2426.42</value>
+          </Data>
+        </ExtendedData>
+        <Polygon>
+          <tessellate>1</tessellate>
+          <outerBoundaryIs>
+            <LinearRing>
+              <coordinates>139.340119815,35.667916308,0 139.340017532,35.667648163,0 139.340276496,35.667590761,0 139.340293082,35.667523387,0 139.340468341,35.667487455,0 139.340408079,35.667302941,0 139.340558459,35.667276351,0 139.340565928,35.667278832,0 139.34074291,35.667726563,0 139.34069345,35.667800031,0 139.340119815,35.667916308,0</coordinates>
+            </LinearRing>
+          </outerBoundaryIs>
+        </Polygon>
+      </Placemark>
+      <Placemark>
+        <name>旧敷地境界（寄付地を含む）</name>
+        <styleUrl>#s1</styleUrl>
+        <description>要確認: True
+仮置き: False
+根拠: 敷地は地図からの推定（±5%）
+標高TP_m: 109.0
+面積m2: 2629.64</description>
+        <ExtendedData>
+          <Data name="区分">
+            <value>敷地</value>
+          </Data>
+          <Data name="名称">
+            <value>旧敷地境界（寄付地を含む）</value>
+          </Data>
+          <Data name="要確認">
+            <value>True</value>
+          </Data>
+          <Data name="仮置き">
+            <value>False</value>
+          </Data>
+          <Data name="根拠">
+            <value>敷地は地図からの推定（±5%）</value>
+          </Data>
+          <Data name="標高TP_m">
+            <value>109.0</value>
+          </Data>
+          <Data name="面積m2">
+            <value>2629.64</value>
+          </Data>
+        </ExtendedData>
+        <Polygon>
+          <tessellate>1</tessellate>
+          <outerBoundaryIs>
+            <LinearRing>
+              <coordinates>139.340119813,35.667916311,0 139.340017532,35.667648163,0 139.340276496,35.667590761,0 139.340293082,35.667523387,0 139.340468341,35.667487455,0 139.340408079,35.667302941,0 139.340558459,35.667276351,0 139.340582785,35.667284436,0 139.340602689,35.667302402,0 139.340791434,35.667771673,0 139.340767736,35.667813741,0 139.340541254,35.667830895,0 139.340119813,35.667916311,0</coordinates>
+            </LinearRing>
+          </outerBoundaryIs>
+        </Polygon>
+      </Placemark>
+    </Folder>
+    <Folder>
+      <name>寄付地</name>
+      <Placemark>
+        <name>寄付地（塀外の帯・要確認）</name>
+        <styleUrl>#s2</styleUrl>
+        <description>要確認: True
+仮置き: False
+根拠: 寄付地の法的扱いは提案・要確認（spec.site.donation）
+標高TP_m: 109.0
+備考: 市へ割譲する提案。法的扱いは要確認
+面積m2: 203.14</description>
+        <ExtendedData>
+          <Data name="区分">
+            <value>寄付地</value>
+          </Data>
+          <Data name="名称">
+            <value>寄付地（塀外の帯・要確認）</value>
+          </Data>
+          <Data name="要確認">
+            <value>True</value>
+          </Data>
+          <Data name="仮置き">
+            <value>False</value>
+          </Data>
+          <Data name="根拠">
+            <value>寄付地の法的扱いは提案・要確認（spec.site.donation）</value>
+          </Data>
+          <Data name="標高TP_m">
+            <value>109.0</value>
+          </Data>
+          <Data name="備考">
+            <value>市へ割譲する提案。法的扱いは要確認</value>
+          </Data>
+          <Data name="面積m2">
+            <value>203.14</value>
+          </Data>
+        </ExtendedData>
+        <Polygon>
+          <tessellate>1</tessellate>
+          <outerBoundaryIs>
+            <LinearRing>
+              <coordinates>139.340542558,35.667830617,0 139.34069345,35.667800031,0 139.34074291,35.667726563,0 139.340566001,35.667279017,0 139.340566106,35.6672789,0 139.340582788,35.66728444,0 139.340602696,35.66730242,0 139.340791425,35.667771673,0 139.340767693,35.667813742,0 139.340542595,35.667830794,0 139.340542476,35.667830719,0 139.340542558,35.667830617,0</coordinates>
+            </LinearRing>
+          </outerBoundaryIs>
+        </Polygon>
+      </Placemark>
+    </Folder>
+    <Folder>
+      <name>建物</name>
+      <Placemark>
+        <name>建物外形（外断熱の外面）</name>
+        <styleUrl>#s3</styleUrl>
+        <description>要確認: False
+仮置き: False
+根拠: 
+標高TP_m: 109.0
+軒高TP_m: 117.3
+パラペット天端TP_m: 117.9
+階数: 2
+建築面積m2: 348.04
+面積m2: 351.19</description>
+        <ExtendedData>
+          <Data name="区分">
+            <value>建物</value>
+          </Data>
+          <Data name="名称">
+            <value>建物外形（外断熱の外面）</value>
+          </Data>
+          <Data name="要確認">
+            <value>False</value>
+          </Data>
+          <Data name="仮置き">
+            <value>False</value>
+          </Data>
+          <Data name="根拠">
+            <value />
+          </Data>
+          <Data name="標高TP_m">
+            <value>109.0</value>
+          </Data>
+          <Data name="軒高TP_m">
+            <value>117.3</value>
+          </Data>
+          <Data name="パラペット天端TP_m">
+            <value>117.9</value>
+          </Data>
+          <Data name="階数">
+            <value>2</value>
+          </Data>
+          <Data name="建築面積m2">
+            <value>348.04</value>
+          </Data>
+          <Data name="面積m2">
+            <value>351.19</value>
+          </Data>
+        </ExtendedData>
+        <Polygon>
+          <tessellate>1</tessellate>
+          <outerBoundaryIs>
+            <LinearRing>
+              <coordinates>139.340589231,35.667559065,0 139.340633299,35.667723559,0 139.340430824,35.66775936,0 139.340386756,35.667594867,0 139.340589231,35.667559065,0</coordinates>
+            </LinearRing>
+          </outerBoundaryIs>
+        </Polygon>
+      </Placemark>
+    </Folder>
+    <Folder>
+      <name>塀</name>
+      <Placemark>
+        <name>塀 1（中心線）</name>
+        <styleUrl>#s4</styleUrl>
+        <description>要確認: True
+仮置き: False
+根拠: 塀の北・東辺は位置 ±0.7m（要確認）
+高さm: 2.0
+厚mm: 150
+長さm: 4.0</description>
+        <ExtendedData>
+          <Data name="区分">
+            <value>塀</value>
+          </Data>
+          <Data name="名称">
+            <value>塀 1（中心線）</value>
+          </Data>
+          <Data name="要確認">
+            <value>True</value>
+          </Data>
+          <Data name="仮置き">
+            <value>False</value>
+          </Data>
+          <Data name="根拠">
+            <value>塀の北・東辺は位置 ±0.7m（要確認）</value>
+          </Data>
+          <Data name="高さm">
+            <value>2.0</value>
+          </Data>
+          <Data name="厚mm">
+            <value>150</value>
+          </Data>
+          <Data name="長さm">
+            <value>4.0</value>
+          </Data>
+        </ExtendedData>
+        <LineString>
+          <tessellate>1</tessellate>
+          <coordinates>139.340408093,35.667302984,0 139.340419433,35.667337707,0</coordinates>
+        </LineString>
+      </Placemark>
+      <Placemark>
+        <name>塀 2（中心線）</name>
+        <styleUrl>#s5</styleUrl>
+        <description>要確認: True
+仮置き: False
+根拠: 塀の北・東辺は位置 ±0.7m（要確認）
+高さm: 2.0
+厚mm: 150
+長さm: 3.66</description>
+        <ExtendedData>
+          <Data name="区分">
+            <value>塀</value>
+          </Data>
+          <Data name="名称">
+            <value>塀 2（中心線）</value>
+          </Data>
+          <Data name="要確認">
+            <value>True</value>
+          </Data>
+          <Data name="仮置き">
+            <value>False</value>
+          </Data>
+          <Data name="根拠">
+            <value>塀の北・東辺は位置 ±0.7m（要確認）</value>
+          </Data>
+          <Data name="高さm">
+            <value>2.0</value>
+          </Data>
+          <Data name="厚mm">
+            <value>150</value>
+          </Data>
+          <Data name="長さm">
+            <value>3.66</value>
+          </Data>
+        </ExtendedData>
+        <LineString>
+          <tessellate>1</tessellate>
+          <coordinates>139.340419433,35.667337707,0 139.340459024,35.667330707,0</coordinates>
+        </LineString>
+      </Placemark>
+      <Placemark>
+        <name>塀 3（中心線）</name>
+        <styleUrl>#s6</styleUrl>
+        <description>要確認: True
+仮置き: False
+根拠: 塀の北・東辺は位置 ±0.7m（要確認）
+高さm: 2.0
+厚mm: 150
+長さm: 212.63</description>
+        <ExtendedData>
+          <Data name="区分">
+            <value>塀</value>
+          </Data>
+          <Data name="名称">
+            <value>塀 3（中心線）</value>
+          </Data>
+          <Data name="要確認">
+            <value>True</value>
+          </Data>
+          <Data name="仮置き">
+            <value>False</value>
+          </Data>
+          <Data name="根拠">
+            <value>塀の北・東辺は位置 ±0.7m（要確認）</value>
+          </Data>
+          <Data name="高さm">
+            <value>2.0</value>
+          </Data>
+          <Data name="厚mm">
+            <value>150</value>
+          </Data>
+          <Data name="長さm">
+            <value>212.63</value>
+          </Data>
+        </ExtendedData>
+        <LineString>
+          <tessellate>1</tessellate>
+          <coordinates>139.340419433,35.667337707,0 139.340468341,35.667487455,0 139.340293082,35.667523387,0 139.340276496,35.667590761,0 139.340017532,35.667648163,0 139.340119815,35.667916308,0 139.34069345,35.667800031,0 139.34074291,35.667726563,0 139.340565928,35.667278832,0 139.34055851,35.667276368,0</coordinates>
+        </LineString>
+      </Placemark>
+      <Placemark>
+        <name>塀 4（中心線）</name>
+        <styleUrl>#s7</styleUrl>
+        <description>要確認: True
+仮置き: False
+根拠: 塀の北・東辺は位置 ±0.7m（要確認）
+高さm: 2.0
+厚mm: 150
+長さm: 3.79</description>
+        <ExtendedData>
+          <Data name="区分">
+            <value>塀</value>
+          </Data>
+          <Data name="名称">
+            <value>塀 4（中心線）</value>
+          </Data>
+          <Data name="要確認">
+            <value>True</value>
+          </Data>
+          <Data name="仮置き">
+            <value>False</value>
+          </Data>
+          <Data name="根拠">
+            <value>塀の北・東辺は位置 ±0.7m（要確認）</value>
+          </Data>
+          <Data name="高さm">
+            <value>2.0</value>
+          </Data>
+          <Data name="厚mm">
+            <value>150</value>
+          </Data>
+          <Data name="長さm">
+            <value>3.79</value>
+          </Data>
+        </ExtendedData>
+        <LineString>
+          <tessellate>1</tessellate>
+          <coordinates>139.340472098,35.667328395,0 139.340513047,35.667321154,0</coordinates>
+        </LineString>
+      </Placemark>
+      <Placemark>
+        <name>塀 5（中心線）</name>
+        <styleUrl>#s8</styleUrl>
+        <description>要確認: True
+仮置き: False
+根拠: 塀の北・東辺は位置 ±0.7m（要確認）
+高さm: 2.0
+厚mm: 150
+長さm: 1.01</description>
+        <ExtendedData>
+          <Data name="区分">
+            <value>塀</value>
+          </Data>
+          <Data name="名称">
+            <value>塀 5（中心線）</value>
+          </Data>
+          <Data name="要確認">
+            <value>True</value>
+          </Data>
+          <Data name="仮置き">
+            <value>False</value>
+          </Data>
+          <Data name="根拠">
+            <value>塀の北・東辺は位置 ±0.7m（要確認）</value>
+          </Data>
+          <Data name="高さm">
+            <value>2.0</value>
+          </Data>
+          <Data name="厚mm">
+            <value>150</value>
+          </Data>
+          <Data name="長さm">
+            <value>1.01</value>
+          </Data>
+        </ExtendedData>
+        <LineString>
+          <tessellate>1</tessellate>
+          <coordinates>139.340567177,35.667311583,0 139.34057811,35.66730965,0</coordinates>
+        </LineString>
+      </Placemark>
+    </Folder>
+    <Folder>
+      <name>Dotcon+</name>
+      <Placemark>
+        <name>Dotcon+ 舗装 1</name>
+        <styleUrl>#s9</styleUrl>
+        <description>要確認: False
+仮置き: False
+根拠: 
+標高TP_m: 109.0
+面積m2: 172.94</description>
+        <ExtendedData>
+          <Data name="区分">
+            <value>Dotcon+</value>
+          </Data>
+          <Data name="名称">
+            <value>Dotcon+ 舗装 1</value>
+          </Data>
+          <Data name="要確認">
+            <value>False</value>
+          </Data>
+          <Data name="仮置き">
+            <value>False</value>
+          </Data>
+          <Data name="根拠">
+            <value />
+          </Data>
+          <Data name="標高TP_m">
+            <value>109.0</value>
+          </Data>
+          <Data name="面積m2">
+            <value>172.94</value>
+          </Data>
+        </ExtendedData>
+        <Polygon>
+          <tessellate>1</tessellate>
+          <outerBoundaryIs>
+            <LinearRing>
+              <coordinates>139.340452948,35.66733316,0 139.340576991,35.667311227,0 139.340577668,35.66731294,0 139.340612563,35.667443193,0 139.340488312,35.667465163,0 139.340452948,35.66733316,0</coordinates>
+            </LinearRing>
+          </outerBoundaryIs>
+        </Polygon>
+      </Placemark>
+      <Placemark>
+        <name>Dotcon+ 舗装 2</name>
+        <styleUrl>#s10</styleUrl>
+        <description>要確認: False
+仮置き: False
+根拠: 
+標高TP_m: 109.0
+面積m2: 54.0</description>
+        <ExtendedData>
+          <Data name="区分">
+            <value>Dotcon+</value>
+          </Data>
+          <Data name="名称">
+            <value>Dotcon+ 舗装 2</value>
+          </Data>
+          <Data name="要確認">
+            <value>False</value>
+          </Data>
+          <Data name="仮置き">
+            <value>False</value>
+          </Data>
+          <Data name="根拠">
+            <value />
+          </Data>
+          <Data name="標高TP_m">
+            <value>109.0</value>
+          </Data>
+          <Data name="面積m2">
+            <value>54.0</value>
+          </Data>
+        </ExtendedData>
+        <Polygon>
+          <tessellate>1</tessellate>
+          <outerBoundaryIs>
+            <LinearRing>
+              <coordinates>139.340524304,35.66748546,0 139.340621544,35.667468266,0 139.340635653,35.667520932,0 139.340538413,35.667538126,0 139.340524304,35.66748546,0</coordinates>
+            </LinearRing>
+          </outerBoundaryIs>
+        </Polygon>
+      </Placemark>
+      <Placemark>
+        <name>Dotcon+ 舗装 3</name>
+        <styleUrl>#s11</styleUrl>
+        <description>要確認: False
+仮置き: False
+根拠: 
+標高TP_m: 109.0
+面積m2: 438.65</description>
+        <ExtendedData>
+          <Data name="区分">
+            <value>Dotcon+</value>
+          </Data>
+          <Data name="名称">
+            <value>Dotcon+ 舗装 3</value>
+          </Data>
+          <Data name="要確認">
+            <value>False</value>
+          </Data>
+          <Data name="仮置き">
+            <value>False</value>
+          </Data>
+          <Data name="根拠">
+            <value />
+          </Data>
+          <Data name="標高TP_m">
+            <value>109.0</value>
+          </Data>
+          <Data name="面積m2">
+            <value>438.65</value>
+          </Data>
+        </ExtendedData>
+        <Polygon>
+          <tessellate>1</tessellate>
+          <outerBoundaryIs>
+            <LinearRing>
+              <coordinates>139.340446709,35.667842097,0 139.34013249,35.66790685,0 139.340055677,35.667660257,0 139.340082148,35.667655576,0 139.340101313,35.667727114,0 139.340333466,35.66767917,0 139.34037158,35.667806655,0 139.340141236,35.667852901,0 139.340149113,35.667882306,0 139.3404413,35.667821908,0 139.340446709,35.667842097,0</coordinates>
+            </LinearRing>
+          </outerBoundaryIs>
+        </Polygon>
+      </Placemark>
+      <Placemark>
+        <name>Dotcon+ 舗装 4</name>
+        <styleUrl>#s12</styleUrl>
+        <description>要確認: False
+仮置き: False
+根拠: 
+標高TP_m: 109.0
+面積m2: 122.29</description>
+        <ExtendedData>
+          <Data name="区分">
+            <value>Dotcon+</value>
+          </Data>
+          <Data name="名称">
+            <value>Dotcon+ 舗装 4</value>
+          </Data>
+          <Data name="要確認">
+            <value>False</value>
+          </Data>
+          <Data name="仮置き">
+            <value>False</value>
+          </Data>
+          <Data name="根拠">
+            <value />
+          </Data>
+          <Data name="標高TP_m">
+            <value>109.0</value>
+          </Data>
+          <Data name="面積m2">
+            <value>122.29</value>
+          </Data>
+        </ExtendedData>
+        <Polygon>
+          <tessellate>1</tessellate>
+          <outerBoundaryIs>
+            <LinearRing>
+              <coordinates>139.340711129,35.667724093,0 139.340632051,35.66752396,0 139.340658337,35.667517016,0 139.340690189,35.667597596,0 139.340741064,35.66772643,0 139.340692341,35.667798848,0 139.340575981,35.667822453,0 139.340505262,35.667836788,0 139.340498523,35.667815008,0 139.340673915,35.66777949,0 139.340711129,35.667724093,0</coordinates>
+            </LinearRing>
+          </outerBoundaryIs>
+        </Polygon>
+      </Placemark>
+    </Folder>
+    <Folder>
+      <name>外構</name>
+      <Placemark>
+        <name>ソーラーパーゴラ</name>
+        <styleUrl>#s13</styleUrl>
+        <description>要確認: False
+仮置き: False
+根拠: 
+PV枚数: 112
+容量kWp: 27.1
+面積m2: 180.0</description>
+        <ExtendedData>
+          <Data name="区分">
+            <value>外構</value>
+          </Data>
+          <Data name="名称">
+            <value>ソーラーパーゴラ</value>
+          </Data>
+          <Data name="要確認">
+            <value>False</value>
+          </Data>
+          <Data name="仮置き">
+            <value>False</value>
+          </Data>
+          <Data name="根拠">
+            <value />
+          </Data>
+          <Data name="PV枚数">
+            <value>112</value>
+          </Data>
+          <Data name="容量kWp">
+            <value>27.1</value>
+          </Data>
+          <Data name="面積m2">
+            <value>180.0</value>
+          </Data>
+        </ExtendedData>
+        <Polygon>
+          <tessellate>1</tessellate>
+          <outerBoundaryIs>
+            <LinearRing>
+              <coordinates>139.340318606,35.667710297,0 139.340342122,35.667798074,0 139.340147642,35.667832462,0 139.340124126,35.667744685,0 139.340318606,35.667710297,0</coordinates>
+            </LinearRing>
+          </outerBoundaryIs>
+        </Polygon>
+      </Placemark>
+      <Placemark>
+        <name>ソーラーカーポート</name>
+        <styleUrl>#s14</styleUrl>
+        <description>要確認: False
+仮置き: False
+根拠: 
+PV枚数: 32
+面積m2: 53.68</description>
+        <ExtendedData>
+          <Data name="区分">
+            <value>外構</value>
+          </Data>
+          <Data name="名称">
+            <value>ソーラーカーポート</value>
+          </Data>
+          <Data name="要確認">
+            <value>False</value>
+          </Data>
+          <Data name="仮置き">
+            <value>False</value>
+          </Data>
+          <Data name="根拠">
+            <value />
+          </Data>
+          <Data name="PV枚数">
+            <value>32</value>
+          </Data>
+          <Data name="面積m2">
+            <value>53.68</value>
+          </Data>
+        </ExtendedData>
+        <Polygon>
+          <tessellate>1</tessellate>
+          <outerBoundaryIs>
+            <LinearRing>
+              <coordinates>139.340579896,35.667384615,0 139.34059424,35.667438159,0 139.340499161,35.667454971,0 139.340484817,35.667401427,0 139.340579896,35.667384615,0</coordinates>
+            </LinearRing>
+          </outerBoundaryIs>
+        </Polygon>
+      </Placemark>
+      <Placemark>
+        <name>雨水貯留槽</name>
+        <styleUrl>#s15</styleUrl>
+        <description>要確認: False
+仮置き: False
+根拠: 
+備考: 位置は spec.rainwater
+面積m2: 25.0</description>
+        <ExtendedData>
+          <Data name="区分">
+            <value>外構</value>
+          </Data>
+          <Data name="名称">
+            <value>雨水貯留槽</value>
+          </Data>
+          <Data name="要確認">
+            <value>False</value>
+          </Data>
+          <Data name="仮置き">
+            <value>False</value>
+          </Data>
+          <Data name="根拠">
+            <value />
+          </Data>
+          <Data name="備考">
+            <value>位置は spec.rainwater</value>
+          </Data>
+          <Data name="面積m2">
+            <value>25.0</value>
+          </Data>
+        </ExtendedData>
+        <Polygon>
+          <tessellate>1</tessellate>
+          <outerBoundaryIs>
+            <LinearRing>
+              <coordinates>139.340198477,35.667768772,0 139.340306521,35.667749668,0 139.3403124,35.667771612,0 139.340204356,35.667790716,0 139.340198477,35.667768772,0</coordinates>
+            </LinearRing>
+          </outerBoundaryIs>
+        </Polygon>
+      </Placemark>
+      <Placemark>
+        <name>がけ 2H 範囲</name>
+        <styleUrl>#s16</styleUrl>
+        <description>要確認: False
+仮置き: False
+根拠: 
+備考: がけの高さ 3.2〜3.3m の 2H 範囲
+面積m2: 711.51</description>
+        <ExtendedData>
+          <Data name="区分">
+            <value>外構</value>
+          </Data>
+          <Data name="名称">
+            <value>がけ 2H 範囲</value>
+          </Data>
+          <Data name="要確認">
+            <value>False</value>
+          </Data>
+          <Data name="仮置き">
+            <value>False</value>
+          </Data>
+          <Data name="根拠">
+            <value />
+          </Data>
+          <Data name="備考">
+            <value>がけの高さ 3.2〜3.3m の 2H 範囲</value>
+          </Data>
+          <Data name="面積m2">
+            <value>711.51</value>
+          </Data>
+        </ExtendedData>
+        <Polygon>
+          <tessellate>1</tessellate>
+          <outerBoundaryIs>
+            <LinearRing>
+              <coordinates>139.340555892,35.66728145,0 139.340558459,35.667276351,0 139.340565928,35.667278832,0 139.34074291,35.667726563,0 139.34069345,35.667800031,0 139.340119815,35.667916308,0 139.340102683,35.667860526,0 139.340646239,35.667750346,0 139.340664777,35.66772281,0 139.340496444,35.66729696,0 139.340555892,35.66728145,0</coordinates>
+            </LinearRing>
+          </outerBoundaryIs>
+        </Polygon>
+      </Placemark>
+    </Folder>
+    <Folder>
+      <name>既存建物</name>
+      <Placemark>
+        <name>既存建物 1（解体予定）</name>
+        <styleUrl>#s17</styleUrl>
+        <description>要確認: True
+仮置き: False
+根拠: 敷地は地図からの推定（±5%）
+面積m2: 1028.56</description>
+        <ExtendedData>
+          <Data name="区分">
+            <value>既存建物</value>
+          </Data>
+          <Data name="名称">
+            <value>既存建物 1（解体予定）</value>
+          </Data>
+          <Data name="要確認">
+            <value>True</value>
+          </Data>
+          <Data name="仮置き">
+            <value>False</value>
+          </Data>
+          <Data name="根拠">
+            <value>敷地は地図からの推定（±5%）</value>
+          </Data>
+          <Data name="面積m2">
+            <value>1028.56</value>
+          </Data>
+        </ExtendedData>
+        <Polygon>
+          <tessellate>1</tessellate>
+          <outerBoundaryIs>
+            <LinearRing>
+              <coordinates>139.340566531,35.667814172,0 139.340303697,35.667878402,0 139.340217892,35.667647445,0 139.340479399,35.667583215,0 139.340487471,35.667603877,0 139.340601362,35.66757558,0 139.340624251,35.667578814,0 139.34066848,35.667602799,0 139.340700657,35.667633251,0 139.34071271,35.667654003,0 139.340720781,35.667697571,0 139.340718128,35.667717154,0 139.340711383,35.667740061,0 139.340691258,35.667765124,0 139.340684513,35.667769526,0 139.340561223,35.667799979,0 139.340566531,35.667814172,0</coordinates>
+            </LinearRing>
+          </outerBoundaryIs>
+        </Polygon>
+      </Placemark>
+    </Folder>
+  </Document>
+</kml>

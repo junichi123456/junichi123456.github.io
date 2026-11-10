@@ -370,3 +370,94 @@ def test_kml_matches_geojson(outdir):
     first = pms[0].find(".//k:coordinates", ns).text.split()[0].split(",")
     c0 = g["features"][0]["geometry"]["coordinates"][0][0]
     assert abs(float(first[0]) - c0[0]) < 1e-8 and abs(float(first[1]) - c0[1]) < 1e-8
+
+
+# ------------------------------------------------------------------ 段階5: 3D DXF・docs・manifest
+def _dxf_volume(me):
+    import numpy as np
+    v = np.array([tuple(p) for p in me.vertices])
+    f = np.array([tuple(x) for x in me.faces])
+    a, b, c = v[f[:, 0]], v[f[:, 1]], v[f[:, 2]]
+    return abs(np.einsum("ij,ij->i", a, np.cross(b, c)).sum() / 6.0)
+
+
+def test_dxf3d_layers_volume_and_units(h, outdir):
+    import re
+    import ezdxf
+    d, _ = outdir
+    doc = ezdxf.readfile(d / "model_3d.dxf")
+    assert doc.header["$INSUNITS"] == 4
+    names = {l.dxf.name for l in doc.layers}
+    pat = re.compile(r"^3D-(FDN|1F|2F|RF|SITE)-[A-Z-]+$")
+    assert all(pat.match(n) for n in names if n not in ("0", "Defpoints"))
+    assert {"3D-1F-WALL", "3D-2F-WALL", "3D-SITE-FENCE", "3D-SITE-BOUNDARY-OLD", "3D-1F-WINDOW", "3D-RF-PARAPET"} <= names
+    meshes = doc.modelspace().query("MESH")
+    assert len(meshes) > 80 and all(e.dxf.hasattr("true_color") for e in meshes)
+    for lvl in ("FDN", "1F", "2F", "RF"):
+        for cat, cname in (("wall", "WALL"), ("partition", "PARTITION"), ("slab", "SLAB"), ("insul", "INSULATION")):
+            exp = sum(common.box_volume_m3(b) for b in h.boxes if b.level == lvl and b.cat == cat)
+            got = sum(_dxf_volume(e) for e in meshes if e.dxf.layer == f"3D-{lvl}-{cname}") / 1e9
+            assert abs(got - exp) <= 0.005 * exp + 1e-9, (lvl, cat, got, exp)
+    # 建物ローカル mm: 1F 壁の境界箱が h.boxes と一致
+    import numpy as np
+    pts = np.vstack([np.array([tuple(p) for p in e.vertices]) for e in meshes if e.dxf.layer == "3D-1F-WALL"])
+    bx = [b for b in h.boxes if b.level == "1F" and b.cat == "wall"]
+    lo = [min(b.x0 for b in bx), min(b.y0 for b in bx), min(b.z0 for b in bx)]
+    assert np.allclose(pts.min(axis=0), lo, atol=0.2)
+
+
+def test_manifest_and_size_budget(outdir):
+    d, mf = outdir
+    m = json.loads((d / "manifest.json").read_text(encoding="utf-8"))
+    names = {f["file"] for f in m["files"]}
+    assert {"schedules.xlsx", "site.geojson", "site.kml", "model_3d.dxf", "model_exterior_obj.zip", "model_interior_obj.zip"} <= names
+    assert any(n.startswith("kawazanyo_IFC4.ifc") for n in names)
+    for f in m["files"]:
+        assert sha(d / f["file"]) == f["sha256"] and (d / f["file"]).stat().st_size == f["size"] and f["version"] == "v4.31"
+    total = sum(p.stat().st_size for p in d.rglob("*") if p.is_file() and p.name != "manifest.json")
+    assert total <= 50_000_000
+
+
+def test_committed_export_budget_and_integrity():
+    """リポジトリに入れた dist/export/ の合計が 50MB 以下・10MB 超の単体は zip・manifest の sha256 が現物と一致。"""
+    d = ROOT / "dist" / "export"
+    if not (d / "manifest.json").exists():
+        pytest.skip("dist/export が未生成")
+    m = json.loads((d / "manifest.json").read_text(encoding="utf-8"))
+    files = [p for p in d.rglob("*") if p.is_file()]
+    assert sum(p.stat().st_size for p in files) <= 50_000_000
+    for p in files:
+        if p.stat().st_size > 10_000_000:
+            assert p.suffix in (".zip", ".blend", ".usdz"), p
+    for f in m["files"]:
+        assert sha(d / f["file"]) == f["sha256"], f["file"]
+    assert not (ROOT / ".gitattributes").exists() or "lfs" not in (ROOT / ".gitattributes").read_text()
+
+
+def test_docs_howto_exists():
+    p = ROOT / "docs" / "export_howto.md"
+    t = p.read_text(encoding="utf-8")
+    for w in ("FreeCAD", "Bonsai", "BIMvision", "Revit", "ArchiCAD", "AutoCAD", "QGIS", "Google Earth", "SketchUp", "Jw_cad", "クイックルック", "INSUNITS", "IfcMapConversion", "既知の制限"):
+        assert w in t, w
+
+
+def _norm_dxf(t):
+    """平面 DXF の比較用: 日時・GUID の行を伏せ、行の並びを無視する（ezdxf の辞書順は実行ごとに変わる）。"""
+    import re
+    t = re.sub(r"^(\d{7}\.\d+|\{[0-9A-F-]{36}\}|\d\.\d\.\d @ \d{4}-.*)$", "#", t, flags=re.M)
+    return "\n".join(sorted(t.splitlines()))
+
+
+def test_plan_dxf_unchanged_committed_and_regenerated(h, tmp_path):
+    """既存の平面 DXF: 現物の正規化 sha256 が基準と一致し、再生成した 3 枚（建具表・平面図・家具表）も一致する。"""
+    import furniture_sheets as fs
+    import house_sheets as hs
+    from sheetlib import fittings_sheet
+    base = json.loads((ROOT / "tests" / "baseline_dxf_normalized.json").read_text())
+    assert len(base) == 42
+    for p, hx in base.items():
+        assert hashlib.sha256(_norm_dxf((ROOT / p).read_text(encoding="utf-8", errors="replace")).encode()).hexdigest() == hx, p
+    for sh in (fittings_sheet(h, "A-09"), hs.floor_plan(h, "1F", "A-03"), fs.furniture_schedule_sheet(h, "I-05")):
+        sh.save(tmp_path / f"{sh.number}.dxf")
+        got = hashlib.sha256(_norm_dxf((tmp_path / f"{sh.number}.dxf").read_text(encoding="utf-8", errors="replace")).encode()).hexdigest()
+        assert got == base[f"dist/dxf/{sh.number}.dxf"], sh.number

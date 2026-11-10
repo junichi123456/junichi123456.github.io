@@ -60,12 +60,15 @@ v4.16: 内装の仮置きと内装CG。リビングのチェアは「ペッパ�
 - `render/interior/zones/*.jpg`（v4.30）：内装CG 18区画×2方向の36カット（3/21 15:30・視点 FL+1,600・1280×720・注記帯つき JPEG）、`render_log_zones.json`、`sheets/`（区画ごとの2枚並べ18枚）。階ごとの3×3コンタクトシートは `render/interior/contact_zones_1F.jpg`・`contact_zones_2F.jpg`（`docs/cg_zones_1F.jpg`・`docs/cg_zones_2F.jpg` に同じもの）。定義は `data/interior_zones.yaml`、ブリーフ38章。
 - `render/interior/*.png`：**I04〜I13 は参考（旧・v4.17）。** 内装CG 14カット（v4.19 で描き直したのは I01・I02（I02_ldk_kitchen_side に改名）・I03・I14 の 4 カット・3/21 14:00 のみ。ほかは v4.17 時点の画像のまま。I01 LDK／I02 LDK キッチン側／I03 キッチン／I04 玄関／I05 階段／I06 ジム／I07 シアター／I08 図書室／I09 主寝室／I10 洗面・浴室／I11 ランドリー）。1600×900＋注記の帯
 - `LEGAL_CHECK.md`：法規チェック 102項目。不適合0、要確認15（用途地域・防火指定・採光補正係数・2階の排煙・構造計算など）
+- `export/`（v4.31）：既製ソフトで操作できるデータ形式。IFC4（`kawazanyo_IFC4.ifc`）、OBJ+MTL（zip）、Blender（`.blend`）、FBX、USDZ、`schedules.xlsx`＋`csv/`、`site.geojson`＋`site.kml`、3D DXF（`model_3d.dxf`）、`manifest.json`。開き方・座標・制限は [`docs/export_howto.md`](docs/export_howto.md)、ブリーフ39章。図面ではないため表紙の図面リスト・`index.json` には載せない。再生成: `python3 src/build.py --export-only [--with-blend]`（`--with-blend` は `.venv-bpy` が必要）
 - ビューア: [`index.html`](index.html)。3D表示、断面表示、図面一覧、法規チェック表を見られます
 
 ## 再生成
 ```
-pip install ezdxf matplotlib shapely trimesh pyyaml mapbox_earcut
-python3 src/build.py
+pip install ezdxf matplotlib shapely trimesh pyyaml mapbox_earcut ifcopenshell==0.9.0 openpyxl   # requirements.txt も参照
+python3 src/build.py               # 図面・GLB のあとに dist/export/ も書く（失敗しても図面・GLB は壊れない）
+python3 src/build.py --export-only --with-blend   # データ形式だけ再生成（.blend・FBX・USDZ は .venv-bpy が必要）
+python3 -m pytest tests/test_export.py -q          # 書き出しの読み戻し試験
 ```
 外観CG（Blender の Python モジュール bpy と Cycles、CPU で約1時間）:
 ```
