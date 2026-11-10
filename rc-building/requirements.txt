@@ -1,0 +1,11 @@
+ifcopenshell==0.9.0
+# 図面・3D・書き出し（v4.31）
+ezdxf==1.4.5
+trimesh==5.2.0
+openpyxl==3.1.5
+shapely==2.2.0
+numpy
+PyYAML
+matplotlib
+pytest
+# bpy（.blend・FBX・USDZ）は別 venv: python3 -m venv .venv-bpy && .venv-bpy/bin/pip install bpy==5.2.3

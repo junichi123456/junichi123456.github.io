@@ -684,9 +684,9 @@ def build_parts(h, interior=False):
     return P
 
 
-def export_glb(h, path, interior=False):
-    """interior=True: 内装CG 用（家具・天井・床仕上げ・内壁仕上げ・扉・照明器具を加える。ノード名は「グループ|階|材質キー|ID」）。
-    既定は False（dist/model.glb とビューアは従来どおり）。"""
+def build_scene(h, interior=False):
+    """GLB・OBJ に出す trimesh.Scene と材質表を作る（書き出しはしない）。戻り値 (scene, table)。
+    interior=True: 内装CG 用（家具・天井・床仕上げ・内壁仕上げ・扉・照明器具を加える。ノード名は「グループ|階|材質キー|ID」）。"""
     spec = h.spec
     table = material_table(spec, interior=interior)
     P = build_parts(h, interior=interior)
@@ -734,6 +734,12 @@ def export_glb(h, path, interior=False):
         mesh.visual = trimesh.visual.TextureVisuals(material=_mat(mk, table))
         mesh.visual.material.doubleSided = True
         scene.add_geometry(mesh, node_name=name, geom_name=name)
+    return scene, table
+
+
+def export_glb(h, path, interior=False):
+    """既定は interior=False（dist/model.glb とビューアは従来どおり）。Scene を返す部分は build_scene。"""
+    scene, table = build_scene(h, interior=interior)
     scene.export(path)
     _patch_glb(path, table)
     return scene

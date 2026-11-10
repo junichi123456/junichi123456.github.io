@@ -23,9 +23,24 @@ from model3d import export_glb  # noqa: E402
 from sheetlib import fittings_sheet, legal_sheets  # noqa: E402
 
 
+def run_export(h, dist, args):
+    """操作可能なデータ形式（dist/export/）。失敗しても既存の出力には影響しない。"""
+    try:
+        from export import export_all
+        schema = args[args.index("--ifc-schema") + 1] if "--ifc-schema" in args else "IFC4"
+        mf = export_all(h, dist / "export", ifc_schema=schema, with_blend="--with-blend" in args)
+        print(f"export: {len(mf.files)} files, {mf.total_size() / 1e6:.1f} MB → dist/export/")
+    except Exception as e:                      # noqa: BLE001
+        print(f"警告: データ形式の書き出しに失敗（図面・GLB は出力済み）: {type(e).__name__}: {e}")
+
+
 def main():
+    args = sys.argv[1:]
     h = House(ROOT)
     dist = ROOT / "dist"
+    if "--export-only" in args:
+        run_export(h, dist, args)
+        return
     for d in ("dxf", "png"):
         (dist / d).mkdir(parents=True, exist_ok=True)
     rows, sm, wq = house_legal.checks(h)
@@ -70,6 +85,7 @@ def main():
     (dist / "index.json").write_text(json.dumps(dict(sheets=index, summary={k: round(v, 3) for k, v in sm.items()},
                                                      checks=rows), ensure_ascii=False, indent=1), encoding="utf-8")
     ng = [r for r in rows if r["result"] == house_legal.NG]
+    run_export(h, dist, args)
     print("外観CG: python3 src/render_cg.py／内装CG: python3 src/render_cg.py --interior（bpy が必要。README 参照）")
     print(f"checks: {len(rows)} rows, NG={len(ng)}, 要確認={sum(r['result'] == house_legal.CHK for r in rows)}")
     for r in ng:

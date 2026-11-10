@@ -1,0 +1,22 @@
+# 書き出しデータの「要確認／仮置き」フラグ（v4.31）。未登録は false。
+# 照合: tags=Box.tag・建具記号、rooms=室名（部分一致）、groups=書き出しのグループ名。
+default: {confirm: false, provisional: false, basis: ""}
+tags:
+  IW-1:  {confirm: true, basis: "ブリーフ35.5 Q2 室内窓 IW-1"}
+  SSD-2: {confirm: true, basis: "ブリーフ35.5 Q3 扉幅W1,200・Ts-45・蝶番の向き"}
+  SSD-1: {confirm: true, basis: "ブリーフ35.5 Q3 扉幅と蝶番"}
+  GD-1:  {confirm: true, basis: "ブリーフ36章 扉幅と蝶番（要確認）"}
+  GD-2:  {confirm: true, basis: "ブリーフ36章 扉幅と蝶番（要確認）"}
+rooms:
+  ジム: {confirm: true, basis: "ブリーフ35.5 Q1 X3 南の残り壁／Q4 外壁の太さ／Q5 基礎・地耐力"}
+  前室: {confirm: true, basis: "ブリーフ36章 Q6 前室まわり"}
+  居室E: {confirm: true, basis: "ブリーフ36章 Q7 居室E の区画"}
+groups:
+  家具: {provisional: true, basis: "v4.16 仮置き（寸法・商品は仮定）"}
+  台所小物: {provisional: true, basis: "v4.16 仮置き"}
+  ジム機器: {provisional: true, basis: "簡易ボリューム（仮置き）"}
+  足元灯: {provisional: true, basis: "光束・配置は仮定値"}
+  照明: {provisional: true, basis: "光束・色温度は設計値（器具は未選定）"}
+  塀: {confirm: true, basis: "塀の北・東辺は位置 ±0.7m（要確認）"}
+  寄付地: {confirm: true, basis: "寄付地の法的扱いは提案・要確認（spec.site.donation）"}
+  敷地: {confirm: true, basis: "敷地は地図からの推定（±5%）"}
