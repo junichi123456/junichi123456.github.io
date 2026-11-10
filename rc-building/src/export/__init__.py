@@ -19,7 +19,7 @@ def export_all(h, outdir, only=None, ifc_schema="IFC4", with_blend=False):
     outdir.mkdir(parents=True, exist_ok=True)
     mf = Manifest(outdir)
     for mod, label in STEPS:
-        if only and mod not in only:
+        if only is not None and mod not in only:
             continue
         try:
             m = importlib.import_module(f"{__name__}.{mod}")

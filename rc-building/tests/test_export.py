@@ -194,3 +194,86 @@ def test_ifc_all_bodies_triangulate(ifc):
                 break
     bodies = [e for e in m.by_type("IfcProduct") if e.Representation and any(r.RepresentationIdentifier == "Body" for r in e.Representation.Representations)]
     assert n == len(bodies)
+
+
+# ------------------------------------------------------------------ 段階3: OBJ+MTL と bpy 系（.blend・FBX・USDZ）
+def _glb(name):
+    import trimesh
+    return trimesh.load(ROOT / "dist" / name, process=False)
+
+
+@pytest.mark.parametrize("stem,glb", [("model_exterior", "model.glb"), ("model_interior", "model_interior.glb")])
+def test_obj_matches_glb(outdir, stem, glb):
+    import re
+    import trimesh
+    import zipfile
+    d, _ = outdir
+    ex = d / f"x_{stem}"
+    with zipfile.ZipFile(d / f"{stem}_obj.zip") as z:
+        z.extractall(ex)
+    g = _glb(glb)
+    sc = trimesh.load(ex / f"{stem}.obj", process=False)
+    obj = (ex / f"{stem}.obj").read_text(encoding="utf-8")
+    mtl = (ex / f"{stem}.mtl").read_text(encoding="utf-8")
+    assert obj.startswith("# 河沿要") and "-Z が真北" in obj.split("\n")[1]
+    names = re.findall(r"^o (.+)$", obj, re.M)
+    assert len(names) == len(g.geometry) and set(names) == set(g.geometry)
+    assert sum(len(m.vertices) for m in sc.geometry.values()) == sum(len(m.vertices) for m in g.geometry.values())
+    assert sum(len(m.faces) for m in sc.geometry.values()) == sum(len(m.faces) for m in g.geometry.values())
+    assert abs(sc.bounds - g.bounds).max() < 0.001                        # ±1mm（単位 m）
+    used = set(re.findall(r"^usemtl (.+)$", obj, re.M))
+    assert used == {m.visual.material.name for m in g.geometry.values()}
+    assert used == set(re.findall(r"^newmtl (.+)$", mtl, re.M))
+    assert "Kd 0.9608 0.9373 0.8902" in mtl                                 # base #F5EFE3 の sRGB
+
+
+BPY = Path(__import__("os").environ.get("BPY_PYTHON") or "/tmp/claude-0/venv-bpy/bin/python")
+if not BPY.exists():
+    BPY = ROOT / ".venv-bpy" / "bin" / "python"
+needs_bpy = pytest.mark.skipif(not BPY.exists(), reason="bpy の入った python が無い")
+
+
+def bpy_check(kind, path):
+    import subprocess
+    r = subprocess.run([str(BPY), str(ROOT / "tests" / "bpy_check.py"), kind, str(path)], capture_output=True, text=True, timeout=600)
+    line = next(l for l in r.stdout.splitlines() if l.startswith("JSON:"))
+    return json.loads(line[5:])
+
+
+@pytest.fixture(scope="session")
+def blend_out(h, tmp_path_factory):
+    from export import export_all
+    d = tmp_path_factory.mktemp("export_bpy")
+    with pytest.MonkeyPatch.context() as mp:
+        if BPY.exists():
+            mp.setenv("BPY_PYTHON", str(BPY))
+        mf = export_all(h, d, only=[], with_blend=True)
+    return d, mf
+
+
+@needs_bpy
+def test_blend_cameras_and_materials(blend_out):
+    d, _ = blend_out
+    e = bpy_check("blend", d / "kawazanyo_exterior.blend")
+    i = bpy_check("blend", d / "kawazanyo_interior.blend")
+    assert e["cameras"] == 7 and i["cameras"] == 36
+    assert "C01" in e["camera_names"] and "Z1-11a" in i["camera_names"] and "Z2-33b" in i["camera_names"]
+    assert e["meshes"] > 150 and i["meshes"] > 700 and e["materials"] > 40 and i["materials"] > 100
+    assert i["lights"] > 100 and e["unit"] == "METRIC"
+
+
+@needs_bpy
+@pytest.mark.parametrize("fname,glb", [("model_exterior.fbx", "model.glb"), ("model_interior.fbx", "model_interior.glb"), ("model_exterior.usdz", "model.glb")])
+def test_fbx_usdz_readback(blend_out, fname, glb):
+    d, _ = blend_out
+    a = bpy_check("mesh", d / fname)
+    b = bpy_check("mesh", ROOT / "dist" / glb)
+    assert a["meshes"] == b["meshes"] and a["vertices"] == b["vertices"]
+    assert max(abs(x - y) for x, y in zip(a["lo"] + a["hi"], b["lo"] + b["hi"])) < 0.001      # ±1mm
+
+
+def test_bpy_missing_is_skipped(h, tmp_path, monkeypatch):
+    from export import export_all, blender
+    monkeypatch.setattr(blender, "find_python", lambda: None)
+    mf = export_all(h, tmp_path, only=[], with_blend=True)
+    assert mf.skipped and "bpy" in mf.skipped[0]["reason"] and not list(tmp_path.glob("*.blend"))
