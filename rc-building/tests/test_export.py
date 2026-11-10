@@ -76,3 +76,121 @@ def test_flags(h):
 def test_manifest_written(outdir):
     d, mf = outdir
     assert (d / "manifest.json").exists()
+
+
+# ------------------------------------------------------------------ 段階2: IFC4
+def _open_ifc(d):
+    import zipfile
+    import ifcopenshell
+    p = next(iter(d.glob("kawazanyo_IFC4.ifc")), None)
+    if p is None:
+        z = d / "kawazanyo_IFC4.ifc.zip"
+        with zipfile.ZipFile(z) as zf:
+            zf.extract("kawazanyo_IFC4.ifc", d)
+        p = d / "kawazanyo_IFC4.ifc"
+    return ifcopenshell.open(str(p)), p
+
+
+@pytest.fixture(scope="session")
+def ifc(outdir):
+    d, _ = outdir
+    return _open_ifc(d)
+
+
+def _vol(shape_settings, e):
+    import ifcopenshell.geom
+    import ifcopenshell.util.shape as US
+    return US.get_volume(ifcopenshell.geom.create_shape(shape_settings, e).geometry)
+
+
+def test_ifc_counts(h, ifc):
+    m, _ = ifc
+    ext_walls = sum(1 for b in h.boxes if b.cat == "wall" and b.level == "EXT")
+    assert len(m.by_type("IfcBuildingStorey")) == 4
+    assert len(m.by_type("IfcWall")) == len(h.walls) + len(h.fence_lines) + ext_walls
+    assert len(m.by_type("IfcSpace")) == len(h.rooms)
+    n_fit = sum(1 for o in h.openings() if o.operation != "opening")
+    assert len(m.by_type("IfcWindow")) + len(m.by_type("IfcDoor")) == n_fit == 54
+    assert len(m.by_type("IfcOpeningElement")) == sum(1 for _ in h.openings())
+    assert len(m.by_type("IfcFurniture")) == 68
+    assert len(m.by_type("IfcLightFixture")) >= 260
+    assert {s.Name for s in m.by_type("IfcBuildingStorey")} == {"FDN", "1F", "2F", "RF"}
+    assert len(m.by_type("IfcSolarDevice")) == 2 and len(m.by_type("IfcStair")) == 3
+
+
+def test_ifc_windows_doors_filled_and_hosted(ifc):
+    m, _ = ifc
+    for e in m.by_type("IfcWindow") + m.by_type("IfcDoor"):
+        rel = [r for r in m.by_type("IfcRelFillsElement") if r.RelatedBuildingElement == e]
+        assert len(rel) == 1, e.Name
+        op = rel[0].RelatingOpeningElement
+        host = [r.RelatingBuildingElement for r in m.by_type("IfcRelVoidsElement") if r.RelatedOpeningElement == op]
+        assert len(host) == 1 and host[0].is_a("IfcWall")
+        assert e.ContainedInStructure and e.ContainedInStructure[0].RelatingStructure.is_a("IfcBuildingStorey")
+
+
+def test_ifc_fitting_symbols_match_schedule(h, ifc):
+    m, _ = ifc
+    got = {e.Name for e in m.by_type("IfcWindow") + m.by_type("IfcDoor")}
+    assert got == {f["label"] for f in h.fittings}
+
+
+def test_ifc_geometry_volume_and_area(h, ifc):
+    import ifcopenshell.geom
+    m, _ = ifc
+    s = ifcopenshell.geom.settings()
+    s.set("disable-opening-subtractions", True)
+    walls = [e for e in m.by_type("IfcWall") + m.by_type("IfcRailing") if not e.Name.startswith("塀")]
+    vw = sum(_vol(s, e) for e in walls)
+    bw = sum(common.box_volume_m3(b) for b in h.boxes if b.cat in ("wall", "partition", "parapet", "insul"))
+    assert abs(vw / bw - 1) < 0.005
+    slabs = [e for e in m.by_type("IfcSlab") if e.ObjectType != "透水舗装"]
+    vs = sum(_vol(s, e) for e in slabs)
+    bs = sum(common.box_volume_m3(b) for b in h.boxes if b.cat in ("slab", "footing") or b.tag == "玄関ポーチ" or b.tag.endswith("踊場"))
+    assert abs(vs / bs - 1) < 0.005
+    area = 0.0
+    for sp in m.by_type("IfcSpace"):
+        q = [q for d in sp.IsDefinedBy if d.RelatingPropertyDefinition.is_a("IfcElementQuantity") for q in d.RelatingPropertyDefinition.Quantities]
+        area += next(x.AreaValue for x in q if x.Name == "NetFloorArea")
+    assert abs(area - sum(r.area for r in h.rooms)) < 0.01
+
+
+def test_ifc_georeference_and_flags(h, ifc):
+    import math
+    m, _ = ifc
+    mc = m.by_type("IfcMapConversion")[0]
+    assert abs(mc.XAxisAbscissa - math.cos(h.alpha)) < 1e-9 and abs(mc.XAxisOrdinate - math.sin(h.alpha)) < 1e-9
+    assert abs(mc.OrthogonalHeight - 109.0) < 1e-9
+    ctx = m.by_type("IfcGeometricRepresentationContext")[0]
+    nx, ny = common.truenorth_dir(h)
+    assert abs(ctx.TrueNorth.DirectionRatios[0] - nx) < 1e-9 and abs(ctx.TrueNorth.DirectionRatios[1] - ny) < 1e-9
+    site = m.by_type("IfcSite")[0]
+    assert site.RefElevation == 109000.0 and site.RefLatitude[0] == 35
+    import ifcopenshell.util.element as UE
+    iw = next(e for e in m.by_type("IfcWindow") if e.Name == "IW-1")
+    ps = UE.get_psets(iw)["Pset_Kawazanyo"]
+    assert ps["要確認"] is True and ps["Version"] == "v4.31" and "IW-1" not in ps["材質キー"]
+    f = next(e for e in m.by_type("IfcFurniture"))
+    assert UE.get_psets(f)["Pset_Kawazanyo"]["仮置き"] is True
+
+
+def test_ifc_schema_validation(ifc):
+    import subprocess
+    _, p = ifc
+    r = subprocess.run([sys.executable, "-m", "ifcopenshell.validate", "--rules", str(p)], capture_output=True, text=True)
+    out = r.stdout + r.stderr
+    assert "0 error(s) found" in out, out[-600:]
+
+
+def test_ifc_all_bodies_triangulate(ifc):
+    import ifcopenshell.geom
+    m, _ = ifc
+    it = ifcopenshell.geom.iterator(ifcopenshell.geom.settings(), m, 2)
+    n = 0
+    if it.initialize():
+        while True:
+            n += 1
+            if not it.next():
+                break
+    bodies = [e for e in m.by_type("IfcProduct") if e.Representation and any(r.RepresentationIdentifier == "Body" for r in e.Representation.Representations)]
+    assert n == len(bodies)
