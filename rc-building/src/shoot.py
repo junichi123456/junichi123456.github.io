@@ -267,7 +267,10 @@ def fail_log(cid, msg):
 
 
 def read_json(p, default):
-    return json.loads(Path(p).read_text(encoding="utf-8")) if Path(p).exists() else default
+    try:
+        return json.loads(Path(p).read_text(encoding="utf-8")) if Path(p).exists() else default
+    except ValueError:                       # Blender が raw.json を書いている途中（半端な JSON）を読んだとき。次の周期でもう一度読む
+        return default
 
 
 def write_json(p, d):
