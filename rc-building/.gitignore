@@ -7,3 +7,7 @@ dist/render/render_log_raw.json
 dist/render/interior/scene.json
 dist/render/interior/blender.log
 dist/render/interior/render_log_raw.json
+*.blend1
+*.blend@
+.cache/cg/shoot/
+dist/render/**/_tmp*

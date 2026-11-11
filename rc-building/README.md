@@ -61,22 +61,31 @@ v4.16: 内装の仮置きと内装CG。リビングのチェアは「ペッパ�
 - `render/interior/*.png`：**I04〜I13 は参考（旧・v4.17）。** 内装CG 14カット（v4.19 で描き直したのは I01・I02（I02_ldk_kitchen_side に改名）・I03・I14 の 4 カット・3/21 14:00 のみ。ほかは v4.17 時点の画像のまま。I01 LDK／I02 LDK キッチン側／I03 キッチン／I04 玄関／I05 階段／I06 ジム／I07 シアター／I08 図書室／I09 主寝室／I10 洗面・浴室／I11 ランドリー）。1600×900＋注記の帯
 - `LEGAL_CHECK.md`：法規チェック 102項目。不適合0、要確認15（用途地域・防火指定・採光補正係数・2階の排煙・構造計算など）
 - v4.32: 館内 Wi-Fi の再計画（AP 16 台・上質な室は −55dBm 以上、水回りは −67dBm 程度に抑制。簡易モデルで RC の減衰誤差 ±5dB のため竣工時に実測調整）、有線 LAN 21 口・RC スリーブ SL-C・ラック配線、E-01 更新・E-07 新設、export に network 表・IFC の AP/LAN 口（ブリーフ40章。携帯電話の電波は抑えない）。
-- `export/`（v4.31〜）：既製ソフトで操作できるデータ形式。IFC4（`kawazanyo_IFC4.ifc`）、OBJ+MTL（zip）、Blender（`.blend`）、FBX、USDZ、`schedules.xlsx`＋`csv/`、`site.geojson`＋`site.kml`、3D DXF（`model_3d.dxf`）、`manifest.json`。開き方・座標・制限は [`docs/export_howto.md`](docs/export_howto.md)、ブリーフ39章。図面ではないため表紙の図面リスト・`index.json` には載せない。再生成: `python3 src/build.py --export-only [--with-blend]`（`--with-blend` は `.venv-bpy` が必要）
+- `export/`（v4.31〜）：既製ソフトで操作できるデータ形式。IFC4（`kawazanyo_IFC4.ifc`）、OBJ+MTL（zip）、Blender のマスター（`kawazanyo_master.blend`。CG の撮影用）、FBX、USDZ、`schedules.xlsx`＋`csv/`、`site.geojson`＋`site.kml`、3D DXF（`model_3d.dxf`）、`manifest.json`。開き方・座標・制限は [`docs/export_howto.md`](docs/export_howto.md)、ブリーフ39章。図面ではないため表紙の図面リスト・`index.json` には載せない。再生成: `python3 src/build.py --export-only`（`--no-blend` で .blend・FBX・USDZ を省く。マスターだけなら `--blend-only`。bpy が必要）
 - ビューア: [`index.html`](index.html)。3D表示、断面表示、図面一覧、法規チェック表を見られます
 
 ## 再生成
 ```
 pip install ezdxf matplotlib shapely trimesh pyyaml mapbox_earcut ifcopenshell==0.9.0 openpyxl   # requirements.txt も参照
 python3 src/build.py               # 図面・GLB のあとに dist/export/ も書く（失敗しても図面・GLB は壊れない）
-python3 src/build.py --export-only --with-blend   # データ形式だけ再生成（.blend・FBX・USDZ は .venv-bpy が必要）
+python3 src/build.py --blend-only                 # GLB とマスター .blend（・FBX・USDZ）だけ再生成（.venv-bpy が必要）
+python3 src/build.py --export-only                # データ形式だけ再生成（--no-blend で .blend・FBX・USDZ を省く）
 python3 -m pytest tests/test_export.py -q          # 書き出しの読み戻し試験
 ```
-外観CG（Blender の Python モジュール bpy と Cycles、CPU で約1時間）:
+CG はマスター .blend（`dist/export/kawazanyo_master.blend`。build が自動生成。手で編集しない）から撮ります（v4.33。Blender の Python モジュール bpy と Cycles、CPU）。Blender で手を入れるのはオーバーレイ（`data/blend/kawazanyo_overlay.blend`）だけ。使い方は [`docs/export_howto.md`](docs/export_howto.md)、ブリーフ41章:
 ```
 python3 -m venv .venv-bpy && .venv-bpy/bin/pip install bpy==5.2.3   # 初回のみ
-python3 src/render_cg.py            # 全カット（--preview で構図確認、--only C03 で1カット）
+python3 src/shoot.py --camera Z1-11a --time 15:30 --date 03-21 --eye 1600 --out dist/render/interior/zones/
+python3 src/shoot.py --camera I01,I03 --preview          # 480×270・16spp を .cache/cg/shoot/preview/ へ
+python3 src/shoot.py --all [--kind int|ext] [--floor 1F]   # 全カメラ（撮影済みで同条件のカットは飛ばす。--force で撮り直し、--background で nohup 実行）
+python3 -m pytest tests/test_blend_master.py -q      # マスターの読み戻し・GLB/IFC/CSV との一致・スモーク撮影・古いマスターの拒否
+python3 tools/repro_blend.py                         # 再現性試験（旧経路 --legacy とマスター経路の撮り比べ）
+```
+旧コマンドは引数互換のラッパーです（内部で `shoot.py` を呼ぶ。`--legacy` で旧経路。v4.33 の 1 版だけ残す）:
+```
+python3 src/render_cg.py            # 外観 7 カット（--preview・--only C03 など）
 python3 tests/test_colors.py        # 色・材質・外壁比率の試験
-python3 src/render_cg.py --interior # 内装CG 14カット（約1時間。--preview で構図確認、--only I01,I02 で一部）
+python3 src/render_cg.py --interior # 内装CG 14カット（--preview・--only I01,I02）
 python3 src/render_zones.py --check            # 区画CG 36カットの定義・離隔の検査（Blender 不要）
 python3 src/render_zones.py --floor 1F         # 区画CG 1階18カット（約46分。6カットずつ・既存はスキップ。2F も同様。--preview で 480×270、--only Z1-23a --force で撮り直し）
 python3 src/zone_sheets.py                     # 区画CGのコンタクトシート（モンタージュ2枚・区画シート18枚）
@@ -95,7 +104,8 @@ python3 tests/test_donation.py  # v4.22 寄付地（新旧面積の和・建ぺ�
 - `src/house_legal.py`：法規チェック（建築基準法・施行令・平13国交告1026号・東京都建築安全条例ほか）
 - `src/model3d.py`：glTF 出力（材質キーごとの色・外壁の割り付け・CG用の要素）
 - `src/furniture.py`（家具の定義・配置・干渉検査）・`src/furniture_shapes.py`（家具の形）・`src/interior_shell.py`（床・天井・内壁・扉・階段まわり）・`src/furniture_sheets.py`（I-03〜I-05）・`src/render_interior.py`・`src/cg_interior.py`：家具の仮置きと内装CG
-- `src/render_cg.py`・`src/cg_blender.py`：外観CG（段階1: 場面の定義とテクスチャ取得、段階2: Blender で描画）
+- `src/shoot.py`（撮影。bpy 側は `src/shoot_blender.py`）・`src/master_build.py`・`src/blend_master.py`（マスター .blend の生成・版管理）・`src/shoot_compat.py`：マスターから CG を撮る（v4.33）
+- `src/render_cg.py`・`src/render_interior.py`・`src/render_zones.py`・`src/cg_blender.py`・`src/cg_interior.py`：CG の定義・材質・照明（旧スクリプトは引数互換のラッパー。`--legacy` が旧経路）
 
 ## 注意
 敷地面積・高低差は公開データからの推定です。用途地域は準工業地域と推定しており、確認が必要です。測量・地盤調査・構造計算・行政協議（水路の占用、がけ条例、雨水浸透）による確定が必要です。

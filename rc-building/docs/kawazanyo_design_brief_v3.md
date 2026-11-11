@@ -1120,7 +1120,7 @@ GLB の SHA-256: model.glb `a34272db8aa00b43e5e9f118b704dccba0a712b6f9a0d74cd2c6
 |---|---|---|
 | IFC4 | `kawazanyo_IFC4.ifc` | Revit・ArchiCAD・FreeCAD・BlenderBIM(Bonsai)・BIMvision・Solibri |
 | OBJ+MTL | `model_exterior_obj.zip`・`model_interior_obj.zip` | Blender・Rhino・SketchUp Pro・3ds Max・MeshLab・Windows 3D ビューア |
-| Blender | `kawazanyo_exterior.blend`（カメラ 7）・`kawazanyo_interior.blend`（カメラ 36） | Blender |
+| Blender | `kawazanyo_master.blend`（v4.33。カメラ 57。旧 `kawazanyo_exterior.blend`・`kawazanyo_interior.blend` を置き換え） | Blender |
 | FBX / USDZ | `model_exterior.fbx`・`model_interior.fbx`・`model_exterior.usdz` | Unity・Unreal・Maya・3ds Max／Mac・iPhone のクイックルック |
 | CSV / XLSX | `schedules.xlsx`・`csv/*.csv`（12 表） | Excel・Numbers・LibreOffice・Google スプレッドシート |
 | GeoJSON / KML | `site.geojson`・`site.kml` | QGIS・geojson.io／Google Earth |
@@ -1167,3 +1167,25 @@ IFC を ifcopenshell で読み戻し（階 4・壁数・室数・建具 54 の�
 
 ### 40.4 要確認
 1. RC・スリーブの実際の減衰（サイトサーベイと★の AP の出力調整。水回りの −67dBm は ±5dB で動く）。2. 機種の最低出力（EIRP 6dBm が出せるか）。3. 2.4GHz を住人用から外すことの了承。4. 携帯電話は抑えない（屋内で弱いときの対策は別に扱う）。5. 光の事業者・管路の曲げ半径。6. スリーブの補強・壁量への算入（構造設計者）。7. 機械室の排熱（温度連動の換気扇）。8. 施主の決定で水回りに非常ボタン・インターホンを設けず、機械的な非常解錠錠・補助錠は維持（記録）。9. モバイルルーター・PLC での回避は運用の範囲。
+
+## 41. CG はマスター .blend から撮る（v4.33）
+施主の指示（2026-11-11）: 「基本的に .blend で制作し、モデルのシーンを撮影する場合にはこれを利用する。既存のモデルを使って都度のイメージ画像出力の労力を簡易化する」。方針は (c) 二層（施主承認済み）: 形状の正本は Python のまま、`build` が**マスター .blend**（`dist/export/kawazanyo_master.blend`、自動生成・手で編集しない）を作り、施主の手編集は**オーバーレイ .blend**（`data/blend/kawazanyo_overlay.blend`、マスターを再生成しても消えない）に入れる。(a)（Python 正本のみ）は手編集の置き場がなく、(b)（.blend を正本）は図面・GLB・IFC・CSV と食い違うため採らない。
+
+### 41.1 運用ルール
+1. 形状・色・家具・照明の変更は Python（`house.py`・`spec.yaml`・`data/*.yaml`）→ `python3 src/build.py`（マスター自動再生成）→ `python3 src/shoot.py` で撮影。
+2. Blender で手を入れるのはオーバーレイの `Overlay` コレクションだけ（追加オブジェクト・追加カメラ・演出ライト・マスターの要素の非表示）。マスターの要素の移動・寸法・材質の変更（ライブラリオーバーライド）は禁止。
+3. オーバーレイの手編集は Python に戻らない（図面・GLB・IFC・数量に反映されない）。設計の変更は `data/blend_overlay_requests.yaml` に **要確認** として記録し、Python 側で反映してから再生成する。
+4. 古いマスターでは撮らない（`model_hash` 不一致は終了コード 3。`--allow-stale` のときだけ警告つきで続行し、render_log に `stale_master` を記録）。マスターを手で保存し直すと `gen_signature` が合わず `master_hand_edited` を記録する。
+
+### 41.2 マスターの内容（実測）
+- カメラ 57（外観 C 7・内装 I 14・区画 Z 36）、材質 209、メッシュ 718（内装 GLB 673 ＋ 外観にだけあるノード 3 ＋ 遠景の木 34 ＋ プランター 7 ＋ 窓の発光面 1）、光源 160（ライン 61・ダウンライト 81・階段の足元灯 18）＋ 外構照明 12 ＋ 太陽、室 43・建具 54 の Empty（記号の照合用）。コレクション 8 種。大きさ約 2.4MB（目標 10MB 以下。テクスチャ・HDRI はパックせず相対パス）。生成は約 8 秒（描画なし）。
+- 命名: オブジェクト名 `<階>.<ID>`、GLB のノード名は `glb_name`、IFC・CSV の記号は `tag`・`ifc_name`。外観 GLB と内装 GLB の重複は、同名のノードを内装側の 1 つにまとめ、外観にだけあるノード（ジム機器・内部建具の一括ノード 2）を足した（表は `docs/export_howto.md`）。外観カットでは内装・家具・照明器具を隠し、窓ガラス・天井・階段・壁の保険マスクは外観用・内装用の 2 種を切り替える。
+- Scene のプロパティ: `model_version`・`model_hash`・`generated_at`・`git_commit`・`bpy_version`・`gen_signature`・`sun_date`・`sun_time`・`lat`・`lon`・`tz`・`true_north_deg`・`hdri_id`・`light_schedule`。ドライバは使わず、撮影時に `shoot.py` が太陽・HDRI・照明の点灯・調光を設定する。モデルの版（`VERSION`）は形状に変更がないため v4.32 のまま。
+
+### 41.3 撮影と再現性
+- `shoot.py`: `--camera`（カンマ区切り・ワイルドカード・範囲）・`--all [--kind --floor]`・`--date`・`--time`・`--eye`・`--res`・`--samples`・`--time-limit`・`--exposure`／`--exposure-add`・`--channels`・`--dim`・`--no-overlay`・`--force`・`--allow-stale`・`--tex-dir`・`--out`・`--seed`（既定 0）・`--preview`・`--background`。マスターを 1 回開いて複数カットを順に撮り、1 カットごとに render_log を保存（中断後は同じコマンドで未撮影から再開）。失敗はカット単位で `.cache/cg/shoot/failed.log` に記録して次へ。`render_cg.py`・`render_interior.py`・`render_zones.py` は引数互換のラッパー（旧経路は `--legacy`。v4.33 の 1 版だけ残し、次の版で削除）。
+- 再現性試験（`tools/repro_blend.py`。旧経路とマスター経路で同じ解像度・spp・seed 0・時間制限なし）: I01・I03 は 640×360・32spp、Z1-11a は 480×270・16spp。`palette_mismatch` は両経路とも 0。平均輝度の差は I01 0.00%・I03 0.00%・Z1-11a 0.04%（基準 3%）、RGB 各チャンネル平均差は 0.04/255 以下（基準 4）、窓領域の平均輝度差は I01 0.04%・Z1-11a 0.12%（基準 5%）。合格。
+- 外観 C01 のマスター経路の画像は、旧経路（テクスチャなしのプレビュー）と空の色が一致し、既存の本番画像と全体の色が一致する。C06（夕景）は旧経路・マスター経路とも、この環境の bpy 5.2.3 では真っ黒に出る（要調査。既存の dist の画像は別版で撮ったもの）。
+
+### 41.4 要確認・残り
+1. 旧カット I04〜I13 は v4.17 の旧配色のまま（撮り直しは今回しない。手順は `docs/export_howto.md`）。2. 旧経路（`--legacy`）の削除は次の版。3. C06 夕景の黒つぶれの原因調査。4. 外観カット（C01〜C06）のマスター経路は I01・Z1-11a ほどの照合はしていない（C01 の色の一致のみ）。
