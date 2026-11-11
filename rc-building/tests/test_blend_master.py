@@ -69,14 +69,14 @@ def info(master):
 @needs_bpy
 def test_master_readback(info, master):
     from export.common import VERSION
-    assert info["cameras"] == 57 and len(info["camera_names"]) == 57
+    assert info["cameras"] == 96 and len(info["camera_names"]) == 96
     assert {"C01", "C07" if "C07" in info["camera_names"] else "C06", "I01", "I14", "Z1-11a", "Z2-33b"} <= set(info["camera_names"])
     assert info["top_collections"] == ["Exterior", "Interior_1F", "Interior_2F", "Furniture", "Lighting", "Site", "Cameras", "Overlay"]
     assert info["props"]["model_version"] == VERSION and info["props"]["model_hash"] == BM.model_hash()
     assert info["props"]["gen_signature"] and info["props"]["git_commit"] and info["props"]["generated_at"]
     assert info["packed"] == 0 and all(p.startswith("//") for p in info["images"])           # テクスチャはパックしない（相対パス）
     assert info["materials"] > 150 and info["meshes"] > 700 and info["unit"] == "METRIC"
-    assert master[1]["cameras"] == 57
+    assert master[1]["cameras"] == 96
     assert (master[0].stat().st_size) < 10e6                                                  # 目標 10MB 以下
     p = info["cam_props"]["Z1-11a"]
     assert p["kind"] == "int" and p["floor"] == "1F" and p["eye_mm"] == 1600 and p["def_hash"] and json.loads(p["channels"])["L"][1] == 100
@@ -90,7 +90,7 @@ def test_repo_master_is_fresh():
     assert p.exists()
     i = bpy_check(p)
     assert i["props"]["model_hash"] == BM.model_hash(), "マスターが古い: python3 src/build.py --blend-only"
-    assert i["cameras"] == 57 and i["packed"] == 0 and p.stat().st_size < 10e6
+    assert i["cameras"] == 96 and i["packed"] == 0 and p.stat().st_size < 10e6
 
 
 # ------------------------------------------------------------------ (b) GLB・IFC・CSV との一致
@@ -156,7 +156,7 @@ def test_smoke_shoot_and_skip(master, tmp_path):
 @needs_bpy
 def test_camera_selection(master, tmp_path):
     r = shoot(master[0], "--list")
-    assert r.returncode == 0 and len([l for l in r.stdout.splitlines() if l.strip()]) == 57
+    assert r.returncode == 0 and len([l for l in r.stdout.splitlines() if l.strip()]) == 96
     out = ["--out", str(tmp_path), "--dry-run"]
     assert "撮る: I04,I05,I06,I07,I08,I09,I10,I11,I12,I13" in shoot(master[0], "--camera", "I04-I13", *out).stdout
     assert shoot(master[0], "--camera", "Z1-11*", *out).stdout.count("Z1-11") >= 2

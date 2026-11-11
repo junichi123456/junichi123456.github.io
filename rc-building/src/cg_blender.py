@@ -633,6 +633,9 @@ def setup_sun(sc, cut, state):
     d = bpy.data.lights.new("sun", "SUN")
     d.energy = cut.get("sun_strength", 3.0)
     d.angle = math.radians(0.53)
+    if cut.get("sun_k"):                                  # 太陽の色温度（K）。指定のないカット（既存）は白のまま
+        d.use_temperature = True
+        d.temperature = float(cut["sun_k"])
     ob = bpy.data.objects.new("sun", d)
     sc.collection.objects.link(ob)
     el, az = math.radians(sun["el"]), math.radians(sun["az"])

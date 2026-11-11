@@ -263,7 +263,7 @@ def test_blend_cameras_and_materials(blend_out):
     d, mf = blend_out
     assert not (d / "kawazanyo_exterior.blend").exists() and not (d / "kawazanyo_interior.blend").exists()
     m = bpy_check("blend", d / "kawazanyo_master.blend")
-    assert m["cameras"] == 57 and "C01" in m["camera_names"] and "Z1-11a" in m["camera_names"] and "Z2-33b" in m["camera_names"] and "I01" in m["camera_names"]
+    assert m["cameras"] == 96 and "C01" in m["camera_names"] and "Z1-11a" in m["camera_names"] and "Z2-33b" in m["camera_names"] and "I01" in m["camera_names"]
     assert m["meshes"] > 700 and m["materials"] > 150 and m["lights"] > 100 and m["unit"] == "METRIC"
     assert any(f["file"] == "kawazanyo_master.blend" for f in mf.files)
 

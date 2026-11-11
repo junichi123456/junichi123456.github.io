@@ -120,6 +120,7 @@ def interior_cfg(h, spec, args, assets, out_dir, glb_path):
                    lamp_k=round(K), lamp_pct=round(pct, 1), lamp_w=ic["lamp_w"], ch={k_: [round(v_[0]), round(v_[1], 1)] for k_, v_ in chs.items()},
                    close_doors=c.get("close_doors", []), floors_lit=[cam_floor] + (["1F"] if c.get("also_1f") else []),
                    screens=c["screens"], open_doors=c.get("open_doors", {}), screen_video=bool(c.get("screen_video")),
+                   sun_k=c.get("sun_k"), ortho_scale=c.get("ortho_scale"), clip_start=c.get("clip_start"), section=c.get("section"), hide_pergola=bool(c.get("hide_pergola")),
                    out=str(out_dir / (c["file"] + ".png")))
         cuts.append(cut)
     scr = next(i for i in its if i.id == "TH-S")

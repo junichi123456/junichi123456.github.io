@@ -292,6 +292,61 @@ def shoot(job):
     log("all done", round(time.time() - t0, 1), "s")
 
 
+def plate(job):
+    """白い拡散板（アルベド 0.8・水平・屋外の上空）を 64×64 で撮り、線形 RGB の平均を result に書く（色温度の実測。v4.34）。"""
+    import cg_blender as CB
+    bpy.ops.wm.open_mainfile(filepath=str(job["master"]), load_ui=False)
+    sc = bpy.context.scene
+    fix_textures(job["tex_dir"], [])
+    for o in [o for o in bpy.data.objects if o.name == "Sun" and not o.library]:
+        bpy.data.objects.remove(o)
+    for o in bpy.data.objects:
+        if o.type == "LIGHT":
+            o.hide_render = True
+    cfg = job["cfg"]
+    cut = cfg["cuts"][0]
+    state = {}
+    CB.setup_world(sc, cut, cfg, state)
+    CB.setup_sun(sc, cut, state)
+    me = bpy.data.meshes.new("plate")
+    me.from_pydata([(-1, -1, 0), (1, -1, 0), (1, 1, 0), (-1, 1, 0)], [], [(0, 1, 2, 3)])
+    ob = bpy.data.objects.new("plate", me)
+    ob.location = (9.0, 9.0, 30.0)
+    sc.collection.objects.link(ob)
+    m = bpy.data.materials.new("plate")
+    m.use_nodes = True
+    P = next(n for n in m.node_tree.nodes if n.type == "BSDF_PRINCIPLED")
+    P.inputs["Base Color"].default_value = (0.8, 0.8, 0.8, 1)
+    P.inputs["Roughness"].default_value = 1.0
+    me.materials.append(m)
+    cd = bpy.data.cameras.new("pc")
+    cd.type = "ORTHO"
+    cd.ortho_scale = 1.0
+    co = bpy.data.objects.new("pc", cd)
+    co.location = (9.0, 9.0, 33.0)
+    co.rotation_euler = (0, 0, 0)
+    sc.collection.objects.link(co)
+    sc.camera = co
+    sc.render.engine = "CYCLES"
+    sc.cycles.device = "CPU"
+    sc.cycles.samples = 64
+    sc.cycles.use_denoising = False
+    sc.render.resolution_x = sc.render.resolution_y = 64
+    sc.render.resolution_percentage = 100
+    sc.view_settings.view_transform = "Standard"
+    sc.view_settings.use_white_balance = False
+    sc.render.image_settings.file_format = "OPEN_EXR"
+    sc.render.image_settings.color_depth = "32"
+    sc.render.filepath = job["out"]
+    bpy.ops.render.render(write_still=True)
+    img = bpy.data.images.load(job["out"])
+    import numpy as np
+    px = np.empty(len(img.pixels), dtype="float32")
+    img.pixels.foreach_get(px)
+    rgb = px.reshape(-1, 4)[:, :3].mean(axis=0)
+    Path(job["result"]).write_text(json.dumps(dict(rgb=[float(v) for v in rgb], sun_k=job["sun_k"], el=cut["sun"]["el"], az=cut["sun"]["az"])), encoding="utf-8")
+
+
 def main():
     cmd, jp = sys.argv[1], sys.argv[2]
     job = json.loads(Path(jp).read_text(encoding="utf-8"))
@@ -299,6 +354,8 @@ def main():
         Path(job["result"]).write_text(json.dumps(inspect(job), ensure_ascii=False), encoding="utf-8")
     elif cmd == "shoot":
         shoot(job)
+    elif cmd == "plate":
+        plate(job)
 
 
 if __name__ == "__main__":

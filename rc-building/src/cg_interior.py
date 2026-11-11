@@ -509,6 +509,32 @@ def set_doors(st, cfg, cut, M):
                 o.matrix_world = M @ Matrix.Translation(v)
 
 
+def fabric_side(o):
+    """ZIP 生地のオブジェクト → 面（S/N/E/W）。glb_name の ID（階-面-u0）から読む。"""
+    try:
+        return o.get("side") or o["glb_name"].split("|")[3].split("-")[1]
+    except Exception:                                   # noqa: BLE001
+        return ""
+
+
+def fabric_blackout(o):
+    return bool(o.get("blackout")) if "blackout" in o.keys() else "zip_blackout" in o.get("glb_name", "")
+
+
+def screen_down(side, blackout, cut, cfg):
+    """ZIP スクリーンを下ろすか。up／down はそのまま。auto は日射センサーの動き: 直射を受ける面（太陽の方位との差 60° 未満）だけ下ろす。
+    寝室の完全遮光生地は起床後に上げる仮定（要施主確認）。"""
+    mode = cut.get("screens", "up")
+    if mode in ("up", "down"):
+        return mode == "down"
+    sun = cut.get("sun")
+    if mode != "auto" or not sun or blackout or side not in ("E", "N", "W", "S"):
+        return False
+    face = {"E": 0.0, "N": 90.0, "W": 180.0, "S": 270.0}[side]
+    sun_math = 90.0 - (sun["az"] + math.degrees(cfg["alpha"]))          # 建物座標の太陽の向き（数学角）
+    return math.cos(math.radians(face - sun_math)) > 0.5
+
+
 def configure_cut(CB, sc, lib, st, cfg, cut, M):
     lit = set(cut["floors_lit"])
     ch = cut["ch"]                                      # {"L": [K, %], "D": [K, %], "F": [K, %]}
@@ -548,9 +574,14 @@ def configure_cut(CB, sc, lib, st, cfg, cut, M):
         e["ob"].data.temperature = kf
         e["strength"].default_value = ic["k_area_w_per_lm"] * ic["foot_lm"] / (0.1 * 0.03) * pf / 100.0 if pf > 0 else 0.0
         e["kelvin"].default_value = float(kf)
-    down = cut["screens"] == "down"
     for o in st["fabrics"]:
-        o.hide_render = not down
+        o.hide_render = not screen_down(fabric_side(o), fabric_blackout(o), cut, cfg)
+    for c in bpy.data.collections:                       # 天井視点（T）の断面キャップ。T のカットのときだけ写す
+        if c.name.startswith("Section_"):
+            c.hide_render = c.name != cut.get("section")
+    for o in bpy.data.objects:                           # パーゴラは T ではカメラに写さない（影は残す）
+        if not o.library and o.get("grp") == "ソーラーパーゴラ":
+            o.visible_camera = not cut.get("hide_pergola")
     set_doors(st, cfg, cut, M)
     Pscr = lib.int_screen
     Pscr.inputs["Emission Strength"].default_value = 0.35 if cut.get("screen_video") else 0.0
@@ -572,6 +603,13 @@ def place_camera(sc, state, cut):
         sc.collection.objects.link(state["cam"])
     cam = state["cam"]
     cam.data.lens = cut["lens"]
+    if cut.get("ortho_scale"):                                    # 天井視点（T）: 正投影。手前 clip_start を切って断面にする
+        cam.data.type = "ORTHO"
+        cam.data.ortho_scale = cut["ortho_scale"]
+        cam.data.clip_start = cut.get("clip_start") or 0.05
+    else:
+        cam.data.type = "PERSP"
+        cam.data.clip_start = 0.05
     cam.location = Vector(cut["cam"])
     d = Vector(cut["target"]) - cam.location
     yaw = math.atan2(d.y, d.x)

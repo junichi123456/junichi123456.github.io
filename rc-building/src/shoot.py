@@ -48,6 +48,8 @@ def parse(argv=None):
     ap.add_argument("--exposure-add", type=float, dest="exposure_add", help="カメラ既定の露出に加算")
     ap.add_argument("--channels", default="", help="点灯させる照明チャンネル（L,D,F のうち。例 L,D）")
     ap.add_argument("--dim", type=float, help="点灯チャンネルの明るさ %%")
+    ap.add_argument("--screens", choices=["up", "down", "auto"], help="ZIP スクリーン（up=上げる／down=下ろす／auto=直射を受ける面だけ下ろす）。省略はカメラの属性 screens")
+    ap.add_argument("--sun-k", type=int, dest="sun_k", help="太陽ランプの色温度（K）。省略はカメラの属性 sun_k（無ければ白）")
     ap.add_argument("--no-overlay", action="store_true")
     ap.add_argument("--force", action="store_true")
     ap.add_argument("--allow-stale", action="store_true")
@@ -103,7 +105,7 @@ def select(info, args):
     # 並びはマスターの定義順（C・I・Z）、オーバーレイは最後
     def key(n):
         p = cams[n]["props"]
-        return ({"C": 0, "I": 1, "Z": 2}.get(p.get("family"), 3), n)
+        return ({"C": 0, "I": 1, "Z": 2, "R": 3, "T": 4}.get(p.get("family"), 5), n)
     order.sort(key=key)
     names = []
     if args.all:
@@ -169,11 +171,15 @@ def overrides(h, spec, kind, args):
         d = d if len(d) > 5 else f"{y}-{d}"
         t = args.time or s["when"][11:16]
         s["when"] = f"{d}T{t}"
+    if args.screens:
+        s["screens"] = args.screens
+    if args.sun_k:
+        s["sun_k"] = args.sun_k
     if args.exposure is not None:
         s["exposure"] = args.exposure
     if args.exposure_add:
         s["exposure"] = s.get("exposure", 0.0) + args.exposure_add
-    if args.eye is not None and kind == "int":
+    if args.eye is not None and kind == "int" and not s.get("ortho_scale"):
         fl = h.fl["2F"] if s["cam"][2] > h.fl["2F"] else h.fl["1F"]
         dz = (fl + args.eye) - s["cam"][2]
         s["cam"] = [s["cam"][0], s["cam"][1], s["cam"][2] + dz]
@@ -187,7 +193,12 @@ def overrides(h, spec, kind, args):
 def settings_for(fam, Z, spec, args):
     st = Z["settings"]
     ic = spec["interior_cg"]
-    if fam == "Z":
+    if fam in ("R", "T"):                                   # v4.34 各室の斜めカット・天井視点（data/interior_rooms.yaml）
+        import render_rooms as RR
+        rs = RR.load()["settings"]
+        k = "room" if fam == "R" else "plan"
+        pv, base = rs[k]["preview"], dict(res=list(rs[k]["resolution"]), samples=rs[k]["samples"], tl=rs[k]["time_limit"], adapt=rs["adaptive_threshold"])
+    elif fam == "Z":
         pv, base = st["preview"], dict(res=list(st["resolution"]), samples=st["samples"], tl=st["time_limit"], adapt=st["adaptive_threshold"])
     elif fam == "C":
         cg = spec["cg"]
@@ -332,7 +343,7 @@ def main(argv=None):
     # ---- 出力先・スキップ
     out_root = Path(args.out) if args.out else None
     odir = {"C": out_root or ROOT / "dist" / "render", "I": out_root or ROOT / "dist" / "render" / "interior", "X": out_root or ROOT / "dist" / "render" / "interior",
-            "Z": out_root or ROOT / "dist" / "render" / "interior" / "zones"}
+            "Z": out_root or ROOT / "dist" / "render" / "interior" / "zones", "R": out_root or ROOT / "dist" / "render" / "interior", "T": out_root or ROOT / "dist" / "render" / "interior"}
     if args.preview:
         odir = {k: SC / "preview" for k in odir}
     if args.out and not args.preview:
@@ -395,7 +406,7 @@ def main(argv=None):
     cfgs, meta = [], {}
     import furniture
     its = furniture.items(h)
-    for fam in ("C", "I", "X", "Z"):
+    for fam in ("C", "I", "X", "Z", "R", "T"):
         ids = [c for c in todo if plan[c]["fam"] == fam]
         if not ids:
             continue
@@ -405,7 +416,7 @@ def main(argv=None):
         else:
             cfg, _ = interior_cfg(h, {c: plan[c]["spec"] for c in ids}, base, work / f"png_{fam}", assets)
             clear = RI.camera_clearance(h, its, cfg["cuts"])
-            bad = [c for c in ids if clear[c]["mm"] < 150]
+            bad = [c for c in ids if clear[c]["mm"] < 150 and fam != "T"]          # T は天井面に立つ正投影（離隔は対象外）
             for c in bad:
                 fails.append(c)
                 fail_log(c, f"カメラが壁・家具に近すぎます（{clear[c]['mm']}mm < 150）")

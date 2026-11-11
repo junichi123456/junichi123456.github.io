@@ -25,10 +25,10 @@ SHOOT_CACHE = CACHE / "shoot"
 
 # マスターの形状・材質・照明・カット定義に関わるファイル（model_hash の入力）
 HASH_SRC = ["house.py", "geom.py", "model3d.py", "furniture.py", "furniture_shapes.py", "interior_shell.py", "interior.py", "lighting.py",
-            "cg_blender.py", "cg_interior.py", "master_build.py", "blend_master.py"]
+            "cg_blender.py", "cg_interior.py", "master_build.py", "blend_master.py"]   # v4.34: 室・天井視点のカット定義は data/interior_rooms.yaml（data/*.yaml）と下の render_rooms の関数
 # カット設定を作る関数（render_*.py のうち、マスターの内容に効く関数だけ。ラッパー側の変更ではマスターを古いとしない）
 HASH_FUNCS = [("render_cg", ["build_cfg", "sun_position", "lamp_schedule", "Frame", "eye_z"]), ("render_interior", ["interior_cfg", "scenery_cfg", "RC_planters"]),
-              ("render_zones", ["cut_defs", "def_hash"])]
+              ("render_zones", ["cut_defs", "def_hash"]), ("render_rooms", ["cut_defs", "section_boxes"])]
 
 
 def model_hash(root: Path = ROOT) -> str:
@@ -89,11 +89,15 @@ def cut_families(h, Z):
     for cid, d in RZ.cut_defs(h, Z).items():
         s = dict(d["spec"])
         out[cid] = dict(family="Z", kind="int", floor=d["floor"], spec=s, title=s["title"], extra=dict(theater=d["theater"], room=d["room"], dir=d["dir"], slug=d["slug"], direct=d["direct"]))
+    import render_rooms as RR
+    for cid, d in RR.cut_defs(h).items():                  # v4.34 R（各室の斜めカット）・T（天井視点）
+        s = dict(d["spec"])
+        out[cid] = dict(family=d["kind"], kind="int", floor=d["floor"], spec=s, title=s["title"], extra=dict(theater=bool(d["cut"].get("theater")), room=d["room"], rr=True))
     for cid, e in out.items():
         s = dict(e["spec"])
         if s["cam"][2] == "eye":
             s["cam"] = [*s["cam"][:2], 0]
-        e["hash"] = cut_hash(s)
+        e["hash"] = cut_hash(s) if e["family"] in "CIZ" else RR.def_hash(dict(spec=s))
     return out
 
 
@@ -169,7 +173,11 @@ def master_job(h, tmp, with_textures=True):
     sp["interior_cg"]["cuts"] = {cid: {**e["spec"], "file": cid} for cid, e in fam.items() if e["family"] == "Z"}
     sp["interior_cg"]["resolution"] = list(Z["settings"]["resolution"])
     cfg_z, _ = RI.interior_cfg(h, sp, ns, full, out, glb_i)
-    cfg_i["cuts"] = cfg_i["cuts"] + cfg_z["cuts"]
+    sp_r = copy.deepcopy(spec)
+    sp_r["interior_cg"]["cuts"] = {cid: {**e["spec"], "file": cid} for cid, e in fam.items() if e["family"] in ("R", "T")}
+    sp_r["interior_cg"]["resolution"] = [1280, 720]
+    cfg_r, _ = RI.interior_cfg(h, sp_r, ns, full, out, glb_i)
+    cfg_i["cuts"] = cfg_i["cuts"] + cfg_z["cuts"] + cfg_r["cuts"]
     cfg_e["glb"] = str(ROOT / "dist" / "model.glb")
     cfg_e["raw_log"] = cfg_i["raw_log"] = str(out / "raw.json")
     fr = RC.Frame(h)
@@ -183,6 +191,8 @@ def master_job(h, tmp, with_textures=True):
         d = dict(kind=e["kind"], floor=floor, family=e["family"], title=e["title"], when=c["when"], lens=c["lens"], exposure=c["exposure"],
                  target=json.dumps(e["spec"]["target"]), def_hash=e["hash"], file=e["spec"]["file"], exclude=json.dumps(["Furniture", "Lighting"] if e["kind"] == "ext" else []),
                  cut_spec=json.dumps(e["spec"], ensure_ascii=False))
+        if e["family"] in ("R", "T"):
+            d["exclude"] = json.dumps([] if e["family"] == "T" else ["Section_1F", "Section_2F"])
         if e["kind"] == "int":
             d.update(fl_mm=h.fl[floor], eye_mm=round(zmm - h.fl[floor]), shift_y=c.get("shift_y", 0.0), wb=c["wb"], lamp_k=c["lamp_k"], lamp_pct=c["lamp_pct"],
                      channels=json.dumps(c["ch"]), open_doors=json.dumps(c.get("open_doors", {})), also_1f=bool(e["spec"].get("also_1f")),
@@ -203,5 +213,6 @@ def master_job(h, tmp, with_textures=True):
                        light_schedule=json.dumps(spec["smart"]["lighting_schedule"]), light_channels=json.dumps(spec["lighting"]["channels"]))
     from export.common import VERSION
     meta = dict(version=VERSION, model_hash=model_hash(), generated_at=dt.datetime.now().isoformat(timespec="seconds"), git_commit=git_commit())
-    return dict(cfg_int=cfg_i, cfg_ext=cfg_e, glb_ext=cfg_e["glb"], cams=cams, tags=dict(D=tags_d), rooms=rooms, openings=ops, meta=meta, scene_props=scene_props,
+    import render_rooms as RR
+    return dict(section=RR.section_boxes(h), cfg_int=cfg_i, cfg_ext=cfg_e, glb_ext=cfg_e["glb"], cams=cams, tags=dict(D=tags_d), rooms=rooms, openings=ops, meta=meta, scene_props=scene_props,
                 furn_names={it.id: it.name for it in its}, downlight_lm=spec["lighting"]["downlight"]["max_lm"])

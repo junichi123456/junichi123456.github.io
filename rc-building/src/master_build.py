@@ -47,7 +47,7 @@ def make_collections(sc):
         c = bpy.data.collections.new(n)
         sc.collection.children.link(c)
         cols[n] = c
-    for n, parent in (("Furniture_1F", "Furniture"), ("Furniture_2F", "Furniture"), ("Ext", "Cameras"), ("Int_I", "Cameras"), ("Int_Z", "Cameras")):
+    for n, parent in (("Furniture_1F", "Furniture"), ("Furniture_2F", "Furniture"), ("Ext", "Cameras"), ("Int_I", "Cameras"), ("Int_Z", "Cameras"), ("Int_R", "Cameras"), ("Int_T", "Cameras"), ("Section_1F", "Interior_1F"), ("Section_2F", "Interior_2F")):
         c = bpy.data.collections.new(n)
         cols[parent].children.link(c)
         cols[n] = c
@@ -115,6 +115,62 @@ def import_ext_only(job, lib, M, int_names):
     return keep
 
 
+def add_section_caps(job, cols, M):
+    """T（天井視点）の断面キャップ。FL+2,400 の水平面が貫く壁・間仕切（濃灰）・外断熱（中濃灰）・造作家具（中灰）の上面。
+    カメラにだけ写り（影・間接光に寄与しない）、T のカット以外ではコレクションごと非表示（shoot の configure_cut が切り替える）。"""
+    import bmesh
+    mats = {}
+    # カメラの WB（5,500K）で灰色が青く転ぶのを打ち消す: 5,500K の昼光色（Y=1 に正規化した線形 sRGB）を掛ける
+    T = 5500.0
+    x = -3.0258469e9 / T ** 3 + 2.1070379e6 / T ** 2 + 0.2226347e3 / T + 0.240390
+    y = -3.000 * x * x + 2.870 * x - 0.275
+    X, Z = x / y, (1 - x - y) / y
+    tint = (3.2406 * X - 1.5372 + -0.4986 * Z, -0.9689 * X + 1.8758 + 0.0415 * Z, 0.0557 * X - 0.2040 + 1.0570 * Z)
+
+    def mat(kind):
+        if kind not in mats:
+            hexv = {"wall": "#2B2B2B", "insul": "#5C5C5C", "furniture": "#8A8A8A"}[kind]
+            lin = [((int(hexv[i:i + 2], 16) / 255.0) / 12.92 if int(hexv[i:i + 2], 16) / 255.0 <= 0.04045 else (((int(hexv[i:i + 2], 16) / 255.0) + 0.055) / 1.055) ** 2.4) for i in (1, 3, 5)]
+            m = bpy.data.materials.new("section_" + kind)
+            m.use_nodes = True
+            nt = m.node_tree
+            for n in list(nt.nodes):
+                nt.nodes.remove(n)
+            out = nt.nodes.new("ShaderNodeOutputMaterial")
+            em = nt.nodes.new("ShaderNodeEmission")
+            em.inputs["Color"].default_value = (*[c * t for c, t in zip(lin, tint)], 1.0)
+            em.inputs["Strength"].default_value = 1.4          # 露出 −0.5EV で指定の灰色に見える強さ
+            nt.links.new(em.outputs[0], out.inputs[0])
+            m.use_fake_user = True
+            mats[kind] = m
+        return mats[kind]
+    n = 0
+    for fl in ("1F", "2F"):
+        items = [b for b in job["section"] if b["floor"] == fl]
+        bm = {}
+        for b in items:
+            x0, y0, x1, y1 = (v / 1000.0 for v in b["rect"])
+            z1, z0 = b["z"] / 1000.0 - 0.002, b["z"] / 1000.0 - 0.022
+            g = bm.setdefault(b["kind"], bmesh.new())
+            vs = [g.verts.new(p) for p in ((x0, y0, z0), (x1, y0, z0), (x1, y1, z0), (x0, y1, z0), (x0, y0, z1), (x1, y0, z1), (x1, y1, z1), (x0, y1, z1))]
+            for f in ((0, 3, 2, 1), (4, 5, 6, 7), (0, 1, 5, 4), (1, 2, 6, 5), (2, 3, 7, 6), (3, 0, 4, 7)):
+                g.faces.new([vs[i] for i in f])
+            n += 1
+        for kind, g in bm.items():
+            me = bpy.data.meshes.new(f"section.{fl}.{kind}")
+            g.to_mesh(me)
+            g.free()
+            me.materials.append(mat(kind))
+            ob = bpy.data.objects.new(f"Section.{fl}.{kind}", me)
+            ob.matrix_world = M
+            ob["kind"], ob["shoot_modes"], ob["section_floor"] = "section_cap", "int", fl
+            ob.visible_shadow = ob.visible_diffuse = ob.visible_glossy = ob.visible_transmission = ob.visible_volume_scatter = False
+            cols["Section_" + fl].objects.link(ob)
+        cols["Section_" + fl].hide_render = True
+        cols["Section_" + fl].hide_viewport = True
+    return n
+
+
 def add_cameras_all(sc, job, cols):
     first = None
     for cam in job["cams"]:
@@ -125,6 +181,10 @@ def add_cameras_all(sc, job, cols):
         cd.clip_start = 0.05
         cd.clip_end = 2000.0 if interior else 5000.0
         cd.lens = cut["lens"]
+        if cut.get("ortho_scale"):                            # T: 正投影・天井面に立って手前 400mm を切る（FL+2,400 の水平断面）
+            cd.type = "ORTHO"
+            cd.ortho_scale = cut["ortho_scale"]
+            cd.clip_start = cut.get("clip_start") or 0.05
         ob = bpy.data.objects.new(cam["id"], cd)
         ob.location = Vector(cut["cam"])
         if interior:
@@ -136,7 +196,7 @@ def add_cameras_all(sc, job, cols):
             cd.shift_x = cut.get("shift_x", 0.0)
         else:
             ob.rotation_euler = (Vector(cut["target"]) - ob.location).to_track_quat("-Z", "Y").to_euler()
-        put_new = cols[{"C": "Ext", "I": "Int_I", "Z": "Int_Z"}[cam["family"]]]
+        put_new = cols[{"C": "Ext", "I": "Int_I", "Z": "Int_Z", "R": "Int_R", "T": "Int_T"}[cam["family"]]]
         put_new.objects.link(ob)
         for k, v in cam["props"].items():
             ob[k] = v
@@ -218,6 +278,8 @@ def build_master(job, out):
         o["shoot_modes"] = modes
         if mk == "glass":
             o["glass_role"] = "window"
+        if grp == "外付けスクリーン生地" and nid:                        # v4.34: 面（S/N/E/W）と完全遮光生地の別（--screens auto が使う）
+            o["side"], o["blackout"] = nid.split("-")[1], mk == "zip_blackout"
         put(o, cols[collection_for(grp, lvl)])
         if ext_only:
             o.hide_render = True
@@ -301,6 +363,7 @@ def build_master(job, out):
         e["kind"], e["tag"], e["ifc_name"], e["floor"], e["shoot_modes"] = "opening", o_["label"], o_["name"], o_["floor"], "both"
         e["opening_type"], e["w_mm"], e["h_mm"] = o_["kind"], o_["w"], o_["h"]
         put(e, cols["Interior_" + ("2F" if o_["floor"] == "2F" else "1F")])
+    n_caps = add_section_caps(job, cols, M)
     add_cameras_all(sc, job, cols)
     # ---- Scene のプロパティ
     m = job["meta"]
@@ -323,5 +386,5 @@ def build_master(job, out):
     bpy.ops.wm.save_as_mainfile(filepath=str(out), compress=True)
     res = dict(file=out.name, seconds=round(time.time() - t0, 1), meshes=len([o for o in bpy.data.objects if o.type == "MESH"]),
                cameras=len([o for o in bpy.data.objects if o.type == "CAMERA"]), lights=len([o for o in bpy.data.objects if o.type == "LIGHT"]),
-               materials=len(bpy.data.materials), objects=len(bpy.data.objects), fallbacks=sorted(set(lib.fallbacks)))
+               materials=len(bpy.data.materials), objects=len(bpy.data.objects), section_caps=n_caps, fallbacks=sorted(set(lib.fallbacks)))
     return res
