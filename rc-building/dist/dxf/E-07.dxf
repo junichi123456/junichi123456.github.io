@@ -493,7 +493,7 @@ $SKPOLY
   9
 $TDCREATE
  40
-2461356.2024421296
+2461356.208657407
   9
 $TDUCREATE
  40
@@ -501,7 +501,7 @@ $TDUCREATE
   9
 $TDUPDATE
  40
-2461356.203321759
+2461356.2094675926
   9
 $TDUUPDATE
  40
@@ -553,7 +553,7 @@ $SPLINESEGS
   9
 $HANDSEED
   5
-2CE
+2D0
   9
 $SURFTAB1
  70
@@ -933,11 +933,11 @@ $PSTYLEMODE
   9
 $FINGERPRINTGUID
   2
-{16B14EAD-86EE-4074-95B1-D679FE6B8471}
+{00FC0CA9-E6AE-4F0B-B3F9-D13A4811CDB2}
   9
 $VERSIONGUID
   2
-{691746F9-B01D-4572-AB85-4992227F3243}
+{4DAEBC28-7582-41D0-AB08-DBB977E01B36}
   9
 $EXTNAMES
 290
@@ -1327,9 +1327,9 @@ ISM
   0
 CLASS
   1
-LAYOUT
+ACDBPLACEHOLDER
   2
-AcDbLayout
+AcDbPlaceHolder
   3
 ObjectDBX Classes
  90
@@ -1343,9 +1343,9 @@ ObjectDBX Classes
   0
 CLASS
   1
-ACDBPLACEHOLDER
+LAYOUT
   2
-AcDbPlaceHolder
+AcDbLayout
   3
 ObjectDBX Classes
  90
@@ -5021,7 +5021,7 @@ AcAecLayerStandard
   0
 APPID
   5
-2CB
+2CD
 330
 3
 100
@@ -5035,7 +5035,7 @@ HATCHBACKGROUNDCOLOR
   0
 APPID
   5
-2CC
+2CE
 330
 3
 100
@@ -6859,7 +6859,7 @@ JIS
 340
 8A
 342
-2CE
+2D0
 371
 13
 372
@@ -6981,7 +6981,7 @@ _CLOSEDBLANK
   0
 BLOCK_RECORD
   5
-2CE
+2D0
 330
 9
 100
@@ -7301,9 +7301,9 @@ AcDbBlockEnd
   0
 BLOCK
   5
-2CF
+2D1
 330
-2CE
+2D0
 100
 AcDbEntity
   8
@@ -7327,9 +7327,9 @@ _DOT
   0
 LINE
   5
-2D1
+2D3
 330
-2CE
+2D0
 100
 AcDbEntity
   8
@@ -7355,9 +7355,9 @@ AcDbLine
   0
 LWPOLYLINE
   5
-2D2
+2D4
 330
-2CE
+2D0
 100
 AcDbEntity
   8
@@ -7389,9 +7389,9 @@ AcDbPolyline
   0
 ENDBLK
   5
-2D0
+2D2
 330
-2CE
+2D0
 100
 AcDbEntity
   8
@@ -23365,7 +23365,7 @@ AcDbText
  40
 420.0
   1
-非常時の負荷は約 0.6kW。UPS 1.5kVA は切替時の瞬断用（15 分以上）、長い停電は蓄電池の特定負荷から給電。発熱
+水回りに AP・LAN 口・配線は置かない。水回りの受信強度（−67dBm 程度）は簡易モデルの試算で、RC 壁の減衰の誤
   7
 JP
  11
@@ -23397,13 +23397,77 @@ AcDbText
  40
 420.0
   1
-は温度連動の換気扇で処理（要確認）。
+差（±5dB）で動くため、竣工時に実測して E-01 の★の AP の出力を調整する。携帯電話の電波は抑えない。
   7
 JP
  11
 50200.0
  21
 12903.000000000005
+ 31
+0.0
+100
+AcDbText
+  0
+TEXT
+  5
+2CB
+330
+17
+100
+AcDbEntity
+  8
+A-TEXT
+100
+AcDbText
+ 10
+50200.0
+ 20
+11943.000000000007
+ 30
+0.0
+ 40
+420.0
+  1
+非常時の負荷は約 0.6kW。UPS 1.5kVA は切替時の瞬断用（15 分以上）、長い停電は蓄電池の特定負荷から給電。発熱
+  7
+JP
+ 11
+50200.0
+ 21
+11943.000000000007
+ 31
+0.0
+100
+AcDbText
+  0
+TEXT
+  5
+2CC
+330
+17
+100
+AcDbEntity
+  8
+A-TEXT
+100
+AcDbText
+ 10
+50200.0
+ 20
+11183.000000000007
+ 30
+0.0
+ 40
+420.0
+  1
+は温度連動の換気扇で処理（要確認）。
+  7
+JP
+ 11
+50200.0
+ 21
+11183.000000000007
  31
 0.0
 100
@@ -24499,7 +24563,7 @@ CREATED_BY_EZDXF
   3
 WRITTEN_BY_EZDXF
 350
-2CD
+2CF
   0
 DICTIONARYVAR
   5
@@ -24511,7 +24575,7 @@ DictionaryVariables
 280
 0
   1
-1.4.5 @ 2026-11-11T04:51:31.772491+00:00
+1.4.5 @ 2026-11-11T05:00:28.670275+00:00
   0
 VISUALSTYLE
   5
@@ -31065,7 +31129,7 @@ strokes_ogs.tif
   0
 DICTIONARYVAR
   5
-2CD
+2CF
 330
 2D
 100
@@ -31073,7 +31137,7 @@ DictionaryVariables
 280
 0
   1
-1.4.5 @ 2026-11-11T04:52:47.020865+00:00
+1.4.5 @ 2026-11-11T05:01:38.544583+00:00
   0
 ENDSEC
   0

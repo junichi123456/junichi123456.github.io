@@ -60,7 +60,8 @@ v4.16: 内装の仮置きと内装CG。リビングのチェアは「ペッパ�
 - `render/interior/zones/*.jpg`（v4.30）：内装CG 18区画×2方向の36カット（3/21 15:30・視点 FL+1,600・1280×720・注記帯つき JPEG）、`render_log_zones.json`、`sheets/`（区画ごとの2枚並べ18枚）。階ごとの3×3コンタクトシートは `render/interior/contact_zones_1F.jpg`・`contact_zones_2F.jpg`（`docs/cg_zones_1F.jpg`・`docs/cg_zones_2F.jpg` に同じもの）。定義は `data/interior_zones.yaml`、ブリーフ38章。
 - `render/interior/*.png`：**I04〜I13 は参考（旧・v4.17）。** 内装CG 14カット（v4.19 で描き直したのは I01・I02（I02_ldk_kitchen_side に改名）・I03・I14 の 4 カット・3/21 14:00 のみ。ほかは v4.17 時点の画像のまま。I01 LDK／I02 LDK キッチン側／I03 キッチン／I04 玄関／I05 階段／I06 ジム／I07 シアター／I08 図書室／I09 主寝室／I10 洗面・浴室／I11 ランドリー）。1600×900＋注記の帯
 - `LEGAL_CHECK.md`：法規チェック 102項目。不適合0、要確認15（用途地域・防火指定・採光補正係数・2階の排煙・構造計算など）
-- `export/`（v4.31）：既製ソフトで操作できるデータ形式。IFC4（`kawazanyo_IFC4.ifc`）、OBJ+MTL（zip）、Blender（`.blend`）、FBX、USDZ、`schedules.xlsx`＋`csv/`、`site.geojson`＋`site.kml`、3D DXF（`model_3d.dxf`）、`manifest.json`。開き方・座標・制限は [`docs/export_howto.md`](docs/export_howto.md)、ブリーフ39章。図面ではないため表紙の図面リスト・`index.json` には載せない。再生成: `python3 src/build.py --export-only [--with-blend]`（`--with-blend` は `.venv-bpy` が必要）
+- v4.32: 館内 Wi-Fi の再計画（AP 16 台・上質な室は −55dBm 以上、水回りは −67dBm 程度に抑制。簡易モデルで RC の減衰誤差 ±5dB のため竣工時に実測調整）、有線 LAN 21 口・RC スリーブ SL-C・ラック配線、E-01 更新・E-07 新設、export に network 表・IFC の AP/LAN 口（ブリーフ40章。携帯電話の電波は抑えない）。
+- `export/`（v4.31〜）：既製ソフトで操作できるデータ形式。IFC4（`kawazanyo_IFC4.ifc`）、OBJ+MTL（zip）、Blender（`.blend`）、FBX、USDZ、`schedules.xlsx`＋`csv/`、`site.geojson`＋`site.kml`、3D DXF（`model_3d.dxf`）、`manifest.json`。開き方・座標・制限は [`docs/export_howto.md`](docs/export_howto.md)、ブリーフ39章。図面ではないため表紙の図面リスト・`index.json` には載せない。再生成: `python3 src/build.py --export-only [--with-blend]`（`--with-blend` は `.venv-bpy` が必要）
 - ビューア: [`index.html`](index.html)。3D表示、断面表示、図面一覧、法規チェック表を見られます
 
 ## 再生成
