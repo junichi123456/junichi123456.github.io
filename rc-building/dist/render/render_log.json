@@ -162,5 +162,94 @@
   "C06": 14.76
  },
  "version_notice": "外観CG（C01〜C06）は v4.17 時点（階高 3,200・旧庇・旧 LDK 窓）の画像のまま。v4.18 では描き直していない（施主指示: リビングとキッチンだけ）。C07（南西から角窓と連続庇）も未描画。",
- "note_v421": "v4.21 の塀・植栽は CG に未反映（再レンダーしていない）"
+ "note_v421": "v4.21 の塀・植栽は CG に未反映（再レンダーしていない）",
+ "rooms": {
+  "cuts": {
+   "T1_plan_1F": {
+    "id": "T1_plan_1F",
+    "kind": "T",
+    "floor": "1F",
+    "room": "",
+    "cam": [
+     9125,
+     9125,
+     4300
+    ],
+    "target": [
+     9125,
+     10125,
+     4300
+    ],
+    "lens": 26,
+    "exposure": -0.5,
+    "when": "2026-06-21T08:00",
+    "wb": 5500,
+    "sun_k": 3900,
+    "channels": {
+     "L": [
+      5000,
+      100
+     ],
+     "D": 0,
+     "F": 0
+    },
+    "render_seconds": 647.3,
+    "metrics": {
+     "mean": 144.4364,
+     "std": 70.6064,
+     "black": 0.0052,
+     "white": 0.0
+    },
+    "status": "ok",
+    "issues": [],
+    "def_hash": "20ba02941f3b"
+   },
+   "T2_plan_2F": {
+    "id": "T2_plan_2F",
+    "kind": "T",
+    "floor": "2F",
+    "room": "",
+    "cam": [
+     9125,
+     9125,
+     7700
+    ],
+    "target": [
+     9125,
+     10125,
+     7700
+    ],
+    "lens": 26,
+    "exposure": -0.5,
+    "when": "2026-06-21T08:00",
+    "wb": 5500,
+    "sun_k": 3900,
+    "channels": {
+     "L": [
+      5000,
+      100
+     ],
+     "D": 0,
+     "F": 0
+    },
+    "render_seconds": 647.8,
+    "metrics": {
+     "mean": 131.7562,
+     "std": 67.1571,
+     "black": 0.0103,
+     "white": 0.0
+    },
+    "status": "ok",
+    "issues": [],
+    "def_hash": "ba6f6fd29f0b"
+   }
+  },
+  "master": {
+   "file": "kawazanyo_master.blend",
+   "model_hash": "0e4b4e7f54a5aac1",
+   "generated_at": "2026-11-11T17:36:50"
+  },
+  "version": "v4.34",
+  "total_seconds": 648.2
+ }
 }

@@ -207,3 +207,26 @@ def test_smoke_shoot_R1_01(tmp_path):
     import numpy as np
     im = Image.open(tmp_path / "R1-01_ld.png")
     assert im.size == (160, 90) and float(np.asarray(im.convert("L")).mean()) > 5
+
+
+# ------------------------------------------------------------------ 撮影後の記録（あるときだけ）
+def _rooms_log():
+    p = ROOT / "dist" / "render" / "render_log.json"
+    return json.loads(p.read_text(encoding="utf-8")).get("rooms", {}) if p.exists() else {}
+
+
+def test_T_outputs_if_present():
+    """T1・T2: 注記帯つき JPEG（≦1.5MB）・室名つき画像・検査に合格（平均 [60,190]・断面キャップ>0・外形が枠内）。"""
+    lg = _rooms_log().get("cuts", {})
+    if "T1_plan_1F" not in lg:
+        pytest.skip("T 未撮影")
+    from PIL import Image
+    Y = ctx()["Y"]
+    for k, fl in (("T1_plan_1F", "1F"), ("T2_plan_2F", "2F")):
+        e = lg[k]
+        assert e["status"] == "ok" and not e["issues"] and Y["checks"]["mean_plan"][0] <= e["metrics"]["mean"] <= Y["checks"]["mean_plan"][1], e
+        p = ROOT / "dist" / "render" / "interior" / f"{k}.jpg"
+        assert p.exists() and p.stat().st_size <= 1.5e6 and (ROOT / "dist" / "render" / "interior" / f"{k}_labels.jpg").exists()
+        assert Image.open(p).size == (1600, 1600 + Y["settings"]["band_px"])
+        assert e["def_hash"] == RR.def_hash(ctx()["defs"][k]) and e["when"] == "2026-06-21T08:00" and e["wb"] == 5500
+    assert sum(1 for b in RR.section_boxes(ctx()["h"], Y) if b["floor"] == "1F") > 0
