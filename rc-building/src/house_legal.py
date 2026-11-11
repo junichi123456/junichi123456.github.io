@@ -304,6 +304,13 @@ def checks(h):
         CHK if sm_["quiet_ok"] else NG)
     add("ブリーフ", "Wi-Fi 一般部", "施主依頼（v4.32）", f"一般部（廊下・ホール・ランドリー等）は −67dBm 以上が{ws['general']['cover'] * 100:.0f}%以上・全点 {ws['general']['min']}dBm 以上",
         f"1F {sm_['general_cover_1F'] * 100:.1f}%・2F {sm_['general_cover_2F'] * 100:.1f}%・最小 {sm_['general_min']:.1f}dBm（水回りブロック内の廊下は意図して弱い）", judge(sm_["general_ok"]))
+    import wiring as WR
+    lo = [o for o in ws["lan_outlets"]]
+    rooms2 = {o["room"] for o in lo if o["n"] >= 2 and o["z"] >= 300}
+    rt = WR.routes(h)
+    add("ブリーフ", "有線 LAN の余地・配線", "施主依頼（v4.32）", "居室・リビング・シアターに有線 LAN の余地。水回りには置かない",
+        f"{len(rooms2)}室に計 {WR.lan_total(h)} 口（Cat6A・シャッター付き・床コンセントなし）、最長配線 {max(r['length_m'] for r in rt):.0f}m（≦{ws['cable']['max_m']}m）、RC スリーブ SL-C1〜C14 は打設前に設置、PoE 負荷 {WR.poe_load_w(h)}W（E-07）",
+        judge(not WR.check(h) and len(rooms2) == 7 and max(r["length_m"] for r in rt) <= ws["cable"]["max_m"] and WR.poe_load_w(h) <= ws["rack"]["poe_budget_w"]))
     add("ブリーフ", "水回りの安全（非常ボタン・インターホン）", "施主決定（v4.32）", "水回りにインターホン・非常ボタンを設けない",
         "設けない（施主の決定）。非常解錠錠・浴室扉の補助錠 H1,400・段差なしは維持。非常ボタンは寝室・LDK・避難室のまま（S-04）", CHK)
     el = s["exterior_lighting"]

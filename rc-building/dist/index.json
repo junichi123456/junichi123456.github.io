@@ -293,6 +293,13 @@
    "scale": "—",
    "dxf": "dist/dxf/E-06.dxf",
    "png": "dist/png/E-06.png"
+  },
+  {
+   "number": "E-07",
+   "title": "通信・LAN 配線図",
+   "scale": "1:200",
+   "dxf": "dist/dxf/E-07.dxf",
+   "png": "dist/png/E-07.png"
   }
  ],
  "summary": {
@@ -719,6 +726,14 @@
    "basis": "施主依頼（v4.32）",
    "required": "一般部（廊下・ホール・ランドリー等）は −67dBm 以上が90%以上・全点 -75dBm 以上",
    "planned": "1F 99.9%・2F 98.7%・最小 -73.6dBm（水回りブロック内の廊下は意図して弱い）",
+   "result": "適合"
+  },
+  {
+   "cat": "ブリーフ",
+   "item": "有線 LAN の余地・配線",
+   "basis": "施主依頼（v4.32）",
+   "required": "居室・リビング・シアターに有線 LAN の余地。水回りには置かない",
+   "planned": "7室に計 21 口（Cat6A・シャッター付き・床コンセントなし）、最長配線 43m（≦90m）、RC スリーブ SL-C1〜C14 は打設前に設置、PoE 負荷 645W（E-07）",
    "result": "適合"
   },
   {

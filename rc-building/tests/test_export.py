@@ -454,7 +454,7 @@ def test_plan_dxf_unchanged_committed_and_regenerated(h, tmp_path):
     import house_sheets as hs
     from sheetlib import fittings_sheet
     base = json.loads((ROOT / "tests" / "baseline_dxf_normalized.json").read_text())
-    assert len(base) == 42
+    assert len(base) == 43                                   # v4.32: E-07（通信・LAN 配線図）を追加（42→43）
     for p, hx in base.items():
         assert hashlib.sha256(_norm_dxf((ROOT / p).read_text(encoding="utf-8", errors="replace")).encode()).hexdigest() == hx, p
     for sh in (fittings_sheet(h, "A-09"), hs.floor_plan(h, "1F", "A-03"), fs.furniture_schedule_sheet(h, "I-05")):

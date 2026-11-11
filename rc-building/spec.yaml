@@ -166,22 +166,63 @@ wifi:         # 館内 Wi-Fi（v4.32）: 室ごとの品質。上質な室は -5
     cover: 0.90
     min: -75
   aps:               # 固定配置（建物座標 mm、天井）。★ は水回りの調整に使う AP（alt_xy は 1.5m 離れた予備の天井ボックス）
-    - {id: AP1-1, floor: 1F, xy: [1250, 3250],   eirp: 6,  role: リビング}
-    - {id: AP1-2, floor: 1F, xy: [3250, 7250],   eirp: 17,  role: キッチン}
-    - {id: AP1-3, floor: 1F, xy: [13250, 6250],  eirp: 20, role: ジム本体}
-    - {id: AP1-4, floor: 1F, xy: [11250, 2250],  eirp: 13,  role: ジム拡張部}
-    - {id: AP1-5, floor: 1F, xy: [15250, 15250], eirp: 20, role: 居室A（1F トイレの調整）, tune: true, alt_xy: [15250, 16750]}
-    - {id: AP1-6, floor: 1F, xy: [5250, 14250],  eirp: 16, role: ランドリー（洗面・浴室の調整）, tune: true, alt_xy: [3750, 14250]}
-    - {id: AP1-7, floor: 1F, xy: [13250, 14250], eirp: 20, role: 1F 東廊下（2F トイレ・シャワーの調整）, tune: true, alt_xy: [13250, 12750]}
-    - {id: AP2-1, floor: 2F, xy: [1250, 1250],   eirp: 14,  role: 居室B}
-    - {id: AP2-2, floor: 2F, xy: [5250, 2250],   eirp: 12,  role: 居室C}
-    - {id: AP2-3, floor: 2F, xy: [7250, 4250],   eirp: 19, role: 居室D}
-    - {id: AP2-4, floor: 2F, xy: [17250, 5250],  eirp: 11, role: シアター}
-    - {id: AP2-5, floor: 2F, xy: [5250, 7250],  eirp: 20, role: 図書室}
-    - {id: AP2-6, floor: 2F, xy: [2250, 13250],  eirp: 20, role: 居室E（シャワーの調整）, tune: true, alt_xy: [2250, 14750]}
-    - {id: AP2-7, floor: 2F, xy: [4250, 14250],  eirp: 19, role: ホール・階段2（脱衣所の調整）, tune: true, alt_xy: [4250, 12750]}
-    - {id: AP2-8, floor: 2F, xy: [13250, 10250],  eirp: 20, role: WIC（避難室。24 時間稼働）}
-    - {id: AP2-9, floor: 2F, xy: [16250, 17250], eirp: 20, role: 主寝室（2F トイレの調整。夜間停止 M-04）, tune: true, alt_xy: [16250, 15750]}
+    - {id: AP1-1, floor: 1F, xy: [1250, 3250],   eirp: 6,  role: リビング, via: [C3, C4]}
+    - {id: AP1-2, floor: 1F, xy: [3250, 7250],   eirp: 17,  role: キッチン, via: [C3, C4]}
+    - {id: AP1-3, floor: 1F, xy: [13250, 6250],  eirp: 20, role: ジム本体, via: []}
+    - {id: AP1-4, floor: 1F, xy: [11250, 2250],  eirp: 13,  role: ジム拡張部, via: [C6]}
+    - {id: AP1-5, floor: 1F, xy: [15250, 15250], eirp: 20, role: 居室A（1F トイレの調整）, tune: true, alt_xy: [15250, 16750], via: [C7]}
+    - {id: AP1-6, floor: 1F, xy: [5250, 14250],  eirp: 16, role: ランドリー（洗面・浴室の調整）, tune: true, alt_xy: [3750, 14250], via: [C3, C4, C5]}
+    - {id: AP1-7, floor: 1F, xy: [13250, 14250], eirp: 20, role: 1F 東廊下（2F トイレ・シャワーの調整）, tune: true, alt_xy: [13250, 12750], via: [C7]}
+    - {id: AP2-1, floor: 2F, xy: [1250, 1250],   eirp: 14,  role: 居室B, via: [C10, C11, C12]}
+    - {id: AP2-2, floor: 2F, xy: [5250, 2250],   eirp: 12,  role: 居室C, via: [C10, C11, C12]}
+    - {id: AP2-3, floor: 2F, xy: [7250, 4250],   eirp: 19, role: 居室D, via: [C10, C13]}
+    - {id: AP2-4, floor: 2F, xy: [17250, 5250],  eirp: 11, role: シアター, via: [C9]}
+    - {id: AP2-5, floor: 2F, xy: [5250, 7250],  eirp: 20, role: 図書室, via: [C10, C11]}
+    - {id: AP2-6, floor: 2F, xy: [2250, 13250],  eirp: 20, role: 居室E（シャワーの調整）, tune: true, alt_xy: [2250, 14750], via: [C10, C11, C14]}
+    - {id: AP2-7, floor: 2F, xy: [4250, 14250],  eirp: 19, role: ホール・階段2（脱衣所の調整）, tune: true, alt_xy: [4250, 12750], via: [C10, C11, C14]}
+    - {id: AP2-8, floor: 2F, xy: [13250, 10250],  eirp: 20, role: WIC（避難室。24 時間稼働）, via: []}
+    - {id: AP2-9, floor: 2F, xy: [16250, 17250], eirp: 20, role: 主寝室（2F トイレの調整。夜間停止 M-04）, tune: true, alt_xy: [16250, 15750], via: [C8]}
+  ssid_vlan:         # VLAN と SSID（v4.32）。住人用は 5/6GHz のみ
+    - [10, 住人, 5/6GHz の SSID（WPA3）]
+    - [20, 制御（IoT）, 2.4GHz の非公開 SSID・機器ごとの鍵（スクリーン・照明・ロボット等）]
+    - [30, 防犯, 有線のみ（カメラ・NVR・門のインターホン）]
+    - [40, 来客, 5GHz の SSID・端末間の通信を遮断]
+    - [99, 管理, 有線のみ（スイッチ・AP の管理）]
+  rack:              # 機械室（東系統）MC-6 に集約（v4.31 を踏襲）
+    id: MC-6
+    xy: [16500, 11500]
+    equipment: [パッチパネル Cat6A 48 口×2, ルーター（WAN1 光・WAN2 5G/LTE 自動切替。警備の LTE とは別）, PoE スイッチ 24 口（2.5G・802.3bt・給電 740W 以上）, 有線用スイッチ 24 口（10G アップリンク）, ONU, KNX/Matter ゲートウェイ, NVR, UPS 1.5kVA]
+    poe_budget_w: 740
+    poe_loads: [[AP, 16, 30], [カメラ, 4, 15], [門のインターホン, 1, 15], [予備, 3, 30]]    # 種類・台数・1 台あたり W
+    ups: {kva: 1.5, load_kw: 0.6, min_runtime_min: 15, note: 切替時の瞬断用。長い停電は蓄電池の特定負荷「ネットワーク・警備」から給電}
+  entry: {route: lifeline.comm, pit_sleeve: SL-C1, sleeve_xy: [17000, 11500], conduit: 地中 φ50×2（1 本は予備で 2 社目の回線用）, pullbox: 門の塀の通信用プルボックス（電力盤とは別区画・下端 FGL+1,200 以上）}
+  riser: {id: SL-C2, xy: [17800, 11700], dia: 100, n: 4, spare: 2, from: 機械室（東）の天井, to: 2F WIC 北東角の配線ボックス, box: {floor: 2F, xy: [17800, 11800], size: [600, 300], note: 点検扉}}
+  cable: {type: Cat6A U/FTP LSZH, per_ap: 2, spare_pf: 予備 PF φ28 を各経路 1 本（呼び線入り）, slack_m: 3.0, detour: 1.1, max_m: 90, ceiling_h: 2900, rack_h: 2000, support: J フック（天井懐 約 380mm）。LGS は天井内で越え、水回りの天井内は通さない}
+  sleeves:           # 通信用 RC スリーブ（打設前に入れ、後から穴をあけない）。各 φ100×2（1 本予備）・FL+2,950 付近。xy は 1 本目の中心（2 本目は壁に沿って +150）
+    - {id: SL-C3, floor: 1F, wall: X3, xy: [12125, 11000], to: 機械室西→ホール}
+    - {id: SL-C4, floor: 1F, wall: X2, xy: [6125, 8200], to: キッチン・リビング（spec 案の y8000 は開口端から 300 未満のため y8200）}
+    - {id: SL-C5, floor: 1F, wall: Y3, xy: [5000, 12125], to: ランドリー}
+    - {id: SL-C6, floor: 1F, wall: X3, xy: [12125, 5200], to: ジム拡張部}
+    - {id: SL-C7, floor: 1F, wall: Y3, xy: [16600, 12125], to: WIC・東廊下・居室A（spec 案の x16000 は SL3 と重なるため x16600）}
+    - {id: SL-C8, floor: 2F, wall: Y3, xy: [17000, 12125], to: 主寝室}
+    - {id: SL-C9, floor: 2F, wall: Y2, xy: [17000, 6125], to: シアター}
+    - {id: SL-C10, floor: 2F, wall: X3, xy: [12125, 11500], to: ホール}
+    - {id: SL-C11, floor: 2F, wall: X2, xy: [6125, 11000], to: 図書室}
+    - {id: SL-C12, floor: 2F, wall: Y2, xy: [3000, 6125], to: 居室B・C}
+    - {id: SL-C13, floor: 2F, wall: Y2, xy: [10000, 6125], to: 居室D}
+    - {id: SL-C14, floor: 2F, wall: Y3, xy: [3000, 12125], to: 居室E・ホール・階段2}
+  sleeve_spec: {dia: 100, n: 2, z: 2950, pitch: 150, edge_clear: 300}
+  lan_outlets:       # 有線 LAN の口（Cat6A・シャッター付き・床コンセントなし）。z は FL からの高さ mm。水回りには置かない
+    - {id: LAN-A, floor: 1F, room: 居室A, xy: [15900, 14750], z: 800, n: 2, where: 南の LGS（机の位置）}
+    - {id: LAN-B, floor: 2F, room: 居室B, xy: [2300, 4800], z: 800, n: 2, where: 北の LGS（扉の脇）}
+    - {id: LAN-C, floor: 2F, room: 居室C, xy: [5500, 4800], z: 800, n: 2, where: 北の LGS（扉の脇）}
+    - {id: LAN-D, floor: 2F, room: 居室D, xy: [8500, 4800], z: 800, n: 2, where: 北の LGS（扉の脇）}
+    - {id: LAN-E, floor: 2F, room: 居室E, xy: [3900, 17600], z: 800, n: 2, where: 東の LGS（デスク E-D1 の延長。天板の配線ダクトでつなぐ）}
+    - {id: LAN-L1, floor: 1F, room: リビング・ダイニング, xy: [6000, 1350], z: 300, n: 4, where: サイドボード L-S1 の背面（X2 の RC に打込み）}
+    - {id: LAN-L2, floor: 1F, room: リビング・ダイニング, xy: [900, 5990], z: 1100, n: 2, where: リビング収納 L-K1 の中}
+    - {id: LAN-T1, floor: 2F, room: シアター, xy: [15200, 125], z: 300, n: 4, where: AV ボード TH-A の背面（南の RC に打込み）}
+    - {id: LAN-T2, floor: 2F, room: シアター, xy: [15250, 3000], z: 2900, n: 1, where: 天井（プロジェクター用）}
+  lan_note: 机の高さか家具の背面に置き、コードを床に這わせない（掃除ロボットの規則に合う）。RC の口は打設前に位置を決め CD φ28 で天井懐へ上げる
 
 smart:        # 建物の制御（v4.7）: スクリーン・照明・空調・掃除ロボットを共通の制御基盤でつなぎ、bot から API で操作できる
   bus: KNX（有線）＋ Matter over Thread/Wi-Fi（ゲートウェイ）
@@ -846,7 +887,7 @@ mech_rooms:
     - [MC-3, 機械室（東系統）, 主分電盤, [16600, 9050, 17200, 9300], 900]
     - [MC-4, 機械室（東系統）, 特定負荷分電盤, [17400, 9050, 18000, 9300], 900]
     - [MC-5, 機械室（東系統）, 浄水器, [15200, 11000, 16050, 12000], 1500]
-    - [MC-6, 機械室（東系統）, ネットワークラック（防振マット）, [16200, 11000, 16800, 12000], 2000]
+    - [MC-6, 機械室（東系統）, ネットワークラック（防振マット。パッチパネル・ルーター・PoE スイッチ・有線用スイッチ・ONU・KNX/Matter GW・NVR・UPS）, [16200, 11000, 16800, 12000], 2000]
     - [MC-7, 機械室（東系統）, 排煙機（東）, [17250, 11000, 18100, 12000], 1000]
     - [MB-1, 蓄電室, 蓄電池ラック1, [17300, 6300, 17950, 7000], 2000]
     - [MB-2, 蓄電室, 蓄電池ラック2, [17300, 7050, 17950, 7750], 2000]

@@ -143,6 +143,7 @@ def machine_battery_detail(h, sh, number_xy, scale=75):
         u = max(u, b_)
     sh.rect(*t2(15100, 9000), *t2(15200, 12000), "A-CUT-LGS")                  # x15,150 の LGS（扉なし）
     sh.text("ジム", t2(13400, 7000), 1.5, "A-ROOM", "MIDDLE_CENTER")
+    sh.text("通信スリーブ SL-C は E-07", t2(13700, 6500), 1.1, "A-TEXT", "MIDDLE_CENTER")
     # 機械室の扉 W800（内開き・蝶番は西）
     for did, room, op in h.mech_doors:
         _swing_leaf(sh, t2, (op.u0, face), (0, 1), (1, 0), op.width, scale)

@@ -115,3 +115,50 @@ def _sheet_layout_ok(sh):
 def test_e01_layout(h):
     import house_sheets as hs
     _sheet_layout_ok(hs.wifi_sheet(h, "E-01"))
+
+
+# ---------------------------------------------------------------- 段階3: 有線 LAN・配線・スリーブ
+def test_wiring_plan_consistent(h):
+    import wiring as WR
+    assert WR.check(h) == []
+
+
+def test_cable_lengths_and_wet_rooms(h):
+    """全経路 90m 以内。天井内の幹線は水回りの室を通らない。"""
+    import wiring as WR
+    from shapely.geometry import LineString, box
+    for r in WR.routes(h):
+        assert r["length_m"] <= h.spec["wifi"]["cable"]["max_m"], r["id"]
+        for f, rc in WR.wet_rects(h):
+            if f == r["floor"]:
+                assert not LineString(r["path"]).intersects(box(*rc).buffer(-1)), (r["id"], rc)
+
+
+def test_lan_outlets(h):
+    """計 21 口。居室A〜E・リビング・シアターの 7 室に 2 口以上・FL+300 以上（床コンセントなし）。水回りには置かない。"""
+    import wiring as WR
+    os_ = h.spec["wifi"]["lan_outlets"]
+    assert WR.lan_total(h) == 21
+    per = {}
+    for o in os_:
+        assert o["z"] >= 300
+        per[(o["floor"], o["room"])] = per.get((o["floor"], o["room"]), 0) + o["n"]
+    assert sorted(f"{k[0]} {k[1]}" for k, v in per.items() if v >= 2) == sorted(h.spec["wifi"]["premium"]["wired"])
+    assert len(per) == 7
+
+
+def test_rack_and_poe(h):
+    """ラックは機械室（東系統）MC-6 内。PoE 負荷は給電の範囲内。スリーブ SL-C1〜C14。"""
+    import wiring as WR
+    w = h.spec["wifi"]
+    mc6 = next(e for e in h.spec["mech_rooms"]["equipment"] if e[0] == "MC-6")
+    x0, y0, x1, y1 = mc6[3]
+    assert x0 <= w["rack"]["xy"][0] <= x1 and y0 <= w["rack"]["xy"][1] <= y1
+    assert WR.poe_load_w(h) <= w["rack"]["poe_budget_w"]
+    assert len(w["sleeves"]) == 12 and len(WR.sleeve_pairs(h)) == 12
+    assert w["riser"]["n"] == 4 and w["riser"]["spare"] == 2
+
+
+def test_e07_layout(h):
+    import wiring_sheets as ws
+    _sheet_layout_ok(ws.wiring_sheet(h, "E-07"))
