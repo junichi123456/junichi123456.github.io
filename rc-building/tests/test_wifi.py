@@ -162,3 +162,13 @@ def test_rack_and_poe(h):
 def test_e07_layout(h):
     import wiring_sheets as ws
     _sheet_layout_ok(ws.wiring_sheet(h, "E-07"))
+
+
+def test_network_table_matches_spec(h):
+    """CSV/XLSX の network 表は spec と同じ（AP 16・LAN 口 9 組 21 口・ラック機器 8・スリーブ 14）。"""
+    from export import tables
+    rows = tables.sheet_network(h)
+    kinds = [r[0] for r in rows]
+    assert kinds.count("AP") == 16 and kinds.count("LAN口") == 9 and kinds.count("ラック機器") == 8 and kinds.count("スリーブ") == 14
+    assert sum(r[8] for r in rows if r[0] == "LAN口") == 21
+    assert all(len(r) == len(tables.HEADERS["ネットワーク"]) for r in rows)

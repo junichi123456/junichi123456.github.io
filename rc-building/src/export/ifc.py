@@ -728,6 +728,29 @@ def build_furniture(ctx):
               dict(Reference=d["id"], 光束lm=float(d["lm_per_m"] * d["L"] / 1000.0), NumberOfSources=1), "足元灯")
 
 
+def build_network(ctx):
+    """AP（IfcCommunicationsAppliance）と有線 LAN 口（IfcOutlet）。配置点だけで形状は入れない（体積比較の対象外）。"""
+    import wiring as WR
+    h = ctx.h
+    w = h.spec["wifi"]
+    rt = {r["id"]: r for r in WR.routes(h)}
+
+    def at(floor, x, y, z):
+        return ctx.f.createIfcLocalPlacement(ctx.storey[floor].ObjectPlacement, ctx.a2p3((x, y, z - ctx.elev[floor] + h.fl[floor])))
+    ctx.nap = ctx.nlan = 0
+    for a in w["aps"]:
+        e = ctx.product("IfcCommunicationsAppliance", a["id"], ctx.storey[a["floor"]], [],
+                        objtype="天井 AP", desc=a["role"], placement=at(a["floor"], a["xy"][0], a["xy"][1], w["ap_h"]))
+        ctx.kz(e, [], group="通信", extra=dict(EIRP_dBm=float(a["eirp"]), 配線長m=round(rt[a["id"]]["length_m"], 1), 調整用=bool(a.get("tune")),
+                                               設置高さmm=w["ap_h"], 室=a["role"]))
+        ctx.nap += 1
+    for o in w["lan_outlets"]:
+        e = ctx.product("IfcOutlet", o["id"], ctx.storey[o["floor"]], [], objtype="有線 LAN 口（Cat6A）", desc=o["where"],
+                        placement=at(o["floor"], o["xy"][0], o["xy"][1], o["z"]))
+        ctx.kz(e, [], group="通信", room=o["room"], extra=dict(口数=o["n"], 床上高さmm=o["z"], 室=o["room"]))
+        ctx.nlan += 1
+
+
 # ------------------------------------------------------------------ 入口
 def build_ifc(h, schema="IFC4"):
     """IFC モデルを組み立てて (ifcopenshell.file, 統計 dict) を返す。"""
@@ -740,6 +763,7 @@ def build_ifc(h, schema="IFC4"):
     build_other_boxes(ctx, used)
     build_site(ctx)
     build_furniture(ctx)
+    build_network(ctx)
     stats = dict(walls=len(h.walls), fence=ctx.nfence, windows=ctx.nwin, doors=ctx.ndoor, openings=ctx.nopen, spaces=len(h.rooms),
                  furniture=ctx.nfurn, decimated=ctx.ndecim, lights=ctx.nlight, other=dict(ctx.nother))
     return ctx.f, stats

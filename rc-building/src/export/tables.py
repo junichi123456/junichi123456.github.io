@@ -28,12 +28,13 @@ HEADERS = {
     "家具": ["ID", "階・室", "名称", "寸法", "数量", "材質・色", "製品", "床との納まり", "仮置き", "要確認", "根拠"],
     "壁量": ["階", "方向", "耐力壁長さm", "壁量cm/m2", "判定"],
     "法規": ["区分", "項目", "根拠", "規定・要求", "計画", "判定"],
+    "ネットワーク": ["区分", "ID", "階", "室・役割", "x_mm", "y_mm", "高さmm", "EIRP_dBm", "口数・本数", "経由・備考"],
     "凡例": ["項目", "内容"],
 }
 CSV_NAMES = {"室": "rooms", "建具": "openings", "建具表": "fittings_schedule", "仕上": "finishes", "設備": "equipment", "ライフライン": "lifeline",
-             "照明": "lights", "照度計算": "illuminance", "家具": "furniture", "壁量": "wall_quantity", "法規": "legal_checks", "凡例": "legend"}
+             "照明": "lights", "照度計算": "illuminance", "家具": "furniture", "壁量": "wall_quantity", "法規": "legal_checks", "ネットワーク": "network", "凡例": "legend"}
 SOURCES = {"室": "A-03/A-04, I-02", "建具": "A-09", "建具表": "A-09", "仕上": "I-02/I-02B", "設備": "A-03/A-04, E-01", "ライフライン": "A-02Z2",
-           "照明": "E-04/E-05/E-06", "照度計算": "E-06", "家具": "I-05", "壁量": "S-01", "法規": "A-11〜", "凡例": ""}
+           "照明": "E-04/E-05/E-06", "照度計算": "E-06", "家具": "I-05", "壁量": "S-01", "法規": "A-11〜", "ネットワーク": "E-01/E-07", "凡例": ""}
 
 
 def _num(v, nd=3):
@@ -172,6 +173,31 @@ def sheet_legal(rows):
     return [[r["cat"], r["item"], r["basis"], r["required"], r["planned"], r["result"]] for r in rows]
 
 
+def sheet_network(h):
+    """E-01・E-07 と同じ spec から: AP 16 台・有線 LAN 口・ラック機器・スリーブ。"""
+    import wiring as WR
+    w = h.spec["wifi"]
+    rows = []
+    rt = {r["id"]: r for r in WR.routes(h)}
+    for a in w["aps"]:
+        r = rt[a["id"]]
+        via = "→".join("SL-" + v for v in r["via"]) or "直接"
+        rows.append(["AP", a["id"], a["floor"], a["role"], *a["xy"], w["ap_h"], a["eirp"], 1,
+                     f"配線 {r['length_m']:.1f}m（{via}）" + ("・★水回りの調整用（予備位置 %d, %d）" % tuple(a["alt_xy"]) if a.get("tune") else "")])
+    for o in w["lan_outlets"]:
+        rows.append(["LAN口", o["id"], o["floor"], o["room"], *o["xy"], o["z"], "", o["n"], o["where"]])
+    rk = w["rack"]
+    for e in rk["equipment"]:
+        rows.append(["ラック機器", rk["id"], "1F", "機械室（東系統）", *rk["xy"], "", "", 1, e])
+    sp = w["sleeve_spec"]
+    rows.append(["スリーブ", "SL-C1", "1F", "機械室（東系統）床→ONU", *w["entry"]["sleeve_xy"], "", "", 2, "床下ピットからの引込（φ%d）" % sp["dia"]])
+    r2 = w["riser"]
+    rows.append(["スリーブ", r2["id"], "1F→2F", "縦配線（スラブ）", *r2["xy"], "", "", r2["n"], f"φ{r2['dia']}×{r2['n']}（{r2['spare']} 本予備）→2F WIC 北東角の配線ボックス"])
+    for s in w["sleeves"]:
+        rows.append(["スリーブ", s["id"], s["floor"], f"{s['wall']} 壁", *s["xy"], sp["z"], "", sp["n"], f"φ{sp['dia']}×{sp['n']}（1 本予備）→{s['to']}"])
+    return rows
+
+
 def sheet_legend(h, sm, counts):
     from datetime import date
     d = [["版", C.VERSION], ["案件", f"{C.PROJECT_NAME} {h.spec['project']['name']}"], ["所在地", h.spec["project"]["location"]],
@@ -197,7 +223,7 @@ def build_tables(h):
     data = {
         "室": sheet_rooms(h, F), "建具": sheet_openings(h, F), "建具表": sheet_fittings(h), "仕上": sheet_finish(h), "設備": sheet_equipment(h),
         "ライフライン": sheet_lifeline(), "照明": sheet_lights(h, F), "照度計算": sheet_illuminance(h), "家具": sheet_furniture(h, F),
-        "壁量": walls, "法規": sheet_legal(legal_rows),
+        "壁量": walls, "法規": sheet_legal(legal_rows), "ネットワーク": sheet_network(h),
     }
     data["凡例"] = sheet_legend(h, sm, {k: len(v) for k, v in data.items()})
     return {k: (HEADERS[k], v) for k, v in [(n, data[n]) for n in HEADERS]}, sm

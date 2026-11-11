@@ -16,6 +16,7 @@ groups:
   台所小物: {provisional: true, basis: "v4.16 仮置き"}
   ジム機器: {provisional: true, basis: "簡易ボリューム（仮置き）"}
   足元灯: {provisional: true, basis: "光束・配置は仮定値"}
+  通信: {confirm: true, provisional: true, basis: "AP の出力・位置は簡易モデルの試算。RC 壁の減衰の誤差（±5dB）で動き、竣工時に実測して調整（ブリーフ40章・要確認）"}
   照明: {provisional: true, basis: "光束・色温度は設計値（器具は未選定）"}
   塀: {confirm: true, basis: "塀の北・東辺は位置 ±0.7m（要確認）"}
   寄付地: {confirm: true, basis: "寄付地の法的扱いは提案・要確認（spec.site.donation）"}

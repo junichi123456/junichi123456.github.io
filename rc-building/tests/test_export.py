@@ -116,6 +116,12 @@ def test_ifc_counts(h, ifc):
     assert len(m.by_type("IfcLightFixture")) >= 260
     assert {s.Name for s in m.by_type("IfcBuildingStorey")} == {"FDN", "1F", "2F", "RF"}
     assert len(m.by_type("IfcSolarDevice")) == 2 and len(m.by_type("IfcStair")) == 3
+    # v4.32: AP 16 台（IfcCommunicationsAppliance）・有線 LAN 口 9 組 21 口（IfcOutlet）は配置点だけで形状なし
+    aps, outs = m.by_type("IfcCommunicationsAppliance"), m.by_type("IfcOutlet")
+    assert len(aps) == 16 and len(outs) == 9
+    assert all(e.Representation is None and e.ContainedInStructure for e in aps + outs)
+    wet_ap = [e for e in aps if e.Name in ("AP1-5",)]
+    assert len(wet_ap) == 1 and wet_ap[0].ContainedInStructure[0].RelatingStructure.Name == "1F"
 
 
 def test_ifc_windows_doors_filled_and_hosted(ifc):
@@ -169,7 +175,7 @@ def test_ifc_georeference_and_flags(h, ifc):
     import ifcopenshell.util.element as UE
     iw = next(e for e in m.by_type("IfcWindow") if e.Name == "IW-1")
     ps = UE.get_psets(iw)["Pset_Kawazanyo"]
-    assert ps["要確認"] is True and ps["Version"] == "v4.31" and "IW-1" not in ps["材質キー"]
+    assert ps["要確認"] is True and ps["Version"] == "v4.32" and "IW-1" not in ps["材質キー"]
     f = next(e for e in m.by_type("IfcFurniture"))
     assert UE.get_psets(f)["Pset_Kawazanyo"]["仮置き"] is True
 
@@ -284,7 +290,7 @@ def test_csv_headers_and_rows(h, outdir):
     import csv
     from export import tables
     d, _ = outdir
-    exp = {"室": len(h.rooms), "建具": 54, "建具表": len(h.fittings), "設備": 21, "家具": 68, "壁量": 5}
+    exp = {"室": len(h.rooms), "建具": 54, "建具表": len(h.fittings), "設備": 21, "家具": 68, "壁量": 5, "ネットワーク": 47}      # v4.32: network 表（AP 16・LAN 口 9 組・ラック機器 8・スリーブ 14）を追加
     for name, hd in tables.HEADERS.items():
         p = d / "csv" / f"{tables.CSV_NAMES[name]}.csv"
         raw = p.read_bytes()
@@ -413,7 +419,7 @@ def test_manifest_and_size_budget(outdir):
     assert {"schedules.xlsx", "site.geojson", "site.kml", "model_3d.dxf", "model_exterior_obj.zip", "model_interior_obj.zip"} <= names
     assert any(n.startswith("kawazanyo_IFC4.ifc") for n in names)
     for f in m["files"]:
-        assert sha(d / f["file"]) == f["sha256"] and (d / f["file"]).stat().st_size == f["size"] and f["version"] == "v4.31"
+        assert sha(d / f["file"]) == f["sha256"] and (d / f["file"]).stat().st_size == f["size"] and f["version"] == "v4.32"
     total = sum(p.stat().st_size for p in d.rglob("*") if p.is_file() and p.name != "manifest.json")
     assert total <= 50_000_000
 

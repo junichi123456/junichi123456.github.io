@@ -11,7 +11,7 @@ from pathlib import Path
 import numpy as np
 import yaml
 
-VERSION = "v4.31"
+VERSION = "v4.32"
 PROJECT_NAME = "河沿要（仮称）"
 
 # 材質キー・カテゴリ → 和名カテゴリ
