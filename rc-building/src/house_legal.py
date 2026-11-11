@@ -289,10 +289,23 @@ def checks(h):
     ls = SV.lighting_curve(h)
     add("ブリーフ", "照明（時刻で変化）", "施主指示（v4.7）", "時刻に応じて色温度と明るさが変わる LED",
         f"全室 調光・調色 LED（{min(k for _, k, _ in ls)}〜{max(k for _, k, _ in ls)}K・{min(b for *_, b in ls)}〜{max(b for *_, b in ls)}%）を時刻スケジュールで制御（E-02）", OK)
+    ws = s["wifi"]
+    st = WF.room_stats(h)
+    sm_ = WF.summarize(st, ws)
     for f in ("1F", "2F"):
-        r = WF.plan(h, f)
-        add("ブリーフ", f"Wi-Fi（{f}）", "施主指示（v4.7）", f"5GHz 受信 {s['wifi']['target_dbm']}dBm 以上を床面の{s['wifi']['target_cover'] * 100:.0f}%以上",
-            f"天井 AP {len(r['aps'])}台（PoE 有線）→ {r['cover'] * 100:.0f}%（概算、竣工時に実測）", judge(r["cover"] >= s["wifi"]["target_cover"]))
+        pr = [x for x in st if x["cls"] == "premium" and x["floor"] == f]
+        nap = sum(a["floor"] == f for a in ws["aps"])
+        add("ブリーフ", f"Wi-Fi 上質な室（{f}）", "施主依頼（v4.32）", f"上質な室を 5GHz −55dBm 以上で全面カバー（計算。実測は −60 以上・各室 5 点以上）",
+            f"{len(pr)}室（{'・'.join(x['name'] for x in pr)}）→ 最小 {min(x['min'] for x in pr):.1f}dBm・{sum(x['c55'] * x['n'] for x in pr) / sum(x['n'] for x in pr) * 100:.0f}%（天井 AP {nap}台・PoE 有線、概算、竣工時に実測）",
+            judge(all(x["min"] >= ws["premium"]["dbm"] for x in pr)))
+    qu = [x for x in st if x["cls"] == "quiet"]
+    add("ブリーフ", "Wi-Fi 水回りの受信強度", "施主決定（v4.32）", "水回りは 5GHz −67dBm 程度に抑える（室の中央値 −70〜−65・最小 −75 以上）",
+        f"{len(qu)}室 中央値 {min(x['med'] for x in qu):.1f}〜{max(x['med'] for x in qu):.1f}dBm・最小 {min(x['min'] for x in qu):.1f}dBm（簡易モデル。RC 壁の減衰の誤差 ±5dB で動くため、竣工時に実測し★の AP の出力を調整。携帯電話の電波は抑えない）",
+        CHK if sm_["quiet_ok"] else NG)
+    add("ブリーフ", "Wi-Fi 一般部", "施主依頼（v4.32）", f"一般部（廊下・ホール・ランドリー等）は −67dBm 以上が{ws['general']['cover'] * 100:.0f}%以上・全点 {ws['general']['min']}dBm 以上",
+        f"1F {sm_['general_cover_1F'] * 100:.1f}%・2F {sm_['general_cover_2F'] * 100:.1f}%・最小 {sm_['general_min']:.1f}dBm（水回りブロック内の廊下は意図して弱い）", judge(sm_["general_ok"]))
+    add("ブリーフ", "水回りの安全（非常ボタン・インターホン）", "施主決定（v4.32）", "水回りにインターホン・非常ボタンを設けない",
+        "設けない（施主の決定）。非常解錠錠・浴室扉の補助錠 H1,400・段差なしは維持。非常ボタンは寝室・LDK・避難室のまま（S-04）", CHK)
     el = s["exterior_lighting"]
     add("ブリーフ", "外構の防虫", "施主指示（v4.7）", "敷地内で虫が発生・集中しない工夫",
         f"外構照明 {len(h.ext_lights)}台を {el['cct']}K・下向き・人感センサー、日没後はスクリーンで光漏れ防止、たまり水をつくらない ほか{len(SV.INSECT)}項目（E-03）", OK)

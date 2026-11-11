@@ -94,3 +94,24 @@ def test_slab_and_distance_terms(h):
     assert same - up > 30 and same > up
     # 同じ平面位置でも高さ差 dz=1600 の 3D 距離（自由空間）で効く
     assert abs(same - (10 - WF._pl(1.6, 5500))) < 1e-6
+
+
+def _sheet_layout_ok(sh):
+    """枠内（内枠）・表題欄に文字がかからない・文字どうしが重ならない。"""
+    sys.path.insert(0, str(ROOT / "tests"))
+    from test_site_integrated import paper_boxes, INNER, TITLE
+    bx = paper_boxes(sh)
+    for e, ly, b in bx:
+        assert b[0] >= INNER[0] - 0.01 and b[1] >= INNER[1] - 0.01 and b[2] <= INNER[2] + 0.01 and b[3] <= INNER[3] + 0.01, (e.dxftype(), b)
+    tx = [(e.dxf.text, b) for e, ly, b in bx if e.dxftype() == "TEXT"]
+    for t, b in tx:
+        assert not (b[2] > TITLE[0] and b[0] < TITLE[2] and b[3] > TITLE[1] and b[1] < TITLE[3]), t
+    for i in range(len(tx)):
+        for j in range(i + 1, len(tx)):
+            a, b = tx[i][1], tx[j][1]
+            assert not (min(a[2], b[2]) - max(a[0], b[0]) > 0.3 and min(a[3], b[3]) - max(a[1], b[1]) > 0.3), (tx[i][0], tx[j][0])
+
+
+def test_e01_layout(h):
+    import house_sheets as hs
+    _sheet_layout_ok(hs.wifi_sheet(h, "E-01"))

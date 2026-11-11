@@ -1540,53 +1540,90 @@ def exterior_finish_table(h, sh, y):
 
 
 def wifi_sheet(h, number):
-    """館内 Wi-Fi の電波計画（受信強度の分布と AP 配置）。"""
+    """館内 Wi-Fi の電波計画（v4.32: 16 台・出力表・水回りの抑制・室ごとの集計）。"""
     import wifi as WF
     from shapely.geometry import box as sbox
     from shapely.ops import unary_union
     w = h.spec["wifi"]
+    M = WF.Model(h)
+    stats = WF.room_stats(h, model=M)
+    sm = WF.summarize(stats, w)
+    aps = w["aps"]
     sh = frame(h, number, "Wi-Fi 電波計画", 200)
-    sh.text(f"館内 Wi-Fi 電波計画 — 5GHz 帯で受信 {w['target_dbm']}dBm 以上を床面の{w['target_cover'] * 100:.0f}%以上（壁の減衰込みの概算）", (12, 280), 3.6, "A-TEXT", paper=True)
-    bands = [(-60, 999, 3, "−60dBm 以上（高速）"), (w["target_dbm"], -60, 4, f"{w['target_dbm']}〜−60dBm（快適）"),
-             (-75, w["target_dbm"], 2, f"−75〜{w['target_dbm']}dBm（つながるが遅い）"), (-999, -75, 1, "−75dBm 未満（不安定）")]
-    res = []
+    sh.text("館内 Wi-Fi 電波計画 — 上質な室は全面 −55dBm 以上、水回りは −65〜−70dBm に抑制（5GHz・床上 1.2m・壁とスラブの減衰込みの簡易モデル）", (12, 280), 3.4, "A-TEXT", paper=True)
+    bands = [(-55, 999, 3, "−55dBm 以上（上質な室の目標・高速）"), (-67, -55, 4, "−67〜−55dBm（快適）"),
+             (-75, -67, 2, "−75〜−67dBm（水回りの目標 −65〜−70・一般部の下限）"), (-999, -75, 1, "−75dBm 未満（不安定）")]
     for k, f in enumerate(("1F", "2F")):
-        r = WF.plan(h, f)
-        res.append(r)
         t = T(sh, (0, 0), (22 + k * 112, 150))
-        g = r["grid"] / 2
         cut = h.fl[f] + 1200
+        g = 250
         solid = unary_union([sbox(*t(b.x0, b.y0), *t(b.x1, b.y1)) for b in h.boxes
                              if b.cat == "wall" and b.level != "EXT" and b.z0 < cut < b.z1])
+        pts, vals = [], []
+        for r, p in M.room_points(f, 500):
+            v = M.best(aps, f, p)
+            pts.extend(map(tuple, p))
+            vals.extend(v)
         for lo, hi, col, _ in bands:
-            polys = [sbox(*t(x - g, y - g), *t(x + g, y + g)) for (x, y), v in zip(r["pts"], r["rssi"]) if lo <= v < hi]
+            polys = [sbox(*t(x - g, y - g), *t(x + g, y + g)) for (x, y), v in zip(pts, vals) if lo <= v < hi]
             if polys:
                 u = unary_union(polys).difference(solid)
                 sh.hatch_polys(list(iter_polygons(u)), solid=True, color=col)
         for b in h.boxes:
             if b.cat in ("wall", "partition") and b.level != "EXT" and b.z0 < cut < b.z1 and b.mat != "insul":
                 sh.rect(*t(b.x0, b.y0), *t(b.x1, b.y1), "A-CUT" if b.cat == "wall" else "A-CUT-LGS", lineweight=35 if b.cat == "wall" else 18)
-        for n, (x, y, name) in enumerate(r["aps"], 1):
+        for s_ in stats:                                              # 水回り: 枠＋中央値
+            if s_["floor"] == f and s_["cls"] == "quiet":
+                r = next(r for r in h.rooms if r.floor == f and r.name == s_["name"])
+                x0, y0, x1, y1 = r.rect
+                sh.rect(*t(x0 + 60, y0 + 60), *t(x1 - 60, y1 - 60), "A-ALT", lineweight=25)
+                sh.text(f"{s_['med']:.0f}", t((x0 + x1) / 2, (y0 + y1) / 2), 1.7, "A-TEXT", "MIDDLE_CENTER")
+        for a_ in aps:
+            if a_["floor"] != f:
+                continue
+            x, y = a_["xy"]
             sh.circle(t(x, y), 1.6 * sh.S, "A-CUT", lineweight=35)
-            sh.text(f"AP{f[0]}-{n}", t(x, y), 1.4, "A-TEXT", "MIDDLE_CENTER")
-        sh.text(f"{'1階' if f == '1F' else '2階'}（AP {len(r['aps'])}台・目標を満たす面積 {r['cover'] * 100:.0f}%）", t(0, -1500), 2.6, "A-TEXT", "TOP_LEFT")
-    y = 128
-    for lo, hi, col, lab in bands:
-        sh.hatch_polys([sbox(*sh.P(22, y), *sh.P(28, y + 3.5))], solid=True, color=col)
-        sh.text(lab, (30, y + 0.5), 2.0, "A-TEXT", paper=True)
-        y -= 5.5
-    rows = [["AP", "設置位置（天井）", "階"]]
-    for r in res:
-        for n, (x, y_, name) in enumerate(r["aps"], 1):
-            rows.append([f"AP{r['floor'][0]}-{n}", name, r["floor"]])
-    sh.text("(1) アクセスポイント", (250, 271), 2.8, "A-TEXT", paper=True)
-    yy = sh.table(250, 268, [18, 64, 12], rows, row_h=4.6, h=1.9)
-    side_panel(sh, 250, yy - 6, [("h", "計画の考え方"),
-        ("t", f"機器: {w['standard']}。各 AP は PoE＋の有線（Cat6A）で機械室（東系統）のネットワークラックに集める（無線中継に頼らない）"),
-        ("t", "壁式 RC は内部の耐力壁も RC 250mm で、5GHz は1枚で約25dB 減衰する。床スラブも厚いため、各階に AP を置き、RC 壁で囲まれた区画ごとに電波を届ける"),
-        ("t", f"計算: 送信 {w['eirp_dbm']}dBm、自由空間損失＋通過する壁の減衰（RC 25dB・間仕切 4dB・扉 4dB・透明扉 3dB）。0.5m メッシュで受信強度を求め、目標を満たす面積が最大になる位置に AP を1台ずつ追加"),
-        ("t", "シアター・ジムは遮音のため扉が重く、それぞれ室内に AP を置くと安定する（必要に応じて実施設計で追加）。外構（菜園・駐車場）は屋外用 AP を別途"),
-        ("t", "実施設計で、機種の送信出力・アンテナ特性を用いて現地測定（竣工後のサイトサーベイ）で確認する")], width=150)
+            sh.text(a_["id"][2:], t(x, y), 1.2, "A-TEXT", "MIDDLE_CENTER")
+            if a_.get("tune"):
+                sh.text("★", t(x, y + 750), 2.0, "A-TEXT", "MIDDLE_CENTER")
+        n_ap = sum(a_["floor"] == f for a_ in aps)
+        sh.text(f"{'1階' if f == '1F' else '2階'}（AP {n_ap}台）", t(0, -1500), 2.6, "A-TEXT", "TOP_LEFT")
+    x = 22
+    for lo, hi, col, lab in bands:                                     # 凡例（図の下に横並び）
+        sh.hatch_polys([sbox(*sh.P(x, 133), *sh.P(x + 5, 136.5))], solid=True, color=col)
+        sh.text(lab, (x + 6.5, 134.0), 1.7, "A-TEXT", paper=True)
+        x += 6.5 + _text_width(lab, 1.7) + 4
+    sh.text("赤枠＝水回り（数字は室の受信強度の中央値 dBm）　★＝水回りの調整に使う AP（竣工時に出力を 1dB 刻みで合わせる）　丸の数字＝AP 番号", (22, 128), 1.8, "A-TEXT", paper=True)
+    # (2) 水回り
+    sh.text("(2) 水回り 9 室の受信強度（dBm）", (12, 122), 2.4, "A-TEXT", paper=True)
+    rows = [["室", "最小", "中央値", "上位10%", "判定"]]
+    q = w["quiet"]
+    for s_ in (s for s in stats if s["cls"] == "quiet"):
+        ok = q["median"][0] <= s_["med"] <= q["median"][1] and s_["p90"] <= q["p90_max"] and s_["min"] >= q["min"]
+        rows.append([f"{s_['floor']} {s_['name']}", f"{s_['min']:.1f}", f"{s_['med']:.1f}", f"{s_['p90']:.1f}", "適合" if ok else "要調整"])
+    yy = sh.table(12, 119, [38, 14, 16, 16, 20], rows, row_h=4.4, h=1.9)
+    sh.text("目標: 中央値 −70〜−65・上位10% −62 以下・最小 −75 以上", (12, yy - 4), 1.8, "A-TEXT", paper=True)
+    # (3) 上質
+    sh.text("(3) 上質な室 12 室（−55dBm 以上の面積）", (130, 122), 2.4, "A-TEXT", paper=True)
+    rows = [["室", "AP", "最小", "中央値", "−55 以上", "−60 以上"]]
+    for s_ in (s for s in stats if s["cls"] == "premium"):
+        r = next(r for r in h.rooms if r.floor == s_["floor"] and r.name == s_["name"])
+        n = sum(a_["floor"] == s_["floor"] and r.rect[0] <= a_["xy"][0] <= r.rect[2] and r.rect[1] <= a_["xy"][1] <= r.rect[3] for a_ in aps)
+        rows.append([f"{s_['floor']} {s_['name']}", f"{n}台", f"{s_['min']:.1f}", f"{s_['med']:.1f}", f"{s_['c55'] * 100:.0f}%", f"{s_['c60'] * 100:.0f}%"])
+    sh.table(130, 119, [38, 10, 13, 13, 17, 17], rows, row_h=4.2, h=1.9)
+    # (1) AP 表
+    sh.text("(1) アクセスポイント 16 台（天井・FL+2,800）", (250, 271), 2.8, "A-TEXT", paper=True)
+    rows = [["AP", "室・役割", "EIRP", "位置 x, y (mm)"]]
+    for a_ in aps:
+        rows.append([a_["id"] + (" ★" if a_.get("tune") else ""), a_["role"], f"{a_['eirp']}dBm", f"{a_['xy'][0]:,}, {a_['xy'][1]:,}"])
+    yy = sh.table(250, 268, [18, 76, 14, 32], rows, row_h=3.9, h=1.7)
+    side_panel(sh, 250, yy - 5, [("h", "計画の考え方"),
+        ("t", f"機器: {w['standard']}。各 AP は PoE＋の有線（Cat6A）で機械室（東系統）のラックに集める（E-07）"),
+        ("t", f"上質な室（居室 A〜E・主寝室・図書室・LDK・ジム・シアター）: 全面 −55dBm 以上（計算。家具・人体の損失を見込み実測の目標 −60 より 5dB 厳しい）。RC 壁 1 枚で 25dB 落ちるため室ごとに AP を置く。最小 {sm['premium_min']:.1f}dBm"),
+        ("t", "水回り（浴室・シャワー・トイレ 4・洗面・脱衣・脱衣所・用品庫）: 施主の決定で −67dBm 程度（中央値 −65〜−70）に抑える。AP も LAN 口も置かず、RC 壁・スラブ越しの漏れ電波を周りの AP の出力で合わせる。切るのではなく悪くする（最小 −75 以上）"),
+        ("t", "注意: 水回りの値は簡易モデルの試算で、RC 壁の減衰の誤差（±5dB）で動く（RC 20dB なら中央値 −61〜−66、30dB なら −69〜−75）。竣工時に実測し、★の AP の出力を 1dB 刻みで調整する。位置で合わなければ予備の天井ボックス（1.5m 離れ）へ移す"),
+        ("t", "携帯電話の電波は抑えない（施主の指示の対象外）。壁内の電波減衰材は携帯電話も遮り、非常ボタンのない水回りで通報手段を減らすため採らない。住人用 SSID は 5/6GHz のみ（2.4GHz を出すと水回りが −50 程度に戻る）"),
+        ("t", "主寝室の AP2-9 は夜間停止（M-04）で、止まると 2F トイレなどは弱くなる方向（施主の意図に沿う）。避難室 AP2-8 は 24 時間稼働")], width=155)
     return sh
 
 
