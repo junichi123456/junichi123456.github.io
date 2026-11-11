@@ -1,0 +1,4 @@
+# オーバーレイ .blend（data/blend/kawazanyo_overlay.blend）の手編集のうち、マスターの要素の移動・寸法・材質の変更にあたるもの＝設計の変更の依頼。
+# オーバーレイには入れない（ライブラリオーバーライド禁止）。ここに「要確認」として記録し、Python 側（house.py・spec.yaml・data/*.yaml）で反映してから build でマスターを再生成する。
+# 書式: - {date: "YYYY-MM-DD", target: "<GLB 名・記号>", change: "<変更の内容>", status: 要確認, note: ""}
+requests: []

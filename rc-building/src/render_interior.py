@@ -4,6 +4,8 @@ Blender 段階（cg_blender.py → cg_interior.py）の起動、後処理（メ�
     python3 src/render_cg.py --interior                      # 全11カットを本番の品質で
     python3 src/render_cg.py --interior --preview            # 480×270・16spp（構図の確認）
     python3 src/render_cg.py --interior --only I01,I02
+
+v4.33: 既定はマスター .blend から撮る（src/shoot.py。引数は互換）。この段階1→Blender 段階2 の旧経路は `--legacy` で 1 版だけ残す。
 """
 from __future__ import annotations
 
@@ -107,7 +109,7 @@ def interior_cfg(h, spec, args, assets, out_dir, glb_path):
         res = list(ic["resolution"])
         samples, tl = ic["samples"], ic["time_limit"]
         if args.preview:
-            res, samples, tl = ([int(v) for v in args.size.split('x')] if args.size else [480, 270]), args.samples or 16, 90
+            res, samples, tl = ([int(v) for v in args.size.split('x')] if args.size else [480, 270]), args.samples or 16, (90 if getattr(args, 'time_limit', None) is None else args.time_limit)
         elif args.samples:
             samples = args.samples
         cut = dict(id=cid, file=c["file"], title=c["title"], kind=kind, lens=c["lens"], res=res, samples=samples, time_limit=tl,
@@ -309,3 +311,8 @@ def main(args):
     lp.write_text(json.dumps(log, ensure_ascii=False, indent=1), encoding="utf-8")
     print(f"done: {len(raw['cuts'])} cuts, total {total} s -> {out_dir}")
     return 0
+
+
+if __name__ == "__main__":
+    # 引数は render_cg.py --interior と同じ（互換ラッパー）
+    sys.exit(RC.main(["--interior", *sys.argv[1:]]))
