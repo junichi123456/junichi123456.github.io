@@ -1,16 +1,14 @@
 """bpy 系（.blend・FBX・USDZ）の起動役。bpy の入った python（.venv-bpy または環境変数 BPY_PYTHON）があるときだけ実行する。"""
 from __future__ import annotations
 
-import copy
 import json
 import os
 import subprocess
 import sys
 import tempfile
-import types
 from pathlib import Path
 
-from .manifest import COORD_WORLD
+from .manifest import COORD_WORLD, sha256
 
 ROOT = Path(__file__).resolve().parent.parent.parent
 sys.path.insert(0, str(ROOT / "src"))
@@ -23,37 +21,7 @@ def find_python():
     return None
 
 
-def make_cfgs(h, tmp):
-    """render_cg／render_interior／render_zones と同じ関数で設定を作る（テクスチャ・HDRI なし = 持ち運べる .blend にする）。"""
-    import render_cg as RC
-    import render_interior as RI
-    import render_zones as RZ
-    spec = h.spec
-    none_tex = {k: dict(asset=v, diff=None, status="skipped") for k, v in spec["cg"]["textures"].items()}
-    tex_i = {**none_tex, **{k: dict(asset=v, diff=None, status="skipped") for k, v in spec["interior_cg"]["textures"].items()}}
-    hd = {k: dict(asset=v, path=None, status="skipped") for k, v in spec["cg"]["hdri"].items()}
-    ns = types.SimpleNamespace(only=None, preview=False, size=None, samples=None, scene_only=False, no_glb=True)
-    out = Path(tmp)
-    cfg_e = RC.build_cfg(h, spec, ns, dict(textures=none_tex, hdri=hd, source="none"), out)
-    Z = RZ.load()
-    defs = RZ.cut_defs(h, Z)
-    sp = copy.deepcopy(spec)
-    ic = sp["interior_cg"]
-    ic["cuts"] = {}
-    for cid, d in defs.items():
-        s = dict(d["spec"])
-        s["file"] = cid
-        ic["cuts"][cid] = s
-    cfg_i, _its = RI.interior_cfg(h, sp, ns, dict(textures=tex_i, hdri=hd, source="none"), out, ROOT / "dist" / "model_interior.glb")
-    cfg_e["glb"] = str(ROOT / "dist" / "model.glb")
-    cfg_e["raw_log"] = cfg_i["raw_log"] = str(out / "raw.json")
-    pe, pi = out / "ext.json", out / "int.json"
-    pe.write_text(json.dumps(cfg_e, ensure_ascii=False), encoding="utf-8")
-    pi.write_text(json.dumps(cfg_i, ensure_ascii=False), encoding="utf-8")
-    return pe, pi, len(cfg_e["cuts"]), len(cfg_i["cuts"])
-
-
-def write_master(h, outdir, mf, timeout=900):
+def write_master(h, outdir, mf, timeout=900, force=False):
     """マスター .blend（kawazanyo_master.blend）を作る。失敗・bpy なしのときは旧ファイルを残して manifest に記録（build は止めない）。"""
     outdir = Path(outdir)
     py = find_python()
@@ -62,9 +30,17 @@ def write_master(h, outdir, mf, timeout=900):
         return None
     dst = outdir / "kawazanyo_master.blend"
     tmpb = outdir / "_master_tmp.blend"
+    import blend_master as BM
+    cur = BM.model_hash()
+    mp = outdir / "manifest.json"
+    if dst.exists() and not force and mp.exists():                # 入力（model_hash）が同じなら作り直さない（--blend-only で強制）
+        old = next((f for f in json.loads(mp.read_text(encoding="utf-8")).get("files", []) if f["file"] == dst.name), None)
+        if old and f"model_hash={cur}" in old.get("note", ""):
+            mf.add(dst, "Blender master .blend", COORD_WORLD, note=old["note"])
+            print("export: master .blend は最新（model_hash 一致）のため再生成しない（--blend-only で強制）")
+            return dict(reused=True)
     try:
         with tempfile.TemporaryDirectory() as tmp:
-            import blend_master as BM
             job = BM.master_job(h, tmp)
             jp, rp = Path(tmp) / "master_job.json", Path(tmp) / "master_result.json"
             jp.write_text(json.dumps(job, ensure_ascii=False), encoding="utf-8")
@@ -85,28 +61,35 @@ def write_master(h, outdir, mf, timeout=900):
         if dst.exists():
             mf.add(dst, "Blender master .blend", COORD_WORLD, note="旧ファイル（今回の生成は失敗）")
         return None
-    mf.add(dst, "Blender master .blend", COORD_WORLD, note=f"カメラ{res['cameras']}・材質{res['materials']}・オブジェクト{res['objects']}・撮影は src/shoot.py（手で編集しない）")
+    mf.add(dst, "Blender master .blend", COORD_WORLD, note=f"カメラ{res['cameras']}・材質{res['materials']}・オブジェクト{res['objects']}・撮影は src/shoot.py（手で編集しない）・model_hash={cur}")
     return res
 
 
-def write(h, outdir, mf, only=None, timeout=3600):
+def write(h, outdir, mf, only=None, timeout=3600, force=False):
+    """マスター .blend（kawazanyo_master.blend）と、GLB から FBX・USDZ を書く。bpy の入った python が無ければ skip を記録して終わる。"""
     outdir = Path(outdir)
     py = find_python()
     if not py:
         mf.skip("blend/FBX/USDZ", "bpy の入った python が無い（.venv-bpy または BPY_PYTHON）")
         return
-    write_master(h, outdir, mf)
-    with tempfile.TemporaryDirectory() as tmp:
-        pe, pi, ne, ni = make_cfgs(h, tmp)
-        cmd = [py, str(ROOT / "src" / "export_blender.py"), str(pe), str(pi), str(outdir)]
+    write_master(h, outdir, mf, force=force)
+    for old in ("kawazanyo_exterior.blend", "kawazanyo_interior.blend"):        # v4.33: マスター 1 本に置き換えた
+        (outdir / old).unlink(missing_ok=True)
+    # FBX・USDZ は GLB から作る。書き出しは時刻を含みバイト列が一定でないため、元の GLB（sha256）が前回と同じなら作り直さない（--blend-only で強制）
+    srcs = {"model_exterior.fbx": "model.glb", "model_interior.fbx": "model_interior.glb", "model_exterior.usdz": "model.glb"}
+    mp = outdir / "manifest.json"
+    old = {f["file"]: f.get("note", "") for f in json.loads(mp.read_text(encoding="utf-8")).get("files", [])} if mp.exists() else {}
+    sha = {g: sha256(ROOT / "dist" / g) for g in set(srcs.values())}
+    fresh = all((outdir / f).exists() and f"glb_sha256={sha[g]}" in old.get(f, "") for f, g in srcs.items())
+    if force or only or not fresh:
+        cmd = [py, str(ROOT / "src" / "export_blender.py"), "conv", str(outdir)]
         if only:
             cmd += ["--only", ",".join(only)]
         r = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout)
-    if r.returncode != 0:
-        mf.skip("blend/FBX/USDZ", f"bpy 工程が失敗: {r.stderr[-300:]}")
-        return
-    res = json.loads((outdir / "_blender_result.json").read_text(encoding="utf-8"))
-    (outdir / "_blender_result.json").unlink()
-    notes = {"kawazanyo_exterior.blend": f"カメラ{ne}", "kawazanyo_interior.blend": f"カメラ{ni}"}
-    for p in [q for q in sorted(outdir.glob("*.blend")) if q.name != "kawazanyo_master.blend"] + sorted(outdir.glob("*.fbx")) + sorted(outdir.glob("*.usdz")):
-        mf.add(p, {".blend": "Blender .blend", ".fbx": "FBX", ".usdz": "USDZ"}[p.suffix], COORD_WORLD, note=notes.get(p.name, ""))
+        if r.returncode != 0:
+            mf.skip("FBX/USDZ", f"bpy 工程が失敗: {r.stderr[-300:]}")
+            return
+        (outdir / "_blender_result.json").unlink(missing_ok=True)
+    for f, g in srcs.items():
+        if (outdir / f).exists():
+            mf.add(outdir / f, {".fbx": "FBX", ".usdz": "USDZ"}[Path(f).suffix], COORD_WORLD, note=f"glb_sha256={sha[g]}")

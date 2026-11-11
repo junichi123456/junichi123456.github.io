@@ -254,6 +254,12 @@ def post_process(path):
     im2.save(path, "PNG", optimize=True)
 
 
+def shoot_compat(args):
+    """引数互換: 従来の render_cg.py の引数を src/shoot.py（マスター .blend から撮る）の引数に読み替える。"""
+    import shoot_compat as SCm
+    return SCm.run("I*" if args.interior else "C*", args)
+
+
 def main(argv=None):
     import argparse
     ap = argparse.ArgumentParser()
@@ -264,8 +270,13 @@ def main(argv=None):
     ap.add_argument("--no-glb", action="store_true")
     ap.add_argument("--size", default="", help="--interior --preview の解像度（例 960x540）")
     ap.add_argument("--interior", action="store_true", help="内装CG（11カット。dist/render/interior/）。--preview・--only・--samples も使える")
+    ap.add_argument("--legacy", action="store_true", help="旧経路（毎回 scene.json を作って Blender でシーンを構築する）。v4.33 の 1 版だけ残す")
+    ap.add_argument("--time-limit", type=int, default=None, help="--legacy --preview の 1 カットの制限時間（秒）。0 で無制限")
+    ap.add_argument("--regen-glb", action="store_true", help="GLB とマスター .blend を再生成してから撮る")
     args = ap.parse_args(argv)
     args.only = set(args.only.split(",")) if args.only else None
+    if not args.legacy and not args.scene_only:
+        return shoot_compat(args)
     if args.interior:
         import render_interior
         return render_interior.main(args)

@@ -14,10 +14,10 @@ from .manifest import Manifest
 STEPS = [("ifc", "IFC4"), ("obj", "OBJ+MTL"), ("tables", "CSV/XLSX"), ("geo", "GeoJSON+KML"), ("dxf3d", "3D DXF")]
 
 
-def export_all(h, outdir, only=None, ifc_schema="IFC4", with_blend=False):
+def export_all(h, outdir, only=None, ifc_schema="IFC4", with_blend=False, force_blend=False):
     outdir = Path(outdir)
     outdir.mkdir(parents=True, exist_ok=True)
-    mf = Manifest(outdir)
+    mf = Manifest(outdir, merge=only is not None)
     for mod, label in STEPS:
         if only is not None and mod not in only:
             continue
@@ -37,7 +37,7 @@ def export_all(h, outdir, only=None, ifc_schema="IFC4", with_blend=False):
     if with_blend:
         try:
             from . import blender
-            blender.write(h, outdir, mf)
+            blender.write(h, outdir, mf, force=force_blend)
         except Exception as e:                      # noqa: BLE001
             mf.skip("blend/FBX/USDZ", f"失敗: {type(e).__name__}: {e}")
     mf.write()

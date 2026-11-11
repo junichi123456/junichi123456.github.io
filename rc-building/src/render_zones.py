@@ -5,6 +5,8 @@ spec.yaml の interior_cg.cuts・render_log.json には触らない。Blender �
     python3 src/render_zones.py --preview                  # 480×270・16spp を .cache/cg/interior_zones/preview/ へ
     python3 src/render_zones.py --floor 1F|2F              # 本番（6 カットずつ。JPEG があり def_hash が一致するカットは飛ばす）
     python3 src/render_zones.py --only Z1-23a --force      # 撮り直し
+
+v4.33: 既定はマスター .blend から撮る（src/shoot.py。引数は互換。--regen-glb は GLB とマスターの再生成）。旧経路は `--legacy` で 1 版だけ残す。
 """
 from __future__ import annotations
 
@@ -481,10 +483,14 @@ def main(argv=None):
     ap.add_argument("--only", default="")
     ap.add_argument("--force", action="store_true")
     ap.add_argument("--regen-glb", action="store_true")
+    ap.add_argument("--legacy", action="store_true", help="旧経路（チャンクごとに scene.json を作って Blender でシーンを構築）。v4.33 の 1 版だけ残す")
     a = ap.parse_args(argv)
     a.only = set(x for x in a.only.split(",") if x)
     if a.check:
         return check(a)
+    if not a.legacy:
+        import shoot_compat
+        return shoot_compat.run({"1F": "Z1-*", "2F": "Z2-*"}.get(a.floor, "Z*"), a)
     return render(a)
 
 

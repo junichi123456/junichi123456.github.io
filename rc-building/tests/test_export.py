@@ -259,13 +259,13 @@ def blend_out(h, tmp_path_factory):
 
 @needs_bpy
 def test_blend_cameras_and_materials(blend_out):
-    d, _ = blend_out
-    e = bpy_check("blend", d / "kawazanyo_exterior.blend")
-    i = bpy_check("blend", d / "kawazanyo_interior.blend")
-    assert e["cameras"] == 7 and i["cameras"] == 36
-    assert "C01" in e["camera_names"] and "Z1-11a" in i["camera_names"] and "Z2-33b" in i["camera_names"]
-    assert e["meshes"] > 150 and i["meshes"] > 700 and e["materials"] > 40 and i["materials"] > 100
-    assert i["lights"] > 100 and e["unit"] == "METRIC"
+    """v4.33: .blend はマスター 1 本（旧 kawazanyo_exterior.blend・kawazanyo_interior.blend は置き換えて削除）。詳しい試験は tests/test_blend_master.py。"""
+    d, mf = blend_out
+    assert not (d / "kawazanyo_exterior.blend").exists() and not (d / "kawazanyo_interior.blend").exists()
+    m = bpy_check("blend", d / "kawazanyo_master.blend")
+    assert m["cameras"] == 57 and "C01" in m["camera_names"] and "Z1-11a" in m["camera_names"] and "Z2-33b" in m["camera_names"] and "I01" in m["camera_names"]
+    assert m["meshes"] > 700 and m["materials"] > 150 and m["lights"] > 100 and m["unit"] == "METRIC"
+    assert any(f["file"] == "kawazanyo_master.blend" for f in mf.files)
 
 
 @needs_bpy

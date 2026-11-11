@@ -22,10 +22,12 @@ def sha256(path):
 
 
 class Manifest:
-    def __init__(self, outdir):
+    def __init__(self, outdir, merge=False):
+        """merge=True: 一部の形式だけ作り直すとき、既存の manifest.json の他の形式の項目を残す（--blend-only）。"""
         self.outdir = Path(outdir)
         self.files = []
         self.skipped = []
+        self.merge = merge
 
     def add(self, path, fmt, coord, note=""):
         path = Path(path)
@@ -41,6 +43,10 @@ class Manifest:
 
     def write(self):
         p = self.outdir / "manifest.json"
+        if self.merge and p.exists():
+            old = json.loads(p.read_text(encoding="utf-8"))
+            new = {f["file"] for f in self.files}
+            self.files = [f for f in old.get("files", []) if f["file"] not in new and (self.outdir / f["file"]).exists()] + self.files
         p.write_text(json.dumps(dict(version=VERSION, total_bytes=self.total_size(), files=self.files, skipped=self.skipped),
                                 ensure_ascii=False, indent=1), encoding="utf-8")
         return p

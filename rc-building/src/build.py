@@ -1,6 +1,8 @@
 """河沿要（仮称）図面一式・法規チェック・3D モデルを生成する。
 
-    cd rc-building && python3 src/build.py
+    cd rc-building && python3 src/build.py                # 図面・GLB・IFC・CSV など＋マスター .blend（bpy が無ければ manifest に skip を記録して続行）
+    python3 src/build.py --no-blend                       # マスター .blend（・FBX・USDZ）を作らない
+    python3 src/build.py --blend-only                     # GLB とマスター .blend（・FBX・USDZ）だけ再生成
 """
 from __future__ import annotations
 
@@ -29,7 +31,9 @@ def run_export(h, dist, args):
     try:
         from export import export_all
         schema = args[args.index("--ifc-schema") + 1] if "--ifc-schema" in args else "IFC4"
-        mf = export_all(h, dist / "export", ifc_schema=schema, with_blend="--with-blend" in args)
+        blend_only = "--blend-only" in args
+        # v4.33: マスター .blend（kawazanyo_master.blend）は既定で作る（--no-blend で省略、--blend-only でマスター（と FBX・USDZ）だけ再生成）
+        mf = export_all(h, dist / "export", ifc_schema=schema, with_blend="--no-blend" not in args, only=[] if blend_only else None, force_blend=blend_only)
         print(f"export: {len(mf.files)} files, {mf.total_size() / 1e6:.1f} MB → dist/export/")
     except Exception as e:                      # noqa: BLE001
         print(f"警告: データ形式の書き出しに失敗（図面・GLB は出力済み）: {type(e).__name__}: {e}")
@@ -39,6 +43,12 @@ def main():
     args = sys.argv[1:]
     h = House(ROOT)
     dist = ROOT / "dist"
+    if "--blend-only" in args:
+        # マスターは GLB（内装・外観）から作るので、GLB は書き出し直す（同じ入力なら同じバイト列）。図面・IFC・CSV には触れない
+        export_glb(h, dist / "model.glb")
+        export_glb(h, dist / "model_interior.glb", interior=True)
+        run_export(h, dist, args)
+        return
     if "--export-only" in args:
         run_export(h, dist, args)
         return
@@ -87,7 +97,7 @@ def main():
                                                      checks=rows), ensure_ascii=False, indent=1), encoding="utf-8")
     ng = [r for r in rows if r["result"] == house_legal.NG]
     run_export(h, dist, args)
-    print("外観CG: python3 src/render_cg.py／内装CG: python3 src/render_cg.py --interior（bpy が必要。README 参照）")
+    print("CG はマスター .blend から: python3 src/shoot.py --camera I01,Z1-11a（bpy が必要。README 参照。旧コマンドは互換）")
     print(f"checks: {len(rows)} rows, NG={len(ng)}, 要確認={sum(r['result'] == house_legal.CHK for r in rows)}")
     for r in ng:
         print("  NG:", r["item"], r["planned"])

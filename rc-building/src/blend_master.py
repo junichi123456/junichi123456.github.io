@@ -33,7 +33,8 @@ HASH_FUNCS = [("render_cg", ["build_cfg", "sun_position", "lamp_schedule", "Fram
 
 def model_hash(root: Path = ROOT) -> str:
     h = hashlib.sha256()
-    files = [root / "spec.yaml"] + sorted((root / "data").glob("*.yaml")) + [root / "src" / s for s in HASH_SRC]
+    # data/blend_overlay_requests.yaml は設計変更の依頼の記録でモデルの入力ではない（記録しただけでマスターを古いとしない）
+    files = [root / "spec.yaml"] + [p for p in sorted((root / "data").glob("*.yaml")) if p.name != "blend_overlay_requests.yaml"] + [root / "src" / s for s in HASH_SRC]
     for p in files:
         if p.exists():
             h.update(p.relative_to(root).as_posix().encode())

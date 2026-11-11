@@ -1,6 +1,6 @@
 {
  "version": "v4.32",
- "total_bytes": 14655029,
+ "total_bytes": 13672343,
  "files": [
   {
    "file": "kawazanyo_IFC4.ifc",
@@ -183,31 +183,13 @@
    "note": "112 MESH, 43 レイヤー"
   },
   {
-   "file": "kawazanyo_exterior.blend",
-   "format": "Blender .blend",
-   "size": 1223232,
-   "sha256": "53e3f19f48c9ff79e8b0e613889b569c0866039cf77bb76410da5411b17e5e52",
-   "version": "v4.31",
-   "coordinates": "真北ワールド（建物中心まわりに回転、m、Y上、-Z=真北、+X=東）",
-   "note": "カメラ7（bpy 生成物。ジオメトリは v4.32 でも不変のため v4.31 の生成物を保持）"
-  },
-  {
-   "file": "kawazanyo_interior.blend",
-   "format": "Blender .blend",
-   "size": 2171395,
-   "sha256": "b843c8aba0b12b88f2e2740fa1d3f7369ced26c840a69e6fc67f4c4f0b9a3995",
-   "version": "v4.31",
-   "coordinates": "真北ワールド（建物中心まわりに回転、m、Y上、-Z=真北、+X=東）",
-   "note": "カメラ36（bpy 生成物。ジオメトリは v4.32 でも不変のため v4.31 の生成物を保持）"
-  },
-  {
    "file": "model_exterior.fbx",
    "format": "FBX",
    "size": 1137340,
    "sha256": "874c8f5310282d9637052c90284112dd1a69720dbc50fff485f5498519fa1759",
    "version": "v4.31",
    "coordinates": "真北ワールド（建物中心まわりに回転、m、Y上、-Z=真北、+X=東）",
-   "note": "（bpy 生成物。ジオメトリは v4.32 でも不変のため v4.31 の生成物を保持）"
+   "note": "glb_sha256=a34272db8aa00b43e5e9f118b704dccba0a712b6f9a0d74cd2c6c46e90122b6d"
   },
   {
    "file": "model_interior.fbx",
@@ -216,7 +198,7 @@
    "sha256": "ef8d50e906e7802f066b188cf53cf63d497b4efebf20fe1cb22d1f58b8f247ae",
    "version": "v4.31",
    "coordinates": "真北ワールド（建物中心まわりに回転、m、Y上、-Z=真北、+X=東）",
-   "note": "（bpy 生成物。ジオメトリは v4.32 でも不変のため v4.31 の生成物を保持）"
+   "note": "glb_sha256=902964e0b5bc695a399848932d90f43300d0aa3778e177f8d3c0235b3a069b67"
   },
   {
    "file": "model_exterior.usdz",
@@ -225,7 +207,16 @@
    "sha256": "215b628f415bcfafaeddaaeb082e9a5b0046a2e95b2ac698afff6bf7c32a41a3",
    "version": "v4.31",
    "coordinates": "真北ワールド（建物中心まわりに回転、m、Y上、-Z=真北、+X=東）",
-   "note": "（bpy 生成物。ジオメトリは v4.32 でも不変のため v4.31 の生成物を保持）"
+   "note": "glb_sha256=a34272db8aa00b43e5e9f118b704dccba0a712b6f9a0d74cd2c6c46e90122b6d"
+  },
+  {
+   "file": "kawazanyo_master.blend",
+   "format": "Blender master .blend",
+   "size": 2411941,
+   "sha256": "3a1605e65d1ce0ee105cc350acae2f612ecd7c868aef0bc46a49169eceae2ee3",
+   "version": "v4.32",
+   "coordinates": "真北ワールド（建物中心まわりに回転、m、Y上、-Z=真北、+X=東）",
+   "note": "カメラ57・材質209・オブジェクト1045・撮影は src/shoot.py（手で編集しない）・model_hash=1b7291cee45a66df72dd904d22dd9e192e2e94d83ed0af9dc8d838214b20d587"
   }
  ],
  "skipped": []
