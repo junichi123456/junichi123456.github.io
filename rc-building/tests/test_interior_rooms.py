@@ -230,3 +230,24 @@ def test_T_outputs_if_present():
         assert Image.open(p).size == (1600, 1600 + Y["settings"]["band_px"])
         assert e["def_hash"] == RR.def_hash(ctx()["defs"][k]) and e["when"] == "2026-06-21T08:00" and e["wb"] == 5500
     assert sum(1 for b in RR.section_boxes(ctx()["h"], Y) if b["floor"] == "1F") > 0
+
+
+@pytest.mark.parametrize("fl", ["1F", "2F"])
+def test_R_outputs_if_present(fl):
+    """R の各階: JPEG（≦600KB・1280×(720+帯)）・定義と一致（def_hash）・検査の結果が記録され、NG（flag）は理由つき。"""
+    c = ctx()
+    ids = [k for k, d in c["defs"].items() if d["kind"] == "R" and d["floor"] == fl]
+    lg = _rooms_log().get("cuts", {})
+    got = [k for k in ids if k in lg]
+    if not got:
+        pytest.skip(f"{fl} 未撮影")
+    from PIL import Image
+    assert len(got) == len(ids), set(ids) - set(got)
+    for k in ids:
+        p = ROOT / "dist" / "render" / "interior" / f"{k}.jpg"
+        e = lg[k]
+        assert p.exists() and p.stat().st_size <= 600_000, k
+        assert Image.open(p).size == (1280, 720 + c["Y"]["settings"]["band_px"]), k
+        assert e["def_hash"] == RR.def_hash(c["defs"][k]) and e["when"] == "2026-06-21T08:00" and e["wb"] == 5500 and e["sun_k"] == c["Y"]["settings"]["sun_k"], k
+        assert e["status"] in ("ok", "flag") and (e["status"] == "ok") == (not e["issues"]), k
+        assert e["clearance"] >= 400 and e["lens"] == c["defs"][k]["spec"]["lens"], k
