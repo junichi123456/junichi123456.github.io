@@ -97,6 +97,13 @@ def glb_to(glb, fbx=None, usdz=None):
 
 
 def main():
+    if sys.argv[1] == "master":                       # v4.33: マスター .blend（master_build.py）。旧 .blend 2 本は段階 3 まで並存
+        import master_build
+        job = json.loads(Path(sys.argv[2]).read_text(encoding="utf-8"))
+        res = master_build.build_master(job, sys.argv[3])
+        Path(sys.argv[4]).write_text(json.dumps(res, ensure_ascii=False), encoding="utf-8")
+        print("export_blender master done", res)
+        return
     ext_j, int_j, out = Path(sys.argv[1]), Path(sys.argv[2]), Path(sys.argv[3])
     only = set(sys.argv[sys.argv.index("--only") + 1].split(",")) if "--only" in sys.argv else {"blend", "fbx", "usdz"}
     res = {}

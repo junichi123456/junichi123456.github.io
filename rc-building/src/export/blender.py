@@ -13,6 +13,7 @@ from pathlib import Path
 from .manifest import COORD_WORLD
 
 ROOT = Path(__file__).resolve().parent.parent.parent
+sys.path.insert(0, str(ROOT / "src"))
 
 
 def find_python():
@@ -52,12 +53,49 @@ def make_cfgs(h, tmp):
     return pe, pi, len(cfg_e["cuts"]), len(cfg_i["cuts"])
 
 
+def write_master(h, outdir, mf, timeout=900):
+    """マスター .blend（kawazanyo_master.blend）を作る。失敗・bpy なしのときは旧ファイルを残して manifest に記録（build は止めない）。"""
+    outdir = Path(outdir)
+    py = find_python()
+    if not py:
+        mf.skip("master.blend", "bpy の入った python が無い（.venv-bpy または BPY_PYTHON）")
+        return None
+    dst = outdir / "kawazanyo_master.blend"
+    tmpb = outdir / "_master_tmp.blend"
+    try:
+        with tempfile.TemporaryDirectory() as tmp:
+            import blend_master as BM
+            job = BM.master_job(h, tmp)
+            jp, rp = Path(tmp) / "master_job.json", Path(tmp) / "master_result.json"
+            jp.write_text(json.dumps(job, ensure_ascii=False), encoding="utf-8")
+            r = subprocess.run([py, str(ROOT / "src" / "export_blender.py"), "master", str(jp), str(tmpb), str(rp)], capture_output=True, text=True, timeout=timeout)
+            if r.returncode != 0 or not tmpb.exists():
+                raise RuntimeError(r.stderr[-400:] or r.stdout[-400:])
+            res = json.loads(rp.read_text(encoding="utf-8"))
+        size = tmpb.stat().st_size
+        if size > 15e6:
+            raise RuntimeError(f"マスター .blend が {size / 1e6:.1f}MB（15MB 超）")
+        if size > 10e6:
+            print(f"警告: マスター .blend が {size / 1e6:.1f}MB（目標 10MB 以下）")
+        tmpb.replace(dst)
+    except Exception as e:                       # noqa: BLE001
+        tmpb.unlink(missing_ok=True)
+        import traceback; traceback.print_exc()
+        mf.skip("master.blend", f"生成に失敗（旧ファイルを残す）: {type(e).__name__}: {str(e)[:300]}")
+        if dst.exists():
+            mf.add(dst, "Blender master .blend", COORD_WORLD, note="旧ファイル（今回の生成は失敗）")
+        return None
+    mf.add(dst, "Blender master .blend", COORD_WORLD, note=f"カメラ{res['cameras']}・材質{res['materials']}・オブジェクト{res['objects']}・撮影は src/shoot.py（手で編集しない）")
+    return res
+
+
 def write(h, outdir, mf, only=None, timeout=3600):
     outdir = Path(outdir)
     py = find_python()
     if not py:
         mf.skip("blend/FBX/USDZ", "bpy の入った python が無い（.venv-bpy または BPY_PYTHON）")
         return
+    write_master(h, outdir, mf)
     with tempfile.TemporaryDirectory() as tmp:
         pe, pi, ne, ni = make_cfgs(h, tmp)
         cmd = [py, str(ROOT / "src" / "export_blender.py"), str(pe), str(pi), str(outdir)]
@@ -70,5 +108,5 @@ def write(h, outdir, mf, only=None, timeout=3600):
     res = json.loads((outdir / "_blender_result.json").read_text(encoding="utf-8"))
     (outdir / "_blender_result.json").unlink()
     notes = {"kawazanyo_exterior.blend": f"カメラ{ne}", "kawazanyo_interior.blend": f"カメラ{ni}"}
-    for p in sorted(outdir.glob("*.blend")) + sorted(outdir.glob("*.fbx")) + sorted(outdir.glob("*.usdz")):
+    for p in [q for q in sorted(outdir.glob("*.blend")) if q.name != "kawazanyo_master.blend"] + sorted(outdir.glob("*.fbx")) + sorted(outdir.glob("*.usdz")):
         mf.add(p, {".blend": "Blender .blend", ".fbx": "FBX", ".usdz": "USDZ"}[p.suffix], COORD_WORLD, note=notes.get(p.name, ""))
