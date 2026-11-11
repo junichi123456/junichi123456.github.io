@@ -67,8 +67,9 @@ def test_fittings_sheet_draws():
 
 
 def test_wifi_glass_loss():
-    import wifi
-    assert wifi.LOSS["glass_door"] < wifi.LOSS["door"]
+    # v4.32: 減衰の値は wifi.py の定数から spec.yaml の wifi.loss へ移した（値は変えていない）
+    loss = house().spec["wifi"]["loss"]
+    assert loss["glass_door"] < loss["door"]
 
 
 if __name__ == "__main__":

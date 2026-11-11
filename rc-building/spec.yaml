@@ -134,13 +134,58 @@ interior:     # インテリアの一貫方針（施主指示 v4.6）: 「すば
   furniture: 突っ張り（床・天井）＋家具自体の構造で転倒を防ぐ。RC 壁には固定しない（外断熱の躯体に穴をあけない）
   child_lock_h: 1400         # 子どもの手が届かない補助錠の高さ（mm）
 
-wifi:         # 館内 Wi-Fi（v4.7）: 天井 AP を PoE 有線で接続、5GHz で受信 -67dBm 以上を床面の98%以上
-  standard: Wi-Fi 7（6GHz/5GHz/2.4GHz）天井埋込 AP・PoE＋・有線バックホール（Cat6A）
+wifi:         # 館内 Wi-Fi（v4.32）: 室ごとの品質。上質な室は -55dBm 以上を全面、水回りは -67dBm 程度に抑える（施主決定）
+  standard: Wi-Fi 7（6GHz/5GHz）天井埋込 AP・PoE＋・有線バックホール（Cat6A）。住人用 SSID は 5/6GHz のみ（2.4GHz は IoT 用の非公開 SSID だけ）
   freq_mhz: 5500
-  eirp_dbm: 20
+  loss:       # dB（5GHz）。RC 壁・スラブの値は仮定（±5dB の誤差。竣工時に実測して AP の出力を合わせる）
+    wall: 25.0
+    partition: 4.0
+    door: 4.0
+    stair: 6.0
+    glass_door: 3.0
+    glass: 3.0       # 室内窓 IW（v4.32 で追加。従前は 0dB）
+    slab: 30.0       # 上下階の AP を加える
+  rx_h: 1200         # 受信点の高さ（床上、mm）
+  ap_h: 2800         # AP の高さ（床上、mm）
+  eirp_range: [6, 20]
+  eirp_dbm: 20        # v4.31 の計画（段階2で削除）
   target_dbm: -67
   target_cover: 0.98
   grid: 500
+  premium:           # 上質（12 室）: 計算の目標は全面 -55dBm 以上（竣工時の実測は -60 以上・各室 5 点以上。家具・人体の損失を見込み 5dB 厳しく）
+    dbm: -55
+    measure_dbm: -60
+    rooms: [1F リビング・ダイニング, 1F キッチン, 1F ジム, 1F ジム（拡張部）, 1F 居室A, 2F 居室B, 2F 居室C, 2F 居室D, 2F 居室E, 2F 主寝室, 2F 図書室, 2F シアター]
+    wired: [1F 居室A, 2F 居室B, 2F 居室C, 2F 居室D, 2F 居室E, 1F リビング・ダイニング, 2F シアター]    # 有線の余地
+  quiet:             # 水回り（9 室）: 中央値 -70〜-65、上位 10% 値 -62 以下、最小 -75 以上。竣工時の実測は中央値 -67±3
+    median: [-70, -65]
+    p90_max: -62
+    min: -75
+    measure: [-70, -64]
+    target_dbm: -67
+    rooms: [1F 洗面・脱衣, 1F 浴室, 1F トイレ（手洗い付）, 1F トイレ, 2F 脱衣所, 2F シャワー, 2F トイレ（手洗い付）, 2F トイレ, 2F 収納（トイレ）]
+    note: 携帯電話の電波は抑えない（施主の指示の対象外）。壁内の電波減衰材は使わない
+  general:           # 一般（廊下・ホール・玄関・ランドリー・ファミクロ・WIC・前室・収納）
+    dbm: -67
+    cover: 0.90
+    min: -75
+  aps:               # 固定配置（建物座標 mm、天井）。★ は水回りの調整に使う AP（alt_xy は 1.5m 離れた予備の天井ボックス）
+    - {id: AP1-1, floor: 1F, xy: [1250, 3250],   eirp: 6,  role: リビング}
+    - {id: AP1-2, floor: 1F, xy: [3250, 7250],   eirp: 17,  role: キッチン}
+    - {id: AP1-3, floor: 1F, xy: [13250, 6250],  eirp: 20, role: ジム本体}
+    - {id: AP1-4, floor: 1F, xy: [11250, 2250],  eirp: 13,  role: ジム拡張部}
+    - {id: AP1-5, floor: 1F, xy: [15250, 15250], eirp: 20, role: 居室A（1F トイレの調整）, tune: true, alt_xy: [15250, 16750]}
+    - {id: AP1-6, floor: 1F, xy: [5250, 14250],  eirp: 16, role: ランドリー（洗面・浴室の調整）, tune: true, alt_xy: [3750, 14250]}
+    - {id: AP1-7, floor: 1F, xy: [13250, 14250], eirp: 20, role: 1F 東廊下（2F トイレ・シャワーの調整）, tune: true, alt_xy: [13250, 12750]}
+    - {id: AP2-1, floor: 2F, xy: [1250, 1250],   eirp: 14,  role: 居室B}
+    - {id: AP2-2, floor: 2F, xy: [5250, 2250],   eirp: 12,  role: 居室C}
+    - {id: AP2-3, floor: 2F, xy: [7250, 4250],   eirp: 19, role: 居室D}
+    - {id: AP2-4, floor: 2F, xy: [17250, 5250],  eirp: 11, role: シアター}
+    - {id: AP2-5, floor: 2F, xy: [5250, 7250],  eirp: 20, role: 図書室}
+    - {id: AP2-6, floor: 2F, xy: [2250, 13250],  eirp: 20, role: 居室E（シャワーの調整）, tune: true, alt_xy: [2250, 14750]}
+    - {id: AP2-7, floor: 2F, xy: [4250, 14250],  eirp: 19, role: ホール・階段2（脱衣所の調整）, tune: true, alt_xy: [4250, 12750]}
+    - {id: AP2-8, floor: 2F, xy: [13250, 10250],  eirp: 20, role: WIC（避難室。24 時間稼働）}
+    - {id: AP2-9, floor: 2F, xy: [16250, 17250], eirp: 20, role: 主寝室（2F トイレの調整。夜間停止 M-04）, tune: true, alt_xy: [16250, 15750]}
 
 smart:        # 建物の制御（v4.7）: スクリーン・照明・空調・掃除ロボットを共通の制御基盤でつなぎ、bot から API で操作できる
   bus: KNX（有線）＋ Matter over Thread/Wi-Fi（ゲートウェイ）

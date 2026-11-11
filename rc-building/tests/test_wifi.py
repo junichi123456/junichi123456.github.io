@@ -1,0 +1,96 @@
+"""v4.32 館内 Wi-Fi・有線 LAN・水回りの電波抑制の試験。
+
+    cd rc-building && python3 -m pytest tests/test_wifi.py -q
+"""
+from __future__ import annotations
+
+import sys
+from pathlib import Path
+
+import pytest
+
+ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(ROOT / "src"))
+
+from house import House  # noqa: E402
+import wifi as WF  # noqa: E402
+
+
+@pytest.fixture(scope="module")
+def h():
+    return House(ROOT)
+
+
+@pytest.fixture(scope="module")
+def stats(h):
+    return WF.room_stats(h)
+
+
+def _sel(stats, cls):
+    return [s for s in stats if s["cls"] == cls]
+
+
+def test_room_counts(stats):
+    """上質 12 室・水回り 9 室（spec の分類が実在の室と対応している）。"""
+    assert len(_sel(stats, "premium")) == 12 and len(_sel(stats, "quiet")) == 9
+
+
+def test_premium_rooms_fully_covered(h, stats):
+    """上質 12 室: 床面の 100% が -55dBm 以上（計算の目標。竣工時の実測は -60 以上）。"""
+    for s in _sel(stats, "premium"):
+        assert s["min"] >= h.spec["wifi"]["premium"]["dbm"], (s["floor"], s["name"], s["min"])
+        assert s["c55"] == 1.0
+
+
+def test_quiet_rooms_suppressed(h, stats):
+    """水回り 9 室: 中央値 -70〜-65・上位 10% 値 ≦ -62・最小 ≧ -75（悪くするが、切りはしない）。"""
+    q = h.spec["wifi"]["quiet"]
+    for s in _sel(stats, "quiet"):
+        k = (s["floor"], s["name"])
+        assert q["median"][0] <= s["med"] <= q["median"][1], (k, s["med"])
+        assert s["p90"] <= q["p90_max"], (k, s["p90"])
+        assert s["min"] >= q["min"], (k, s["min"])
+
+
+def test_general_rooms(h, stats):
+    """一般: -67 以上が各階 90% 以上・全点 -75 以上。"""
+    sm = WF.summarize(stats, h.spec["wifi"])
+    assert sm["general_cover_1F"] >= 0.90 and sm["general_cover_2F"] >= 0.90
+    assert sm["general_min"] >= -75
+
+
+def test_eirp_range_and_counts(h):
+    aps = h.spec["wifi"]["aps"]
+    lo, hi = h.spec["wifi"]["eirp_range"]
+    assert (lo, hi) == (6, 20) and len(aps) == 16
+    assert all(lo <= a["eirp"] <= hi and float(a["eirp"]).is_integer() for a in aps)
+    assert sum(a["floor"] == "1F" for a in aps) == 7 and sum(a["floor"] == "2F" for a in aps) == 9
+
+
+def test_no_ap_in_wet_areas(h):
+    """水回りと、水回りブロック内の廊下には AP（予備の alt_xy も）を置かない。"""
+    w = h.spec["wifi"]
+    wet = [r for r in h.rooms if WF.room_class(w, f"{r.floor} {r.name}") == "quiet"]
+    corr = {"1F": (9600, 12250, 12000, 15500), "2F": (6250, 12250, 12000, 13700)}
+    for a in w["aps"]:
+        for key in ("xy", "alt_xy"):
+            if key not in a:
+                continue
+            x, y = a[key]
+            for r in wet:
+                if r.floor == a["floor"]:
+                    assert not (r.rect[0] <= x <= r.rect[2] and r.rect[1] <= y <= r.rect[3]), (a["id"], r.name)
+            c = corr[a["floor"]]
+            assert not (c[0] <= x <= c[2] and c[1] <= y <= c[3]), (a["id"], "wet corridor")
+
+
+def test_slab_and_distance_terms(h):
+    """モデルの項: 上下階の AP はスラブ 30dB を加え、距離は 3 次元。"""
+    import numpy as np
+    M = WF.Model(h)
+    p = np.array([[3250.0, 3250.0]])
+    same = M.rssi(dict(floor="1F", xy=(3250, 3250), eirp=10), "1F", p)[0]
+    up = M.rssi(dict(floor="2F", xy=(3250, 3250), eirp=10), "1F", p)[0]
+    assert same - up > 30 and same > up
+    # 同じ平面位置でも高さ差 dz=1600 の 3D 距離（自由空間）で効く
+    assert abs(same - (10 - WF._pl(1.6, 5500))) < 1e-6
