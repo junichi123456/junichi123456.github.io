@@ -58,6 +58,7 @@ v4.16: 内装の仮置きと内装CG。リビングのチェアは「ペッパ�
 - `render/*.png`：外観CG 7カット（v4.17 時点の画像。v4.18 では描き直していない）（C01 門まわり／C01b 南東角／C02 南東上空／C03 玄関／C04 パーゴラ／C05 東側道路／C06 夕景）。1920×1080（C01b は 1600×900）
 - `model_interior.glb`：内装CG 用の3Dモデル（家具・天井・床仕上げ・内壁仕上げ・扉・照明器具を加えたもの。ビューアは従来どおり `model.glb`）
 - `render/interior/zones/*.jpg`（v4.30）：内装CG 18区画×2方向の36カット（3/21 15:30・視点 FL+1,600・1280×720・注記帯つき JPEG）、`render_log_zones.json`、`sheets/`（区画ごとの2枚並べ18枚）。階ごとの3×3コンタクトシートは `render/interior/contact_zones_1F.jpg`・`contact_zones_2F.jpg`（`docs/cg_zones_1F.jpg`・`docs/cg_zones_2F.jpg` に同じもの）。定義は `data/interior_zones.yaml`、ブリーフ38章。
+- `render/interior/T1_plan_1F.jpg`・`T2_plan_2F.jpg`（v4.34）：各階を天井面から真下に見下ろす 2 枚（正投影・北が上・FL+2,400 の水平断面・1600×1600＋注記帯。室名つきは `*_labels.jpg`）。`R1-01_ld.jpg` … `R2-19_master.jpg`：各室を壁に対し 25〜65° の斜めから撮った 37 枚（視点 FL+1,600・夏至 6/21 8:00・昼光 5,500K・1280×720）、`contact_rooms_1F.jpg`・`contact_rooms_2F.jpg`（4×5。`docs/cg_rooms_1F.jpg`・`docs/cg_rooms_2F.jpg`・`docs/cg_T1.jpg`・`docs/cg_T2.jpg` に縮小版）。定義は `data/interior_rooms.yaml`、記録は `render/render_log.json` の `rooms`、ブリーフ42章。
 - `render/interior/*.png`：**I04〜I13 は参考（旧・v4.17）。** 内装CG 14カット（v4.19 で描き直したのは I01・I02（I02_ldk_kitchen_side に改名）・I03・I14 の 4 カット・3/21 14:00 のみ。ほかは v4.17 時点の画像のまま。I01 LDK／I02 LDK キッチン側／I03 キッチン／I04 玄関／I05 階段／I06 ジム／I07 シアター／I08 図書室／I09 主寝室／I10 洗面・浴室／I11 ランドリー）。1600×900＋注記の帯
 - `LEGAL_CHECK.md`：法規チェック 102項目。不適合0、要確認15（用途地域・防火指定・採光補正係数・2階の排煙・構造計算など）
 - v4.32: 館内 Wi-Fi の再計画（AP 16 台・上質な室は −55dBm 以上、水回りは −67dBm 程度に抑制。簡易モデルで RC の減衰誤差 ±5dB のため竣工時に実測調整）、有線 LAN 21 口・RC スリーブ SL-C・ラック配線、E-01 更新・E-07 新設、export に network 表・IFC の AP/LAN 口（ブリーフ40章。携帯電話の電波は抑えない）。
@@ -78,6 +79,8 @@ python3 -m venv .venv-bpy && .venv-bpy/bin/pip install bpy==5.2.3   # 初回の�
 python3 src/shoot.py --camera Z1-11a --time 15:30 --date 03-21 --eye 1600 --out dist/render/interior/zones/
 python3 src/shoot.py --camera I01,I03 --preview          # 480×270・16spp を .cache/cg/shoot/preview/ へ
 python3 src/shoot.py --all [--kind int|ext] [--floor 1F]   # 全カメラ（撮影済みで同条件のカットは飛ばす。--force で撮り直し、--background で nohup 実行）
+python3 src/render_rooms.py --plan                 # 各室の視点・向きを決めて data/interior_rooms.yaml に固定（v4.34。--check は Blender なしの検査）
+python3 src/render_rooms.py --shoot --background   # T1・T2 と各室 37 枚（約 1 時間 50 分。6 カットずつ・既存はスキップ。--floor 1F|2F|T、--preview、--sheet、--white-plate）
 python3 -m pytest tests/test_blend_master.py -q      # マスターの読み戻し・GLB/IFC/CSV との一致・スモーク撮影・古いマスターの拒否
 python3 tools/repro_blend.py                         # 再現性試験（旧経路 --legacy とマスター経路の撮り比べ）
 ```
@@ -106,6 +109,7 @@ python3 tests/test_donation.py  # v4.22 寄付地（新旧面積の和・建ぺ�
 - `src/furniture.py`（家具の定義・配置・干渉検査）・`src/furniture_shapes.py`（家具の形）・`src/interior_shell.py`（床・天井・内壁・扉・階段まわり）・`src/furniture_sheets.py`（I-03〜I-05）・`src/render_interior.py`・`src/cg_interior.py`：家具の仮置きと内装CG
 - `src/shoot.py`（撮影。bpy 側は `src/shoot_blender.py`）・`src/master_build.py`・`src/blend_master.py`（マスター .blend の生成・版管理）・`src/shoot_compat.py`：マスターから CG を撮る（v4.33）
 - `src/render_cg.py`・`src/render_interior.py`・`src/render_zones.py`・`src/cg_blender.py`・`src/cg_interior.py`：CG の定義・材質・照明（旧スクリプトは引数互換のラッパー。`--legacy` が旧経路）
+- `src/render_rooms.py`：各階の天井視点（T1・T2）と各室の斜めカット 37 枚の計画・撮影・検査・シート（v4.34。定義は `data/interior_rooms.yaml`、試験は `tests/test_interior_rooms.py`）
 
 ## 注意
 敷地面積・高低差は公開データからの推定です。用途地域は準工業地域と推定しており、確認が必要です。測量・地盤調査・構造計算・行政協議（水路の占用、がけ条例、雨水浸透）による確定が必要です。
