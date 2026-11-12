@@ -55,7 +55,11 @@ def test_alternates_have_reasons():
         if c["zone"] in ALT_ZONES:
             assert c.get("alt") and len(c["alt"]) > 10, i
         if c.get("moved"):
-            assert c["moved"].get("reason") and c["moved"]["back_mm"] % 300 == 0 and c["moved"]["back_mm"] <= 900, i
+            assert c["moved"].get("reason"), i
+            if "back_mm" in c["moved"]:                       # v4.35 の移動（家具の北移動）は from だけを持つ
+                assert c["moved"]["back_mm"] % 300 == 0 and c["moved"]["back_mm"] <= 900, i
+            else:
+                assert c["moved"].get("from"), i
 
 
 def test_clearance_and_position():

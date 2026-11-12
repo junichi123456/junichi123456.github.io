@@ -35,8 +35,8 @@ checks:
   window: {mean_ratio: 1.2, std_min: 8, min_area: 0.02}
 cuts:
   # id: {zone, floor, room(カメラのある室), x, y, dir, lens(省略=標準), look(主に見えるもの), direct(直射の予測), alt(代替位置の理由), open_doors, also_1f}
-  Z1-11a: {slug: ld, zone: Z1-11, floor: 1F, room: リビング・ダイニング, x: 3000, y: 4600, dir: S, look: テーブル・角窓・窓辺の台、直射, direct: true}
-  Z1-11b: {exposure: -1.0, exp_note: "プレビューの平均輝度が上限（185）を超えたため −0.5 → −1.0（1回だけ）", slug: ld, zone: Z1-11, floor: 1F, room: リビング・ダイニング, x: 3000, y: 4600, dir: N, look: 開口越しのキッチン, direct: true}
+  Z1-11a: {slug: ld, zone: Z1-11, floor: 1F, room: リビング・ダイニング, x: 3000, y: 3800, dir: S, look: テーブル・角窓・窓辺の台、直射, direct: true, moved: {from: [3000, 4600], reason: "テーブルの北移動（v4.35）で視点がテーブルの上になる"}}
+  Z1-11b: {exposure: -1.0, exp_note: "プレビューの平均輝度が上限（185）を超えたため −0.5 → −1.0（1回だけ）", slug: ld, zone: Z1-11, floor: 1F, room: リビング・ダイニング, x: 3000, y: 3800, dir: N, look: 開口越しのキッチン, direct: true, moved: {from: [3000, 4600], reason: "テーブルの北移動（v4.35）で視点がテーブルの上になる"}}
   Z1-21a: {slug: genkan, zone: Z1-21, floor: 1F, room: ホール, x: 8600, y: 3800, dir: S, look: 土間・下足入れ・玄関扉}
   Z1-21b: {slug: genkan, zone: Z1-21, floor: 1F, room: ホール, x: 8600, y: 3800, dir: N, look: GD-2 越しの階段ホール}
   Z1-31a: {slug: gym, zone: Z1-31, floor: 1F, room: ジム, x: 15200, y: 3600, dir: E, look: 高窓・測定コーナー}

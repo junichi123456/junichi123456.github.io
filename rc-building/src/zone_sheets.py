@@ -178,7 +178,7 @@ def zone_sheet(h, Z, lg, zone):
                 d.text((x, yy), ln, font=font(13), fill=SUB)
                 yy += 16
         if c.get("moved"):
-            d.text((x, yy), f"位置：表から {c['moved']['back_mm']}mm 後ろへ", font=font(13), fill=SUB)
+            d.text((x, yy), (f"位置：表から {c['moved']['back_mm']}mm 後ろへ" if "back_mm" in c["moved"] else f"位置：表 {tuple(c['moved']['from'])} から移動（{c['moved']['reason']}）"), font=font(13), fill=SUB)
             yy += 16
         for ln in wrap(d, "検査：" + ("；".join(iss) if iss else "異常なし"), font(13), iw)[:3]:
             d.text((x, yy), ln, font=font(13), fill=RED if iss else SUB)

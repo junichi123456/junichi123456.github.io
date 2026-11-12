@@ -85,7 +85,7 @@ def items(h):
         out.append(Item(i, fl, room, name, kind, tuple(float(v) for v in rect), FL[fl] if z0 is None else z0, H, mat, base, **kw))
 
     # ---- 1F LDK（指定商品 2 点・チェアはこの 1 脚だけ）
-    tx, ty = 3000.0, 3000.0
+    tx, ty = 3000.0, 4900.0
     add("L-T1", "1F", LDK, T["name"], "table_osb", (tx - T["w"] / 2, ty - T["d"] / 2, tx + T["w"] / 2, ty + T["d"] / 2), T["h"], "osb",
         base="legs690", product="table_osb")
     # チェアはテーブルの東の短辺側に、西（テーブル）向きに置く（北側だと I01 でテーブルの陰に隠れる）。さらに −8° 振る
@@ -93,7 +93,7 @@ def items(h):
     add("L-C1", "1F", LDK, C["name"], "school_chair", (ccx - C["w"] / 2, ty - C["d"] / 2, ccx + C["w"] / 2, ty + C["d"] / 2), C["h"], "chair_wood",
         base="legs", chair=True, rot=-98.0, product="school_chair")
     add("L-S1", "1F", LDK, "サイドボード（台輪）", "cabinet", (5550, 225, 6000, 2475), 700, "case_ash")
-    add("L-K1", "1F", LDK, "リビング収納（天井まで・扉付き）", "tall", (175, 5550, 1700, 6000), h.ch["1F"], "case_ash")
+    add("L-K1", "1F", LDK, "リビング収納（天井まで・扉付き・W825）", "tall", (175, 5550, 1000, 6000), h.ch["1F"], "case_ash")
     add("LDK-C1", "1F", LDK, "窓辺の造作台 南（FL+700・奥行 1,000・オーク天板 t40・前面は人造大理石の艶消しパネルで床まで・内部は温風チャンバー）", "sill_counter", (175, 225, 4000, 1225), 700, "sill_panel", base="none", front="+y",
         note="「床から70cmに1m幅の台」の解釈。要施主確認")
     add("LDK-C2", "1F", LDK, "窓辺の造作台 西（同上・L 字でつながる）", "sill_counter", (175, 1225, 1175, 4000), 700, "sill_panel", base="none", front="+x")
