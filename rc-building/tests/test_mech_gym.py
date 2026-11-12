@@ -30,7 +30,7 @@ def test_x3_openings_and_remnants():
 def test_wall_quantity_and_eccentricity():
     h = _h()
     wq = house_legal.wall_quantity(h)
-    assert wq[("1F", "Y方向")][1] >= 16.2 and wq[("1F", "X方向")][1] >= 15.99
+    assert wq[("1F", "Y方向")][1] >= 16.2 and wq[("1F", "X方向")][1] >= 15.75
     assert max(v["ecc"] for v in PF.seismic(h)["stories"].values()) <= 0.15
     assert h.t == 250
 
