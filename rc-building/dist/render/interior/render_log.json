@@ -6,9 +6,9 @@
  "cuts": [
   {
    "id": "I01",
-   "file": "/home/user/junichi123456.github.io/rc-building/dist/render/interior/I01_ldk_south.png",
-   "seconds": 251.6,
-   "render_seconds": 251.0,
+   "file": "dist/render/interior/I01_ldk_south.png",
+   "seconds": 250.0,
+   "render_seconds": 249.8,
    "samples": 64,
    "time_limit": 240,
    "res": [
@@ -39,14 +39,30 @@
     -137.4
    ],
    "texture_fallbacks": [],
+   "family": "I",
    "time_limit_hit": true,
-   "when": "2026-03-21T14:00"
+   "when": "2026-03-21T14:00",
+   "status": "ok",
+   "master": {
+    "file": "kawazanyo_master.blend",
+    "model_version": "v4.32",
+    "model_hash": "0cd724d4128844315dfb7ac2479d292cfe20a4a1a59ee8738abf826f9c80b546",
+    "generated_at": "2026-11-12T06:30:40"
+   },
+   "shoot": {
+    "def_hash": "f6a0651c937e",
+    "model_hash": "0cd724d4128844315dfb7ac2479d292cfe20a4a1a59ee8738abf826f9c80b546",
+    "args_hash": "08ea60cb19d3",
+    "seed": 0
+   },
+   "shoot_flags": [],
+   "palette_mismatch": []
   },
   {
    "id": "I02",
-   "file": "/home/user/junichi123456.github.io/rc-building/dist/render/interior/I02_ldk_kitchen_side.png",
-   "seconds": 248.2,
-   "render_seconds": 248.0,
+   "file": "dist/render/interior/I02_ldk_kitchen_side.png",
+   "seconds": 248.6,
+   "render_seconds": 248.4,
    "samples": 64,
    "time_limit": 240,
    "res": [
@@ -77,8 +93,24 @@
     -137.4
    ],
    "texture_fallbacks": [],
+   "family": "I",
    "time_limit_hit": true,
-   "when": "2026-03-21T14:00"
+   "when": "2026-03-21T14:00",
+   "status": "ok",
+   "master": {
+    "file": "kawazanyo_master.blend",
+    "model_version": "v4.32",
+    "model_hash": "0cd724d4128844315dfb7ac2479d292cfe20a4a1a59ee8738abf826f9c80b546",
+    "generated_at": "2026-11-12T06:30:40"
+   },
+   "shoot": {
+    "def_hash": "75a89e9f739d",
+    "model_hash": "0cd724d4128844315dfb7ac2479d292cfe20a4a1a59ee8738abf826f9c80b546",
+    "args_hash": "a07908b6e7ca",
+    "seed": 0
+   },
+   "shoot_flags": [],
+   "palette_mismatch": []
   },
   {
    "id": "I03",
@@ -116,13 +148,68 @@
    ],
    "texture_fallbacks": [],
    "time_limit_hit": true,
-   "when": "2026-03-21T14:00"
+   "when": "2026-03-21T14:00",
+   "stale_since": "v4.35"
+  },
+  {
+   "id": "I12",
+   "file": "dist/render/interior/I12_genkan_glass.png",
+   "seconds": 250.0,
+   "render_seconds": 249.8,
+   "samples": 64,
+   "time_limit": 240,
+   "res": [
+    1600,
+    900
+   ],
+   "exposure": -0.7,
+   "wb": 5000,
+   "lamp_k": 4625,
+   "lamp_pct": 100.0,
+   "channels": {
+    "L": [
+     4625,
+     100.0
+    ],
+    "D": [
+     2200,
+     0.0
+    ],
+    "F": [
+     2200,
+     0.0
+    ]
+   },
+   "hdri_sun": [
+    145.8,
+    47.9,
+    -137.4
+   ],
+   "texture_fallbacks": [],
+   "family": "I",
+   "time_limit_hit": true,
+   "when": "2026-03-21T14:00",
+   "status": "ok",
+   "master": {
+    "file": "kawazanyo_master.blend",
+    "model_version": "v4.32",
+    "model_hash": "0cd724d4128844315dfb7ac2479d292cfe20a4a1a59ee8738abf826f9c80b546",
+    "generated_at": "2026-11-12T06:30:40"
+   },
+   "shoot": {
+    "def_hash": "658faa7fc7a6",
+    "model_hash": "0cd724d4128844315dfb7ac2479d292cfe20a4a1a59ee8738abf826f9c80b546",
+    "args_hash": "41cb4416dc10",
+    "seed": 0
+   },
+   "shoot_flags": [],
+   "palette_mismatch": []
   },
   {
    "id": "I14",
-   "file": "/home/user/junichi123456.github.io/rc-building/dist/render/interior/I14_ldk_corner.png",
-   "seconds": 249.0,
-   "render_seconds": 248.9,
+   "file": "dist/render/interior/I14_ldk_corner.png",
+   "seconds": 252.3,
+   "render_seconds": 252.1,
    "samples": 64,
    "time_limit": 240,
    "res": [
@@ -153,8 +240,186 @@
     -137.4
    ],
    "texture_fallbacks": [],
+   "family": "I",
    "time_limit_hit": true,
-   "when": "2026-03-21T14:00"
+   "when": "2026-03-21T14:00",
+   "status": "ok",
+   "master": {
+    "file": "kawazanyo_master.blend",
+    "model_version": "v4.32",
+    "model_hash": "0cd724d4128844315dfb7ac2479d292cfe20a4a1a59ee8738abf826f9c80b546",
+    "generated_at": "2026-11-12T06:30:40"
+   },
+   "shoot": {
+    "def_hash": "170cbfc8fb51",
+    "model_hash": "0cd724d4128844315dfb7ac2479d292cfe20a4a1a59ee8738abf826f9c80b546",
+    "args_hash": "4fdf339572ce",
+    "seed": 0
+   },
+   "shoot_flags": [],
+   "palette_mismatch": []
+  },
+  {
+   "id": "R1-01_ld",
+   "file": "/home/user/junichi123456.github.io/rc-building/dist/render/interior/R1-01_ld.png",
+   "seconds": 157.9,
+   "render_seconds": 157.5,
+   "samples": 64,
+   "time_limit": 150,
+   "res": [
+    1280,
+    720
+   ],
+   "exposure": -0.5,
+   "wb": 5500,
+   "lamp_k": 5000,
+   "lamp_pct": 100.0,
+   "channels": {
+    "L": [
+     5000,
+     100.0
+    ],
+    "D": [
+     2200,
+     0.0
+    ],
+    "F": [
+     2200,
+     0.0
+    ]
+   },
+   "hdri_sun": [
+    145.8,
+    47.9,
+    1.8
+   ],
+   "texture_fallbacks": [],
+   "family": "R",
+   "time_limit_hit": true,
+   "when": "2026-06-21T08:00",
+   "status": "ok",
+   "master": {
+    "file": "kawazanyo_master.blend",
+    "model_version": "v4.32",
+    "model_hash": "0cd724d4128844315dfb7ac2479d292cfe20a4a1a59ee8738abf826f9c80b546",
+    "generated_at": "2026-11-12T06:30:40"
+   },
+   "shoot": {
+    "def_hash": "41faee6013de",
+    "model_hash": "0cd724d4128844315dfb7ac2479d292cfe20a4a1a59ee8738abf826f9c80b546",
+    "args_hash": "5ab15989a62c",
+    "seed": 0
+   },
+   "shoot_flags": [],
+   "palette_mismatch": []
+  },
+  {
+   "id": "R1-03_doma",
+   "file": "/home/user/junichi123456.github.io/rc-building/dist/render/interior/R1-03_doma.png",
+   "seconds": 157.0,
+   "render_seconds": 156.9,
+   "samples": 64,
+   "time_limit": 150,
+   "res": [
+    1280,
+    720
+   ],
+   "exposure": -0.5,
+   "wb": 5500,
+   "lamp_k": 5000,
+   "lamp_pct": 100.0,
+   "channels": {
+    "L": [
+     5000,
+     100.0
+    ],
+    "D": [
+     2200,
+     0.0
+    ],
+    "F": [
+     2200,
+     0.0
+    ]
+   },
+   "hdri_sun": [
+    145.8,
+    47.9,
+    1.8
+   ],
+   "texture_fallbacks": [],
+   "family": "R",
+   "time_limit_hit": true,
+   "when": "2026-06-21T08:00",
+   "status": "ok",
+   "master": {
+    "file": "kawazanyo_master.blend",
+    "model_version": "v4.32",
+    "model_hash": "0cd724d4128844315dfb7ac2479d292cfe20a4a1a59ee8738abf826f9c80b546",
+    "generated_at": "2026-11-12T06:30:40"
+   },
+   "shoot": {
+    "def_hash": "ae5940dbc2fb",
+    "model_hash": "0cd724d4128844315dfb7ac2479d292cfe20a4a1a59ee8738abf826f9c80b546",
+    "args_hash": "d5b04bc30f1e",
+    "seed": 0
+   },
+   "shoot_flags": [],
+   "palette_mismatch": []
+  },
+  {
+   "id": "T1_plan_1F",
+   "file": "/home/user/junichi123456.github.io/rc-building/dist/render/interior/T1_plan_1F.png",
+   "seconds": 319.0,
+   "render_seconds": 318.9,
+   "samples": 64,
+   "time_limit": 300,
+   "res": [
+    1600,
+    1600
+   ],
+   "exposure": -0.5,
+   "wb": 5500,
+   "lamp_k": 5000,
+   "lamp_pct": 100.0,
+   "channels": {
+    "L": [
+     5000,
+     100.0
+    ],
+    "D": [
+     2200,
+     0.0
+    ],
+    "F": [
+     2200,
+     0.0
+    ]
+   },
+   "hdri_sun": [
+    145.8,
+    47.9,
+    1.8
+   ],
+   "texture_fallbacks": [],
+   "family": "T",
+   "time_limit_hit": true,
+   "when": "2026-06-21T08:00",
+   "status": "ok",
+   "master": {
+    "file": "kawazanyo_master.blend",
+    "model_version": "v4.32",
+    "model_hash": "0cd724d4128844315dfb7ac2479d292cfe20a4a1a59ee8738abf826f9c80b546",
+    "generated_at": "2026-11-12T06:30:40"
+   },
+   "shoot": {
+    "def_hash": "20ba02941f3b",
+    "model_hash": "0cd724d4128844315dfb7ac2479d292cfe20a4a1a59ee8738abf826f9c80b546",
+    "args_hash": "46ed02b62f45",
+    "seed": 0
+   },
+   "shoot_flags": [],
+   "palette_mismatch": []
   }
  ],
  "textures": {
@@ -292,5 +557,18 @@
   "when": "2026-03-21T14:00",
   "version": "v4.29",
   "note": "内装の配色（v4.29）で再レンダー。I04〜I13 は旧配色のまま（再レンダーしていない）。bpy 5.2.3。palette_mismatch=0"
- }
+ },
+ "master": {
+  "file": "kawazanyo_master.blend",
+  "model_version": "v4.32",
+  "model_hash": "0cd724d4128844315dfb7ac2479d292cfe20a4a1a59ee8738abf826f9c80b546",
+  "generated_at": "2026-11-12T06:30:40"
+ },
+ "last_shoot": {
+  "at": "2026-11-12T07:27:19",
+  "seconds": 644.5,
+  "seed": 0,
+  "material_colors_checked": 122
+ },
+ "texture_missing": []
 }

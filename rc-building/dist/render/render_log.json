@@ -20,7 +20,8 @@
     -91.1
    ],
    "sky_fallback": false,
-   "texture_fallbacks": []
+   "texture_fallbacks": [],
+   "stale_since": "v4.35"
   },
   {
    "id": "C01b",
@@ -39,7 +40,8 @@
     -91.1
    ],
    "sky_fallback": false,
-   "texture_fallbacks": []
+   "texture_fallbacks": [],
+   "stale_since": "v4.35"
   },
   {
    "id": "C02",
@@ -193,11 +195,11 @@
      "D": 0,
      "F": 0
     },
-    "render_seconds": 647.3,
+    "render_seconds": 1.5,
     "metrics": {
-     "mean": 144.4364,
-     "std": 70.6064,
-     "black": 0.0052,
+     "mean": 144.6204,
+     "std": 70.6986,
+     "black": 0.0051,
      "white": 0.0
     },
     "status": "ok",
@@ -271,19 +273,19 @@
      "D": 0,
      "F": 0
     },
-    "render_seconds": 951.9,
+    "render_seconds": 326.1,
     "metrics": {
-     "black": 0.0,
+     "black": 0.0001,
      "white": 0.0036,
-     "mean": 118.2709,
-     "std": 52.8684,
+     "mean": 120.4964,
+     "std": 55.4329,
      "window_area": 0.4834,
-     "window_ratio": 0.8789,
-     "window_std": 36.3648
+     "window_ratio": 0.8692,
+     "window_std": 36.4795
     },
     "status": "flag",
     "issues": [
-     "窓の外が見えない（窓領域の平均は画像平均の 0.88 倍・標準偏差 36.4）"
+     "窓の外が見えない（窓領域の平均は画像平均の 0.87 倍・標準偏差 36.5）"
     ],
     "def_hash": "41faee6013de",
     "clearance": 700,
@@ -333,7 +335,8 @@
     "clearance": 860,
     "front_mm": 7217,
     "wall_angle": 44.2,
-    "alt": null
+    "alt": null,
+    "stale_since": "v4.35"
    },
    "R1-03_doma": {
     "id": "R1-03_doma",
@@ -363,12 +366,12 @@
      "D": 0,
      "F": 0
     },
-    "render_seconds": 952.2,
+    "render_seconds": 326.2,
     "metrics": {
      "black": 0.0002,
      "white": 0.0009,
-     "mean": 176.5229,
-     "std": 35.3363,
+     "mean": 175.9332,
+     "std": 35.604,
      "window_area": 0.0
     },
     "status": "ok",
@@ -1909,10 +1912,10 @@
   },
   "master": {
    "file": "kawazanyo_master.blend",
-   "model_hash": "0e4b4e7f54a5aac1",
-   "generated_at": "2026-11-11T19:19:11"
+   "model_hash": "0cd724d412884431",
+   "generated_at": "2026-11-12T07:43:17"
   },
   "version": "v4.34",
-  "total_seconds": 6633.7
+  "total_seconds": 7292.6
  }
 }
