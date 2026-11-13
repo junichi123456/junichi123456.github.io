@@ -7180,11 +7180,19 @@
       "when": [
        {
         "trickroom": false,
-        "foe_boosted": true
+        "foe_boosted": true,
+        "my_hp": [
+         1.0,
+         1.0
+        ]
        },
        {
         "trickroom": false,
-        "foe_faster": true
+        "foe_faster": true,
+        "my_hp": [
+         1.0,
+         1.0
+        ]
        }
       ],
       "do": {
@@ -7194,7 +7202,7 @@
       },
       "max": 2,
       "origin": "article",
-      "note": "高速物理・積み技にトリルで切り返す",
+      "note": "ばけのかわが残っている(HP満タン)ときにトリル。高速物理・積み技に切り返す",
       "src": "高速物理や積み技、イエッサン絡みにトリルで切り返す枠"
      },
      {
@@ -7253,7 +7261,7 @@
       "src": ""
      }
     ],
-    "play_date": "2026-11-05"
+    "play_date": "2026-11-13"
    },
    "regulation": "mc"
   },
