@@ -4931,10 +4931,10 @@ def tn_approx(V):
     return {m['name']: {'approx': m.get('approx', []), 'note': m.get('approx_note', '')} for m in v['team']}
 
 
-def tn_opp_sels(V, rt):
+def tn_opp_sels(V, rt, leads=None):
     bases = [m['base'] for m in rt['mons']]
     out = []
-    for lead in TN_LEADS[V]:
+    for lead in (leads or TN_LEADS[V]):
         assert lead in bases and lead not in TN_BACK, (V, lead)
         out += [[lead, TN_BACK[0], TN_BACK[1]], [lead, TN_BACK[1], TN_BACK[0]]]
     return out
@@ -5592,7 +5592,749 @@ def cmd_tonorag_selftest(a):
         raise SystemExit(1)
 
 
+# ================================================================ tonorag --focus（SPEC_TONORAGU2.md）
+TN2_VERSION = 'tn2'
+TN2_LEADS = {'A': ['イエッサン'], 'B': ['バサギリ'], 'C': ['イエッサン♀']}
+TN2_K2 = 100
+
+
+def tn2_paths(out_dir=None):
+    d = out_dir or DEF_OUT
+    return {'dir': d, 'plan': os.path.join(d, 'tn2_plan.json'), 'games': os.path.join(d, 'tn2_games.json'),
+            'logs': os.path.join(d, 'tn2_logs.jsonl'), 'md': os.path.join(d, 'TONORAGU2.md') if out_dir else os.path.join(HERE, '..', 'logs', 'TONORAGU2.md')}
+
+
+def tn2_seed(V, osel, lsel, k):
+    return zlib.crc32(f"tn2{V}{'/'.join(osel)}{'/'.join(lsel)}{k}".encode())
+
+
+def tn2_key(V, osel, lsel, k):
+    return f"tn2:{V}|{'/'.join(osel)}|{'/'.join(lsel)}|{k}"
+
+
+def tn2_append_log(P, key, r):
+    need_nl = False
+    if os.path.exists(P['logs']) and os.path.getsize(P['logs']) > 0:
+        with open(P['logs'], 'rb') as f:
+            f.seek(-1, 2)
+            need_nl = f.read(1) != b'\n'
+    with open(P['logs'], 'a', encoding='utf-8') as f:
+        if need_nl:
+            f.write('\n')
+        f.write(json.dumps({'key': key, 'log': r['log'], 'snap': r.get('snap'), 'post': r.get('post')}, ensure_ascii=False) + '\n')
+        f.flush()
+
+
+def tn2_job(plan, V, osel, lsel, k, stage, teams):
+    j = tn_job(plan, V, osel, lsel, k, stage, teams)
+    return (tn2_key(V, osel, lsel, k),) + j[1:]
+
+
+def _job_tn2(a, snap=True):
+    key, V, osel, lsel, k, s0, s1, o0, o1, stage, depth, res, mode = a
+    t0 = time.time()
+    import search as _S
+    orig, osnap = _S.axis_cover, R.SNAP
+    try:
+        R.SNAP = snap
+        rr_apply(_TEAMS[s0])
+        pa = _pb_args(s0, s1)
+        if res and (res[0] or res[1]):
+            pa = (pa[0] if pa else None, res)
+        if mode == 'discount':
+            _S.axis_cover = _tn_discount_cover
+        r = _TN_PLAY((None, s1, o0, o1, tn2_seed(V, osel, lsel, k), depth[0], depth[1], False, None, False, (s0,), (True, True)) + pa)
+    except Exception:
+        r = {'res': None, 'error': traceback.format_exc()[-800:]}
+    finally:
+        _S.axis_cover = orig
+        R.SNAP = osnap
+    r['key'] = key
+    r['sec'] = round(time.time() - t0, 2)
+    return r
+
+
+def tn2_record(job, r, L):
+    key, V, osel, lsel, k, *_ = job
+    rec = tn_record(job, r, L)
+    rec['seed'] = tn2_seed(V, osel, lsel, k)
+    rec['focus'] = True
+    return rec
+
+
+def tn2_ks(plan, stage, n=None):
+    if stage == 1:
+        return list(range(n if n is not None else plan['games']['1']))
+    return list(range(TN2_K2, TN2_K2 + (n if n is not None else plan['games']['2'])))
+
+
+def tn2_jobs(plan, stage, teams, sels=None, n=None):
+    out = []
+    for V, vv in plan['variants'].items():
+        ls = plan['candidates'] if stage == 1 else (sels or {}).get(V, [])
+        for osel in vv['opp_sels']:
+            for lsel in ls:
+                for k in tn2_ks(plan, stage, n):
+                    out.append(tn2_job(plan, V, osel, lsel, k, stage, teams))
+    return out
+
+
+def tn2_pick_stage2(plan, gm):
+    out = {}
+    ks = tn2_ks(plan, 1)
+    for V in plan['variants']:
+        rows = []
+        for i, lsel in enumerate(plan['candidates']):
+            w, n, hp = tn_rate(gm, V, lsel, ks)
+            rows.append((-(w / n if n else 0.0), -(sum(hp) / len(hp) if hp else 0.0), i))
+        out[V] = [list(plan['candidates'][r[2]]) for r in sorted(rows)[:plan['top']]]
+    return out
+
+
+def cmd_tn2_plan(a):
+    P = tn2_paths(a.out_dir)
+    os.makedirs(P['dir'], exist_ok=True)
+    mode = a.resource or 'loose'
+    n1g, n2g, top = (a.games or 8), (getattr(a, 'games2', None) or 12), (getattr(a, 'top', None) or 2)
+    rp = load_plan(paths(None))
+    T = dict(rp['teams'])
+    V = tn_load_variants()
+    for v, rt in V.items():
+        T[rt['id']] = rt
+    _worker_init(T)
+    for i in [TN_L] + list(TN_VARS.values()):
+        rr_apply(T[i])
+    cands = [list(c) for c in T[TN_L]['candidates']]
+    osels = {v: tn_opp_sels(v, V[v], TN2_LEADS[v]) for v in V}
+    variants = {v: {'id': rt['id'], 'title': rt['title'], 'opp_sels': osels[v], 'team': rt['mons'], 'approx': tn_approx(v)} for v, rt in V.items()}
+    rc = tn_res_cfg(mode)
+    sig = hashlib.sha256((rp['sig'] + TN_L + ','.join(TN_VARS.values()) + json.dumps([V[v]['mons'] for v in sorted(V)], ensure_ascii=False, sort_keys=True) +
+                          json.dumps(osels, ensure_ascii=False, sort_keys=True) + json.dumps(cands, ensure_ascii=False) +
+                          json.dumps(rc, ensure_ascii=False, sort_keys=True) + 'tn1' + 'tn2' + json.dumps(TN2_LEADS, ensure_ascii=False, sort_keys=True)).encode()).hexdigest()
+    old = None
+    if os.path.exists(P['plan']):
+        old = json.load(open(P['plan'], encoding='utf-8'))
+        if old.get('sig') != sig:
+            if not a.force:
+                raise SystemExit('tn2_plan.json の sig が違います（--force で退避して作り直し）')
+            os.replace(P['plan'], P['plan'][:-5] + time.strftime('.%Y%m%d_%H%M%S.json'))
+            old = None
+    nv = len(cands) * sum(len(x) for x in osels.values())
+    est = tn_estimate(nv * n1g, nv // len(cands) * top * n2g, a.procs)
+    if est['total_min'] > 120:
+        print(f"警告: 見積り {est['total_min']}分（rf込み）が120分を超えます", flush=True)
+    plan = old or {'version': TN2_VERSION, 'created': time.strftime('%Y-%m-%d %H:%M:%S'), 'sig': sig, 'rr_sig': rp['sig'], 'main': TN_L,
+                   'variants': variants, 'candidates': cands, 'depth': {'1': list(TN_DEPTH[1]), '2': list(TN_DEPTH[2])}, 'deny': [True, True],
+                   'resource': rc, 'leads': TN2_LEADS, 'opp_sels': osels, 'playbook': _pb_sig(), 'stage2_sels': None,
+                   'note': 'B・C の approx 項目は近似＝仮説'}
+    if old and not (getattr(a, 'games', None) or getattr(a, 'games2', None) or getattr(a, 'top', None)):
+        print(f"変更なし: {P['plan']}（sig {sig[:12]}）")
+        return old
+    plan['games'] = {'1': n1g, '2': n2g}
+    plan['top'] = top
+    plan['estimate'] = est
+    safeio.write_json(P['plan'], plan)
+    print(f"書きました: {P['plan']}（sig {sig[:12]}）第1段{nv * n1g}戦 第2段{nv // len(cands) * top * n2g}戦 見積り {est}")
+    return plan
+
+
+def cmd_tn2_run(a):
+    P = tn2_paths(a.out_dir)
+    plan = tn_load_plan(P)
+    if a.resource and a.resource != plan['resource']['mode']:
+        raise SystemExit(f"plan の resource は {plan['resource']['mode']} です")
+    rp = load_plan(paths(None))
+    T = dict(rp['teams'])
+    for v, rt in tn_load_variants().items():
+        T[rt['id']] = rt
+    if os.path.exists(P['games']):
+        G = json.load(open(P['games'], encoding='utf-8'))
+        if G.get('plan_sig') != plan['sig']:
+            raise SystemExit('tn2_games.json の plan_sig が tn2_plan.json と違います')
+    else:
+        G = {'version': TN2_VERSION, 'plan_sig': plan['sig'], 'resource': plan['resource'], 'games': {}, 'playbook': _pb_sig()}
+    pb_guard(G)
+    gm = G['games']
+    n = getattr(a, 'games', None)
+    if a.stage == 1:
+        jobs = tn2_jobs(plan, 1, T, n=n)
+    else:
+        miss = [j[0] for j in tn2_jobs(plan, 1, T) if j[0] not in gm or gm[j[0]]['res'] is None]
+        if miss:
+            raise SystemExit(f'第1段が未完です（{len(miss)}戦）。先に run --stage 1 を完了してください')
+        if not plan.get('stage2_sels'):
+            plan['stage2_sels'] = tn2_pick_stage2(plan, gm)
+            safeio.write_json(P['plan'], plan)
+        jobs = tn2_jobs(plan, 2, T, plan['stage2_sels'], n=n)
+    todo = [j for j in jobs if j[0] not in gm or (a.retry_errors and gm[j[0]]['res'] is None)]
+    if a.max_games:
+        todo = todo[:a.max_games]
+    tot, base = len(jobs), sum(1 for j in jobs if j[0] in gm and gm[j[0]]['res'] is not None)
+    print(f'第{a.stage}段 全体 {tot}戦、済み {base}、今回 {len(todo)}', flush=True)
+    t0 = time.time()
+    n_done = 0
+    active = {}
+    it = iter(todo)
+    with make_pool(a.procs, T) as pool:
+        while True:
+            while len(active) < a.procs:
+                job = next(it, None)
+                if job is None:
+                    break
+                active[job[0]] = (pool.apply_async(_job_tn2, (job,)), job)
+            if not active:
+                break
+            got = False
+            for key, (ar, job) in list(active.items()):
+                if not ar.ready():
+                    continue
+                got = True
+                r = ar.get()
+                del active[key]
+                n_done += 1
+                gm[key] = tn2_record(job, r, plan['main'])
+                safeio.write_json(P['games'], G)
+                if r.get('log') is not None:
+                    tn2_append_log(P, key, r)
+                s = tn_score(gm[key])
+                el = (time.time() - t0) / 60
+                print(f"[{base + n_done}/{tot}] {key} L{'例外' if s is None else ('勝' if s == 1 else ('分' if s == 0.5 else '負'))} {r.get('turns')}手 {r['sec']:.0f}秒 経過{el:.1f}分 残り約{el / n_done * (len(todo) - n_done):.1f}分", flush=True)
+            if not got:
+                time.sleep(0.05)
+    return n_done
+
+
+# ---- report
+def _f(w, n):
+    return _tn_ci(w, n) + ('（参考）' if 0 < n < 5 else '')
+
+
+def _wr(gs):
+    ss = [tn_score(g) for g in gs if tn_score(g) is not None]
+    return sum(ss), len(ss)
+
+
+def _delta_lines(items, ks, lo=4, thr=15):
+    out = []
+    for T in range(1, 7):
+        reach = [i for i in items if len(i['lg']) >= T]
+        acts = collections.Counter()
+        for i in reach:
+            acts[(i['lg'][T - 1][0], i['lg'][T - 1][1])] += 1
+        for (fld, ac), c in acts.items():
+            if ac in ('-', '反動') or c < lo:
+                continue
+            yes = [i for i in reach if i['lg'][T - 1][:2] == [fld, ac]]
+            no = [i for i in reach if i['lg'][T - 1][:2] != [fld, ac]]
+            wy, ny = _wr([i['g'] for i in yes])
+            wn, nn = _wr([i['g'] for i in no])
+            if ny >= lo and nn >= lo:
+                d = (wy / ny - wn / nn) * 100
+                if abs(d) >= thr:
+                    out.append((abs(d), f"T{T} {fld}:{ac} 取った {wy / ny * 100:.0f}%({ny}) / 取らない {wn / nn * 100:.0f}%({nn}) Δ{d:+.0f}", d, T, fld, ac))
+    return sorted(out, key=lambda x: -x[0])
+
+
+def tn2_items(gm, logs, sel_filter):
+    out = []
+    for key, g in gm.items():
+        if g['res'] is None or key not in logs or not sel_filter(g):
+            continue
+        rec = logs[key]
+        ms = g['main_side']
+        lg = [[x[2:] if isinstance(x, str) and x.startswith('M+') else x for x in row] for row in rec['log']]
+        meg = [[isinstance(x, str) and x.startswith('M+') for x in row] for row in rec['log']]
+        lg2 = [[r[2 * ms], r[2 * ms + 1], r[2 * (1 - ms)], r[2 * (1 - ms) + 1]] for r in lg]
+        out.append({'g': g, 'ms': ms, 'lg': lg2, 'meg': [(m[2 * ms + 1], m[2 * (1 - ms) + 1]) for m in meg], 'sn': rec.get('snap') or [], 'po': rec.get('post') or [], 'sc': tn_score(g)})
+    return out
+
+
+def _cnt_table(ctr, wins, top=3):
+    return ', '.join(f"{k} {c}回(勝{wins.get(k, 0):.0f}→{_tn_pct(wins.get(k, 0), c)}){'（参考）' if c < 5 else ''}" for k, c in ctr.most_common(top))
+
+
+def tn2_points(items):
+    """4.3 個別論点。items は L 視点の試合。"""
+    out = []
+    # ミミッキュ
+    tr = {'未破壊': [0, 0.0], '破壊後': [0, 0.0]}
+    room_act, room_w = collections.Counter(), collections.Counter()
+    curse = [0, 0]
+    after = collections.Counter()
+    after_w = collections.Counter()
+    for it in items:
+        ms, lg, sn = it['ms'], it['lg'], it['sn']
+        seen_tr = set()
+        for t, row in enumerate(lg):
+            s = sn[t] if t < len(sn) else None
+            if row[0].startswith('ミミッキュ') and row[1] == 'トリックルーム' and s:
+                kk = '未破壊' if s['bk'][ms] is False else '破壊後'
+                if kk not in seen_tr:
+                    seen_tr.add(kk)
+                    tr[kk][0] += 1
+                    tr[kk][1] += it['sc']
+            if s and s['room'] > 0 and row[1] not in ('-', '反動'):
+                room_act[row[1]] += 1
+                room_w[row[1]] += it['sc']
+            if row[0].startswith('ミミッキュ') and row[1] == 'のろい':
+                curse[0] += 1
+                f = next((x for x in it['g']['faints'] or [] if x[1] == ms and x[2].startswith('ミミッキュ') and t + 1 <= x[0] <= t + 2), None)
+                if f:
+                    curse[1] += 1
+                    nx = lg[f[0]][0] if f[0] < len(lg) else None
+                    if nx:
+                        after[nx] += 1
+                        after_w[nx] += it['sc']
+    out.append('- **ミミッキュ**: トリル ' + ', '.join(f"{k} {v[0]}回 勝率{_tn_pct(v[1], v[0])}{'（参考）' if v[0] < 5 else ''}" for k, v in tr.items()) +
+               f"。トリル中のL行動上位: {_cnt_table(room_act, room_w) or '該当なし'}。のろい使用 {curse[0]}回 → 2ターン以内にミミッキュ退場 {curse[1]}回（{_tn_pct(curse[1], curse[0])}）、その後のL個体: {_cnt_table(after, after_w) or '該当なし'}")
+    # リザードンX
+    mg = collections.defaultdict(lambda: [0, 0.0])
+    streak = collections.Counter()
+    sw = 0
+    rain = {'げきりん': [0, 0.0], 'フレアドライブ': [0, 0.0]}
+    for it in items:
+        lg, sn = it['lg'], it['sn']
+        mt = next((t + 1 for t, m in enumerate(it['meg']) if m[0]), None)
+        if mt is None:
+            for t in range(1, len(sn)):
+                if sn[t]['mega'][it['ms']] and not sn[t - 1]['mega'][it['ms']]:
+                    mt = t
+                    break
+        if mt:
+            mg[mt][0] += 1
+            mg[mt][1] += it['sc']
+        run = 0
+        for t, row in enumerate(lg):
+            if row[0].startswith('リザードン') and row[1] == 'げきりん':
+                run += 1
+                if row[3].startswith('→'):
+                    sw += 1
+            else:
+                if run:
+                    streak[run] += 1
+                run = 0
+            if row[0].startswith('リザードン') and row[1] in rain and t < len(sn) and sn[t]['w'] == 'raindance':
+                rain[row[1]][0] += 1
+                rain[row[1]][1] += it['sc']
+        if run:
+            streak[run] += 1
+    out.append('- **リザードンX**: メガ時期別 ' + (', '.join(f"T{k} {v[0]}戦 勝率{_tn_pct(v[1], v[0])}{'（参考）' if v[0] < 5 else ''}" for k, v in sorted(mg.items())) or '該当なし') +
+               f"。げきりん連続ターン数 {dict(sorted(streak.items())) or '該当なし'}、げきりん中の相手交代 {sw}回。雨下: " +
+               ', '.join(f"{k} {v[0]}回 勝率{_tn_pct(v[1], v[0])}{'（参考）' if v[0] < 5 else ''}" for k, v in rain.items()))
+    # イダイトウ
+    og = collections.defaultdict(lambda: [0, 0.0])
+    blocked = [0, 0]
+    for it in items:
+        ms, sn = it['ms'], it['sn']
+        for t, row in enumerate(it['lg']):
+            s = sn[t] if t < len(sn) else None
+            if row[0].startswith('イダイトウ') and row[1] == 'おはかまいり' and s:
+                dead = max(0, 3 - s['alive'][ms])
+                og[dead][0] += 1
+                og[dead][1] += it['sc']
+            if row[0].startswith('イダイトウ') and row[1] == 'アクアジェット' and s:
+                if s['tr'] == 'psychicterrain' and s['item'][1 - ms] != 'airballoon':
+                    blocked[0] += 1
+                else:
+                    blocked[1] += 1
+    out.append('- **イダイトウ**: おはかまいり L瀕死数別 ' + (', '.join(f"{k}体 {v[0]}回 勝率{_tn_pct(v[1], v[0])}{'（参考）' if v[0] < 5 else ''}" for k, v in sorted(og.items())) or '該当なし') +
+               f"。アクアジェットをサイコフィールド×接地（ふうせん除く、飛行・ふゆうは未判定の近似）で選んだ＝封じられた {blocked[0]}回 / それ以外 {blocked[1]}回")
+    # ほろび
+    pf = collections.defaultdict(lambda: [0, 0.0])
+    for it in items:
+        ms, sn = it['ms'], it['sn']
+        cur = None
+        for t, row in enumerate(it['lg']):
+            s = sn[t] if t < len(sn) else None
+            if not s:
+                break
+            p = s['vol'][ms]['perish']
+            if p is not None and cur is None:
+                cur = row[0]
+            if cur is not None:
+                if row[1].startswith('→'):
+                    pf[f'{p}で交代'][0] += 1
+                    pf[f'{p}で交代'][1] += it['sc']
+                    cur = None
+                elif row[0] != cur:
+                    cur = None
+        if cur is not None:
+            pf['交代せず退場'][0] += 1
+            pf['交代せず退場'][1] += it['sc']
+    out.append('- **ほろびのうた**(Lの場がカウント保持): ' + (', '.join(f"{k} {v[0]}回 勝率{_tn_pct(v[1], v[0])}{'（参考）' if v[0] < 5 else ''}" for k, v in sorted(pf.items())) or '該当なし'))
+    # アンコール
+    en = collections.defaultdict(lambda: [0, 0.0])
+    for it in items:
+        ms, sn = it['ms'], it['sn']
+        for t, row in enumerate(it['lg'][:-1]):
+            s = sn[t] if t < len(sn) else None
+            e = s['vol'][ms]['encore'] if s else None
+            if e:
+                mv = e.get('move') or e.get('m') or row[1] if isinstance(e, dict) else row[1]
+                nxt = it['lg'][t + 1][1]
+                kk = f"{mv}/残{e.get('dur') if isinstance(e, dict) else e}T/" + ('交代' if nxt.startswith('→') else '居座り')
+                en[kk][0] += 1
+                en[kk][1] += it['sc']
+    out.append('- **アンコール**(L被弾): ' + (', '.join(f"{k} {v[0]}回 勝率{_tn_pct(v[1], v[0])}{'（参考）' if v[0] < 5 else ''}" for k, v in sorted(en.items(), key=lambda kv: -kv[1][0])[:8]) or '該当なし'))
+    # 雨
+    lw = collections.Counter()
+    endact, endw = collections.Counter(), collections.Counter()
+    back = 0
+    for it in items:
+        sn, lg, ms = it['sn'], it['lg'], it['ms']
+        seen_lag = False
+        for t in range(len(sn)):
+            if lg[t][2] == 'ラグラージ' and not seen_lag and (t == 0 or lg[t - 1][2] != 'ラグラージ'):
+                seen_lag = True
+                lw[sn[t]['wt'] if sn[t]['w'] == 'raindance' else '雨なし'] += 1
+            if t and sn[t - 1]['w'] == 'raindance' and sn[t]['w'] != 'raindance' and lg[t][1] not in ('-', '反動'):
+                endact[lg[t][1]] += 1
+                endw[lg[t][1]] += it['sc']
+            if t and lg[t][2] == 'ニョロトノ' and lg[t - 1][2] != 'ニョロトノ' and sn[t]['w'] == 'raindance' and sn[t - 1]['w'] == 'raindance' and sn[t]['wt'] > sn[t - 1]['wt']:
+                back += 1
+    out.append(f"- **雨**: ラグラージ登場時の雨の残りターン {dict(lw) or '該当なし'}。雨が切れたターンのL行動上位: {_cnt_table(endact, endw) or '該当なし'}。ニョロトノ再登場で雨が戻った {back}回")
+    # だっしゅつボタン
+    ej = []
+    for it in items:
+        ms, po, sn, lg = it['ms'], it['po'], it['sn'], it['lg']
+        for t, p in enumerate(po):
+            for sd in (0, 1):
+                if p['ej'][sd]:
+                    who = 'L' if sd == ms else '相手'
+                    atk = lg[t][2] if sd == ms else lg[t][0]
+                    mv = lg[t][3] if sd == ms else lg[t][1]
+                    nxt = lg[t + 1][1] if sd == ms and t + 1 < len(lg) else None
+                    ej.append((who, t + 1, f"{atk}:{mv}", p['act'][sd], nxt, it['sc']))
+    if ej:
+        c = collections.Counter(e[4] for e in ej if e[4])
+        cw = collections.Counter()
+        for e in ej:
+            if e[4]:
+                cw[e[4]] += e[5]
+        out.append(f"- **だっしゅつボタン**: {len(ej)}回（勝率{_tn_pct(sum(e[5] for e in ej), len(ej))}）。発動ターン/攻撃/入れ替わり: " + '; '.join(f"{e[0]}T{e[1]} {e[2]}→{e[3]}" for e in ej[:6]) + f"。L側発動後の次ターン行動: {_cnt_table(c, cw) or '該当なし'}")
+    else:
+        out.append('- **だっしゅつボタン**: 該当なし')
+    return out
+
+
+def cmd_tn2_report(a):
+    P = tn2_paths(a.out_dir)
+    plan = tn_load_plan(P)
+    if not os.path.exists(P['games']):
+        raise SystemExit('tn2_games.json がありません')
+    G = json.load(open(P['games'], encoding='utf-8'))
+    gm = {k: g for k, g in G['games'].items() if g['res'] is not None}
+    logs = {}
+    for r in read_jsonl(P['logs']):
+        if r.get('key') in gm:
+            logs[r['key']] = r
+    N1 = plan['games']['1']
+    s1g = lambda g: g['k'] < TN2_K2
+    s2g = lambda g: g['k'] >= TN2_K2
+    out = ['# TONORAGU2: トノラグ3変種 × 相手選出固定（イエッサン先発）で最も勝てるプレイング', '',
+           f"作成 {time.strftime('%Y-%m-%d %H:%M')} / plan sig {plan['sig'][:12]} / 有効 {len(gm)}戦 / 例外 {sum(1 for g in G['games'].values() if g['res'] is None)}戦 / log付き {len(logs)}戦", '']
+    out += ['## 1. 条件', f"- 深さ 第1段 {tuple(plan['depth']['1'])} / 第2段 {tuple(plan['depth']['2'])}、N1={plan['games']['1']} N2={plan['games']['2']} top={plan['top']}、deny [True, True]、resource = {plan['resource']['mode']}、playbook {G.get('playbook')}",
+            '- 種: crc32("tn2"+V+相手選出+L選出+k)、k の偶数は L が side0（stage1 k=0..N1-1 / stage2 k=100..）',
+            '- 相手選出（固定）: ' + ' / '.join(f"{V}: {'|'.join('/'.join(s) for s in vv['opp_sels'])}" for V, vv in plan['variants'].items()),
+            f"- 見積り {plan['estimate']}"]
+    secs = [g['sec'] for g in gm.values() if g.get('sec')]
+    if secs:
+        out.append(f"- 実所要: 計 {sum(secs) / 3600:.1f} CPU時間 ÷ {plan['estimate']['procs']}並列 ≒ {sum(secs) / 60 / plan['estimate']['procs']:.0f}分、1戦平均 {sum(secs) / len(secs):.0f}秒")
+    out.append('- **近似項目の一覧（B・C は仮説）**:')
+    for V, vv in plan['variants'].items():
+        ap = tn_approx(V)
+        if not ap:
+            out.append(f"  - {V} {vv['title']}: 記事どおり（近似なし）")
+        for nm, d in ap.items():
+            out.append(f"  - {V} {nm}: 近似 {', '.join(d['approx'])}（{d['note']}）")
+    out.append('')
+    # 2
+    out += ['## 2. 選出表（stage1 勝率、L24選出）']
+    r1 = {}
+    for V, vv in plan['variants'].items():
+        tot = []
+        for osel in vv['opp_sels']:
+            rows = []
+            for lsel in plan['candidates']:
+                w = n = 0
+                for g in gm.values():
+                    if g['variant'] == V and g['opp_sel'] == osel and g['sel'] == lsel and s1g(g):
+                        w += tn_score(g)
+                        n += 1
+                if n:
+                    rows.append((w / n, w, n, '/'.join(lsel)))
+            rows.sort(key=lambda r: -r[0])
+            tot.append(sum(r[1] for r in rows) / max(1, sum(r[2] for r in rows)) if rows else None)
+            out.append(f"- {V} 相手 {'/'.join(osel)}:")
+            for r in rows[:8]:
+                out.append(f"  - 上位 {r[3]} {_f(r[1], r[2])}")
+            for r in rows[-3:][::-1] if len(rows) > 8 else []:
+                out.append(f"  - 下位 {r[3]} {_f(r[1], r[2])}")
+            if not rows:
+                out.append('  - 該当なし')
+        if len(tot) == 2 and None not in tot:
+            out.append(f"  - 後発順の差: {abs(tot[0] - tot[1]) * 100:.0f}pt " + ('（差あり）' if abs(tot[0] - tot[1]) >= 0.05 else '（差なし）'))
+    out.append('')
+    # 3
+    out += ['## 3. 変種ごとの最良選出（stage2 勝率 → stage1）']
+    best, s1rate = {}, {}
+    for V in plan['variants']:
+        rows = []
+        for lsel in plan['candidates']:
+            gs = [g for g in gm.values() if g['variant'] == V and g['sel'] == lsel]
+            a1, a2 = _wr([g for g in gs if s1g(g)]), _wr([g for g in gs if s2g(g)])
+            if a1[1]:
+                s1rate[(V, tuple(lsel))] = a1[0] / a1[1]
+                rows.append(((a2[0] / a2[1]) if a2[1] else -1, a1[0] / a1[1], list(lsel), a1, a2))
+        rows.sort(key=lambda r: (-r[0], -r[1]))
+        best[V] = rows[0][2] if rows else None
+        out.append(f"- {V}:")
+        for r in rows[:3]:
+            out.append(f"  - {'/'.join(r[2])}: stage1 {_f(*r[3])} / stage2 {_f(*r[4])} / 合算 {_f(r[3][0] + r[4][0], r[3][1] + r[4][1])}")
+        if not rows:
+            out.append('  - 該当なし')
+    cs = {c for (_, c) in s1rate}
+    if cs and all(all((V, c) in s1rate for V in plan['variants']) for c in cs):
+        com = max(cs, key=lambda c: (min(s1rate[(V, c)] for V in plan['variants']), sum(s1rate[(V, c)] for V in plan['variants'])))
+        out.append(f"- **3変種共通（最悪ケース最大、stage1）**: {'/'.join(com)} " + ' / '.join(f"{V} {s1rate[(V, com)] * 100:.0f}%" for V in plan['variants']))
+    out.append('')
+    # 4
+    out += ['## 4. 最も勝てるプレイング（最良選出の全試合、L視点）']
+    recs, rules = {}, {}
+    for V in plan['variants']:
+        out.append(f"### {V}: {'/'.join(best[V]) if best[V] else '該当なし'}")
+        if not best[V]:
+            out += ['該当なし', '']
+            continue
+        its = tn2_items(gm, logs, lambda g, V=V: g['variant'] == V and g['sel'] == best[V])
+        allg = [g for g in gm.values() if g['variant'] == V and g['sel'] == best[V]]
+        W, Nn = _wr(allg)
+        out.append(f"- 全体 {_f(W, Nn)}（log付き {len(its)}戦）。深さ別: " + ' / '.join(f"{d}手 {_f(*_wr([g for g in allg if g['depth'][0] == d]))}" for d in sorted({g['depth'][0] for g in allg})))
+        out.append('#### 4.1 ターン別行動')
+        recs[V] = []
+        for T in range(1, 7):
+            reach = [i for i in its if len(i['lg']) >= T]
+            if not reach:
+                continue
+            for who, ix in (('L', 0), ('相手', 2)):
+                c, w = collections.Counter(), collections.Counter()
+                for i in reach:
+                    r = i['lg'][T - 1]
+                    if r[ix + 1] in ('-', '反動'):
+                        continue
+                    k = f"{r[ix]}:{r[ix + 1]}"
+                    c[k] += 1
+                    w[k] += i['sc']
+                out.append(f"- T{T} {who}: " + (' | '.join(f"{k} 出現{n}(勝試合{sum(1 for i in reach if f'{i['lg'][T - 1][ix]}:{i['lg'][T - 1][ix + 1]}' == k and i['sc'] == 1)}) 勝率{_tn_pct(w[k], n)}{'（参考）' if n < 5 else ''}" for k, n in c.most_common(3)) or '該当なし'))
+                if T == 1 and who == 'L' and reach:
+                    pr = collections.Counter((i['lg'][0][0], i['lg'][0][2]) for i in reach)
+                    out.append('- T1 先発の組: ' + ', '.join(f'{x}×{y} {n}戦' for (x, y), n in pr.most_common(3)))
+                if who == 'L' and c:
+                    k0, n0 = c.most_common(1)[0]
+                    if T <= 4 and n0 >= 5 and w[k0] / n0 >= (W / Nn if Nn else 0):
+                        recs[V].append(f"T{T}: {k0}（{n0}回・勝率{_tn_pct(w[k0], n0)}）")
+        out.append('#### 4.2 分岐点')
+        dl = _delta_lines(its, None)
+        out += [f'- {x[1]}' for x in dl[:8]] or ['- 該当なし']
+        rules[V] = [x for x in dl if x[2] > 0][:5]
+        pr = collections.Counter()
+        pw = collections.Counter()
+        for i in its:
+            if len(i['lg']) >= 2:
+                k = f"{i['lg'][0][0]}:{i['lg'][0][1]}→{i['lg'][1][0]}:{i['lg'][1][1]}"
+                pr[k] += 1
+                pw[k] += i['sc']
+        out.append('- T1→T2 の行動の組上位5: ' + ('; '.join(f"{k} {n}回 勝率{_tn_pct(pw[k], n)}{'（参考）' if n < 5 else ''}" for k, n in pr.most_common(5)) or '該当なし'))
+        out.append('#### 4.3 個別論点')
+        out += tn2_points(its)
+        out.append('#### 4.4 推奨手順（機械生成・仮説。シミュレーション（ブラインド・deny・4/5手読み）由来）')
+        out += [f'- {x}' for x in recs[V]] or ['- 該当なし']
+        out += [f"- 条件付き: {x[1]}" for x in rules[V]]
+        out.append('')
+    # 5
+    out += ['## 5. 負け筋']
+    for V in plan['variants']:
+        if not best[V]:
+            continue
+        ls = [g for g in gm.values() if g['variant'] == V and g['sel'] == best[V] and tn_score(g) == 0.0]
+        first, seq = collections.Counter(), collections.Counter()
+        for g in ls:
+            ms = g['main_side']
+            f = sorted([x for x in g.get('faints') or [] if x[1] == ms])
+            if f:
+                first[f"{f[0][2]}（倒した: {f[0][3]}）"] += 1
+                seq[' → '.join(x[2] for x in f[:3])] += 1
+        out.append(f"- {V}: 負け {len(ls)}戦。先頭瀕死 {dict(first.most_common(4)) or '該当なし'}、瀕死順 " + ('; '.join(f'{k}×{v}' for k, v in seq.most_common(3)) or '該当なし'))
+    out += ['', '## 6. 結論']
+    for V in plan['variants']:
+        if not best[V]:
+            out.append(f'- {V}: 該当なし')
+            continue
+        allg = [g for g in gm.values() if g['variant'] == V and g['sel'] == best[V]]
+        out.append(f"- {V}: 選出 {'/'.join(best[V])} 勝率 {_f(*_wr(allg))}。手順: " + (' → '.join(recs.get(V, [])[:3]) or '該当なし（仮説）'))
+    open(P['md'], 'w', encoding='utf-8').write('\n'.join(out) + '\n')
+    print(f"書きました: {P['md']}")
+
+
+def cmd_tn2_selftest(a):
+    import shutil, subprocess, tempfile
+    global _TN_PLAY
+    D = a.out_dir or tempfile.mkdtemp(prefix='tn2test_')
+    results = []
+
+    def ok(n, cond, msg=''):
+        results.append((n, bool(cond)))
+        print(f"{'○' if cond else '×'} {n} {msg}", flush=True)
+
+    before = _sha_all()
+    p = subprocess.run([sys.executable, '-m', 'py_compile', 'roundrobin.py', 'refine.py'], cwd=HERE, capture_output=True, text=True)
+    ok('1 py_compile', p.returncode == 0, p.stderr[-200:])
+
+    class A_:
+        pass
+
+    def args(sub, **kw):
+        x = A_()
+        x.out_dir, x.procs, x.max_games, x.force, x.retry_errors, x.resource, x.stage = os.path.join(D, sub), a.procs, 0, True, False, 'loose', 1
+        x.games, x.games2, x.top, x.focus = None, None, None, True
+        x.__dict__.update(kw)
+        return x
+
+    rp = load_plan(paths(None))
+    V = tn_load_variants()
+    T = dict(rp['teams'])
+    for v, rt in V.items():
+        T[rt['id']] = rt
+    _worker_init(T)
+    L = TN_L
+    rr_apply(T[L])
+    pl = cmd_tn2_plan(args('p'))
+    cs = [list(c) for c in T[L]['candidates']]
+    allo = [s for v, vv in pl['variants'].items() for s in vv['opp_sels']]
+    ok('2a 相手選出6通り・先発固定・両後衛含む・後発順2通り', len(allo) == 6 and all(len(vv['opp_sels']) == 2 for vv in pl['variants'].values()) and
+       all(s[0] == {'A': 'イエッサン', 'B': 'バサギリ', 'C': 'イエッサン♀'}[v] for v, vv in pl['variants'].items() for s in vv['opp_sels']) and
+       all(set(TN_BACK) <= set(s) and s[0] not in TN_BACK for s in allo) and
+       all({tuple(s[1:]) for s in vv['opp_sels']} == {TN_BACK, TN_BACK[::-1]} for vv in pl['variants'].values()))
+    ok('2b L選出24通り', len(pl['candidates']) == 24 and pl['candidates'] == cs)
+    ok('2c tn1 の相手選出は不変(A=8,B=6,C=6)', {v: len(tn_opp_sels(v, V[v])) for v in V} == {'A': 8, 'B': 6, 'C': 6})
+    j1 = tn2_jobs(pl, 1, T)
+    keys = [j[0] for j in j1]
+    j0 = tn2_job(pl, 'A', allo[0], cs[0], 0, 1, T)
+    j1_ = tn2_job(pl, 'A', allo[0], cs[0], 1, 1, T)
+    ok('3a stage1 件数=24×6×N1・重複なし・key形式', len(j1) == 24 * 6 * pl['games']['1'] and len(set(keys)) == len(keys) and all(k.startswith('tn2:') for k in keys))
+    ok('3b k偶奇で左右入替・種', j0[5] == L and j1_[6] == L and j0[0] == f"tn2:A|{'/'.join(allo[0])}|{'/'.join(cs[0])}|0" and
+       tn2_seed('A', allo[0], cs[0], 0) == zlib.crc32(f"tn2A{'/'.join(allo[0])}{'/'.join(cs[0])}0".encode()))
+    ok('3c k範囲 stage2=100..', tn2_ks(pl, 2) == list(range(100, 112)) and tn2_ks(pl, 1) == list(range(8)))
+    est = tn_estimate(8 * 144, 12 * 12, 4)
+    ok('8a estimate(N1=8,N2=12,top=2,4並列) rf込み≤120分', pl['estimate']['total_min'] <= 120 and est['total_min'] <= 120, str(pl['estimate']))
+
+    # 5 snap（実 blind_play 深さ1）
+    sj = list(tn2_job(pl, 'A', allo[0], cs[0], 0, 1, T))
+    sj[10] = (1, 1)
+    r_on, r_off = _job_tn2(tuple(sj), True), _job_tn2(tuple(sj), False)
+    same = r_on.get('res') is not None and all(r_on.get(k) == r_off.get(k) for k in ('res', 'log', 'faints', 'left', 'turns'))
+    ok('5a SNAP オン/オフで res/log/faints/left/turns 一致', same, (r_on.get('error') or r_off.get('error') or '')[-200:])
+    sn, po = r_on.get('snap') or [], r_on.get('post') or []
+    kk1 = {'w', 'wt', 'tr', 'tt', 'room', 'hp', 'mega', 'bk', 'vol', 'item', 'alive'}
+    ok('5b オン側のみ snap/post・長さ一致・キー', 'snap' not in r_off and 'post' not in r_off and len(sn) == len(r_on['log']) == len(po) > 0 and
+       all(set(s) == kk1 for s in sn) and all(set(q) == {'hp', 'act', 'ej'} for q in po) and all(set(v) == {'perish', 'encore', 'curse'} for v in sn[0]['vol']))
+    ok('5c R.SNAP は元に戻る', R.SNAP is False)
+
+    # 実 d4 1戦（時間）
+    t0 = time.time()
+    rd = _job_tn2(tn2_job(pl, 'A', allo[0], cs[0], 0, 1, T), True)
+    sec4 = time.time() - t0
+    ok('8b 実 d4 1戦', rd.get('res') is not None, f'{sec4:.1f}秒 {rd.get("turns")}手 {rd.get("error") or ""}')
+
+    # stub
+    def stub(args_):
+        h = zlib.crc32(repr((args_[2], args_[3], args_[4])).encode())
+        n = 6
+        names = [args_[2][0], args_[3][0]]
+        log = [[args_[2][0], ('M+' if t == 1 else '') + ('げきりん' if (h >> t) & 1 else 'のろい'), args_[3][0], ('→ニョロトノ' if t == 2 else 'じしん')] for t in range(n)]
+        sn_ = [{'w': 'raindance' if t < 3 else '', 'wt': max(0, 5 - t), 'tr': 'psychicterrain' if t == 1 else '', 'tt': 0, 'room': 1 if t == 2 else 0,
+                'hp': [100, 100], 'mega': [t > 1, False], 'bk': [False if t < 3 else 'done', None], 'vol': [{'perish': 3 if t == 4 else None, 'encore': {'move': 'げきりん', 'dur': 2} if t == 3 else None, 'curse': False}] * 2,
+                'item': ['', 'airballoon' if t == 0 else ''], 'alive': [3, 3]} for t in range(n)]
+        po_ = [{'hp': [90, 90], 'act': names, 'ej': [t == 3, False]} for t in range(n)]
+        return {'res': (1, -1, 0)[h % 3], 'turns': n, 'judged': False,
+                'left': [[[m, (h >> i) % 101] for i, m in enumerate(args_[2])], [[m, (h >> (i + 3)) % 101] for i, m in enumerate(args_[3])]],
+                'faints': [[3, 0, args_[2][0], args_[3][0]], [5, 1, args_[3][0], args_[2][1]]], 'log': log, 'snap': sn_, 'post': po_,
+                'echo': [list(args_[2]), list(args_[3]), args_[4]]}
+    _TN_PLAY = stub
+    try:
+        a1 = args('s1', max_games=5)
+        cmd_tn2_plan(a1)
+        cmd_tn2_run(a1)
+        P1 = tn2_paths(a1.out_dir)
+        g5 = json.load(open(P1['games'], encoding='utf-8'))['games']
+        a1.max_games = 7
+        n_new = cmd_tn2_run(a1)
+        g12 = json.load(open(P1['games'], encoding='utf-8'))['games']
+        ok('4a 再開: 5件→残り7件だけ・既存5件不変', len(g5) == 5 and n_new == 7 and len(g12) == 12 and all(json.dumps(g12[k], sort_keys=True) == json.dumps(g5[k], sort_keys=True) for k in g5))
+        lg = read_jsonl(P1['logs'])
+        ok('4a2 tn2_logs に key/log/snap/post', len(lg) == 12 and all({'key', 'log', 'snap', 'post'} <= set(x) for x in lg) and all(g.get('focus') is True for g in g12.values()))
+        # --games 増加
+        a2 = args('s2', games=2)
+        cmd_tn2_plan(a2)
+        cmd_tn2_run(a2)
+        n2a = len(json.load(open(tn2_paths(a2.out_dir)['games'], encoding='utf-8'))['games'])
+        a2.games = 3
+        n_new2 = cmd_tn2_run(a2)
+        gk = json.load(open(tn2_paths(a2.out_dir)['games'], encoding='utf-8'))['games']
+        ok('4b --games 増加で新しい k だけ追加', n2a == 24 * 6 * 2 and n_new2 == 24 * 6 and len(gk) == 24 * 6 * 3 and {g['k'] for g in gk.values()} == {0, 1, 2})
+        # retry-errors
+        P2 = tn2_paths(a2.out_dir)
+        GG = json.load(open(P2['games'], encoding='utf-8'))
+        bad = list(GG['games'])[:3]
+        for k in bad:
+            GG['games'][k]['res'] = None
+            GG['games'][k]['error'] = 'x'
+        json.dump(GG, open(P2['games'], 'w', encoding='utf-8'))
+        a2.retry_errors = True
+        n_re = cmd_tn2_run(a2)
+        a2.retry_errors = False
+        n_re0 = cmd_tn2_run(a2)
+        ok('4c --retry-errors で error のみ再実行', n_re == 3 and n_re0 == 0, f'{n_re},{n_re0}')
+        # stage2 ゲート・固定
+        try:
+            a1.stage = 2
+            cmd_tn2_run(a1)
+            ok('3d stage1 未完なら stage2 拒否', False)
+        except SystemExit:
+            ok('3d stage1 未完なら stage2 拒否', True)
+        a3 = args('s3', games=2, games2=2, top=2)
+        cmd_tn2_plan(a3)
+        cmd_tn2_run(a3)
+        a3.stage = 2
+        cmd_tn2_run(a3)
+        P3 = tn2_paths(a3.out_dir)
+        pl3 = json.load(open(P3['plan'], encoding='utf-8'))
+        gm3 = json.load(open(P3['games'], encoding='utf-8'))['games']
+        n_s2 = sum(1 for g in gm3.values() if g['stage'] == 2)
+        ok('3e stage2: 上位 top が plan に保存・戦数=3×2×2×N2', all(len(v) == 2 for v in pl3['stage2_sels'].values()) and n_s2 == 3 * 2 * 2 * 2, str(n_s2))
+        keep = json.dumps(pl3['stage2_sels'])
+        cmd_tn2_run(a3)
+        ok('3f stage2_sels は再計算されない', json.dumps(json.load(open(P3['plan'], encoding='utf-8'))['stage2_sels']) == keep)
+        cmd_tn2_report(a3)
+        md = open(P3['md'], encoding='utf-8').read()
+        heads = ['## 1. 条件', '## 2. 選出表', '## 3. 変種ごとの最良選出', '## 4. 最も勝てるプレイング', '#### 4.1', '#### 4.2', '#### 4.3', '#### 4.4', '## 5. 負け筋', '## 6. 結論']
+        pts = ['ミミッキュ', 'リザードンX', 'イダイトウ', 'ほろびのうた', 'アンコール', '**雨**', 'だっしゅつボタン']
+        ok('6 report: §1〜§6・4.3 の7項目', all(h in md for h in heads) and all(x in md for x in pts), str([x for x in heads + pts if x not in md]))
+    finally:
+        _TN_PLAY = R.blind_play
+    ok('7 既存結果の sha256 不変・既定の場所に tn2_* を作らない', _sha_all() == before and not [f for f in os.listdir(DEF_OUT) if f.startswith('tn2_')])
+    if not a.keep and not a.out_dir:
+        shutil.rmtree(D, ignore_errors=True)
+    bad = [n for n, c in results if not c]
+    print(f"\n{len(results) - len(bad)}/{len(results)} ○" + (f"  ×: {bad}" if bad else '') + f"  実d4 1戦 {sec4:.1f}秒")
+    if bad:
+        raise SystemExit(1)
+
+
+
 def cmd_tonorag(a):
+    if getattr(a, 'focus', False):
+        return {'plan': cmd_tn2_plan, 'run': cmd_tn2_run, 'report': cmd_tn2_report, 'selftest': cmd_tn2_selftest}[a.what](a)
     {'import': lambda x: tn_import(x.force, getattr(x, 'from_file', None)), 'plan': cmd_tonorag_plan, 'run': cmd_tonorag_run,
      'report': cmd_tonorag_report, 'selftest': cmd_tonorag_selftest}[a.what](a)
 
@@ -5699,6 +6441,10 @@ def main():
     p.add_argument('--retry-errors', action='store_true')
     p.add_argument('--keep', action='store_true')
     p.add_argument('--out-dir')
+    p.add_argument('--focus', action='store_true')
+    p.add_argument('--games', type=int, default=None)
+    p.add_argument('--games2', type=int, default=None)
+    p.add_argument('--top', type=int, default=None)
     for nm in ('run', 'deny', 'adapt', 'm7', 'counter', 'sched3', 'final20', 'tonorag'):
         sp.choices[nm].add_argument('--no-playbook', action='store_true')
     a = ap.parse_args()

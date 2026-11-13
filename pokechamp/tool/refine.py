@@ -552,6 +552,24 @@ def res_cand(st, bs, rx, t6k, appeared_foe, k):
     return {'axis': tuple(rx['axis']), 'cand': cand, 'loose': bool(rx.get('loose'))}
 
 
+SNAP = False   # True: blind_play also returns 'snap'/'post' (read-only snapshots before/after each turn, SPEC_TONORAGU2.md)
+
+
+def _snap_pre(st):
+    A = [st.active(0), st.active(1)]
+    return {'w': st.weather, 'wt': st.wturns, 'tr': st.terrain, 'tt': st.tturns, 'room': st.pseudo.get('trickroom', 0),
+            'hp': [round(100 * m.hp / m.maxhp) for m in A], 'mega': [bool(s.mega_used) for s in st.sides],
+            'bk': [m.busted if m.form.sid.startswith('mimikyu') else None for m in A],
+            'vol': [{'perish': m.vol.get('perishsong'), 'encore': (dict(m.vol['encore']) if isinstance(m.vol.get('encore'), dict) else m.vol.get('encore')), 'curse': 'curse' in m.vol} for m in A],
+            'item': [m.item for m in A], 'alive': [sum(1 for m in s.mons if m.alive) for s in st.sides]}
+
+
+def _snap_post(st, pre_items, pre_acts):
+    A = [st.active(0), st.active(1)]
+    return {'hp': [round(100 * m.hp / m.maxhp) for m in A], 'act': [m.name for m in A],
+            'ej': [pre_items[i] == 'ejectbutton' and not A[i].item and A[i].name != pre_acts[i] for i in (0, 1)]}
+
+
 def blind_play(args):
     """One game: true sets on both sides; each side reads ahead on its own guess of the other's sets (usage data
     and the moves seen so far). We read my_depth turns ahead, they read opp_depth."""
@@ -598,6 +616,7 @@ def blind_play(args):
         seen = [{}, {}]
         rng = prep.RandomRNG(seed)
         log, faints, mv = [], [], []
+        snap, post = [], []
         rocks_turn, tox, fired = None, [], []
         if rules is not None:
             import policy
@@ -684,6 +703,9 @@ def blind_play(args):
                     for _k, _a in dinfo[_s]['threats_root']:
                         dstats[_s][_k] += 1
             log.append((st.active(0).name, _name(st, 0, a0), st.active(1).name, _name(st, 1, a1)))
+            if SNAP:
+                snap.append(_snap_pre(st))
+                _pi, _pa = [st.active(0).item, st.active(1).item], [st.active(0).name, st.active(1).name]
             for i, a in ((0, a0), (1, a1)):
                 if a and a[0] == 'm' and a[1] != 'recharge':
                     lst = seen[i].setdefault(st.sides[i].act, [])
@@ -701,6 +723,8 @@ def blind_play(args):
                     mv.append(_trace_move(tn + 1, my_nm, foe_nm, a0[1], elog))
             else:
                 st = E.step(st, a0, a1, rng=rng, chooser=chooser)
+            if SNAP:
+                post.append(_snap_post(st, _pi, _pa))
             if rocks_turn is None and st.sides[1].cond.get('stealthrock'):
                 rocks_turn = tn + 1
             if pois and st.sides[1].mons[fj].status in ('psn', 'tox'):
@@ -717,6 +741,7 @@ def blind_play(args):
         return {'res': res, 'log': log, 'faints': faints, 'left': left, 'fired': list(ctx.fired) if ctx else [],
                 'rocks_turn': rocks_turn, 'tox': tox, 'turns': len(log), 'judged': judged,
                 **({'mv': mv} if trace else {}),
+                **({'snap': snap, 'post': post} if SNAP else {}),
                 **({'pb': {str(_s): _p.stats() for _s, _p in ((0, pb0), (1, pb1)) if _p is not None}} if (pb0 or pb1) else {}),
                 **({'deny_stats': {_s: {'turns': dturns[_s], 'kinds': dict(dstats[_s])} for _s in (0, 1) if deny[_s]}}
                    if deny[0] or deny[1] else {}),
