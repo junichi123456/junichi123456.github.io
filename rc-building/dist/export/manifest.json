@@ -1,6 +1,6 @@
 {
  "version": "v4.32",
- "total_bytes": 4905722,
+ "total_bytes": 13440848,
  "files": [
   {
    "file": "kawazanyo_IFC4.ifc",
@@ -181,6 +181,42 @@
    "version": "v4.32",
    "coordinates": "建物ローカル（原点=X1・Y1 壁芯交点、z=0=設計GL、mm、Z上）。既存の平面 DXF と同じ原点・向き",
    "note": "107 MESH, 41 レイヤー"
+  },
+  {
+   "file": "kawazanyo_master.blend",
+   "format": "Blender master .blend",
+   "size": 2443878,
+   "sha256": "0f7b758a9b23fc1578d8fb0dce1f7ab39873e02349c012d88667fec0a6aabc32",
+   "version": "v4.32",
+   "coordinates": "真北ワールド（建物中心まわりに回転、m、Y上、-Z=真北、+X=東）",
+   "note": "カメラ96・材質212・オブジェクト1088・撮影は src/shoot.py（手で編集しない）・model_hash=c42cfaed817c94b7489f237719b098fe1c161ef1f07235b00a14e9ee6560f97d"
+  },
+  {
+   "file": "model_exterior.fbx",
+   "format": "FBX",
+   "size": 1129308,
+   "sha256": "88fa324482bb48192ea4694f0b63947d7000e3ad143b17ee097cfb8821ee8876",
+   "version": "v4.32",
+   "coordinates": "真北ワールド（建物中心まわりに回転、m、Y上、-Z=真北、+X=東）",
+   "note": "glb_sha256=50f8ffbfacc3da67c384e362967d31328099b1f6d1884f5da2fc4575d8edd8c9"
+  },
+  {
+   "file": "model_interior.fbx",
+   "format": "FBX",
+   "size": 3421964,
+   "sha256": "71cb3d6e0f5e3ca55d249939c367cbc878078f2d5f18d7cf419d5621acae5a3b",
+   "version": "v4.32",
+   "coordinates": "真北ワールド（建物中心まわりに回転、m、Y上、-Z=真北、+X=東）",
+   "note": "glb_sha256=28087fc12d73af16796d587205872ed1bcfefbb6f80681e45a307eb5a1c5bf35"
+  },
+  {
+   "file": "model_exterior.usdz",
+   "format": "USDZ",
+   "size": 1539976,
+   "sha256": "5301e77f2a6146db4cd03781aec6a86e60f9988957ac274cfa159dddb3fb4393",
+   "version": "v4.32",
+   "coordinates": "真北ワールド（建物中心まわりに回転、m、Y上、-Z=真北、+X=東）",
+   "note": "glb_sha256=50f8ffbfacc3da67c384e362967d31328099b1f6d1884f5da2fc4575d8edd8c9"
   }
  ],
  "skipped": []
