@@ -493,7 +493,7 @@ $SKPOLY
   9
 $TDCREATE
  40
-2461357.269965278
+2461358.685949074
   9
 $TDUCREATE
  40
@@ -501,7 +501,7 @@ $TDUCREATE
   9
 $TDUPDATE
  40
-2461357.2703819443
+2461358.6862962963
   9
 $TDUUPDATE
  40
@@ -933,11 +933,11 @@ $PSTYLEMODE
   9
 $FINGERPRINTGUID
   2
-{3DF3E865-7ABB-42E0-8B48-C1CC858C76D6}
+{403A9130-5137-4632-8545-780492B88867}
   9
 $VERSIONGUID
   2
-{755B9272-3786-4694-9C81-4DEEBF36828D}
+{71C74462-A23D-4B25-87EC-BA33DB05B1C2}
   9
 $EXTNAMES
 290
@@ -1327,9 +1327,9 @@ ISM
   0
 CLASS
   1
-LAYOUT
+ACDBPLACEHOLDER
   2
-AcDbLayout
+AcDbPlaceHolder
   3
 ObjectDBX Classes
  90
@@ -1343,9 +1343,9 @@ ObjectDBX Classes
   0
 CLASS
   1
-ACDBPLACEHOLDER
+LAYOUT
   2
-AcDbPlaceHolder
+AcDbLayout
   3
 ObjectDBX Classes
  90
@@ -10509,7 +10509,7 @@ AcDbText
  40
 2.1
   1
-年間電力需要 約21,060kWh ×1.2 を賄う → 24.1kWp
+年間電力需要 約21,033kWh ×1.2 を賄う → 24.0kWp
   7
 JP
  11
@@ -11009,7 +11009,7 @@ AcDbText
  40
 2.1
   1
-全館空調2系統＋全熱交換＋デシカント調湿。暖房 9.4kW・冷房 12.0kW・除湿 74L/日・加湿 63L/日
+全館空調2系統＋全熱交換＋デシカント調湿。暖房 9.2kW・冷房 11.9kW・除湿 74L/日・加湿 63L/日
   7
 JP
  11
@@ -12073,7 +12073,7 @@ AcDbText
  40
 2.1
   1
-現状 37.29kWp・38,764kWh/年（需要の184%）／拡張後 78.3kWp・約80,536kWh/年（382%）。影の損失 3% は推定
+現状 37.29kWp・38,764kWh/年（需要の184%）／拡張後 78.3kWp・約80,536kWh/年（383%）。影の損失 3% は推定
   7
 JP
  11
@@ -14355,7 +14355,7 @@ AcDbText
  40
 2.1
   1
-全13か所 樹脂サッシ（トリプルガラス対応・FIX）・Low-E トリプル（Ar・Low-E 2面）、Uw≦0.90。南北 日射取得
+全12か所 樹脂サッシ（トリプルガラス対応・FIX）・Low-E トリプル（Ar・Low-E 2面）、Uw≦0.90。南北 日射取得
   7
 JP
  11
@@ -14855,7 +14855,7 @@ AcDbText
  40
 2.1
   1
-全体 62.2%（各室 52〜67%）。壁 W1〜W5・床 F1〜F5 は施主指定、IV1・IV2・C2 は補完（I-02B）
+全体 62.1%（各室 52〜67%）。壁 W1〜W5・床 F1〜F5 は施主指定、IV1・IV2・C2 は補完（I-02B）
   7
 JP
  11
@@ -17099,7 +17099,7 @@ DictionaryVariables
 280
 0
   1
-1.4.5 @ 2026-11-12T06:28:45.013825+00:00
+1.4.5 @ 2026-11-13T16:27:46.980377+00:00
   0
 VISUALSTYLE
   5
@@ -23661,7 +23661,7 @@ DictionaryVariables
 280
 0
   1
-1.4.5 @ 2026-11-12T06:29:21.904357+00:00
+1.4.5 @ 2026-11-13T16:28:16.174874+00:00
   0
 ENDSEC
   0

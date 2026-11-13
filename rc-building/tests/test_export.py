@@ -290,7 +290,7 @@ def test_csv_headers_and_rows(h, outdir):
     import csv
     from export import tables
     d, _ = outdir
-    exp = {"室": len(h.rooms), "建具": 54, "建具表": len(h.fittings), "設備": 21, "家具": 68, "壁量": 5, "ネットワーク": 47}      # v4.32: network 表（AP 16・LAN 口 9 組・ラック機器 8・スリーブ 14）を追加
+    exp = {"室": len(h.rooms), "建具": 53, "建具表": len(h.fittings), "設備": 21, "家具": 69, "壁量": 5, "ネットワーク": 47}      # v4.32: network 表（AP 16・LAN 口 9 組・ラック機器 8・スリーブ 14）を追加
     for name, hd in tables.HEADERS.items():
         p = d / "csv" / f"{tables.CSV_NAMES[name]}.csv"
         raw = p.read_bytes()
