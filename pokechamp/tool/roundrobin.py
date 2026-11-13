@@ -2008,6 +2008,7 @@ def adapt_select(A, Bid, hist):
     why = {'src': 'adapt', 'order': list(best), 'hist_len': len(hist), 'pi_new': round(pi, 4),
            'q_top': [[round(p, 4), list(c)] for c, p in C[:5]],
            'score_top': [[round(score[o][0], 4), round(score[o][1], 4), round(score[o][2], 4), round(score[o][3], 4), list(o)] for o in st],
+           'e_all': [[round(ew[o][0], 4), list(o)] for o in cl],
            'banned_streak': list(banned) if banned else None, 'sec': round(time.time() - t0, 2)}
     return list(best), why
 
@@ -6332,7 +6333,790 @@ def cmd_tn2_selftest(a):
 
 
 
+# ================================================================ tn3 (SPEC_TONORAGU3.md)
+TN3_VERSION = 'tn3'
+TN3_MIM = 'ミミッキュ'
+TN3_MK, TN3_ZD = 'ムクホーク', 'リザードン'
+_TN3_SELECT = adapt_select
+_TN3_NOBAN = [False]        # selftest 用: True ならメガ禁止を掛けない（対照）
+
+
+def tn3_paths(out_dir=None):
+    d = out_dir or DEF_OUT
+    return {'dir': d, 'plan': os.path.join(d, 'tn3_plan.json'), 'games': os.path.join(d, 'tn3_games.json'),
+            'logs': os.path.join(d, 'tn3_logs.jsonl'), 'md': os.path.join(d, 'TONORAGU3.md') if out_dir else os.path.join(HERE, '..', 'logs', 'TONORAGU3.md')}
+
+
+def tn3_seed(V, osel, k):
+    return zlib.crc32(f"tn3{V}{'/'.join(osel)}{k}".encode())
+
+
+def tn3_key(V, osel, k, ctl=False):
+    return f"tn3{'c' if ctl else ''}:{V}|{'/'.join(osel)}|{k}"
+
+
+def tn3_orders(rt, excl):
+    bases = [m['base'] for m in rt['mons']]
+    assert TN3_MIM in bases and excl in bases and excl != TN3_MIM
+    rest = [b for b in bases if b not in (excl, TN3_MIM)]
+    out = []
+    for p in itertools.combinations(rest, 2):
+        tri = [b for b in bases if b in p or b == TN3_MIM]
+        for lead in tri:
+            out.append(norm_order([lead] + [b for b in tri if b != lead], bases))
+    return out
+
+
+def tn3_megaban(lsel):
+    return [TN3_MK] if TN3_MK in lsel and TN3_ZD in lsel and not _TN3_NOBAN[0] else None
+
+
+def _tn3_eval(o, c, smart):
+    """adapt の評価試合（A=side0）。ムクホーク＋リザードンX の時はムクホークのメガを禁止。"""
+    import search as _S
+    st = B.engine_game(list(o), list(c))
+    mb = tn3_megaban(o)
+    if mb:
+        R.mega_ban(st, 0, mb)
+    return _S.play(st, smart=smart)
+
+
+# ---- 除外個体
+def tn3_exclusion(gm, logs, bases, total, manual=None):
+    """gm: tn2 games（stage1 のみ使う）、logs: key->{'log'}。戻り値 {'name','mode','table',...}。"""
+    g1 = [g for g in gm.values() if g.get('stage') == 1 and g.get('res') is not None]
+    rows = []
+    for idx, nm in enumerate(bases):
+        sg = [(k, g) for k, g in gm.items() if g.get('stage') == 1 and g.get('res') is not None and nm in g['sel']]
+        n = len(sg)
+        sc = [tn_score(g) for _, g in sg]
+        out_ = [tn_score(g) for k, g in sg if _tn3_appeared(g, logs.get(k), nm)]
+        lead = [tn_score(g) for _, g in sg if g['sel'][0] == nm]
+        ff = 0
+        for _, g in sg:
+            f = sorted([x for x in g.get('faints') or [] if x[1] == g['main_side']])
+            ff += 1 if f and f[0][2].startswith(nm) else 0
+        w = sum(sc)
+        lo, hi = wilson(w, n) if n else (0, 0)
+        rows.append({'name': nm, 'idx': idx, 'n': n, 'rate': w / n if n else None, 'ci': [round(lo, 4), round(hi, 4)], 'n_out': len(out_),
+                     'rate_out': sum(out_) / len(out_) if out_ else None, 'n_lead': len(lead), 'rate_lead': sum(lead) / len(lead) if lead else None,
+                     'first_faint': ff, 'first_faint_rate': ff / n if n else 0.0})
+    cand = [r for r in rows if r['name'] != TN3_MIM and r['n']]
+    big = 9.0
+
+    def key(r):
+        return (round(r['rate'] * 100, 1), r['rate_out'] if r['rate_out'] is not None else big, r['rate_lead'] if r['rate_lead'] is not None else big,
+                -r['first_faint_rate'], -r['idx'])
+    auto = min(cand, key=key)['name'] if cand else None
+    tie = [r['name'] for r in cand if auto and round(r['rate'] * 100, 1) == round(next(x for x in cand if x['name'] == auto)['rate'] * 100, 1)]
+    if manual:
+        if manual == TN3_MIM or manual not in bases:
+            raise SystemExit(f'--exclude {manual}: ミミッキュ・不明名は指定できません（{bases}）')
+        name, mode = manual, 'manual'
+    else:
+        name, mode = auto, 'auto'
+    return {'name': name, 'mode': mode, 'auto_name': auto, 'tie': tie if len(tie) > 1 else [], 'table': rows, 'n_games': len(g1), 'total': total}
+
+
+def _tn3_appeared(g, rec, nm):
+    ms = g['main_side']
+    if rec and rec.get('log'):
+        for row in rec['log']:
+            f = row[2 * ms]
+            if isinstance(f, str) and f.startswith(nm):
+                return True
+            a = row[2 * ms + 1]
+            if isinstance(a, str) and a.startswith('→' + nm):
+                return True
+        return False
+    return g['sel'][0] == nm or any(x[1] == ms and x[2].startswith(nm) for x in g.get('faints') or [])
+
+
+def tn3_load_tn2(d):
+    P2 = tn2_paths(d)
+    if not os.path.exists(P2['plan']) or not os.path.exists(P2['games']):
+        raise SystemExit(f"{P2['plan']} / {P2['games']} がありません")
+    p2 = json.load(open(P2['plan'], encoding='utf-8'))
+    raw = open(P2['games'], 'rb').read()
+    gm = json.loads(raw.decode('utf-8'))['games']
+    logs = {}
+    for r in read_jsonl(P2['logs']):
+        if r.get('key') in gm:
+            logs[r['key']] = r
+    return p2, gm, logs, hashlib.sha256(raw).hexdigest()
+
+
+def tn3_control_best(p2, gm):
+    out = {}
+    s2 = p2.get('stage2_sels') or {}
+    for V in p2['variants']:
+        rows = []
+        for i, ls in enumerate(p2['candidates']):
+            w2, n2, _ = tn_rate(gm, V, ls, range(TN2_K2, TN2_K2 + 1000))
+            w1, n1, hp = tn_rate(gm, V, ls, range(0, TN2_K2))
+            has2 = n2 > 0 and list(ls) in [list(x) for x in s2.get(V, [])]
+            rows.append((0 if has2 else 1, -(w2 / n2 if has2 else (w1 / n1 if n1 else 0.0)), -(sum(hp) / len(hp) if hp else 0.0), i))
+        r = sorted(rows)[0]
+        out[V] = {'sel': list(p2['candidates'][r[3]]), 'stage': 2 if r[0] == 0 else 1, 'rate': -r[1]}
+    return out
+
+
+def tn3_estimate(n, cells, procs, sec_game=180.0, sec_sel=20.0, rf=1.3, control=False):
+    waves = math.ceil(cells * (2 if control else 1) / procs)
+    base = n * waves * (sec_game + sec_sel) / 60
+    return {'rounds': n, 'waves': waves, 'procs': procs, 'sec_game': sec_game, 'sec_sel': sec_sel, 'min': round(base), 'min_rf': round(base * rf), 'rf': rf}
+
+
+def tn3_teams(plan, T=None):
+    if T is None:
+        rp = load_plan(paths(None))
+        T = dict(rp['teams'])
+        for v, rt in tn_load_variants().items():
+            T[rt['id']] = rt
+    T = dict(T)
+    L = plan['main']
+    orders = {tuple(o) for o in plan['orders']}
+    t = dict(T[L])
+    t['candidates'] = [list(o) for o in plan['orders']]
+    t['article_orders'] = [o for o in t['article_orders'] if tuple(o) in orders]
+    gi = []
+    for it in t['gitems']:
+        os_ = [o for o in it['orders'] if tuple(o) in orders]
+        if os_:
+            gi.append(dict(it, orders=os_))
+    t['gitems'] = gi
+    T[L] = t
+    return T
+
+
+def cmd_tn3_plan(a):
+    P = tn3_paths(a.out_dir)
+    os.makedirs(P['dir'], exist_ok=True)
+    mode = a.resource or 'loose'
+    N = a.games or 10
+    od = getattr(a, 'opp_depth', None) or 6
+    selm = getattr(a, 'sel', None) or 'adapt'
+    ctl = bool(getattr(a, 'control', False))
+    p2, gm2, lg2, sha2 = tn3_load_tn2(getattr(a, 'tn2_dir', None))
+    rp = load_plan(paths(None))
+    T0 = dict(rp['teams'])
+    V = tn_load_variants()
+    for v, rt in V.items():
+        T0[rt['id']] = rt
+    rt = T0[TN_L]
+    bases = [m['base'] for m in rt['mons']]
+    total = len(p2['candidates']) * sum(len(vv['opp_sels']) for vv in p2['variants'].values()) * p2['games']['1']
+    ex = tn3_exclusion(gm2, lg2, bases, total, getattr(a, 'exclude', None))
+    if ex['n_games'] < total and ex['mode'] == 'auto':
+        raise SystemExit(f"tn2 stage1 未完（{ex['n_games']}/{total}）。完了後に plan するか --exclude 個体名 を指定してください")
+    if ex['mode'] == 'manual':
+        ex['note'] = f"手動指定（機械決定なら{ex['auto_name']}）" + (f'、tn2 未完（{ex["n_games"]}/{total}）' if ex['n_games'] < total else '')
+    ex['tn2_sha256'] = sha2
+    orders = tn3_orders(rt, ex['name'])
+    osels = {v: tn_opp_sels(v, V[v], TN2_LEADS[v]) for v in V}
+    cells = [[v, s] for v in V for s in osels[v]]
+    _worker_init(T0)
+    plan = {'version': TN3_VERSION, 'created': time.strftime('%Y-%m-%d %H:%M:%S'), 'main': TN_L, 'exclude': ex, 'orders': orders,
+            'variants': {v: {'id': r_['id'], 'title': r_['title'], 'opp_sels': osels[v]} for v, r_ in V.items()}, 'cells': cells,
+            'depth': [6, od], 'deny': [True, True], 'sel_mode': selm, 'resource': tn_res_cfg(mode), 'games': N, 'playbook': _pb_sig(),
+            'control': tn3_control_best(p2, gm2) if ctl else None}
+    plan['sig'] = hashlib.sha256((json.dumps([TN_L, ex['name'], orders, osels, plan['depth'], selm, plan['resource'], bool(ctl), plan['control'],
+                                               [V[v]['mons'] for v in sorted(V)]], ensure_ascii=False, sort_keys=True, default=str) + 'tn3').encode()).hexdigest()
+    old = None
+    if os.path.exists(P['plan']):
+        old = json.load(open(P['plan'], encoding='utf-8'))
+        if old.get('sig') != plan['sig']:
+            if not a.force:
+                raise SystemExit('tn3_plan.json の sig が違います（--force で退避して作り直し）')
+            os.replace(P['plan'], P['plan'][:-5] + time.strftime('.%Y%m%d_%H%M%S.json'))
+            old = None
+    if old:
+        plan = old
+        plan['games'] = N
+    else:
+        T3 = tn3_teams(plan, T0)
+        _worker_init(T3)
+        plan['sel1'], ssec = {}, []
+        if selm == 'adapt':
+            for v in V:
+                t0 = time.time()
+                s = decide_pair(TN_L, V[v]['id'])
+                ssec.append(time.time() - t0)
+                plan['sel1'][v] = {'order': list(s['order']), 'src': s.get('src')}
+        plan['sec_sel1'] = round(sum(ssec) / len(ssec), 1) if ssec else 0.0
+    sg = getattr(a, 'sec_game', None) or 180.0
+    plan['estimate'] = tn3_estimate(N, len(cells), a.procs, sg, plan.get('sec_sel1') or 20.0, control=ctl)
+    if plan['estimate']['min_rf'] > 180:
+        print(f"警告: 見積り {plan['estimate']['min_rf']}分（rf込み）が180分を超えます", flush=True)
+    safeio.write_json(P['plan'], plan)
+    print(f"除外 {ex['name']}（{ex['mode']}、tn2 {ex['n_games']}/{total}）選出{len(orders)}通り セル{len(cells)}×{N}戦 見積り {plan['estimate']}")
+    return plan
+
+
+def tn3_job(plan, T, ci, k, ctl, hist, snap=True):
+    V, osel = plan['cells'][ci]
+    L, X = plan['main'], plan['variants'][V]['id']
+    s0, s1 = (L, X) if k % 2 == 0 else (X, L)
+    mode = plan['resource']['mode']
+    res = None if mode == 'off' else (tn_rc(mode, s0, s1, T), tn_rc(mode, s1, s0, T))
+    lsel = None
+    if ctl:
+        lsel = plan['control'][V]['sel']
+    elif plan['sel_mode'] == 'rotate':
+        lsel = plan['orders'][(k + 3 * ci) % len(plan['orders'])]
+    sel1 = (plan.get('sel1') or {}).get(V)
+    d = plan['depth']
+    return (tn3_key(V, osel, k, ctl), V, list(osel), k, s0, s1, lsel, hist, ci, (d[0], d[1]), res, mode, sel1, snap, bool(ctl))
+
+
+def _job_tn3(a):
+    key, V, osel, k, s0, s1, lsel, hist, ci, depth, res, mode, sel1, snap, ctl = a
+    t0 = time.time()
+    import search as _S
+    global _AD_EVAL
+    L = TN_L
+    X = s1 if s0 == L else s0
+    orig, osnap, oev = _S.axis_cover, R.SNAP, _AD_EVAL
+    why = mrb = None
+    ssec = 0.0
+    try:
+        R.SNAP = snap
+        if lsel is None:
+            if sel1:
+                _AD['sel1'][f'{L}|{X}'] = {'order': sel1['order'], 'src': sel1.get('src')}
+            _AD_EVAL = _tn3_eval
+            ts = time.time()
+            try:
+                lsel, why = _TN3_SELECT(L, X, hist)
+            finally:
+                _AD_EVAL = oev
+            ssec = time.time() - ts
+            lsel = list(lsel)
+            if why and why.get('e_all'):
+                both = [x for x in why['e_all'] if TN3_MK in x[1] and TN3_ZD in x[1]]
+                mrb = {'best': max(both)[1] if both else None, 'e_best': max(both)[0] if both else None,
+                       'e_chosen': next((x[0] for x in why['e_all'] if x[1] == lsel), None)}
+        lsel = list(lsel)
+        rr_apply(_TEAMS[s0])
+        pa = _pb_args(s0, s1)
+        mb = tn3_megaban(lsel)
+        mbs = (mb if s0 == L else None, mb if s1 == L else None)
+        o0, o1 = (lsel, list(osel)) if s0 == L else (list(osel), lsel)
+        d0, d1 = (depth[0], depth[1]) if s0 == L else (depth[1], depth[0])
+        if mode == 'discount':
+            _S.axis_cover = _tn_discount_cover
+        rs = res if (res and (res[0] or res[1])) else None
+        r = _TN_PLAY((None, s1, o0, o1, tn3_seed(V, osel, k), d0, d1, False, None, False, (s0,), (True, True), pa[0] if pa else None, rs, mbs))
+        r['lsel'], r['why'], r['mrb'], r['ssec'] = lsel, why, mrb, round(ssec, 2)
+    except Exception:
+        r = {'res': None, 'error': traceback.format_exc()[-800:], 'lsel': lsel}
+    finally:
+        _S.axis_cover, R.SNAP, _AD_EVAL = orig, osnap, oev
+    r['key'] = key
+    r['sec'] = round(time.time() - t0, 2)
+    return r
+
+
+def tn3_record(job, r):
+    key, V, osel, k, s0, s1, lsel, hist, ci, depth, res, mode, sel1, snap, ctl = job
+    ls = r.get('lsel') or []
+    o0, o1 = (ls, list(osel)) if s0 == TN_L else (list(osel), ls)
+    rec = tn_record((key, V, osel, ls, k, s0, s1, o0, o1, 3, depth, res, mode), r, TN_L)
+    rec['seed'] = tn3_seed(V, osel, k)
+    rec['cell'] = ci
+    rec['ctl'] = ctl
+    rec['sel_why'] = r.get('why')
+    rec['mr_best'] = r.get('mrb')
+    rec['ssec'] = r.get('ssec')
+    rec['mega_ban'] = tn3_megaban(ls)
+    return rec
+
+
+def tn3_hist(plan, gm, T, ci, k):
+    V, osel = plan['cells'][ci]
+    bases = [m['base'] for m in T[plan['variants'][V]['id']]['mons']]
+    h = []
+    for j in range(k):
+        g = gm[tn3_key(V, osel, j)]
+        h.append({'n': j, 'mine': list(g['sel']), 'theirs': norm_order(list(osel), bases), 'res_for_A': tn_score(g)})
+    return h
+
+
+def tn3_next(plan, gm, ci, ctl, N, retry):
+    V, osel = plan['cells'][ci]
+    for k in range(N):
+        g = gm.get(tn3_key(V, osel, k, ctl))
+        if g and g['res'] is not None:
+            continue
+        if g and not retry:
+            return None
+        return k
+    return None
+
+
+def cmd_tn3_run(a):
+    P = tn3_paths(a.out_dir)
+    plan = tn_load_plan(P)
+    if a.resource and a.resource != plan['resource']['mode']:
+        raise SystemExit(f"plan の resource は {plan['resource']['mode']} です")
+    T0 = dict(load_plan(paths(None))['teams'])
+    for v, rt in tn_load_variants().items():
+        T0[rt['id']] = rt
+    T3 = tn3_teams(plan, T0)
+    if os.path.exists(P['games']):
+        G = json.load(open(P['games'], encoding='utf-8'))
+        if G.get('plan_sig') != plan['sig']:
+            raise SystemExit('tn3_games.json の plan_sig が tn3_plan.json と違います')
+    else:
+        G = {'version': TN3_VERSION, 'plan_sig': plan['sig'], 'resource': plan['resource'], 'games': {}, 'playbook': _pb_sig()}
+    pb_guard(G)
+    gm = G['games']
+    N = getattr(a, 'games', None) or plan['games']
+    ctls = [False, True] if plan.get('control') else [False]
+    t0, n_done, left = time.time(), 0, a.max_games or 10 ** 9
+    tot = N * len(plan['cells']) * len(ctls)
+    print(f"全体 {tot}戦、済み {sum(1 for g in gm.values() if g['res'] is not None)}", flush=True)
+    with make_pool(a.procs, T3) as pool:
+        while left > 0:
+            jobs = []
+            for ci in range(len(plan['cells'])):
+                for c in ctls:
+                    k = tn3_next(plan, gm, ci, c, N, a.retry_errors)
+                    if k is not None:
+                        jobs.append(tn3_job(plan, T0, ci, k, c, [] if c else tn3_hist(plan, gm, T0, ci, k)))
+            jobs = jobs[:left]
+            if not jobs:
+                break
+            for r in pool.imap_unordered(_job_tn3, jobs):
+                job = next(j for j in jobs if j[0] == r['key'])
+                gm[r['key']] = tn3_record(job, r)
+                safeio.write_json(P['games'], G)
+                if r.get('log') is not None:
+                    tn2_append_log(P, r['key'], r)
+                n_done += 1
+                left -= 1
+                s = tn_score(gm[r['key']])
+                el = (time.time() - t0) / 60
+                print(f"[{n_done}] {r['key']} L{'例外' if s is None else ('勝' if s == 1 else ('分' if s == 0.5 else '負'))} {'/'.join(r.get('lsel') or [])} {r.get('turns')}手 {r['sec']:.0f}秒 経過{el:.1f}分", flush=True)
+    return n_done
+
+
+def cmd_tn3_report(a):
+    P = tn3_paths(a.out_dir)
+    plan = tn_load_plan(P)
+    G = json.load(open(P['games'], encoding='utf-8'))
+    gm = {k: g for k, g in G['games'].items() if g['res'] is not None}
+    logs = {}
+    for r in read_jsonl(P['logs']):
+        if r.get('key') in gm:
+            logs[r['key']] = r
+    ex = plan['exclude']
+    main = {k: g for k, g in gm.items() if not g.get('ctl')}
+    ctl = {k: g for k, g in gm.items() if g.get('ctl')}
+    out = [f"# TONORAGU3: {ex['name']}除外・ミミッキュ必須・ムクホーク/リザードンX同時選出可（ムクホークはメガなし）6手読みブラインド", '',
+           f"作成 {time.strftime('%Y-%m-%d %H:%M')} / plan sig {plan['sig'][:12]} / 有効 {len(gm)}戦 / 例外 {sum(1 for g in G['games'].values() if g['res'] is None)}戦", '']
+    secs = [g['sec'] for g in gm.values() if g.get('sec')]
+    out += ['## 1. 条件', f"- 深さ (自分, 相手)={tuple(plan['depth'])}、N={plan['games']}/セル、セル={len(plan['cells'])}、sel方式 {plan['sel_mode']}、deny {plan['deny']}、resource {plan['resource']['mode']}、playbook {G.get('playbook')}",
+            '- 種: crc32("tn3"+V+相手選出+k)（L選出を含まない）、k 偶数は L が side0',
+            '- 相手選出（固定）: ' + ' / '.join(f"{v}: {'|'.join('/'.join(s) for s in vv['opp_sels'])}" for v, vv in plan['variants'].items()),
+            '- メガ禁止: L の選出に ムクホーク＋リザードン が両方ある時だけ L 側のムクホークがメガしない（args[14]）。相手の読みは禁止を知らない（ブラインド）。プレイブック p1/p2 の `who: メガムクホーク` は base 名一致なのでメガしないムクホークにも適用される。',
+            f"- 見積り {plan['estimate']}"]
+    if secs:
+        out.append(f"- 実所要: 計 {sum(secs) / 3600:.1f} CPU時間 ÷ {plan['estimate']['procs']}並列 ≒ {sum(secs) / 60 / plan['estimate']['procs']:.0f}分、1戦平均 {sum(secs) / len(secs):.0f}秒")
+    out.append('')
+    out += ['## 2. 除外した個体と根拠', f"- 除外: **{ex['name']}**（{ex['mode']}）" + (f"。{ex['note']}" if ex.get('note') else '') + (f"。同率判定あり {ex['tie']}" if ex.get('tie') else '。同率判定なし'),
+            f"- tn2_games.json sha256 {ex.get('tn2_sha256')}、stage1 {ex['n_games']}/{ex['total']}戦",
+            '- 注意: 24候補は個体の組み合わせが偏る（ムクホーク＋リザードンXは無い）ため、選出時勝率は組む相手の影響を含む交絡あり。', '',
+            '| 個体 | 選出時 n | 勝率 | 区間 | 出場時 n | 出場時勝率 | 先発 n | 先発時勝率 | 被先頭瀕死 | 被先頭瀕死率 |', '|---|---|---|---|---|---|---|---|---|---|']
+    pc = lambda x: '-' if x is None else f'{x * 100:.1f}%'
+    for r in ex['table']:
+        out.append(f"| {r['name']} | {r['n']} | {pc(r['rate'])} | {r['ci'][0] * 100:.0f}-{r['ci'][1] * 100:.0f}% | {r['n_out']} | {pc(r['rate_out'])} | {r['n_lead']} | {pc(r['rate_lead'])} | {r['first_faint']} | {pc(r['first_faint_rate'])} |")
+    out.append('')
+    out += ['## 3. 選出別・変種別の勝率']
+    for v, vv in plan['variants'].items():
+        for osel in vv['opp_sels']:
+            gs = [g for g in main.values() if g['variant'] == v and g['opp_sel'] == osel]
+            out.append(f"- {v} 相手 {'/'.join(osel)}: {_f(*_wr(gs))}")
+        gs = [g for g in main.values() if g['variant'] == v]
+        out.append(f"- **{v} 通算**: {_f(*_wr(gs))}")
+        byl = collections.defaultdict(list)
+        for g in gs:
+            byl['/'.join(g['sel'])].append(g)
+        out.append('  - L選出別: ' + ('; '.join(f"{k} {_f(*_wr(x))}" for k, x in sorted(byl.items(), key=lambda t: -len(t[1]))[:12]) or '該当なし'))
+    out.append('- adapt が選んだ選出の推移（セルごと k=0..）:')
+    for ci, (v, osel) in enumerate(plan['cells']):
+        seq = [main.get(tn3_key(v, osel, k)) for k in range(plan['games'])]
+        out.append(f"  - {v} {'/'.join(osel)}: " + (' → '.join('/'.join(g['sel']) if g else '-' for g in seq)))
+    out.append('')
+    both = [g for g in main.values() if TN3_MK in g['sel'] and TN3_ZD in g['sel']]
+    out += ['## 4. ムクホーク＋リザードンX同時選出']
+    if ex['name'] in (TN3_MK, TN3_ZD):
+        out.append(f"該当なし（{ex['name']}除外）")
+    elif not both:
+        out.append('該当なし')
+    else:
+        its = tn2_items(gm, logs, lambda g: g in both)
+        out.append(f"- 該当 {len(both)}戦、勝率 {_f(*_wr(both))}")
+        mk_t = kills = ink = ink_k = dead = zmega = mkmega = 0
+        for it in its:
+            ms = it['ms']
+            for t, row in enumerate(it['lg']):
+                if row[0].startswith(TN3_MK):
+                    mk_t += 1
+                    if it['meg'][t][0]:
+                        mkmega += 1
+                    if row[1] == 'いのちがけ':
+                        ink += 1
+                        ink_k += sum(1 for x in it['g']['faints'] if x[0] == t + 1 and x[1] != ms)
+                if row[0].startswith(TN3_ZD) and it['meg'][t][0]:
+                    zmega += 1
+            kills += sum(1 for x in it['g']['faints'] if x[1] != ms and x[3].startswith(TN3_MK))
+            dead += sum(1 for x in it['g']['faints'] if x[1] == ms and x[2].startswith(TN3_MK))
+        out.append(f"- ムクホーク: 場に出たターン計 {mk_t}、倒した数 {kills}、いのちがけ {ink}回（直後の相手瀕死 {ink_k}）、被瀕死 {dead}回")
+        out.append(f"- リザードンXのメガターン計 {zmega}。**ムクホークのメガ回数 {mkmega}（0 であること）**")
+        mr = [g['mr_best'] for g in main.values() if g.get('mr_best')]
+        if mr:
+            out.append('- mr_best（同時選出の最大 e / 選ばれた選出の e）: ' + ', '.join(f"{(x['e_best'] if x['e_best'] is not None else 0):.3f}/{(x['e_chosen'] if x['e_chosen'] is not None else 0):.3f}" for x in mr[:20]))
+    out.append('')
+    out += ['## 5. ミミッキュ必須ルールの効果']
+    for v in plan['variants']:
+        gs = [g for g in main.values() if g['variant'] == v]
+        c = plan.get('control') and plan['control'].get(v)
+        line = f"- {v}: tn3 {_f(*_wr(gs))}"
+        if ctl:
+            cg = [g for g in ctl.values() if g['variant'] == v]
+            line += f" / 同深さ対照 {'/'.join(c['sel'])} {_f(*_wr(cg))}"
+        elif c:
+            line += f" / tn2 最良 {'/'.join(c['sel'])} 勝率{c['rate'] * 100:.0f}%（tn2 は d4/d5。深さが違うので参考）"
+        out.append(line)
+    out.append('')
+    out += ['## 6. 勝ち筋のターン別行動（シミュレーション由来・仮説）']
+    for title, flt in (('最多選出', None), ('同時選出', lambda g: g in both)):
+        if flt is None:
+            cnt = collections.Counter('/'.join(g['sel']) for g in main.values())
+            top = cnt.most_common(1)[0][0] if cnt else None
+            f2 = lambda g, top=top: '/'.join(g['sel']) == top
+        else:
+            f2 = flt
+        its = tn2_items(gm, logs, f2)
+        out.append(f"### {title}（{len(its)}戦）")
+        if not its:
+            out.append('- 該当なし')
+            continue
+        for T_ in range(1, 7):
+            reach = [i for i in its if len(i['lg']) >= T_]
+            if reach:
+                cl = collections.Counter((i['lg'][T_ - 1][0], i['lg'][T_ - 1][1]) for i in reach)
+                co = collections.Counter((i['lg'][T_ - 1][2], i['lg'][T_ - 1][3]) for i in reach)
+                out.append(f"- T{T_} L: " + ', '.join(f'{f}:{x} {n}' for (f, x), n in cl.most_common(3)) + ' / 相手: ' + ', '.join(f'{f}:{x} {n}' for (f, x), n in co.most_common(3)))
+        out += [f'- 分岐点 {x[1]}' for x in _delta_lines(its, None)[:5]]
+        out += tn2_points(its)
+    out += ['', '## 7. 結論']
+    for v in plan['variants']:
+        gs = [g for g in main.values() if g['variant'] == v]
+        cnt = collections.Counter('/'.join(g['sel']) for g in gs)
+        out.append(f"- {v}: 最多選出 {cnt.most_common(1)[0][0] if cnt else '該当なし'}、勝率 {_f(*_wr(gs))}")
+    open(P['md'], 'w', encoding='utf-8').write('\n'.join(out) + '\n')
+    print(f"書きました: {P['md']}")
+
+
+def cmd_tn3_selftest(a):
+    import shutil, subprocess, tempfile
+    global _TN_PLAY, _TN3_SELECT
+    D = a.out_dir or tempfile.mkdtemp(prefix='tn3test_')
+    results = []
+
+    def ok(n, cond, msg=''):
+        results.append((n, bool(cond)))
+        print(f"{'○' if cond else '×'} {n} {msg}", flush=True)
+
+    busy = ('tn2_games.json', 'tn2_logs.jsonl', 'TONORAGU2.md', 'tn2_plan.json')   # 別プロセス(tn2)が実行中なら書き換わるので比較から外す
+    sha = lambda: {k: v for k, v in _sha_all().items() if os.path.basename(k) not in busy}
+    before = sha()
+    before_busy = {k: v for k, v in _sha_all().items() if os.path.basename(k) in busy}
+    p = subprocess.run([sys.executable, '-m', 'py_compile', 'roundrobin.py', 'refine.py'], cwd=HERE, capture_output=True, text=True)
+    ok('1 py_compile', p.returncode == 0, p.stderr[-200:])
+
+    class A_:
+        pass
+
+    def args(sub, **kw):
+        x = A_()
+        x.out_dir, x.procs, x.max_games, x.force, x.retry_errors, x.resource, x.stage = os.path.join(D, sub), a.procs, 0, True, False, 'loose', 1
+        x.games, x.exclude, x.opp_depth, x.sel, x.control, x.tn2_dir, x.sec_game, x.focus = 3, None, None, 'adapt', False, os.path.join(D, 'tn2'), None, False
+        x.__dict__.update(kw)
+        return x
+
+    # ---- 2 除外個体（スタブ）
+    def mkg(sel, res, ms=0, faints=None, k=0):
+        return {'stage': 1, 'res': res, 'sel': sel, 'main_side': ms, 'faints': faints or [], 'variant': 'A', 'k': k, 'left': None}
+
+    def mkl(field):
+        return {'log': [[field, 'x', 'o', 'y']]}
+    bs = ['A', 'B', TN3_MIM]
+    gm = {}
+    n_ = 0
+
+    def add(g, field=None):
+        nonlocal n_
+        n_ += 1
+        gm[f'k{n_}'] = g
+        if field:
+            lg_[f'k{n_}'] = mkl(field)
+    lg_ = {}
+    for nm, ws in (('A', 3), ('B', 1), (TN3_MIM, 0)):
+        for i in range(4):
+            add(mkg([nm, 'x1', 'x2'], 1 if i < ws else -1), nm)
+    e = tn3_exclusion(gm, lg_, bs, 12)
+    ok('2a 最低勝率(B)が除外・ミミッキュ最低でも除外されない', e['name'] == 'B' and e['mode'] == 'auto' and e['table'][2]['rate'] == 0.0)
+    # 同率 ①出場時
+    gm, lg_, n_ = {}, {}, 0
+    for i in range(4):
+        add(mkg(['A', 'x1', 'x2'], 1 if i < 2 else -1), 'A' if i >= 2 else 'zz')     # 出場は負けのみ -> rate_out 0
+        add(mkg(['B', 'x1', 'x2'], 1 if i < 2 else -1), 'B')
+    e1 = tn3_exclusion(gm, lg_, bs, 8)
+    # ②先発時
+    gm, lg_, n_ = {}, {}, 0
+    for i in range(4):
+        add(mkg(['A', 'x1', 'x2'] if i >= 2 else ['x1', 'A', 'x2'], 1 if i < 2 else -1), 'A')
+        add(mkg(['B', 'x1', 'x2'] if i < 2 else ['x1', 'B', 'x2'], 1 if i < 2 else -1), 'B')
+    e2 = tn3_exclusion(gm, lg_, bs, 8)
+    # ③被先頭瀕死率（A 先発時を同じにし、B のみ先頭瀕死）
+    gm, lg_, n_ = {}, {}, 0
+    for i in range(4):
+        add(mkg(['x1', 'A', 'x2'], 1 if i < 2 else -1), 'A')
+        add(mkg(['x1', 'B', 'x2'], 1 if i < 2 else -1, faints=[[3, 0, 'B', 'z']] if i >= 2 else []), 'B')
+    e3 = tn3_exclusion(gm, lg_, bs, 8)
+    # ④全部同じ -> 構築で後ろ
+    gm, lg_, n_ = {}, {}, 0
+    for i in range(4):
+        add(mkg(['x1', 'A', 'x2'], 1 if i < 2 else -1), 'A')
+        add(mkg(['x1', 'B', 'x2'], 1 if i < 2 else -1), 'B')
+    e4 = tn3_exclusion(gm, lg_, bs, 8)
+    ok('2b 同率 ①出場時 ②先発時 ③被先頭瀕死 ④後ろ', (e1['name'], e2['name'], e3['name'], e4['name']) == ('A', 'A', 'B', 'B') and e1['tie'] == ['A', 'B'], str((e1['name'], e2['name'], e3['name'], e4['name'])))
+    em = tn3_exclusion(gm, lg_, bs, 8, manual='A')
+    errs = 0
+    for bad in (TN3_MIM, 'ゾウ'):
+        try:
+            tn3_exclusion(gm, lg_, bs, 8, manual=bad)
+        except SystemExit:
+            errs += 1
+    ok('2c --exclude 優先・ミミッキュ/不明名はエラー', em['name'] == 'A' and em['mode'] == 'manual' and em['auto_name'] == 'B' and errs == 2)
+
+    # ---- tn2 スタブ + plan
+    rp = load_plan(paths(None))
+    V = tn_load_variants()
+    T = dict(rp['teams'])
+    for v, rt in V.items():
+        T[rt['id']] = rt
+    _worker_init(T)
+    L = TN_L
+    rr_apply(T[L])
+    rt = T[L]
+    bases = [m['base'] for m in rt['mons']]
+    cs24 = [list(c) for c in rt['candidates']]
+    osels = {v: tn_opp_sels(v, V[v], TN2_LEADS[v]) for v in V}
+    tdir = os.path.join(D, 'tn2')
+    os.makedirs(tdir, exist_ok=True)
+    g2 = {}
+    for v in V:
+        for os_ in osels[v]:
+            for j, ls in enumerate(cs24):
+                h = zlib.crc32(f'{v}{os_}{j}'.encode())
+                g2[tn2_key(v, os_, ls, 0)] = {'stage': 1, 'res': (1, -1, 0)[h % 3], 'sel': ls, 'main_side': 0, 'faints': [[3, 0, ls[0], 'z']], 'variant': v, 'k': 0, 'left': None}
+    json.dump({'games': {'1': 1, '2': 1}, 'candidates': cs24, 'variants': {v: {'opp_sels': osels[v]} for v in V}, 'stage2_sels': None}, open(os.path.join(tdir, 'tn2_plan.json'), 'w', encoding='utf-8'))
+    json.dump({'games': g2}, open(os.path.join(tdir, 'tn2_games.json'), 'w', encoding='utf-8'))
+    open(os.path.join(tdir, 'tn2_logs.jsonl'), 'w').close()
+    ex_name = next(b for b in bases if b not in (TN3_MK, TN3_ZD, TN3_MIM))
+    short = dict(g2)
+    for kk in list(short)[:5]:
+        del short[kk]
+    td2 = os.path.join(D, 'tn2short')
+    os.makedirs(td2, exist_ok=True)
+    for f in ('tn2_plan.json', 'tn2_logs.jsonl'):
+        shutil.copy(os.path.join(tdir, f), os.path.join(td2, f))
+    json.dump({'games': short}, open(os.path.join(td2, 'tn2_games.json'), 'w', encoding='utf-8'))
+    try:
+        cmd_tn3_plan(args('stop', tn2_dir=td2))
+        stopped = False
+    except SystemExit:
+        stopped = True
+    pm = cmd_tn3_plan(args('short', tn2_dir=td2, exclude=ex_name))
+    ok('2d tn2 未完なら --exclude 無しは停止、有りは通り note に tn2 未完', stopped and 'tn2 未完' in pm['exclude'].get('note', ''))
+    t0 = time.time()
+    pl = cmd_tn3_plan(args('r', exclude=ex_name))
+    sec_plan = time.time() - t0
+    pa_ = cmd_tn3_plan(args('auto'))
+    ok('2e 完了データで機械決定・根拠表6体・sha', pa_['exclude']['mode'] == 'auto' and len(pa_['exclude']['table']) == 6 and len(pa_['exclude']['tn2_sha256']) == 64, f"除外={pa_['exclude']['name']}")
+
+    # ---- 3 許容集合
+    od = pl['orders']
+    ok('3a 18通り・ミミッキュ必須・除外なし・重複なし・norm済み', len(od) == 18 and all(TN3_MIM in o and ex_name not in o and len(set(o)) == 3 and o == norm_order(o, bases) for o in od)
+       and len({tuple(o) for o in od}) == 18)
+    ok('3b ムクホーク+リザードンX 同時選出が3通り', sum(1 for o in od if TN3_MK in o and TN3_ZD in o) == 3)
+    T3 = tn3_teams(pl, T)
+    ok('3c adapt の candidates が18通りに絞られる', len(T3[L]['candidates']) == 18 and all(tuple(o) in {tuple(x) for x in od} for it in T3[L]['gitems'] for o in it['orders']) and len(rt['candidates']) == 24)
+    ok('3d plan sel1 は許容集合内・変種ごと', all(tuple(pl['sel1'][v]['order']) in {tuple(x) for x in od} for v in V), str({v: pl['sel1'][v]['order'] for v in V}))
+
+    # ---- 4 ムクホークがメガしない（実 blind_play 浅い深さ）
+    _worker_init(T3)
+    zs = norm_order([TN3_MK, TN3_ZD, TN3_MIM], bases)
+    cap = {}
+    orig_mb = R.mega_ban
+
+    def spy(st, side, names):
+        orig_mb(st, side, names)
+        cap[side] = {m.name: m.can_mega for m in st.sides[side].mons if m.mega_form is not None}
+    R.mega_ban = spy
+    rows_ = {}
+    try:
+        for k in (0, 1):
+            j = list(tn3_job(pl, T, 0, k, False, []))
+            j[6], j[9] = zs, (1, 1)
+            cap.clear()
+            r = _job_tn3(tuple(j))
+            ms = 0 if k % 2 == 0 else 1
+            log = r.get('log') or []
+            mk_m = [t for t, row in enumerate(log) if row[2 * ms].startswith(TN3_MK) and str(row[2 * ms + 1]).startswith('M+')]
+            sn = r.get('snap') or []
+            zm = [t for t, row in enumerate(log) if row[2 * ms].startswith(TN3_ZD) and str(row[2 * ms + 1]).startswith('M+')]
+            sn_ok = all(not sn[t]['mega'][ms] or (zm and zm[0] < t) for t, row in enumerate(log) if row[2 * ms].startswith(TN3_MK) and t < len(sn))
+            rows_[k] = (r.get('res') is not None, not mk_m, sn_ok, cap.get(ms, {}).get(TN3_ZD) is True and cap.get(ms, {}).get(TN3_MK) is False, bool(zm))
+        ok('4a 同時選出で k偶数/奇数ともムクホーク M+ なし・snap mega 整合・開始時 リザードンX can_mega=True', all(all(v[:4]) for v in rows_.values()), str(rows_))
+        # 対照
+        _TN3_NOBAN[0] = True
+        j = list(tn3_job(pl, T, 0, 0, False, []))
+        j[6], j[9] = zs, (1, 1)
+        r = _job_tn3(tuple(j))
+        _TN3_NOBAN[0] = False
+        log = r.get('log') or []
+        mk_ctl = any(row[0].startswith(TN3_MK) and str(row[1]).startswith('M+') for row in log)
+        ok('4b 対照: megaban 無し k偶数ならムクホークがメガする', mk_ctl, f"res={r.get('res')} {r.get('error') or ''}")
+        # 従来呼び出し一致
+        seen = []
+
+        def wrap(full):
+            def f(args_):
+                seen.append(len(args_))
+                return orig_play(args_ if full else args_[:14])
+            return f
+        orig_play = R.blind_play
+        j = list(tn3_job(pl, T, 0, 0, False, []))
+        j[6], j[9] = norm_order([TN3_MIM, bases[0] if bases[0] not in (TN3_MIM, ex_name) else bases[1], TN3_MK], bases), (1, 1)
+        rs_ = []
+        for full in (True, False):
+            _TN_PLAY = wrap(full)
+            rs_.append(_job_tn3(tuple(j)))
+        _TN_PLAY = R.blind_play
+        ok('4c megaban (None,None) と従来(14引数)で res/log/faints/left/turns 一致', all(rs_[0].get(x) == rs_[1].get(x) for x in ('res', 'log', 'faints', 'left', 'turns')) and rs_[0].get('res') is not None, str(seen))
+        # _AD_EVAL 経路
+        cap.clear()
+        X0 = pl['variants']['A']['id']
+        with _ad_blind(L, X0):
+            ev = _tn3_eval(zs, pl['cells'][0][1], False)
+        ok('4d _AD_EVAL(_tn3_eval) でも禁止が効く', cap.get(0, {}).get(TN3_MK) is False and cap.get(0, {}).get(TN3_ZD) is True and isinstance(ev, (int, float)), str(ev))
+    finally:
+        R.mega_ban = orig_mb
+        _TN3_NOBAN[0] = False
+        _TN_PLAY = R.blind_play
+
+    # ---- 8 時間（実 d6 1戦、adapt 選出 1回）
+    j = list(tn3_job(pl, T, 0, 0, False, []))
+    j[6] = zs
+    t0 = time.time()
+    r6 = _job_tn3(tuple(j))
+    sec6 = time.time() - t0
+    bX = [m['base'] for m in T[pl['variants']['A']['id']]['mons']]
+    hist = [{'n': 0, 'mine': list(od[0]), 'theirs': norm_order(list(pl['cells'][0][1]), bX), 'res_for_A': 1.0}]
+    j = list(tn3_job(pl, T, 0, 1, False, hist))
+    j[9] = (1, 1)
+    r_s = _job_tn3(tuple(j))
+    ok('8a 実 d6 1戦 (6,6) 同時選出', r6.get('res') is not None, f"{sec6:.0f}秒 {r6.get('turns')}手 {r6.get('error') or ''}")
+    ok('8b adapt 選出1回', r_s.get('why') is not None and r_s.get('lsel') in od, f"選出 {r_s.get('ssec')}秒 plan(sel1×3込み) {sec_plan:.0f}秒")
+    est = tn3_estimate(10, 6, 4, round(sec6), r_s.get('ssec') or 20.0)
+    print(f"  見積り(procs=4, 実測 d6 {sec6:.0f}秒 + 選出 {r_s.get('ssec')}秒): {est}", flush=True)
+
+    # ---- 5 再開（スタブ）
+    def stub(args_):
+        h = zlib.crc32(repr((args_[2], args_[3], args_[4])).encode())
+        n = 6
+        names = [args_[2][0], args_[3][0]]
+        log = [[args_[2][0], ('M+' if (t == 1 and args_[2][0] == TN3_ZD) else '') + ('げきりん' if (h >> t) & 1 else 'のろい'), args_[3][0], 'じしん'] for t in range(n)]
+        sn_ = [{'w': '', 'wt': 0, 'tr': '', 'tt': 0, 'room': 0, 'hp': [100, 100], 'mega': [t > 1, False], 'bk': [False, None],
+                'vol': [{'perish': None, 'encore': None, 'curse': False}] * 2, 'item': ['', ''], 'alive': [3, 3]} for t in range(n)]
+        po_ = [{'hp': [90, 90], 'act': names, 'ej': [False, False]} for t in range(n)]
+        return {'res': (1, -1, 0)[h % 3], 'turns': n, 'judged': False,
+                'left': [[[m, (h >> i) % 101] for i, m in enumerate(args_[2])], [[m, (h >> (i + 3)) % 101] for i, m in enumerate(args_[3])]],
+                'faints': [[3, 0, args_[2][0], args_[3][0]], [5, 1, args_[3][0], args_[2][1]]], 'log': log, 'snap': sn_, 'post': po_,
+                'echo': [list(args_[14])]}
+
+    def sel_stub(A, X, hist):
+        i = (zlib.crc32(repr(hist).encode()) + 3 * len(hist)) % 18
+        o = od[i]
+        return list(o), {'src': 'stub', 'e_all': [[round(((zlib.crc32(repr((hist, x)).encode()) % 100) / 100), 2), list(x)] for x in od]}
+
+    _TN_PLAY, _TN3_SELECT = stub, sel_stub
+    try:
+        a1 = args('s1', max_games=7, games=3)
+        cmd_tn3_plan(a1)
+        cmd_tn3_run(a1)
+        P1 = tn3_paths(a1.out_dir)
+        g7 = json.load(open(P1['games'], encoding='utf-8'))['games']
+        a1.max_games = 0
+        n_new = cmd_tn3_run(a1)
+        g18 = json.load(open(P1['games'], encoding='utf-8'))['games']
+        ok('5a 再開: 7件→残り11件だけ・既存不変', len(g7) == 7 and n_new == 11 and len(g18) == 18 and all(json.dumps(g18[k], sort_keys=True) == json.dumps(g7[k], sort_keys=True) for k in g7))
+        pre = all(g['k'] in (0, 1, 2) for g in g18.values()) and all(len({tn3_key(v, o, k) in g18 for k in range(3)}) == 1 for v, o in pl['cells'])
+        ok('5b セル6×k3・sel は許容集合内・megaban は両方選出の時だけ記録', pre and all(g['sel'] in od for g in g18.values()) and
+           all((g['mega_ban'] == [TN3_MK]) == (TN3_MK in g['sel'] and TN3_ZD in g['sel']) for g in g18.values()))
+        ok('5b2 echo(args[14]) が L 側にだけ入る', all(((g['echo'][0][g['main_side']] == [TN3_MK]) if g['mega_ban'] else (g['echo'][0] == [None, None])) for g in g18.values() if g.get('echo')))
+        lg = read_jsonl(P1['logs'])
+        ok('5c tn3_logs に key/log/snap/post', len(lg) == 18 and all({'key', 'log', 'snap', 'post'} <= set(x) for x in lg))
+        ci0 = pl['cells'][0]
+        k0 = [tn3_key(ci0[0], ci0[1], k) for k in range(3)]
+        sel_k2 = g18[k0[2]]['sel']
+        G = json.load(open(P1['games'], encoding='utf-8'))
+        G['games'][k0[1]]['res'], G['games'][k0[1]]['error'] = None, 'x'
+        del G['games'][k0[2]]
+        json.dump(G, open(P1['games'], 'w', encoding='utf-8'))
+        n_a = cmd_tn3_run(a1)
+        a1.retry_errors = True
+        n_b = cmd_tn3_run(a1)
+        g_b = json.load(open(P1['games'], encoding='utf-8'))['games']
+        ok('5d error の k より後は走らず・--retry-errors で再開・同じ hist から同じ選出', n_a == 0 and n_b == 2 and g_b[k0[2]]['sel'] == sel_k2, f'{n_a},{n_b}')
+        a1.retry_errors, a1.games = False, 4
+        n_c = cmd_tn3_run(a1)
+        ok('5e --games 増加で新しい k だけ追加', n_c == 6, str(n_c))
+        # rotate + control
+        a2 = args('s2', sel='rotate', control=True, games=2)
+        pr = cmd_tn3_plan(a2)
+        cmd_tn3_run(a2)
+        g2_ = json.load(open(tn3_paths(a2.out_dir)['games'], encoding='utf-8'))['games']
+        okc = all(g['sel'] == pr['control'][g['variant']]['sel'] for g in g2_.values() if g['ctl'])
+        okr = all(g['sel'] == od[(g['k'] + 3 * g['cell']) % 18] for g in g2_.values() if not g['ctl'])
+        ok('5f rotate/control: 件数24・key tn3c:・sel 一致', len(g2_) == 24 and sum(1 for k in g2_ if k.startswith('tn3c:')) == 12 and okc and okr)
+        # 7 report
+        cmd_tn3_report(a1)
+        md = open(P1['md'], encoding='utf-8').read()
+        heads = ['## 1. 条件', '## 2. 除外した個体と根拠', '## 3. 選出別・変種別の勝率', '## 4. ムクホーク＋リザードンX同時選出', '## 5. ミミッキュ必須ルールの効果', '## 6. 勝ち筋のターン別行動', '## 7. 結論']
+        ok('7 report: §1〜§7 の見出し', all(h in md for h in heads), str([h for h in heads if h not in md]))
+    finally:
+        _TN_PLAY, _TN3_SELECT = R.blind_play, adapt_select
+    after = sha()
+    ok('6 既存結果の sha256 不変（tn2 実行中の4ファイルは比較から除外）・既定の場所に tn3_* を作らない', after == before and not [f for f in os.listdir(DEF_OUT) if f.startswith('tn3_')] and
+       not os.path.exists(os.path.join(HERE, '..', 'logs', 'TONORAGU3.md')))
+    if not a.keep and not a.out_dir:
+        shutil.rmtree(D, ignore_errors=True)
+    bad = [n for n, c in results if not c]
+    print(f"\n{len(results) - len(bad)}/{len(results)} ○" + (f"  ×: {bad}" if bad else '') + f"  実d6 1戦 {sec6:.0f}秒 / 選出 {r_s.get('ssec')}秒")
+    if bad:
+        raise SystemExit(1)
+
+
+
 def cmd_tonorag(a):
+    if getattr(a, 'tn3', False):
+        return {'plan': cmd_tn3_plan, 'run': cmd_tn3_run, 'report': cmd_tn3_report, 'selftest': cmd_tn3_selftest}[a.what](a)
     if getattr(a, 'focus', False):
         return {'plan': cmd_tn2_plan, 'run': cmd_tn2_run, 'report': cmd_tn2_report, 'selftest': cmd_tn2_selftest}[a.what](a)
     {'import': lambda x: tn_import(x.force, getattr(x, 'from_file', None)), 'plan': cmd_tonorag_plan, 'run': cmd_tonorag_run,
@@ -6442,6 +7226,12 @@ def main():
     p.add_argument('--keep', action='store_true')
     p.add_argument('--out-dir')
     p.add_argument('--focus', action='store_true')
+    p.add_argument('--tn3', action='store_true')
+    p.add_argument('--exclude')
+    p.add_argument('--opp-depth', type=int, default=None)
+    p.add_argument('--sel', choices=['adapt', 'rotate'], default=None)
+    p.add_argument('--control', action='store_true')
+    p.add_argument('--tn2-dir', default=None)
     p.add_argument('--games', type=int, default=None)
     p.add_argument('--games2', type=int, default=None)
     p.add_argument('--top', type=int, default=None)

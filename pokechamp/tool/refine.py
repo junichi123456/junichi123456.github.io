@@ -570,6 +570,14 @@ def _snap_post(st, pre_items, pre_acts):
             'ej': [pre_items[i] == 'ejectbutton' and not A[i].item and A[i].name != pre_acts[i] for i in (0, 1)]}
 
 
+def mega_ban(st, side, names):
+    """Mons of `side` whose base name is in `names` can't mega; the other mega-capable mons can (restores what engine_game dropped)."""
+    for m in st.sides[side].mons:
+        if m.mega_form is None:
+            continue
+        m.can_mega = m.name not in names
+
+
 def blind_play(args):
     """One game: true sets on both sides; each side reads ahead on its own guess of the other's sets (usage data
     and the moves seen so far). We read my_depth turns ahead, they read opp_depth."""
@@ -603,6 +611,10 @@ def blind_play(args):
     try:
         _ctx(kid)
         st = B.engine_game(my_order, opp_order)
+        mb = args[14] if len(args) > 14 and args[14] else (None, None)   # (side 0 / side 1 base names that never mega, SPEC_TONORAGU3.md)
+        for _i in (0, 1):
+            if mb[_i]:
+                mega_ban(st, _i, mb[_i])
         B.match_known = lambda *a, **k: None
         B.set_known_context(None)
         B._OPP_CACHE.clear()
