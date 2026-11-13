@@ -46,8 +46,8 @@
   {
    "id": "C02",
    "file": "/home/user/junichi123456.github.io/rc-building/dist/render/C02_aerial.png",
-   "seconds": 272.5,
-   "render_seconds": 272.4,
+   "seconds": 131.1,
+   "render_seconds": 131.0,
    "samples": 128,
    "res": [
     1920,
@@ -60,13 +60,32 @@
     -134.9
    ],
    "sky_fallback": false,
-   "texture_fallbacks": []
+   "texture_fallbacks": [],
+   "family": "C",
+   "time_limit": 420,
+   "time_limit_hit": false,
+   "when": "2026-10-24T14:00",
+   "status": "ok",
+   "master": {
+    "file": "kawazanyo_master.blend",
+    "model_version": "v4.32",
+    "model_hash": "c42cfaed817c94b7489f237719b098fe1c161ef1f07235b00a14e9ee6560f97d",
+    "generated_at": "2026-11-13T16:36:31"
+   },
+   "shoot": {
+    "def_hash": "6a397d2974cf",
+    "model_hash": "c42cfaed817c94b7489f237719b098fe1c161ef1f07235b00a14e9ee6560f97d",
+    "args_hash": "9b59863f5e2d",
+    "seed": 0
+   },
+   "shoot_flags": [],
+   "palette_mismatch": []
   },
   {
    "id": "C03",
    "file": "/home/user/junichi123456.github.io/rc-building/dist/render/C03_approach.png",
-   "seconds": 316.2,
-   "render_seconds": 316.1,
+   "seconds": 174.1,
+   "render_seconds": 174.1,
    "samples": 128,
    "res": [
     1920,
@@ -79,7 +98,26 @@
     -71.5
    ],
    "sky_fallback": false,
-   "texture_fallbacks": []
+   "texture_fallbacks": [],
+   "family": "C",
+   "time_limit": 420,
+   "time_limit_hit": false,
+   "when": "2026-10-24T10:30",
+   "status": "ok",
+   "master": {
+    "file": "kawazanyo_master.blend",
+    "model_version": "v4.32",
+    "model_hash": "c42cfaed817c94b7489f237719b098fe1c161ef1f07235b00a14e9ee6560f97d",
+    "generated_at": "2026-11-13T16:36:31"
+   },
+   "shoot": {
+    "def_hash": "a296d7bdfb38",
+    "model_hash": "c42cfaed817c94b7489f237719b098fe1c161ef1f07235b00a14e9ee6560f97d",
+    "args_hash": "316d7dd07f4d",
+    "seed": 0
+   },
+   "shoot_flags": [],
+   "palette_mismatch": []
   },
   {
    "id": "C04",
@@ -136,7 +174,8 @@
     148.7
    ],
    "sky_fallback": false,
-   "texture_fallbacks": []
+   "texture_fallbacks": [],
+   "stale_since": "v4.36"
   }
  ],
  "textures": {
@@ -195,11 +234,11 @@
      "D": 0,
      "F": 0
     },
-    "render_seconds": 1.5,
+    "render_seconds": 316.0,
     "metrics": {
-     "mean": 144.6204,
-     "std": 70.6986,
-     "black": 0.0051,
+     "mean": 143.7676,
+     "std": 71.0817,
+     "black": 0.0055,
      "white": 0.0
     },
     "status": "ok",
@@ -273,23 +312,23 @@
      "D": 0,
      "F": 0
     },
-    "render_seconds": 326.1,
+    "render_seconds": 444.6,
     "metrics": {
-     "black": 0.0001,
+     "black": 0.0,
      "white": 0.0036,
-     "mean": 120.4964,
-     "std": 55.4329,
-     "window_area": 0.4834,
-     "window_ratio": 0.8692,
-     "window_std": 36.4795
+     "mean": 122.2509,
+     "std": 63.3199,
+     "window_area": 0.1563,
+     "window_ratio": 0.8709,
+     "window_std": 34.2769
     },
     "status": "flag",
     "issues": [
-     "窓の外が見えない（窓領域の平均は画像平均の 0.87 倍・標準偏差 36.5）"
+     "窓の外が見えない（窓領域の平均は画像平均の 0.87 倍・標準偏差 34.3）"
     ],
     "def_hash": "41faee6013de",
     "clearance": 700,
-    "front_mm": 7509,
+    "front_mm": 7207,
     "wall_angle": 44.7,
     "alt": null
    },
@@ -321,12 +360,12 @@
      "D": 0,
      "F": 0
     },
-    "render_seconds": 952.1,
+    "render_seconds": 444.7,
     "metrics": {
      "black": 0.0,
-     "white": 0.0041,
-     "mean": 178.6604,
-     "std": 53.5186,
+     "white": 0.0046,
+     "mean": 165.4339,
+     "std": 58.4397,
      "window_area": 0.0
     },
     "status": "ok",
@@ -335,8 +374,7 @@
     "clearance": 860,
     "front_mm": 7217,
     "wall_angle": 44.2,
-    "alt": null,
-    "stale_since": "v4.35"
+    "alt": null
    },
    "R1-03_doma": {
     "id": "R1-03_doma",
@@ -424,7 +462,8 @@
     "clearance": 762,
     "front_mm": 4485,
     "wall_angle": 37.7,
-    "alt": null
+    "alt": null,
+    "stale_since": "v4.36"
    },
    "R1-05_gym": {
     "id": "R1-05_gym",
@@ -498,19 +537,19 @@
      "D": 0,
      "F": 0
     },
-    "render_seconds": 952.5,
+    "render_seconds": 444.8,
     "metrics": {
      "black": 0.0,
      "white": 0.001,
-     "mean": 166.981,
-     "std": 38.6547,
+     "mean": 167.9808,
+     "std": 38.263,
      "window_area": 0.0
     },
     "status": "ok",
     "issues": [],
     "def_hash": "da4a4a958453",
     "clearance": 700,
-    "front_mm": 12588,
+    "front_mm": 12410,
     "wall_angle": 26.3,
     "alt": null
    },
@@ -1912,10 +1951,23 @@
   },
   "master": {
    "file": "kawazanyo_master.blend",
-   "model_hash": "0cd724d412884431",
-   "generated_at": "2026-11-12T07:43:17"
+   "model_hash": "c42cfaed817c94b7",
+   "generated_at": "2026-11-13T17:05:57"
   },
   "version": "v4.34",
-  "total_seconds": 7292.6
- }
+  "total_seconds": 8053.8
+ },
+ "master": {
+  "file": "kawazanyo_master.blend",
+  "model_version": "v4.32",
+  "model_hash": "c42cfaed817c94b7489f237719b098fe1c161ef1f07235b00a14e9ee6560f97d",
+  "generated_at": "2026-11-13T16:36:31"
+ },
+ "last_shoot": {
+  "at": "2026-11-13T17:31:24",
+  "seconds": 314.6,
+  "seed": 0,
+  "material_colors_checked": 122
+ },
+ "texture_missing": []
 }

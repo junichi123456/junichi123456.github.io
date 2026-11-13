@@ -7,8 +7,8 @@
   {
    "id": "I01",
    "file": "dist/render/interior/I01_ldk_south.png",
-   "seconds": 250.0,
-   "render_seconds": 249.8,
+   "seconds": 244.3,
+   "render_seconds": 244.1,
    "samples": 64,
    "time_limit": 240,
    "res": [
@@ -46,12 +46,12 @@
    "master": {
     "file": "kawazanyo_master.blend",
     "model_version": "v4.32",
-    "model_hash": "0cd724d4128844315dfb7ac2479d292cfe20a4a1a59ee8738abf826f9c80b546",
-    "generated_at": "2026-11-12T06:30:40"
+    "model_hash": "c42cfaed817c94b7489f237719b098fe1c161ef1f07235b00a14e9ee6560f97d",
+    "generated_at": "2026-11-13T16:36:31"
    },
    "shoot": {
     "def_hash": "f6a0651c937e",
-    "model_hash": "0cd724d4128844315dfb7ac2479d292cfe20a4a1a59ee8738abf826f9c80b546",
+    "model_hash": "c42cfaed817c94b7489f237719b098fe1c161ef1f07235b00a14e9ee6560f97d",
     "args_hash": "08ea60cb19d3",
     "seed": 0
    },
@@ -61,8 +61,8 @@
   {
    "id": "I02",
    "file": "dist/render/interior/I02_ldk_kitchen_side.png",
-   "seconds": 248.6,
-   "render_seconds": 248.4,
+   "seconds": 243.4,
+   "render_seconds": 243.3,
    "samples": 64,
    "time_limit": 240,
    "res": [
@@ -100,12 +100,12 @@
    "master": {
     "file": "kawazanyo_master.blend",
     "model_version": "v4.32",
-    "model_hash": "0cd724d4128844315dfb7ac2479d292cfe20a4a1a59ee8738abf826f9c80b546",
-    "generated_at": "2026-11-12T06:30:40"
+    "model_hash": "c42cfaed817c94b7489f237719b098fe1c161ef1f07235b00a14e9ee6560f97d",
+    "generated_at": "2026-11-13T16:36:31"
    },
    "shoot": {
     "def_hash": "75a89e9f739d",
-    "model_hash": "0cd724d4128844315dfb7ac2479d292cfe20a4a1a59ee8738abf826f9c80b546",
+    "model_hash": "c42cfaed817c94b7489f237719b098fe1c161ef1f07235b00a14e9ee6560f97d",
     "args_hash": "a07908b6e7ca",
     "seed": 0
    },
@@ -114,48 +114,9 @@
   },
   {
    "id": "I03",
-   "file": "/home/user/junichi123456.github.io/rc-building/dist/render/interior/I03_kitchen.png",
-   "seconds": 248.7,
-   "render_seconds": 248.6,
-   "samples": 64,
-   "time_limit": 240,
-   "res": [
-    1600,
-    900
-   ],
-   "exposure": -0.7,
-   "wb": 5000,
-   "lamp_k": 4625,
-   "lamp_pct": 100.0,
-   "channels": {
-    "L": [
-     4625,
-     100.0
-    ],
-    "D": [
-     2200,
-     0.0
-    ],
-    "F": [
-     2200,
-     0.0
-    ]
-   },
-   "hdri_sun": [
-    145.8,
-    47.9,
-    -137.4
-   ],
-   "texture_fallbacks": [],
-   "time_limit_hit": true,
-   "when": "2026-03-21T14:00",
-   "stale_since": "v4.35"
-  },
-  {
-   "id": "I12",
-   "file": "dist/render/interior/I12_genkan_glass.png",
-   "seconds": 250.0,
-   "render_seconds": 249.8,
+   "file": "dist/render/interior/I03_kitchen.png",
+   "seconds": 240.5,
+   "render_seconds": 240.4,
    "samples": 64,
    "time_limit": 240,
    "res": [
@@ -193,12 +154,66 @@
    "master": {
     "file": "kawazanyo_master.blend",
     "model_version": "v4.32",
-    "model_hash": "0cd724d4128844315dfb7ac2479d292cfe20a4a1a59ee8738abf826f9c80b546",
-    "generated_at": "2026-11-12T06:30:40"
+    "model_hash": "c42cfaed817c94b7489f237719b098fe1c161ef1f07235b00a14e9ee6560f97d",
+    "generated_at": "2026-11-13T16:36:31"
+   },
+   "shoot": {
+    "def_hash": "bf19ccaea915",
+    "model_hash": "c42cfaed817c94b7489f237719b098fe1c161ef1f07235b00a14e9ee6560f97d",
+    "args_hash": "9f9467abf303",
+    "seed": 0
+   },
+   "shoot_flags": [],
+   "palette_mismatch": []
+  },
+  {
+   "id": "I12",
+   "file": "dist/render/interior/I12_genkan_glass.png",
+   "seconds": 242.1,
+   "render_seconds": 242.0,
+   "samples": 64,
+   "time_limit": 240,
+   "res": [
+    1600,
+    900
+   ],
+   "exposure": -0.7,
+   "wb": 5000,
+   "lamp_k": 4625,
+   "lamp_pct": 100.0,
+   "channels": {
+    "L": [
+     4625,
+     100.0
+    ],
+    "D": [
+     2200,
+     0.0
+    ],
+    "F": [
+     2200,
+     0.0
+    ]
+   },
+   "hdri_sun": [
+    145.8,
+    47.9,
+    -137.4
+   ],
+   "texture_fallbacks": [],
+   "family": "I",
+   "time_limit_hit": true,
+   "when": "2026-03-21T14:00",
+   "status": "ok",
+   "master": {
+    "file": "kawazanyo_master.blend",
+    "model_version": "v4.32",
+    "model_hash": "c42cfaed817c94b7489f237719b098fe1c161ef1f07235b00a14e9ee6560f97d",
+    "generated_at": "2026-11-13T16:36:31"
    },
    "shoot": {
     "def_hash": "658faa7fc7a6",
-    "model_hash": "0cd724d4128844315dfb7ac2479d292cfe20a4a1a59ee8738abf826f9c80b546",
+    "model_hash": "c42cfaed817c94b7489f237719b098fe1c161ef1f07235b00a14e9ee6560f97d",
     "args_hash": "41cb4416dc10",
     "seed": 0
    },
@@ -208,8 +223,8 @@
   {
    "id": "I14",
    "file": "dist/render/interior/I14_ldk_corner.png",
-   "seconds": 252.3,
-   "render_seconds": 252.1,
+   "seconds": 229.0,
+   "render_seconds": 228.9,
    "samples": 64,
    "time_limit": 240,
    "res": [
@@ -241,19 +256,19 @@
    ],
    "texture_fallbacks": [],
    "family": "I",
-   "time_limit_hit": true,
+   "time_limit_hit": false,
    "when": "2026-03-21T14:00",
    "status": "ok",
    "master": {
     "file": "kawazanyo_master.blend",
     "model_version": "v4.32",
-    "model_hash": "0cd724d4128844315dfb7ac2479d292cfe20a4a1a59ee8738abf826f9c80b546",
-    "generated_at": "2026-11-12T06:30:40"
+    "model_hash": "c42cfaed817c94b7489f237719b098fe1c161ef1f07235b00a14e9ee6560f97d",
+    "generated_at": "2026-11-13T16:36:31"
    },
    "shoot": {
     "def_hash": "170cbfc8fb51",
-    "model_hash": "0cd724d4128844315dfb7ac2479d292cfe20a4a1a59ee8738abf826f9c80b546",
-    "args_hash": "4fdf339572ce",
+    "model_hash": "c42cfaed817c94b7489f237719b098fe1c161ef1f07235b00a14e9ee6560f97d",
+    "args_hash": "8adba280cf9b",
     "seed": 0
    },
    "shoot_flags": [],
@@ -561,12 +576,12 @@
  "master": {
   "file": "kawazanyo_master.blend",
   "model_version": "v4.32",
-  "model_hash": "0cd724d4128844315dfb7ac2479d292cfe20a4a1a59ee8738abf826f9c80b546",
-  "generated_at": "2026-11-12T06:30:40"
+  "model_hash": "c42cfaed817c94b7489f237719b098fe1c161ef1f07235b00a14e9ee6560f97d",
+  "generated_at": "2026-11-13T16:36:31"
  },
  "last_shoot": {
-  "at": "2026-11-12T07:27:19",
-  "seconds": 644.5,
+  "at": "2026-11-13T17:26:08",
+  "seconds": 1209.2,
   "seed": 0,
   "material_colors_checked": 122
  },

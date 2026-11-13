@@ -48,35 +48,35 @@
     1280,
     720
    ],
-   "render_seconds": 158.2,
+   "render_seconds": 155.9,
    "time_limit": 150,
    "time_limit_hit": true,
-   "clearance": 1109,
+   "clearance": 1580,
    "front_mm": 3785,
    "metrics": {
-    "black": 0.0016,
+    "black": 0.0008,
     "white": 0.0,
-    "mean": 88.8634,
-    "std": 42.3561,
-    "window_area": 0.4696,
-    "window_ratio": 0.9191,
-    "window_std": 26.4007
+    "mean": 118.6176,
+    "std": 42.5954,
+    "window_area": 0.2722,
+    "window_ratio": 0.7034,
+    "window_std": 29.1481
    },
    "status": "flag",
    "issues": [
-    "窓の外が見えない（窓領域の平均は画像平均の 0.92 倍・標準偏差 26.4）"
+    "窓の外が見えない（窓領域の平均は画像平均の 0.70 倍・標準偏差 29.1）"
    ],
    "def_hash": "027bbeccf55c",
    "master": {
     "file": "kawazanyo_master.blend",
     "model_version": "v4.32",
-    "model_hash": "0cd724d4128844315dfb7ac2479d292cfe20a4a1a59ee8738abf826f9c80b546",
-    "generated_at": "2026-11-12T06:30:40"
+    "model_hash": "c42cfaed817c94b7489f237719b098fe1c161ef1f07235b00a14e9ee6560f97d",
+    "generated_at": "2026-11-13T16:36:31"
    },
    "shoot": {
     "def_hash": "027bbeccf55c",
-    "model_hash": "0cd724d4128844315dfb7ac2479d292cfe20a4a1a59ee8738abf826f9c80b546",
-    "args_hash": "f725df9fcd9f",
+    "model_hash": "c42cfaed817c94b7489f237719b098fe1c161ef1f07235b00a14e9ee6560f97d",
+    "args_hash": "de2f50b391a5",
     "seed": 0
    },
    "shoot_flags": [],
@@ -131,16 +131,16 @@
     1280,
     720
    ],
-   "render_seconds": 158.1,
+   "render_seconds": 153.0,
    "time_limit": 150,
    "time_limit_hit": true,
-   "clearance": 1109,
+   "clearance": 1580,
    "front_mm": 8200,
    "metrics": {
-    "black": 0.0003,
+    "black": 0.0009,
     "white": 0.0032,
-    "mean": 180.7503,
-    "std": 45.4527,
+    "mean": 169.4781,
+    "std": 52.2864,
     "window_area": 0.0
    },
    "status": "ok",
@@ -149,13 +149,13 @@
    "master": {
     "file": "kawazanyo_master.blend",
     "model_version": "v4.32",
-    "model_hash": "0cd724d4128844315dfb7ac2479d292cfe20a4a1a59ee8738abf826f9c80b546",
-    "generated_at": "2026-11-12T06:30:40"
+    "model_hash": "c42cfaed817c94b7489f237719b098fe1c161ef1f07235b00a14e9ee6560f97d",
+    "generated_at": "2026-11-13T16:36:31"
    },
    "shoot": {
     "def_hash": "ab4f194cb071",
-    "model_hash": "0cd724d4128844315dfb7ac2479d292cfe20a4a1a59ee8738abf826f9c80b546",
-    "args_hash": "17051619920b",
+    "model_hash": "c42cfaed817c94b7489f237719b098fe1c161ef1f07235b00a14e9ee6560f97d",
+    "args_hash": "e9d6718d880a",
     "seed": 0
    },
    "shoot_flags": [],
@@ -224,7 +224,8 @@
    },
    "status": "ok",
    "issues": [],
-   "def_hash": "00711d31d194"
+   "def_hash": "00711d31d194",
+   "stale_since": "v4.36"
   },
   "Z1-21b": {
    "id": "Z1-21b",
@@ -288,7 +289,8 @@
    },
    "status": "ok",
    "issues": [],
-   "def_hash": "c71641229a99"
+   "def_hash": "c71641229a99",
+   "stale_since": "v4.36"
   },
   "Z1-31a": {
    "id": "Z1-31a",
@@ -466,22 +468,36 @@
     1280,
     720
    ],
-   "render_seconds": 157.8,
+   "render_seconds": 146.5,
    "time_limit": 150,
-   "time_limit_hit": true,
-   "clearance": 1180,
+   "time_limit_hit": false,
+   "clearance": 915,
    "front_mm": 3900,
    "metrics": {
-    "black": 0.0,
+    "black": 0.0001,
     "white": 0.0,
-    "mean": 171.6019,
-    "std": 64.3333,
+    "mean": 154.5727,
+    "std": 64.4704,
     "window_area": 0.0
    },
    "status": "ok",
    "issues": [],
    "def_hash": "115d3bbac6e7",
-   "stale_since": "v4.35"
+   "master": {
+    "file": "kawazanyo_master.blend",
+    "model_version": "v4.32",
+    "model_hash": "c42cfaed817c94b7489f237719b098fe1c161ef1f07235b00a14e9ee6560f97d",
+    "generated_at": "2026-11-13T16:36:31"
+   },
+   "shoot": {
+    "def_hash": "115d3bbac6e7",
+    "model_hash": "c42cfaed817c94b7489f237719b098fe1c161ef1f07235b00a14e9ee6560f97d",
+    "args_hash": "380d7639b6b5",
+    "seed": 0
+   },
+   "shoot_flags": [],
+   "texture_fallbacks": [],
+   "palette_mismatch": []
   },
   "Z1-12b": {
    "id": "Z1-12b",
@@ -531,35 +547,35 @@
     1280,
     720
    ],
-   "render_seconds": 157.2,
+   "render_seconds": 153.9,
    "time_limit": 150,
    "time_limit_hit": true,
-   "clearance": 1180,
+   "clearance": 915,
    "front_mm": 8085,
    "metrics": {
-    "black": 0.0003,
+    "black": 0.0002,
     "white": 0.0053,
-    "mean": 129.5515,
-    "std": 64.7224,
-    "window_area": 0.2472,
-    "window_ratio": 0.6558,
-    "window_std": 35.7721
+    "mean": 152.5777,
+    "std": 61.3552,
+    "window_area": 0.0596,
+    "window_ratio": 0.5341,
+    "window_std": 28.4257
    },
    "status": "flag",
    "issues": [
-    "窓の外が見えない（窓領域の平均は画像平均の 0.66 倍・標準偏差 35.8）"
+    "窓の外が見えない（窓領域の平均は画像平均の 0.53 倍・標準偏差 28.4）"
    ],
    "def_hash": "7402b8583358",
    "master": {
     "file": "kawazanyo_master.blend",
     "model_version": "v4.32",
-    "model_hash": "0cd724d4128844315dfb7ac2479d292cfe20a4a1a59ee8738abf826f9c80b546",
-    "generated_at": "2026-11-12T06:30:40"
+    "model_hash": "c42cfaed817c94b7489f237719b098fe1c161ef1f07235b00a14e9ee6560f97d",
+    "generated_at": "2026-11-13T16:36:31"
    },
    "shoot": {
     "def_hash": "7402b8583358",
-    "model_hash": "0cd724d4128844315dfb7ac2479d292cfe20a4a1a59ee8738abf826f9c80b546",
-    "args_hash": "02ea01fea713",
+    "model_hash": "c42cfaed817c94b7489f237719b098fe1c161ef1f07235b00a14e9ee6560f97d",
+    "args_hash": "28a6dbce2614",
     "seed": 0
    },
    "shoot_flags": [],
@@ -614,7 +630,7 @@
     1280,
     720
    ],
-   "render_seconds": 155.9,
+   "render_seconds": 154.2,
    "time_limit": 150,
    "time_limit_hit": true,
    "clearance": 1440,
@@ -622,8 +638,8 @@
    "metrics": {
     "black": 0.0,
     "white": 0.0002,
-    "mean": 165.3926,
-    "std": 44.954,
+    "mean": 164.7807,
+    "std": 45.3237,
     "window_area": 0.0
    },
    "status": "ok",
@@ -632,13 +648,13 @@
    "master": {
     "file": "kawazanyo_master.blend",
     "model_version": "v4.32",
-    "model_hash": "0cd724d4128844315dfb7ac2479d292cfe20a4a1a59ee8738abf826f9c80b546",
-    "generated_at": "2026-11-12T06:30:40"
+    "model_hash": "c42cfaed817c94b7489f237719b098fe1c161ef1f07235b00a14e9ee6560f97d",
+    "generated_at": "2026-11-13T16:36:31"
    },
    "shoot": {
     "def_hash": "247d7541170a",
-    "model_hash": "0cd724d4128844315dfb7ac2479d292cfe20a4a1a59ee8738abf826f9c80b546",
-    "args_hash": "96e6598d5fa3",
+    "model_hash": "c42cfaed817c94b7489f237719b098fe1c161ef1f07235b00a14e9ee6560f97d",
+    "args_hash": "3dda39377899",
     "seed": 0
    },
    "shoot_flags": [],
@@ -707,7 +723,8 @@
    },
    "status": "ok",
    "issues": [],
-   "def_hash": "e04ba1c9ee04"
+   "def_hash": "e04ba1c9ee04",
+   "stale_since": "v4.36"
   },
   "Z1-32a": {
    "id": "Z1-32a",
@@ -2459,7 +2476,7 @@
  "master": {
   "file": "kawazanyo_master.blend",
   "model_version": "v4.32",
-  "model_hash": "0cd724d4128844315dfb7ac2479d292cfe20a4a1a59ee8738abf826f9c80b546",
-  "generated_at": "2026-11-12T06:30:40"
+  "model_hash": "c42cfaed817c94b7489f237719b098fe1c161ef1f07235b00a14e9ee6560f97d",
+  "generated_at": "2026-11-13T16:36:31"
  }
 }
