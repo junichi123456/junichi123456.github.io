@@ -20,7 +20,7 @@ KNIFE_Z = (1250, 1550)             # 施錠式ナイフケースの下端・上�
 KSW_Z = 1550                       # 目隠し収納 KS-W の本体の天端
 KSW_SHELF_Z = (300, 620, 940, 1260)   # 可動棚の下面（天端は +18）
 RAIL_Z = 1300
-ISLAND_BAY = (1300, 1900)          # アイランド調理側（北面）のオープン棚の幅の範囲（island の局所 u）
+ISLAND_BAY = (1100, 1500)          # アイランド調理側（北面）のオープン棚の幅の範囲（island の局所 u）。v4.36: W2,400 でシンク 1,050 と IH 1,550 の間に W400
 ISLAND_BAY_Z = (300, 600)
 
 
@@ -40,16 +40,17 @@ def kb_wall(mb, rect, z0):
     mb.box("stainless", x0, y0, z0 + 900, x1, y1, z0 + CH)          # ヘアライン一枚貼り（目地なし）
 
 
-def kb_counter(mb, rect, z0):
-    """ステンレス一体天板（バックガード立上り 50）＋脚 4 本＋オープン棚 2 段（底板 FL+300・中段 FL+600、背板・側板なし）。"""
-    x0, y0, x1, y1 = rect
+def kb_counter(mb, rect, z0, front="-y"):
+    """ステンレス一体天板（バックガード立上り 50）＋脚 4 本＋オープン棚 2 段（底板 FL+300・中段 FL+600、背板・側板なし）。front = 正面の向き（背＝壁側）。"""
+    L = FS.LF(mb, rect, front)
+    W, D = L.W, L.D
     t = KB_SHELF_T
-    mb.box("stainless", x0, y0, z0 + 888, x1, y1, z0 + 900)
-    mb.box("stainless", x0, y1 - 12, z0 + 900, x1, y1, z0 + 950)       # バックガード
+    L.box("stainless", 0, W, 0, D, z0 + 888, z0 + 900)
+    L.box("stainless", 0, W, 0, 12, z0 + 900, z0 + 950)       # バックガード（壁側）
     for zz in KB_SHELF_Z:
-        mb.box("stainless", x0, y0, z0 + zz, x1, y1, z0 + zz + t)
-    for (cx, cy) in ((x0, y0), (x1 - 25, y0), (x0, y1 - 25), (x1 - 25, y1 - 25)):
-        mb.box("stainless", cx, cy, z0, cx + 25, cy + 25, z0 + 888)
+        L.box("stainless", 0, W, 0, D, z0 + zz, z0 + zz + t)
+    for (u, v) in ((0, 0), (W - 25, 0), (0, D - 25), (W - 25, D - 25)):
+        L.box("stainless", u, u + 25, v, v + 25, z0, z0 + 888)
 
 
 def kb_rail(mb, rect, z0):
@@ -190,10 +191,13 @@ def props(h):
         _cyl(mb, ow, x + 60 + k * 130, yy - 110, 55, z1, z1 + 55, 14)
     # ---- K-I1 調理側のまな板 2 枚（北面のオープン棚の中、立てて置く）
     zi = FL + ISLAND_BAY_Z[0] + KB_SHELF_T
-    # island は rect (1875,9050)-(4675,10050)、-y 向き。局所 u は x0 から、v は北（奥）から
-    x0i = 1875 + ISLAND_BAY[0]
+    # island は K-I1 の矩形（x0 から局所 u）、-y 向き。v4.36: 棚の内法 376 に W400 の板は入らないので奥行方向に立てる（各 t20×400×H250）
+    import furniture as FU
+    isl = next(i for i in FU.items(h) if i.id == "K-I1").rect
+    x0i = isl[0] + ISLAND_BAY[0]
     for k in range(2):
-        mb.box(ow, x0i + 100, 10050 - 100 - 20 * k - 30 * k, zi, x0i + 500, 10050 - 100 - 20 * k - 30 * k + 20, zi + 250)
+        xa = x0i + 120 + 60 * k
+        mb.box(ow, xa, isl[3] - 100 - 400, zi, xa + 20, isl[3] - 100, zi + 250)
     return mb
 
 
@@ -205,28 +209,80 @@ def _basket(mb, x, y, z):
         mb.box("stainless", a, b, z + t, c, e, z + hh)
 
 
-# ------------------------------------------------------------------ v4.18: 検証（通路 ≧1,300・棚の上端 ≦1,550）
-AISLE_MIN = 1300
+# ------------------------------------------------------------------ v4.18: 検証（通路 ≧1,200（v4.36）・棚の上端 ≦1,550）
+AISLE_MIN = 1200
 
 
 def aisles(h, its=None):
-    """固定物の仕上げ面どうしの水平の内法（mm）。[(ラベル, 値)]。出入口の戸は数えない（要施主確認 F-4）。"""
+    """固定物・家具の仕上げ面どうしの水平の内法（mm）。[(ラベル, 値)] 9 行。出入口の戸は数えない（要施主確認 F-4）。"""
     import furniture as FU
     its = {i.id: i for i in (its or FU.items(h))}
     isl, kbc, kbf, ksw = its["K-I1"].rect, its["KB-C"].rect, its["KB-F"].rect, its["KS-W"].rect
+    c2, tb = its["KB-C2"].rect, its["L-T1"].rect
     kit = next(r for r in h.rooms if r.name == "キッチン")
     kx0, ky0, kx1, ky1 = kit.rect
+    chx1 = its["L-C1"].poly().bounds[2]
     return [("アイランド北面 ↔ 背面カウンター前面", kbc[1] - isl[3]),
             ("アイランド北面 ↔ 冷蔵庫前面", kbf[1] - isl[3]),
             ("アイランド西面 ↔ 目隠し収納 KS-W 扉面", isl[0] - ksw[2]),
-            ("アイランド東面 ↔ X2 壁面", kx1 - isl[2]),
-            ("アイランド南面 ↔ Y2 壁面", isl[1] - ky0),
-            ("KS-W 北端 ↔ Y3 壁面", ky1 - ksw[3])]
+            ("アイランド東面 ↔ L 字東カウンター前面", c2[0] - isl[2]),
+            ("アイランド南面 ↔ テーブル北端", isl[1] - tb[3]),
+            ("KS-W 北端 ↔ Y3 壁面", ky1 - ksw[3]),
+            ("テーブル西端 ↔ KS-W 扉面", tb[0] - ksw[2]),
+            ("チェア東端 ↔ X2 壁面", kx1 - chx1),
+            ("冷蔵庫西面 ↔ X1 壁面（Y3 の戸への通路）", kbf[0] - kx0)]
+
+
+def passages(h, its=None):
+    """v4.36 通行の帯の検査: LDK・キッチン（spec.passage_check.rooms）の床から、家具と壁（開口部を除く）を引き、幅 min の帯（内側へ min/2 縮めた骨格）に
+    spec の出入口・作業面の前の点がすべて 1 つの成分で入ること。{ok, missing（外れた点のラベル）, comps}。"""
+    import furniture as FU
+    from shapely.geometry import Point, box as sbox
+    from shapely.ops import unary_union
+    its = its or FU.items(h)
+    pc = h.spec["passage_check"]
+    W = pc["min"]
+    names = {(a, b) for a, b in pc["rooms"]}
+    fl = "1F"
+    free = [sbox(*r.rect) for r in h.rooms if (r.floor, r.name) in names]
+    room_b = [f for f in free]
+    for w in h.walls:
+        if w.cat != "wall" or w.floor != fl:
+            continue
+        for op in w.openings:
+            if op.kind != "door":
+                continue
+            t2 = w.t / 2
+            q = (op.u0, w.c - t2, op.u1, w.c + t2) if w.axis == "x" else (w.c - t2, op.u0, w.c + t2, op.u1)
+            bq = sbox(*q)
+            if any(bq.buffer(1).intersects(f) for f in room_b):
+                free.append(bq)
+    free = unary_union(free)
+    ops = []
+    for w in h.walls:
+        if w.cat not in ("wall", "partition") or w.floor != fl:
+            continue
+        for op in w.openings:
+            if op.kind != "door":
+                continue
+            t2 = w.t / 2 + 400
+            ops.append(sbox(*((op.u0, w.c - t2, op.u1, w.c + t2) if w.axis == "x" else (w.c - t2, op.u0, w.c + t2, op.u1))))
+    wl = unary_union(FU.wall_rects(h, fl)).difference(unary_union(ops))
+    obst = unary_union([i.poly() for i in its if i.floor == fl and not i.stack and i.base != "ceiling" and i.z0 < h.fl[fl] + 1900] + [wl])
+    er = free.difference(obst).buffer(-(W / 2 - 1))
+    comps = list(getattr(er, "geoms", [er]))
+    where = {}
+    for lab, (x, y) in pc["portals"].items():
+        where[lab] = next((k for k, c in enumerate(comps) if c.buffer(1).contains(Point(x, y))), None)
+    main = max(set(where.values()), key=lambda v: sum(1 for x in where.values() if x == v))
+    missing = [lab for lab, k in where.items() if k is None or k != main]
+    return dict(ok=not missing, missing=missing, comps=len(comps))
 
 
 def support_tops(h):
     """物を載せる・掛ける面の上端（FL+ mm）。[(ID, 内容, 値)]。落下防止バー（天端+60）は面ではなく縁の部材。"""
     return [("KB-C", "背面カウンター天板（バックガード立上り 50 を含む）", 950),
+            ("KB-C2", "L 字の東カウンター天板（バックガード立上り 50 を含む）", 950),
             ("KB-C", "下部の棚（中段）", KB_SHELF_Z[1] + KB_SHELF_T),
             ("KB-R", "レール", RAIL_Z + 12),
             ("KB-S", "吊り棚の棚板天端", KS_TIERS[0] + KB_SHELF_T),

@@ -260,8 +260,8 @@ def island(mb, rect, z0, p):
             continue
         L.box("joint", u - 2, u + 2, D, D + 1, z0 + 65, z0 + 875)
     # 天板: シンクの開口と IH の面一ガラス
-    su0, su1, sv0, sv1 = 450, 1250, 330, 780                      # シンク（u, 奥からの v）
-    iu0, iu1, iv0, iv1 = 1950, 2650, 300, 820                     # IH
+    su0, su1, sv0, sv1 = 300, 1050, 330, 780                      # シンク（u, 奥からの v）。v4.36 W2,400 に合わせ W800→750
+    iu0, iu1, iv0, iv1 = W - 850, W - 150, 300, 820               # IH（W2,400 で 1,550〜2,250）
     zt = z0 + 900
     pieces = [(-10, W + 10, -10, sv0), (-10, W + 10, sv1, D + 10), (-10, su0, sv0, sv1), (su1, W + 10, sv0, sv1)]
     for (a, b, c, d) in pieces:
@@ -294,6 +294,32 @@ def sill_counter(mb, rect, z0, H, front, top_t=40):
     L.box("sill_oak", 0, L.W, 40, L.D, zt - top_t, zt)                  # 天板（前面の木口 40 が細い線に見える）
     L.box("sill_oak", 0, L.W, 0, 40, zt - top_t, zt - 2)               # スリット部の下地
     L.box("stainless", 0, L.W, 0, 40, zt - 2, zt)                       # 吹出しスリット（天板と面一）
+
+
+def sill_storage(mb, rect, z0, H, front, slot=None, top_t=40):
+    """窓辺の造作収納（v4.36。台→収納）: 外形・高さは sill_counter と同じ。前面に引出しの目地（縦 ピッチ≈640・中ほどに横 1 本）。
+    天板はオーク t40。slot（建物座標の幅方向の範囲）だけ窓側の縁 40 をステンレスの吹出しスリットにし、それ以外は奥まで天板。"""
+    L = LF(mb, rect, front)
+    zt = z0 + H
+    L.box("sill_panel", 0, L.W, 0, L.D, z0, zt - top_t)
+    org = rect[0] if front in ("-y", "+y") else rect[1]
+    if slot:
+        a, b = max(0.0, slot[0] - org), min(L.W, slot[1] - org)
+    else:
+        a = b = 0.0
+    if b <= a:
+        L.box("sill_oak", 0, L.W, 0, L.D, zt - top_t, zt)
+    else:
+        L.box("sill_oak", 0, a, 0, L.D, zt - top_t, zt)
+        L.box("sill_oak", b, L.W, 0, L.D, zt - top_t, zt)
+        L.box("sill_oak", a, b, 40, L.D, zt - top_t, zt)
+        L.box("sill_oak", a, b, 0, 40, zt - top_t, zt - 2)
+        L.box("stainless", a, b, 0, 40, zt - 2, zt)
+    n = max(1, round(L.W / 640))
+    for k in range(1, n):
+        u = L.W * k / n
+        L.box("joint", u - 2, u + 2, L.D, L.D + 1, z0 + 60, zt - top_t)
+    L.box("joint", 3, L.W - 3, L.D, L.D + 1, z0 + 378, z0 + 382)
 
 
 def counter_float(mb, rect, z0, H, front, key="solid_surface"):

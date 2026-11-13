@@ -35,14 +35,14 @@ checks:
   window: {mean_ratio: 1.2, std_min: 8, min_area: 0.02}
 cuts:
   # id: {zone, floor, room(カメラのある室), x, y, dir, lens(省略=標準), look(主に見えるもの), direct(直射の予測), alt(代替位置の理由), open_doors, also_1f}
-  Z1-11a: {slug: ld, zone: Z1-11, floor: 1F, room: リビング・ダイニング, x: 3000, y: 3800, dir: S, look: テーブル・角窓・窓辺の台、直射, direct: true, moved: {from: [3000, 4600], reason: "テーブルの北移動（v4.35）で視点がテーブルの上になる"}}
-  Z1-11b: {exposure: -1.0, exp_note: "プレビューの平均輝度が上限（185）を超えたため −0.5 → −1.0（1回だけ）", slug: ld, zone: Z1-11, floor: 1F, room: リビング・ダイニング, x: 3000, y: 3800, dir: N, look: 開口越しのキッチン, direct: true, moved: {from: [3000, 4600], reason: "テーブルの北移動（v4.35）で視点がテーブルの上になる"}}
+  Z1-11a: {slug: ld, zone: Z1-11, floor: 1F, room: リビング・ダイニング, x: 3000, y: 3800, dir: S, look: 南窓・RC の角・窓辺の収納、直射, direct: true, moved: {from: [3000, 4600], reason: "テーブルの北移動（v4.35）で視点がテーブルの上になる"}}
+  Z1-11b: {exposure: -1.0, exp_note: "プレビューの平均輝度が上限（185）を超えたため −0.5 → −1.0（1回だけ）", slug: ld, zone: Z1-11, floor: 1F, room: リビング・ダイニング, x: 3000, y: 3800, dir: N, look: 開口越しのキッチン・テーブル, direct: true, moved: {from: [3000, 4600], reason: "テーブルの北移動（v4.35）で視点がテーブルの上になる"}}
   Z1-21a: {slug: genkan, zone: Z1-21, floor: 1F, room: ホール, x: 8600, y: 3800, dir: S, look: 土間・下足入れ・玄関扉}
   Z1-21b: {slug: genkan, zone: Z1-21, floor: 1F, room: ホール, x: 8600, y: 3800, dir: N, look: GD-2 越しの階段ホール}
   Z1-31a: {slug: gym, zone: Z1-31, floor: 1F, room: ジム, x: 15200, y: 3600, dir: E, look: 高窓・測定コーナー}
   Z1-31b: {slug: gym, zone: Z1-31, floor: 1F, room: ジム, x: 15200, y: 3600, dir: W, look: 拡張部・室内窓 IW-1}
-  Z1-12a: {slug: kitchen, zone: Z1-12, floor: 1F, room: キッチン, x: 3200, y: 8100, dir: N, look: アイランド・背面・冷蔵庫}
-  Z1-12b: {slug: kitchen, zone: Z1-12, floor: 1F, room: キッチン, x: 3200, y: 8100, dir: S, look: ダイニング・角窓の逆光, direct: true}
+  Z1-12a: {slug: kitchen, zone: Z1-12, floor: 1F, room: キッチン, x: 3200, y: 8100, dir: N, look: アイランド・L 字の背面・冷蔵庫}
+  Z1-12b: {slug: kitchen, zone: Z1-12, floor: 1F, room: キッチン, x: 3200, y: 8100, dir: S, look: テーブル・開口越しの LDK・南窓の逆光, direct: true}
   Z1-22a: {slug: hall1f, zone: Z1-22, floor: 1F, room: ホール・階段1, x: 10000, y: 7600, dir: W, look: 階段1・キッチン開口}
   Z1-22b: {slug: hall1f, zone: Z1-22, floor: 1F, room: ホール・階段1, x: 10000, y: 7600, dir: N, look: トイレの戸・廊下への開口}
   Z1-32a: {slug: gym, zone: Z1-32, floor: 1F, room: ジム, x: 15200, y: 7050, dir: S, look: ジム全景, alt: "区画中心 (15188,9125) はジムと機械室を分ける間仕切の上（離隔 0mm）で、主室が2つ（ジム・機械室）あるため、a はジムの中で中心に最も近い空きへ移した"}

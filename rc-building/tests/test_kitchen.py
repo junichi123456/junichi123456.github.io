@@ -36,10 +36,25 @@ def test_shelf_tops_within_1550():
     assert its["KB-N"].z0 + its["KB-N"].h - h.fl["1F"] <= 1550
 
 
-def test_aisles_at_least_1300():
+def test_aisles_at_least_1200():
     h = house()
     ai = KO.aisles(h)
-    assert len(ai) == 6 and min(v for _, v in ai) >= 1300, ai
+    assert len(ai) == 9 and min(v for _, v in ai) >= h.spec["kitchen_open"]["aisle_min"] == 1200, ai
+
+
+def test_passages_1200():
+    h = house()
+    r = KO.passages(h)
+    assert r["ok"], r
+
+
+def test_L_kitchen():
+    h = house()
+    its = {i.id: i for i in FU.items(h)}
+    assert its["KB-C2"].rect == (5400, 9050, 6000, 11350)
+    assert its["KB-C"].rect[2] == 6000
+    assert its["KB-F"].rect == (1800, 11350, 2500, 11950)
+    assert its["K-I1"].rect == (1800, 9050, 4200, 10050)
 
 
 def test_pantry_removed():

@@ -31,12 +31,13 @@ def test_window_dimensions():
     h = house()
     o = _ops(h)
     ch, fl = h.ch["1F"], h.fl["1F"]
-    for k in ("AW-LS", "AW-LW"):
+    assert set(o) == {"AW-LS"}                                # v4.36: 西の窓（AW-LW）は撤回
+    for k in ("AW-LS",):
         assert o[k].z1 - fl == ch - 100 == 2700, k           # 上端 = 天井 − 100
         assert o[k].z0 - fl == 700 and o[k].height == 2000
-    assert (o["AW-LS"].u0, o["AW-LS"].u1) == (-125, 4000)
-    assert (o["AW-LW"].u0, o["AW-LW"].u1) == (125, 4000)
-    assert h.room_windows(h.ldk) >= 16.0 - 1e-9
+    assert (o["AW-LS"].u0, o["AW-LS"].u1) == (1900, 4000)
+    assert h.room_windows(h.ldk) >= 4.2 - 1e-9
+    assert 4.2 * 3.0 >= h.ldk.daylight_area * 0.1529 - 1e-9
 
 
 def test_structure():
@@ -46,10 +47,11 @@ def test_structure():
         assert v["wall_rate"] >= 12, (f, d)
         assert v["耐震等級3（Co=0.3）"]["ratio"] >= 1.0
         assert v["ecc"] <= 0.15, (f, d, v["ecc"])
-    assert abs(se["stories"][("1F", "X方向")]["ecc"] - 0.113) < 0.005     # v4.35: Y2 西端の袖壁 1,675→875 で 0.108→0.113。 v4.27: ジムの S・E t300 の増し打ちで 0.131→0.108（意図した変更）
+    assert abs(se["stories"][("1F", "X方向")]["ecc"] - 0.061) < 0.005     # v4.36: L 字窓の撤回（角を RC 化）で 0.113→0.061
+    assert abs(se["stories"][("1F", "Y方向")]["ecc"] - 0.107) < 0.005     # 0.040→0.107
     assert max(h.H.values()) <= 3500
     assert 250 >= max(150, max(h.H.values()) / 22)
-    assert PF.corner_post(h)["ratio"] < 1.0
+    assert not [b for b in h.boxes if b.level == "1F" and b.tag in ("角柱", "方立", "角の方立")]
 
 
 def test_condensation():

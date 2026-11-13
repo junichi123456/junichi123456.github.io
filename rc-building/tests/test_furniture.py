@@ -58,14 +58,16 @@ def test_single_chair_in_ldk():
     its = FU.items(h)
     ch = [i for i in its if i.chair]
     assert len(ch) == 1 == sum(i.chair for i in its)
-    assert ch[0].room == FU.LDK and ch[0].name == "ペッパー スクールチェア チャコールブラウン"
+    assert ch[0].room in (FU.LDK, "キッチン") and ch[0].name == "ペッパー スクールチェア チャコールブラウン"
     assert not [i for i in its if i.kind in FU.CHAIR_KINDS and not i.chair]
 
 
-def test_table_in_ldk():
+def test_table_north_of_y2():
     h = house()
-    t = next(i for i in FU.items(h) if i.id == "L-T1")
-    assert t.room == FU.LDK
+    its = {i.id: i for i in FU.items(h)}
+    t = its["L-T1"]
+    assert t.room == "キッチン" and t.rect[1] >= 6850 and its["K-I1"].rect[1] - t.rect[3] >= 1200
+    assert "L-P1" not in its and "L-K2" in its
     assert round(t.w) == h.spec["furniture"]["products"]["table_osb"]["w"] == 1775
     assert t.name.startswith("マテリア ダイニングテーブル OSB 177.5cm")
 
@@ -147,7 +149,7 @@ def test_kitchen_open():
     its = FU.items(h)
     ids = {i.id for i in its}
     assert "K-B1" not in ids and "P-S1" not in ids
-    assert {"KB-W", "KB-C", "KB-R", "KB-N", "KB-S", "KB-F", "KS-W"} <= ids and not ({"KB-K", "P-O1"} & ids)
+    assert {"KB-W", "KB-C", "KB-C2", "KB-R", "KB-N", "KB-S", "KB-F", "KS-W"} <= ids and not ({"KB-K", "P-O1"} & ids)
     by = {i.id: i for i in its}
     assert by["KB-N"].z0 - h.fl["1F"] + by["KB-N"].h <= 1550         # 施錠式ナイフケース（上端 1,550 以下）
     zs = [0] + [z for z in KO.KB_SHELF_Z] + [KO.KB_TOP_UNDER]       # 背面カウンター下部の段の間隔（棚板上面〜上の棚板下面）

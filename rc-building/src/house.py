@@ -114,7 +114,6 @@ class House:
         self._label_openings()
         for w in self.walls:
             self.boxes.extend(self._wall_boxes(w))
-        self._ldk_corner()
         self._blind_boxes()
         self._stair_guards()
 
@@ -522,9 +521,8 @@ class House:
         self.rc_walls["1F"]["Y2"].add(Opening("door", 12600, 17800, self.fl["1F"], self.fl["1F"] + 2600, "1F", "I", "開口（ジム）", "opening"))
         D("1F", "Y3", 300, 1300, op="sliding", name="木製引戸")
         G("1F", "Y3", 10900, 11800, name="開口（ホール↔廊下）")
-        cw = self.spec["ldk_corner_window"]
-        self._window("1F", "S", cw["S"][0], cw["S"][1], cw["sill"], cw["head"] - cw["sill"], "FIX窓（LDK角窓・南）")
-        self._window("1F", "W", cw["W"][0], cw["W"][1], cw["sill"], cw["head"] - cw["sill"], "FIX窓（LDK角窓・西）")
+        cw = self.spec["ldk_window"]
+        self._window("1F", "S", cw["S"][0], cw["S"][1], cw["sill"], cw["head"] - cw["sill"], "FIX窓（LDK・南）")
         self._window("1F", "E", 700, 2900, 2000, 650, "FIX高窓（ジム）")
         self._window("1F", "E", 3400, 5600, 2000, 650, "FIX高窓（ジム）")
         wu = self.spec["room_a"]["window_u"]
@@ -883,7 +881,7 @@ class House:
         for key in sorted(groups, key=lambda k: (k[0], (1 if k[0] == "GD" else -1) * k[2] * k[3])):      # GD は狭い方（左・LDK）が GD-1
             prefix = key[0]
             counters[prefix] = counters.get(prefix, 0) + 1
-            label = {"FIX窓（LDK角窓・南）": "AW-LS", "FIX窓（LDK角窓・西）": "AW-LW"}.get(key[1])
+            label = {"FIX窓（LDK・南）": "AW-LS"}.get(key[1])
             if label is None:
                 label = f"{prefix}-{counters[prefix]}"
             else:
@@ -944,22 +942,6 @@ class House:
                         self.guards.append((s.name, bx))
                     k = m + 1
 
-    def _ldk_corner(self):
-        """LDK 南西の L 字コーナー窓（v4.18）: 角の鋼製丸柱（鉛直荷重のみ・耐火塗装、箱で近似）、各面 2 分割の樹脂方立、角の方立。"""
-        cw, cp = self.spec["ldk_corner_window"], self.spec["structure"]["corner_post"]
-        z0, z1 = self.fl["1F"] + cp["z"][0], self.fl["1F"] + cp["z"][1]
-        r = cp["d"] / 2
-        cx, cy = cp["center"]
-        self.boxes.append(Box(cx - r, cy - r, z0, cx + r, cy + r, z1, "column", "steel", level="1F", tag="角柱"))
-        zs0, zs1 = self.fl["1F"] + cw["sill"], self.fl["1F"] + cw["head"]
-        mw = cw["mullion"]["w"] / 2
-        at = cw["mullion"]["at"]
-        self.boxes.append(Box(at - mw, -40, zs0, at + mw, 40, zs1, "mullion", "sash", level="1F", tag="方立"))
-        self.boxes.append(Box(-40, at - mw, zs0, 40, at + mw, zs1, "mullion", "sash", level="1F", tag="方立"))
-        # 角の方立（外側から L 形にかぶせる。見付 約 140）
-        self.boxes.append(Box(-70, -55, zs0, 70, -25, zs1, "mullion", "sash", level="1F", tag="角の方立"))
-        self.boxes.append(Box(-70, -55, zs0, -40, 70, zs1, "mullion", "sash", level="1F", tag="角の方立"))
-
     def _blind_boxes(self):
         """外付け電動スクリーンのボックス（窓上、外断熱層に埋め込み、外装面から30mm出す）。"""
         us = self.spec.get("uv_shading")
@@ -973,11 +955,6 @@ class House:
             if op.kind != "window" or (op.side not in us["sides"] and not extra):
                 continue
             a, b, z0, z1 = op.u0 - 50, op.u1 + 50, op.z1, op.z1 + bh
-            corner = "角窓" in op.name and self.spec["uv_shading"].get("corner") == "shared_rail_post"
-            if corner and op.side == "S":
-                a = -e - 30                          # 南のボックスを角の外装面まで延ばす
-            elif corner and op.side == "W":
-                a = -e - 30 + bd                     # 西のボックスは南のボックスの北端から（角で突き合わせ・留めを矩形で近似）
             if op.side == "S":
                 bx = Box(a, -e - 30, z0, b, -e - 30 + bd, z1, "blind", "sash", level=op.floor, tag="外付けスクリーン")
             elif op.side == "N":

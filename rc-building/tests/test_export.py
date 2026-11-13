@@ -110,9 +110,9 @@ def test_ifc_counts(h, ifc):
     assert len(m.by_type("IfcWall")) == len(h.walls) + len(h.fence_lines) + ext_walls
     assert len(m.by_type("IfcSpace")) == len(h.rooms)
     n_fit = sum(1 for o in h.openings() if o.operation != "opening")
-    assert len(m.by_type("IfcWindow")) + len(m.by_type("IfcDoor")) == n_fit == 54
+    assert len(m.by_type("IfcWindow")) + len(m.by_type("IfcDoor")) == n_fit == 53
     assert len(m.by_type("IfcOpeningElement")) == sum(1 for _ in h.openings())
-    assert len(m.by_type("IfcFurniture")) == 68
+    assert len(m.by_type("IfcFurniture")) == 69
     assert len(m.by_type("IfcLightFixture")) >= 260
     assert {s.Name for s in m.by_type("IfcBuildingStorey")} == {"FDN", "1F", "2F", "RF"}
     assert len(m.by_type("IfcSolarDevice")) == 2 and len(m.by_type("IfcStair")) == 3

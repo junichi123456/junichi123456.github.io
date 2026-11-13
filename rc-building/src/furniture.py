@@ -55,6 +55,7 @@ class Item:
     stack: bool = False          # 他の家具の上・壁際に載るもの（重なり・すき間の検査から除く）
     provisional: bool = True
     note: str = ""
+    slot: tuple | None = None    # v4.36: 窓辺の収納の吹出しスリットの範囲（建物座標 mm、幅方向）
 
     @property
     def w(self):
@@ -85,31 +86,33 @@ def items(h):
         out.append(Item(i, fl, room, name, kind, tuple(float(v) for v in rect), FL[fl] if z0 is None else z0, H, mat, base, **kw))
 
     # ---- 1F LDK（指定商品 2 点・チェアはこの 1 脚だけ）
-    tx, ty = 3000.0, 4900.0
-    add("L-T1", "1F", LDK, T["name"], "table_osb", (tx - T["w"] / 2, ty - T["d"] / 2, tx + T["w"] / 2, ty + T["d"] / 2), T["h"], "osb",
+    tx, ty = 3000.0, 7425.0           # v4.36: テーブルをキッチン室内（Y2 の北・アイランドの南 1,200）へ
+    add("L-T1", "1F", "キッチン", T["name"], "table_osb", (tx - T["w"] / 2, ty - T["d"] / 2, tx + T["w"] / 2, ty + T["d"] / 2), T["h"], "osb",
         base="legs690", product="table_osb")
     # チェアはテーブルの東の短辺側に、西（テーブル）向きに置く（北側だと I01 でテーブルの陰に隠れる）。さらに −8° 振る
     ccx = tx + T["w"] / 2 + 60 + C["d"] / 2
-    add("L-C1", "1F", LDK, C["name"], "school_chair", (ccx - C["w"] / 2, ty - C["d"] / 2, ccx + C["w"] / 2, ty + C["d"] / 2), C["h"], "chair_wood",
+    add("L-C1", "1F", "キッチン", C["name"], "school_chair", (ccx - C["w"] / 2, ty - C["d"] / 2, ccx + C["w"] / 2, ty + C["d"] / 2), C["h"], "chair_wood",
         base="legs", chair=True, rot=-98.0, product="school_chair")
     add("L-S1", "1F", LDK, "サイドボード（台輪）", "cabinet", (5550, 225, 6000, 2475), 700, "case_ash")
     add("L-K1", "1F", LDK, "リビング収納（天井まで・扉付き・W825）", "tall", (175, 5550, 1000, 6000), h.ch["1F"], "case_ash")
-    add("LDK-C1", "1F", LDK, "窓辺の造作台 南（FL+700・奥行 1,000・オーク天板 t40・前面は人造大理石の艶消しパネルで床まで・内部は温風チャンバー）", "sill_counter", (175, 225, 4000, 1225), 700, "sill_panel", base="none", front="+y",
-        note="「床から70cmに1m幅の台」の解釈。要施主確認")
-    add("LDK-C2", "1F", LDK, "窓辺の造作台 西（同上・L 字でつながる）", "sill_counter", (175, 1225, 1175, 4000), 700, "sill_panel", base="none", front="+x")
-    add("L-P1", "1F", LDK, "鉢植え（オリーブ）φ500・樹高1,900", "plant", (175, 4300, 675, 4800), 1900, "leaf", base="pot")
+    add("LDK-C1", "1F", LDK, "窓辺の造作収納 南（FL+700・奥行 1,000・オーク天板 t40・前面は引出し・奥は跳ね上げ蓋・窓の前 1,900〜4,000 だけ温風の吹出し）", "sill_storage", (175, 225, 4000, 1225), 700, "sill_panel", base="none", front="+y",
+        slot=(1900, 4000), note="v4.36 施主指示で台→収納。仕様は要施主確認")
+    add("LDK-C2", "1F", LDK, "窓辺の造作収納 西（同上・吹出しなし・L 字でつながる）", "sill_storage", (175, 1225, 1175, 4000), 700, "sill_panel", base="none", front="+x",
+        note="v4.36 施主指示で台→収納")
+    add("L-K2", "1F", LDK, "リビング収納 南（天井まで・扉付き・D450）", "tall", (175, 4000, 625, 5550), h.ch["1F"], "case_ash", front="+x")
     add("L-A1", "1F", LDK, "アートパネル（サイドボードの上に立て掛け）", "art", (5870, 700, 5900, 1600), 640, "art", z0=FL["1F"] + 700, base="stack", stack=True)
     # ---- キッチン・パントリー
-    add("K-I1", "1F", "キッチン", "アイランドキッチン（IH 3口・一体成形シンク・ダウンドラフト換気、南＝LDK を向いて調理）", "island", (1875, 9050, 4675, 10050), 900, "olive_case")
+    add("K-I1", "1F", "キッチン", "アイランドキッチン W2,400（IH 3口・一体成形シンク・ダウンドラフト換気、南＝LDK を向いて調理）", "island", (1800, 9050, 4200, 10050), 900, "olive_case")
     # 全露出（施主指示 v4.17）: 背面収納 K-B1・パントリー収納 P-S1 を撤去し、オープン棚・レール・ナイフバーに置き換える
-    add("KB-W", "1F", "キッチン", "背面のふかし壁（ステンレス）", "kb_wall", (2500, 11950, 6000, 12000), h.ch["1F"], "stainless", base="none")
-    add("KB-C", "1F", "キッチン", "背面カウンター（下部オープン棚）", "kb_counter", (2500, 11350, 5300, 11950), 900, "stainless", base="legs25")
+    add("KB-W", "1F", "キッチン", "背面のふかし壁（ステンレス）", "kb_wall", (1800, 11950, 6000, 12000), h.ch["1F"], "stainless", base="none")
+    add("KB-C", "1F", "キッチン", "背面カウンター（下部オープン棚・L 字の北辺）", "kb_counter", (2500, 11350, 6000, 11950), 900, "stainless", base="legs25", front="-y")
+    add("KB-C2", "1F", "キッチン", "L 字の東カウンター（下部オープン棚・D600）", "kb_counter", (5400, 9050, 6000, 11350), 900, "stainless", base="legs25", front="-x")
     add("KB-R", "1F", "キッチン", "壁付けレール φ12（台所用具）", "kb_rail", (3300, 11900, 5200, 11950), 12, "stainless", z0=FL["1F"] + KO.RAIL_Z, base="wallfix", stack=True)
     add("KB-N", "1F", "キッチン", "施錠式ナイフケース W450×H300×D80（FL+1,250〜1,550）", "kb_knife_case", (2650, 11870, 3100, 11950), 300, "steel_black", z0=FL["1F"] + KO.KNIFE_Z[0],
         base="wallfix", stack=True, note="包丁の扱い（施錠ケース／磁石バー／引出し）は要施主確認")
     add("KB-S", "1F", "キッチン", "吊り棚 1 段（天端 FL+1,550・落下防止バー）", "kb_shelves", (3200, 11650, 5300, 11950), 72, "stainless", z0=FL["1F"] + KO.KS_TIERS[0],
         base="wallfix", stack=True)
-    add("KB-F", "1F", "キッチン", "冷蔵庫＋上部ふさぎ板", "kb_fridge", (5300, 11350, 6000, 11950), h.ch["1F"], "stainless", base="none")
+    add("KB-F", "1F", "キッチン", "冷蔵庫＋上部ふさぎ板", "kb_fridge", (1800, 11350, 2500, 11950), h.ch["1F"], "stainless", base="none")
     add("KS-W", "1F", "キッチン", "西の目隠し収納（奥行 450・H1,550・引違い戸、上は突っ張りパネル）", "ks_wall", (125, 6250, 575, 10600), h.ch["1F"], "case_ash", base="none")
     # ---- 玄関・ホール
     add("G-S1", "1F", "玄関土間", "下足入れ（造作・天井まで・扉付き・電波遮断キーボックス内蔵）", "tall", h.shoe, FL["1F"] + h.ch["1F"] - DOMA, "case_ash", z0=DOMA, front="+x")
@@ -304,8 +307,8 @@ def check(h, its):
     if len(ch) != limit:
         errs.append(("chair", f"チェアの数が {len(ch)}（指定 {limit}）"))
     for i in ch:
-        if i.room != LDK:
-            errs.append((i.id, "チェアが LDK にない"))
+        if i.room not in (LDK, "キッチン"):
+            errs.append((i.id, "チェアが LDK（キッチン含む）にない"))
     for i in its:
         if i.kind in CHAIR_KINDS and not i.chair:
             errs.append((i.id, "チェア類がチェアとして登録されていない"))
@@ -333,7 +336,11 @@ def build_item(h, it, prod=None):
     elif k == "tall_kitchen":
         FS.tall_kitchen(mb, rect, z0, it.front, P)
     elif k in ("kb_wall", "kb_counter", "kb_rail", "kb_knife_case", "kb_shelves", "kb_fridge", "ks_wall"):
-        getattr(KO, k)(mb, rect, z0 if k not in ("kb_wall", "kb_counter", "kb_fridge", "ks_wall") else h.fl[it.floor])
+        fz = z0 if k not in ("kb_wall", "kb_counter", "kb_fridge", "ks_wall") else h.fl[it.floor]
+        if k == "kb_counter":
+            KO.kb_counter(mb, rect, fz, front=it.front or "-y")
+        else:
+            getattr(KO, k)(mb, rect, fz)
     elif k == "island":
         FS.island(mb, rect, z0, P)
     elif k in ("tall", "cabinet", "bench"):
@@ -349,6 +356,8 @@ def build_item(h, it, prod=None):
             L.box(ck, 15, L.W - 15, 15, L.D - 15, z0 + H, z0 + H + 45)
     elif k == "sill_counter":
         FS.sill_counter(mb, rect, z0, H, it.front)
+    elif k == "sill_storage":
+        FS.sill_storage(mb, rect, z0, H, it.front, slot=it.slot)
     elif k == "counter_float":
         FS.counter_float(mb, rect, z0, H, it.front)
     elif k == "toilet":

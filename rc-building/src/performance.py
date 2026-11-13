@@ -360,7 +360,7 @@ def seismic(h):
 
 
 def condensation(h):
-    """LDK のコーナー窓まわりの結露判定（v4.18）。室内側表面温度 = t_out + f_Rsi × (t_in − t_out) が、露点 + margin 以上であること。
+    """LDK の窓まわりの結露判定（v4.18。v4.36 でコーナー窓を撤回）。室内側表面温度 = t_out + f_Rsi × (t_in − t_out) が、露点 + margin 以上であること。
     f_Rsi は spec.condensation.parts の仮定値（メーカーの 2 次元熱解析に置き換える）。[(部位, 対策なし ℃, 対策後 ℃, 下限 ℃, 適合)] と露点を返す。"""
     c = h.spec["condensation"]
     td = dew_point(c["t_in"], c["rh"])
@@ -371,19 +371,3 @@ def condensation(h):
         t1 = c["t_out"] + f1 * (c["t_in"] - c["t_out"])
         rows.append((name, t0, t1, lim, t1 >= lim - 0.05))      # 0.05K の丸め許容（下限ケースは 14.9℃）
     return dict(dew=td, limit=lim, rows=rows, ok=all(r[4] for r in rows))
-
-
-def corner_post(h):
-    """角の鋼製丸柱（ピン、鉛直荷重のみ）の長期許容圧縮力（日本建築学会 鋼構造設計規準 の長期許容圧縮応力度、F=235）。"""
-    cp = h.spec["structure"]["corner_post"]
-    d, L = cp["d"], cp["z"][1] - cp["z"][0]
-    A = math.pi * d * d / 4
-    i = d / 4
-    F, E = cp.get("fy", 235.0), 205000.0
-    lam = L / i
-    Lam = math.sqrt(math.pi ** 2 * E / (0.6 * F))
-    r = lam / Lam
-    nu = 1.5 + 2.0 / 3.0 * r * r
-    fc = (1 - 0.4 * r * r) / nu * F / 1.5
-    cap = fc * A / 1000
-    return dict(lam=lam, Lam=Lam, fc=fc, cap_kN=cap, N_kN=cp["N_long_kN"], ratio=cp["N_long_kN"] / cap)
