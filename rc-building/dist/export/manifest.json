@@ -1,33 +1,33 @@
 {
  "version": "v4.32",
- "total_bytes": 13440848,
+ "total_bytes": 13590890,
  "files": [
   {
    "file": "kawazanyo_IFC4.ifc",
    "format": "IFC4",
-   "size": 2221283,
-   "sha256": "d33bf26d60d235ef93595e5c64b95446dd21dbba055304ebde2ac432fd9ec32d",
+   "size": 2248788,
+   "sha256": "7b7289f9813e124b9bba7c5f236c3a5618dbddf11539ac58f3ba40ff50849f70",
    "version": "v4.32",
    "coordinates": "建物ローカル（原点=X1・Y1 壁芯交点、z=0=設計GL、mm、Z上）。真北は TrueNorth と IfcMapConversion",
-   "note": "壁74・窓13・扉40・室43・家具69・照明269"
+   "note": "壁74・窓14・扉40・室43・家具73・照明269"
   },
   {
    "file": "model_exterior_obj.zip",
    "format": "OBJ+MTL",
-   "size": 341839,
-   "sha256": "19bffe6a5f437ea8c7ea8cc048adc2ccff0458f339e0cbafa8ee2eb72fb28c3f",
+   "size": 343373,
+   "sha256": "e5bd265497de809b0bf4f1c13f7d4054474dce678d35d0447d03dc03bc45adae",
    "version": "v4.32",
    "coordinates": "真北ワールド（建物中心まわりに回転、m、Y上、-Z=真北、+X=東）",
-   "note": "155 objects, 20973 vertices, 34291 faces"
+   "note": "155 objects, 21109 vertices, 34495 faces"
   },
   {
    "file": "model_interior_obj.zip",
    "format": "OBJ+MTL",
-   "size": 877558,
-   "sha256": "0c93ab231223edd36b0cb1fbf76625b8f3f27d45d31252c6b150bb4628c56f52",
+   "size": 880805,
+   "sha256": "8b9033f552dda5ea274b6ed6aa3c790f1404f8e774658a6bcd97ffa7f2eddc98",
    "version": "v4.32",
    "coordinates": "真北ワールド（建物中心まわりに回転、m、Y上、-Z=真北、+X=東）",
-   "note": "672 objects, 59585 vertices, 98467 faces"
+   "note": "686 objects, 59845 vertices, 98823 faces"
   },
   {
    "file": "csv/rooms.csv",
@@ -41,20 +41,20 @@
   {
    "file": "csv/openings.csv",
    "format": "CSV(UTF-8 BOM)",
-   "size": 7467,
-   "sha256": "2cdde3e567315d8ff80fffec744489b145e8a834dd2f950c44ab9a7c4feb770e",
+   "size": 7666,
+   "sha256": "62d8572d9a788642b48e9dff4c9bec6890c2e56bf46931b284103074dec90099",
    "version": "v4.32",
    "coordinates": "座標なし（表）",
-   "note": "53 行"
+   "note": "54 行"
   },
   {
    "file": "csv/fittings_schedule.csv",
    "format": "CSV(UTF-8 BOM)",
-   "size": 2025,
-   "sha256": "0af821918be98d90ea35369ea242cd3cce81b9648a253ffb30037b133dc91a99",
+   "size": 2076,
+   "sha256": "de964809e522f51224959127f5c6657ccee2cd05f61278032d1415cae28413da",
    "version": "v4.32",
    "coordinates": "座標なし（表）",
-   "note": "34 行"
+   "note": "35 行"
   },
   {
    "file": "csv/finishes.csv",
@@ -86,8 +86,8 @@
   {
    "file": "csv/lights.csv",
    "format": "CSV(UTF-8 BOM)",
-   "size": 38481,
-   "sha256": "18d69a7eb772a765556a741ca9149dfd10ba55e0f7e1c8f27364994926121669",
+   "size": 38467,
+   "sha256": "3d7747179957660318a88bdc072c4f7ccb53e825dfb4e5d6ac83415221834b7f",
    "version": "v4.32",
    "coordinates": "座標なし（表）",
    "note": "269 行"
@@ -96,7 +96,7 @@
    "file": "csv/illuminance.csv",
    "format": "CSV(UTF-8 BOM)",
    "size": 2769,
-   "sha256": "f18de44ce23c6d2f3c5b6605779faa7f0aeea0c3d7d7a2669b4dc38006e661bd",
+   "sha256": "b567fd79133e6dd983aab1cae4169bed7315f968cdd69ccf08d6969cd51bf5f2",
    "version": "v4.32",
    "coordinates": "座標なし（表）",
    "note": "43 行"
@@ -104,17 +104,17 @@
   {
    "file": "csv/furniture.csv",
    "format": "CSV(UTF-8 BOM)",
-   "size": 14624,
-   "sha256": "0c607bd34bbdca5baa47c282e7beb96cd6ac3e9e4751dd8d31e39ac8ba581dc4",
+   "size": 15642,
+   "sha256": "7fc2fec8b3754b953ef4f1a55720597994cd0e4453d79334a274d46a72919d7d",
    "version": "v4.32",
    "coordinates": "座標なし（表）",
-   "note": "69 行"
+   "note": "73 行"
   },
   {
    "file": "csv/wall_quantity.csv",
    "format": "CSV(UTF-8 BOM)",
-   "size": 252,
-   "sha256": "743bbe4ea34f397b954cdb4ecb9fd6aa7622932f9b47357b544a452872610b8f",
+   "size": 251,
+   "sha256": "0aa0c51e1e4053df6f132b0160746b750682285cd1783baf54ded77b1d6d17a8",
    "version": "v4.32",
    "coordinates": "座標なし（表）",
    "note": "5 行"
@@ -122,11 +122,11 @@
   {
    "file": "csv/legal_checks.csv",
    "format": "CSV(UTF-8 BOM)",
-   "size": 33959,
-   "sha256": "30076ed307758c871ba9826501fc21ac25959dd6d708a729334bf1f53ed5c0d2",
+   "size": 34502,
+   "sha256": "13cd7e48362432a2ef281b2b4e53da06734b3622ea73b9d2724c3c92af84eb48",
    "version": "v4.32",
    "coordinates": "座標なし（表）",
-   "note": "134 行"
+   "note": "135 行"
   },
   {
    "file": "csv/network.csv",
@@ -141,7 +141,7 @@
    "file": "csv/legend.csv",
    "format": "CSV(UTF-8 BOM)",
    "size": 1434,
-   "sha256": "1f86ff1ee0354976d265da45b869f786389b8992e5359dc99fc52310549c1a8f",
+   "sha256": "c61a632c8ee6b696e814545131fcd1bb48b83ac0b8dbaed4e847796cb1f3f451",
    "version": "v4.32",
    "coordinates": "座標なし（表）",
    "note": "37 行"
@@ -149,8 +149,8 @@
   {
    "file": "schedules.xlsx",
    "format": "XLSX",
-   "size": 88530,
-   "sha256": "3c525dd7bea88169078d8a10c3d62ea5bdcc12f722b131b23f973f1f30399660",
+   "size": 89359,
+   "sha256": "2209214bbad126672c604567414cc6fc5ad3069e8776b910d03698201791aeaf",
    "version": "v4.32",
    "coordinates": "座標なし（表）",
    "note": "13 シート"
@@ -176,8 +176,8 @@
   {
    "file": "model_3d.dxf",
    "format": "3D DXF(MESH, R2010)",
-   "size": 1194979,
-   "sha256": "478002b3d5358c9107aab4fce61c96a357e7da71a6f87075af6c4d99ee50a38a",
+   "size": 1215770,
+   "sha256": "67560ae4f42c36015022c5e3afbacbb072c8a3599f675b57d1a816084b35ec21",
    "version": "v4.32",
    "coordinates": "建物ローカル（原点=X1・Y1 壁芯交点、z=0=設計GL、mm、Z上）。既存の平面 DXF と同じ原点・向き",
    "note": "107 MESH, 41 レイヤー"
@@ -185,38 +185,38 @@
   {
    "file": "kawazanyo_master.blend",
    "format": "Blender master .blend",
-   "size": 2443878,
-   "sha256": "0f7b758a9b23fc1578d8fb0dce1f7ab39873e02349c012d88667fec0a6aabc32",
+   "size": 2488644,
+   "sha256": "c8fbe74d1264f815cd2809ac3cb724c87969cd9a0f892f071c9e9c5cd333d2b5",
    "version": "v4.32",
    "coordinates": "真北ワールド（建物中心まわりに回転、m、Y上、-Z=真北、+X=東）",
-   "note": "カメラ96・材質212・オブジェクト1088・撮影は src/shoot.py（手で編集しない）・model_hash=c42cfaed817c94b7489f237719b098fe1c161ef1f07235b00a14e9ee6560f97d"
+   "note": "カメラ96・材質212・オブジェクト1102・撮影は src/shoot.py（手で編集しない）・model_hash=addd3d119831924198ef0e5fb6f334f2e3eb18d207008669fca66ee523113407"
   },
   {
    "file": "model_exterior.fbx",
    "format": "FBX",
-   "size": 1129308,
-   "sha256": "88fa324482bb48192ea4694f0b63947d7000e3ad143b17ee097cfb8821ee8876",
+   "size": 1132412,
+   "sha256": "7420f538a5cf490603047e127d407ad898d9de3d6d47ce782adb01253adbabb4",
    "version": "v4.32",
    "coordinates": "真北ワールド（建物中心まわりに回転、m、Y上、-Z=真北、+X=東）",
-   "note": "glb_sha256=50f8ffbfacc3da67c384e362967d31328099b1f6d1884f5da2fc4575d8edd8c9"
+   "note": "glb_sha256=c51c8601220f3a435ca5b7afd7b4b6f70d5a0668adecb758f95d0c0f10191816"
   },
   {
    "file": "model_interior.fbx",
    "format": "FBX",
-   "size": 3421964,
-   "sha256": "71cb3d6e0f5e3ca55d249939c367cbc878078f2d5f18d7cf419d5621acae5a3b",
+   "size": 3459196,
+   "sha256": "957ff591f2cca7301b0a140bf8ff01b308899dfc7cd3d9e575d1b36677652966",
    "version": "v4.32",
    "coordinates": "真北ワールド（建物中心まわりに回転、m、Y上、-Z=真北、+X=東）",
-   "note": "glb_sha256=28087fc12d73af16796d587205872ed1bcfefbb6f80681e45a307eb5a1c5bf35"
+   "note": "glb_sha256=7eceaa47eadc4f2b5a0d498367e4a03963156c7e328e08d3062b3b0e92e87d1e"
   },
   {
    "file": "model_exterior.usdz",
    "format": "USDZ",
-   "size": 1539976,
-   "sha256": "5301e77f2a6146db4cd03781aec6a86e60f9988957ac274cfa159dddb3fb4393",
+   "size": 1549214,
+   "sha256": "095e39d037ff517f713f2777505f42c9ad61b51e3e150f8f08588628c40abeec",
    "version": "v4.32",
    "coordinates": "真北ワールド（建物中心まわりに回転、m、Y上、-Z=真北、+X=東）",
-   "note": "glb_sha256=50f8ffbfacc3da67c384e362967d31328099b1f6d1884f5da2fc4575d8edd8c9"
+   "note": "glb_sha256=c51c8601220f3a435ca5b7afd7b4b6f70d5a0668adecb758f95d0c0f10191816"
   }
  ],
  "skipped": []
