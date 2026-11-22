@@ -56,6 +56,8 @@ class Item:
     provisional: bool = True
     note: str = ""
     slot: tuple | None = None    # v4.36: 窓辺の収納の吹出しスリットの範囲（建物座標 mm、幅方向）
+    under: str = ""              # v4.37: 階段下の収納（階段名）。室の矩形・階段の検査の代わりに段裏との離隔を検査する
+    pocket: float = 0.0          # v4.37: 背面の戸袋の奥行（GD-1 の引込み）
 
     @property
     def w(self):
@@ -97,9 +99,12 @@ def items(h):
     add("L-K1", "1F", LDK, "リビング収納（天井まで・扉付き・W825）", "tall", (175, 5550, 1000, 6000), h.ch["1F"], "case_ash")
     add("LDK-C1", "1F", LDK, "窓辺の造作収納 南（FL+700・奥行 1,000・オーク天板 t40・前面は引出し・奥は跳ね上げ蓋・窓の前 1,900〜4,000 だけ温風の吹出し）", "sill_storage", (175, 225, 4000, 1225), 700, "sill_panel", base="none", front="+y",
         slot=(1900, 4000), note="v4.36 施主指示で台→収納。仕様は要施主確認")
-    add("LDK-C2", "1F", LDK, "窓辺の造作収納 西（同上・吹出しなし・L 字でつながる）", "sill_storage", (175, 1225, 1175, 4000), 700, "sill_panel", base="none", front="+x",
-        note="v4.36 施主指示で台→収納")
-    add("L-K2", "1F", LDK, "リビング収納 南（天井まで・扉付き・D450）", "tall", (175, 4000, 625, 5550), h.ch["1F"], "case_ash", front="+x")
+    wW = h.spec["ldk_window"].get("W")
+    add("LDK-C2", "1F", LDK, "窓辺の造作収納 西（同上・西窓の前だけ温風の吹出し・L 字でつながる）", "sill_storage", (175, 1225, 1175, 4000), 700, "sill_panel", base="none", front="+x",
+        slot=tuple(wW) if wW else None, note="v4.36 施主指示で台→収納。v4.37 西窓 AW-LW の前に吹出し")
+    add("L-K2", "1F", LDK, "リビング収納 南（天井まで・扉付き・D825、L-K1 と面を揃える）", "tall", (175, 4000, 1000, 5550), h.ch["1F"], "case_ash", front="+x")
+    add("L-K3", "1F", LDK, "リビング収納 東（天井まで・扉付き・背面 130 は GD-1 の戸袋）", "tall", (5550, 4050, 6000, 5400), h.ch["1F"], "case_ash", front="-x", pocket=130.0,
+        note="v4.37 施主指示（10.png）。GD-1 の開いた戸は背面の戸袋に入る")
     add("L-A1", "1F", LDK, "アートパネル（サイドボードの上に立て掛け）", "art", (5870, 700, 5900, 1600), 640, "art", z0=FL["1F"] + 700, base="stack", stack=True)
     # ---- キッチン・パントリー
     add("K-I1", "1F", "キッチン", "アイランドキッチン W2,400（IH 3口・一体成形シンク・ダウンドラフト換気、南＝LDK を向いて調理）", "island", (1800, 9050, 4200, 10050), 900, "olive_case")
@@ -118,6 +123,10 @@ def items(h):
     add("G-S1", "1F", "玄関土間", "下足入れ（造作・天井まで・扉付き・電波遮断キーボックス内蔵）", "tall", h.shoe, FL["1F"] + h.ch["1F"] - DOMA, "case_ash", z0=DOMA, front="+x")
     add("G-B1", "1F", "玄関土間", "腰掛けベンチ（造作、座 H420＋クッション）", "bench", h.bench, 420, "case_ash", z0=DOMA, seat=True, front="+y", note="座る家具。要施主確認")
     add("H-S2", "1F", "ホール", "コート収納", "tall", (6250, 4200, 6700, 6000), h.ch["1F"], "case_ash")
+    add("H-S3", "1F", "ホール・階段1", "収納 東（天井まで・扉付き・D450）", "tall", (11550, 6650, 12000, 8100), h.ch["1F"], "case_ash", front="-x",
+        note="v4.37 施主指示（10.png）。南端 y6,650 は GD-2 の開いた戸の引手（Y2 面から 約 104）から 約 300 離す")
+    add("H-S4", "1F", "ホール・階段1", "階段1 下の収納（H1,500・扉付き・上り 2 本目の下）", "tall", (7500, 9800, 8650, 10840), 1500, "case_ash", front="-y", under="階段1",
+        note="v4.37 施主指示（10.png）。段裏 FL+1,550 との離隔 50")
     # ---- ジム（機器は h.equipment）
     add("J-M1", "1F", "ジム", "鏡（突っ張り枠・飛散防止フィルム。S 壁の内面・トレッドミルの正面）", "mirror", tuple(h.spec["gym_layout"]["mirror"]), 2000, "mirror", z0=FL["1F"] + 300, base="frame", stack=True)
     add("J-K1", "1F", "ジム", "測定コーナーのカウンター（体組成計は床、血圧計は天板）", "cabinet", tuple(h.spec["gym_layout"]["counter"]), 900, "case_ash")
@@ -136,6 +145,8 @@ def items(h):
         base="ceiling", qty=2, stack=True)
     add("C1-W", "1F", "ファミリークローゼット", "収納（天井まで・扉付き）西", "tall", (125, 15100, 725, 18125), h.ch["1F"], "case_ash")
     add("C1-N", "1F", "ファミリークローゼット", "収納（天井まで・扉付き）北", "tall", (725, 17525, 3900, 18125), h.ch["1F"], "case_ash")
+    add("R-S1", "1F", "ランドリー・室内干し", "階段2 下の収納（H2,350・扉付き・ランドリー側に開く）", "tall", (5050, 15100, 6000, 15900), 2350, "case_ash", front="-y", under="階段2",
+        note="v4.37 施主指示（10.png）。段裏 FL+2,400 との離隔 50")
     add("M1-A", "1F", "機械室（西系統）", "空調機・全熱交換器（簡易ボリューム）", "machine", (12250, 10800, 15100, 12000), 1900, "machine", base="none")
     add("M2-A", "1F", "機械室（東系統）", "浄水器・ネットワークラック・排煙機（簡易ボリューム）", "machine", (15200, 11000, 18125, 12000), 1900, "machine", base="none")
     add("WA-S", "1F", "WIC", "棚・パイプ（突っ張りフレーム）", "tall", (14300, 12250, 18125, 12850), h.ch["1F"], "case_ash")
@@ -235,6 +246,14 @@ def stair_zone(h, fl):
     return out
 
 
+def stair_soffit(h, name, poly):
+    """階段 name の段板・踊場の箱のうち、平面で poly と重なるものの下端の最小（絶対 z）。v4.37 階段下の収納。"""
+    import house as HM
+    s = [x for x in h.stairs if x.name == name][0]
+    zs = [b.z0 for b in s.boxes(12000 if s.name == "階段1" else 18125) if sbox(b.x0, b.y0, b.x1, b.y1).intersection(poly).area > 1]
+    return min(zs) if zs else float("inf")
+
+
 def gap_errors(h, its):
     """家具と壁・家具どうしの間のすき間: 0〜5mm（密着）か 250mm 以上。8〜25（指）・100〜230（頭）のすき間をつくらない。"""
     errs = []
@@ -270,6 +289,9 @@ def check(h, its):
     for it in its:
         p = it.poly()
         rp = room_polys(h, it.floor, it.room)
+        if it.under:
+            rp = rp + [sbox(*s.footprint(12000 if s.name == "階段1" else 18125)) for s in h.stairs if s.name == it.under]
+            rp = [unary_union(rp)]
         if not any(r.buffer(1).contains(p) for r in rp):
             errs.append((it.id, "室の外にはみ出す"))
         for wp in solids[it.floor]:
@@ -280,9 +302,14 @@ def check(h, its):
             for nm, z in door_zones(h, it.floor):
                 if z.intersection(p).area > 100:
                     errs.append((it.id, "扉・開口と重なる: " + nm))
-        for s in stair_zone(h, it.floor):
-            if s.intersection(p).area > 1:
-                errs.append((it.id, "階段と重なる"))
+        if it.under:
+            sf = stair_soffit(h, it.under, p)
+            if it.z0 + it.h > sf - 50:
+                errs.append((it.id, f"段裏との離隔が 50 未満（段裏 FL+{sf - h.fl[it.floor]:.0f}）"))
+        else:
+            for s in stair_zone(h, it.floor):
+                if s.intersection(p).area > 1:
+                    errs.append((it.id, "階段と重なる"))
         if it.floor == "1F":
             for name, r, hh, kg in h.equipment:
                 if sbox(*r).intersection(p).area > 1:
@@ -349,7 +376,16 @@ def build_item(h, it, prod=None):
             top = ("countertop", 20)
         if it.id in ("LB-T1",):
             top = ("case_oak", 30)
-        FS.case(mb, rect, z0, H, it.front, it.mat if it.id != "R-SK" else "case_ash", top=top, pitch=450 if k != "bench" else 600)
+        crect = rect
+        if it.pocket > 0:    # v4.37: 背面の戸袋（GD-1 の開いた戸が入る）。本体は背面から pocket だけ縮める
+            Lp = FS.LF(mb, rect, it.front)
+            ux0, uy0, ux1, uy1 = Lp.xy(0, Lp.W, it.pocket, Lp.D)
+            crect = (ux0, uy0, ux1, uy1)
+        FS.case(mb, crect, z0, H, it.front, it.mat if it.id != "R-SK" else "case_ash", top=top, pitch=450 if k != "bench" else 600)
+        if it.pocket > 0:
+            Lp = FS.LF(mb, rect, it.front)
+            Lp.box("case_ash", Lp.W - 20, Lp.W, 0, it.pocket, z0, z0 + H)          # 戸袋の北の端板
+            Lp.box("case_ash", 0, Lp.W, 60, it.pocket, z0 + 2150, z0 + H)           # 戸袋の上の幕板（壁から 60 はレールカバー）
         if k == "bench":
             L = FS.LF(mb, rect, it.front)
             ck = "cushion" if it.id == "LB-B1" else "throw"

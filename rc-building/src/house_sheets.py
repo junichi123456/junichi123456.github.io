@@ -1000,7 +1000,7 @@ def wall_plan(h, number, wall_rows):
     vdim(sh, t, h.gy, -1450)
     sh.text("べた基礎 t=350（外周 500 張出し）", t(h.W / 2, -1000), 1.8, "S-TEXT", "MIDDLE_CENTER")
     sh.view_title("基礎伏図・耐力壁配置図（1階）", "1:100", (24, 22))
-    sh.text("南西角は RC の耐力壁（L 字窓の撤回・v4.36）", t(300, -300), 1.6, "S-TEXT", "MIDDLE_LEFT")
+    sh.text("南西角は RC の耐力壁（L 字窓の撤回 v4.36・西窓 AW-LW u1,225〜3,325 は v4.37）", t(300, -300), 1.6, "S-TEXT", "MIDDLE_LEFT")
     sh.text("網掛け=RC耐力壁 t=250（1・2階 同位置。1階 LDK の南 350・西 300 は室内側へ増し打ち）、破線=開口", (24, 15), 2.2, "A-TEXT", paper=True)
     sh.text(f"階高 {h.H['1F']:,}（構造スラブ天端の間隔 {h.H['1F']:,} 固定。令78条の2・告示1026号の上限 3,500）。壁厚 250 ≧ max(150, {h.H['1F'] / 22:.0f})", (24, 10), 2.0, "A-TEXT", paper=True)
     sh.text("壁量・壁式構造の規定（平13国交告1026号）", (250, 280), 2.6, "A-TEXT", paper=True)

@@ -165,6 +165,21 @@ def test_kitchen_open():
     assert {"stainless", "ceramic", "glass_clear"} <= set(props)
 
 
+def test_storage_v437():
+    h = house()
+    its = {i.id: i for i in FU.items(h)}
+    assert its["L-K2"].rect == (175, 4000, 1000, 5550) and its["L-K3"].rect == (5550, 4050, 6000, 5400)
+    assert its["H-S3"].rect == (11550, 6650, 12000, 8100) and its["H-S4"].rect == (7500, 9800, 8650, 10840)
+    assert its["R-S1"].rect == (5050, 15100, 6000, 15900)
+    assert its["L-K3"].pocket == 130
+    for k in ("H-S4", "R-S1"):
+        it = its[k]
+        assert it.z0 + it.h <= FU.stair_soffit(h, it.under, it.poly()) - 50, k
+    assert FU.check(h, list(its.values())) == []
+    assert len(its) == 73
+    assert tuple(its["LDK-C2"].slot) == (1225, 3325)
+
+
 if __name__ == "__main__":
     fns = [v for k, v in sorted(globals().items()) if k.startswith("test_") and callable(v)]
     for f in fns:

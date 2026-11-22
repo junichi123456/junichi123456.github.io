@@ -28,7 +28,9 @@ def test_canopy_geometry():
     south, west = h.canopies
     assert south[3] - south[1] == 2000 and west[2] - west[0] == 1000     # 南の出 2,000、西の出 1,000
     assert (south[0], south[2]) == (-1245, 10900) and west[3] == 4500
-    zip_top = max(b.z1 for op, b in h.blinds if op.label == "AW-LS")
+    zip_top = max(b.z1 for op, b in h.blinds if op.label in ("AW-LS", "AW-LW"))
+    west = h.canopies[1]
+    assert west[1] <= 1225 - 50 and west[3] >= 3325 + 50      # v4.37 西庇が西窓と ZIP を覆う
     assert h.canopy_z >= zip_top and h.canopy_z == h.fl["1F"] + 2900      # 下端 FL+2,900 ≧ ZIP ボックスの上端
 
 
@@ -41,9 +43,11 @@ def test_building_area_includes_canopy():
 
 def test_overhang_factor():
     h = house()
-    ops = {op.label: op for op in h.openings(exterior=True) if op.label == "AW-LS"}
+    ops = {op.label: op for op in h.openings(exterior=True) if op.label in ("AW-LS", "AW-LW")}
     f = SS.overhang_factor(h, ops["AW-LS"], {11, 12, 1, 2, 3})
     assert 0.40 <= f <= 0.46, f                                              # 南の暖房期の残存率
+    fw = SS.overhang_factor(h, ops["AW-LW"], {11, 12, 1, 2, 3})
+    assert 0.70 <= fw <= 0.76, fw                                            # v4.37 西窓（0.733）
 
 
 if __name__ == "__main__":

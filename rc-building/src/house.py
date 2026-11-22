@@ -523,6 +523,8 @@ class House:
         G("1F", "Y3", 10900, 11800, name="開口（ホール↔廊下）")
         cw = self.spec["ldk_window"]
         self._window("1F", "S", cw["S"][0], cw["S"][1], cw["sill"], cw["head"] - cw["sill"], "FIX窓（LDK・南）")
+        if cw.get("W"):
+            self._window("1F", "W", cw["W"][0], cw["W"][1], cw["sill"], cw["head"] - cw["sill"], "FIX窓（LDK・西）")
         self._window("1F", "E", 700, 2900, 2000, 650, "FIX高窓（ジム）")
         self._window("1F", "E", 3400, 5600, 2000, 650, "FIX高窓（ジム）")
         wu = self.spec["room_a"]["window_u"]
@@ -881,7 +883,7 @@ class House:
         for key in sorted(groups, key=lambda k: (k[0], (1 if k[0] == "GD" else -1) * k[2] * k[3])):      # GD は狭い方（左・LDK）が GD-1
             prefix = key[0]
             counters[prefix] = counters.get(prefix, 0) + 1
-            label = {"FIX窓（LDK・南）": "AW-LS"}.get(key[1])
+            label = {"FIX窓（LDK・南）": "AW-LS", "FIX窓（LDK・西）": "AW-LW"}.get(key[1])
             if label is None:
                 label = f"{prefix}-{counters[prefix]}"
             else:

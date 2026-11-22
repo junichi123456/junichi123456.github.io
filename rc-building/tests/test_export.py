@@ -110,9 +110,9 @@ def test_ifc_counts(h, ifc):
     assert len(m.by_type("IfcWall")) == len(h.walls) + len(h.fence_lines) + ext_walls
     assert len(m.by_type("IfcSpace")) == len(h.rooms)
     n_fit = sum(1 for o in h.openings() if o.operation != "opening")
-    assert len(m.by_type("IfcWindow")) + len(m.by_type("IfcDoor")) == n_fit == 53
+    assert len(m.by_type("IfcWindow")) + len(m.by_type("IfcDoor")) == n_fit == 54
     assert len(m.by_type("IfcOpeningElement")) == sum(1 for _ in h.openings())
-    assert len(m.by_type("IfcFurniture")) == 69
+    assert len(m.by_type("IfcFurniture")) == 73
     assert len(m.by_type("IfcLightFixture")) >= 260
     assert {s.Name for s in m.by_type("IfcBuildingStorey")} == {"FDN", "1F", "2F", "RF"}
     assert len(m.by_type("IfcSolarDevice")) == 2 and len(m.by_type("IfcStair")) == 3
@@ -290,7 +290,7 @@ def test_csv_headers_and_rows(h, outdir):
     import csv
     from export import tables
     d, _ = outdir
-    exp = {"室": len(h.rooms), "建具": 53, "建具表": len(h.fittings), "設備": 21, "家具": 69, "壁量": 5, "ネットワーク": 47}      # v4.32: network 表（AP 16・LAN 口 9 組・ラック機器 8・スリーブ 14）を追加
+    exp = {"室": len(h.rooms), "建具": 54, "建具表": len(h.fittings), "設備": 21, "家具": 73, "壁量": 5, "ネットワーク": 47}      # v4.32: network 表（AP 16・LAN 口 9 組・ラック機器 8・スリーブ 14）を追加
     for name, hd in tables.HEADERS.items():
         p = d / "csv" / f"{tables.CSV_NAMES[name]}.csv"
         raw = p.read_bytes()

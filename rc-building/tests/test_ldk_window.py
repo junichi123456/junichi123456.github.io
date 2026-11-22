@@ -31,13 +31,14 @@ def test_window_dimensions():
     h = house()
     o = _ops(h)
     ch, fl = h.ch["1F"], h.fl["1F"]
-    assert set(o) == {"AW-LS"}                                # v4.36: 西の窓（AW-LW）は撤回
-    for k in ("AW-LS",):
+    assert set(o) == {"AW-LS", "AW-LW"}                       # v4.37: 西窓 AW-LW を追加（v4.36 の撤回を一部戻す。角は RC のまま）
+    for k in ("AW-LS", "AW-LW"):
         assert o[k].z1 - fl == ch - 100 == 2700, k           # 上端 = 天井 − 100
         assert o[k].z0 - fl == 700 and o[k].height == 2000
     assert (o["AW-LS"].u0, o["AW-LS"].u1) == (1900, 4000)
-    assert h.room_windows(h.ldk) >= 4.2 - 1e-9
-    assert 4.2 * 3.0 >= h.ldk.daylight_area * 0.1529 - 1e-9
+    assert (o["AW-LW"].u0, o["AW-LW"].u1) == (1225, 3325)
+    assert h.room_windows(h.ldk) >= 8.4 - 1e-9
+    assert 8.4 * 3.0 >= h.ldk.daylight_area * 0.1529 * 2.4
 
 
 def test_structure():
@@ -47,11 +48,13 @@ def test_structure():
         assert v["wall_rate"] >= 12, (f, d)
         assert v["耐震等級3（Co=0.3）"]["ratio"] >= 1.0
         assert v["ecc"] <= 0.15, (f, d, v["ecc"])
-    assert abs(se["stories"][("1F", "X方向")]["ecc"] - 0.061) < 0.005     # v4.36: L 字窓の撤回（角を RC 化）で 0.113→0.061
-    assert abs(se["stories"][("1F", "Y方向")]["ecc"] - 0.107) < 0.005     # 0.040→0.107
+    assert abs(se["stories"][("1F", "X方向")]["ecc"] - 0.062) < 0.005     # v4.36: L 字窓の撤回（角を RC 化）で 0.113→0.061。v4.37 西窓 0.062
+    assert abs(se["stories"][("1F", "Y方向")]["ecc"] - 0.071) < 0.005     # 0.040→0.107。v4.37 西窓の追加で 0.107→0.071
     assert max(h.H.values()) <= 3500
     assert 250 >= max(150, max(h.H.values()) / 22)
     assert not [b for b in h.boxes if b.level == "1F" and b.tag in ("角柱", "方立", "角の方立")]
+    lw = [o for w in h.walls if w.floor == "1F" and w.cat == "wall" and w.axis == "y" and w.c == 0 for o in w.openings if o.kind == "window"]
+    assert min(o.u0 for o in lw) - h.t / 2 >= 690          # 角の西の壁 125〜1,225（1,100）≧ 690
 
 
 def test_condensation():

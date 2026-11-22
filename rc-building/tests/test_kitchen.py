@@ -43,6 +43,7 @@ def test_aisles_at_least_1200():
 
 
 def test_passages_1200():
+    assert "L-K3 前" in house().spec["passage_check"]["portals"]       # v4.37
     h = house()
     r = KO.passages(h)
     assert r["ok"], r
