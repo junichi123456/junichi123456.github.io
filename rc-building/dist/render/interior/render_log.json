@@ -7,8 +7,8 @@
   {
    "id": "I01",
    "file": "dist/render/interior/I01_ldk_south.png",
-   "seconds": 244.3,
-   "render_seconds": 244.1,
+   "seconds": 243.0,
+   "render_seconds": 242.8,
    "samples": 64,
    "time_limit": 240,
    "res": [
@@ -44,14 +44,14 @@
    "when": "2026-03-21T14:00",
    "status": "ok",
    "master": {
-    "file": "kawazanyo_master.blend",
+    "file": "master_new.blend",
     "model_version": "v4.32",
-    "model_hash": "c42cfaed817c94b7489f237719b098fe1c161ef1f07235b00a14e9ee6560f97d",
-    "generated_at": "2026-11-13T16:36:31"
+    "model_hash": "9e98d75f7beef06d79b59c72bf0d4fb3811d9dc7eba83719b9b4e03c81532805",
+    "generated_at": "2026-11-22T14:54:57"
    },
    "shoot": {
     "def_hash": "f6a0651c937e",
-    "model_hash": "c42cfaed817c94b7489f237719b098fe1c161ef1f07235b00a14e9ee6560f97d",
+    "model_hash": "9e98d75f7beef06d79b59c72bf0d4fb3811d9dc7eba83719b9b4e03c81532805",
     "args_hash": "08ea60cb19d3",
     "seed": 0
    },
@@ -61,8 +61,8 @@
   {
    "id": "I02",
    "file": "dist/render/interior/I02_ldk_kitchen_side.png",
-   "seconds": 243.4,
-   "render_seconds": 243.3,
+   "seconds": 243.2,
+   "render_seconds": 243.1,
    "samples": 64,
    "time_limit": 240,
    "res": [
@@ -98,14 +98,14 @@
    "when": "2026-03-21T14:00",
    "status": "ok",
    "master": {
-    "file": "kawazanyo_master.blend",
+    "file": "master_new.blend",
     "model_version": "v4.32",
-    "model_hash": "c42cfaed817c94b7489f237719b098fe1c161ef1f07235b00a14e9ee6560f97d",
-    "generated_at": "2026-11-13T16:36:31"
+    "model_hash": "9e98d75f7beef06d79b59c72bf0d4fb3811d9dc7eba83719b9b4e03c81532805",
+    "generated_at": "2026-11-22T14:54:57"
    },
    "shoot": {
     "def_hash": "75a89e9f739d",
-    "model_hash": "c42cfaed817c94b7489f237719b098fe1c161ef1f07235b00a14e9ee6560f97d",
+    "model_hash": "9e98d75f7beef06d79b59c72bf0d4fb3811d9dc7eba83719b9b4e03c81532805",
     "args_hash": "a07908b6e7ca",
     "seed": 0
    },
@@ -164,13 +164,14 @@
     "seed": 0
    },
    "shoot_flags": [],
-   "palette_mismatch": []
+   "palette_mismatch": [],
+   "stale_since": "v4.37"
   },
   {
    "id": "I12",
    "file": "dist/render/interior/I12_genkan_glass.png",
-   "seconds": 242.1,
-   "render_seconds": 242.0,
+   "seconds": 242.7,
+   "render_seconds": 242.6,
    "samples": 64,
    "time_limit": 240,
    "res": [
@@ -206,14 +207,14 @@
    "when": "2026-03-21T14:00",
    "status": "ok",
    "master": {
-    "file": "kawazanyo_master.blend",
+    "file": "master_new.blend",
     "model_version": "v4.32",
-    "model_hash": "c42cfaed817c94b7489f237719b098fe1c161ef1f07235b00a14e9ee6560f97d",
-    "generated_at": "2026-11-13T16:36:31"
+    "model_hash": "9e98d75f7beef06d79b59c72bf0d4fb3811d9dc7eba83719b9b4e03c81532805",
+    "generated_at": "2026-11-22T14:54:57"
    },
    "shoot": {
     "def_hash": "658faa7fc7a6",
-    "model_hash": "c42cfaed817c94b7489f237719b098fe1c161ef1f07235b00a14e9ee6560f97d",
+    "model_hash": "9e98d75f7beef06d79b59c72bf0d4fb3811d9dc7eba83719b9b4e03c81532805",
     "args_hash": "41cb4416dc10",
     "seed": 0
    },
@@ -223,8 +224,8 @@
   {
    "id": "I14",
    "file": "dist/render/interior/I14_ldk_corner.png",
-   "seconds": 229.0,
-   "render_seconds": 228.9,
+   "seconds": 242.3,
+   "render_seconds": 242.2,
    "samples": 64,
    "time_limit": 240,
    "res": [
@@ -256,19 +257,19 @@
    ],
    "texture_fallbacks": [],
    "family": "I",
-   "time_limit_hit": false,
+   "time_limit_hit": true,
    "when": "2026-03-21T14:00",
    "status": "ok",
    "master": {
-    "file": "kawazanyo_master.blend",
+    "file": "master_new.blend",
     "model_version": "v4.32",
-    "model_hash": "c42cfaed817c94b7489f237719b098fe1c161ef1f07235b00a14e9ee6560f97d",
-    "generated_at": "2026-11-13T16:36:31"
+    "model_hash": "9e98d75f7beef06d79b59c72bf0d4fb3811d9dc7eba83719b9b4e03c81532805",
+    "generated_at": "2026-11-22T14:54:57"
    },
    "shoot": {
     "def_hash": "170cbfc8fb51",
-    "model_hash": "c42cfaed817c94b7489f237719b098fe1c161ef1f07235b00a14e9ee6560f97d",
-    "args_hash": "8adba280cf9b",
+    "model_hash": "9e98d75f7beef06d79b59c72bf0d4fb3811d9dc7eba83719b9b4e03c81532805",
+    "args_hash": "60e4cb5cb53d",
     "seed": 0
    },
    "shoot_flags": [],
@@ -574,14 +575,14 @@
   "note": "内装の配色（v4.29）で再レンダー。I04〜I13 は旧配色のまま（再レンダーしていない）。bpy 5.2.3。palette_mismatch=0"
  },
  "master": {
-  "file": "kawazanyo_master.blend",
+  "file": "master_new.blend",
   "model_version": "v4.32",
-  "model_hash": "c42cfaed817c94b7489f237719b098fe1c161ef1f07235b00a14e9ee6560f97d",
-  "generated_at": "2026-11-13T16:36:31"
+  "model_hash": "9e98d75f7beef06d79b59c72bf0d4fb3811d9dc7eba83719b9b4e03c81532805",
+  "generated_at": "2026-11-22T14:54:57"
  },
  "last_shoot": {
-  "at": "2026-11-13T17:26:08",
-  "seconds": 1209.2,
+  "at": "2026-11-22T15:45:42",
+  "seconds": 981.3,
   "seed": 0,
   "material_colors_checked": 122
  },
