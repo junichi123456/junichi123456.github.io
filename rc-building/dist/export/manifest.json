@@ -1,6 +1,6 @@
 {
  "version": "v4.32",
- "total_bytes": 13590890,
+ "total_bytes": 13590703,
  "files": [
   {
    "file": "kawazanyo_IFC4.ifc",
@@ -185,17 +185,17 @@
   {
    "file": "kawazanyo_master.blend",
    "format": "Blender master .blend",
-   "size": 2488644,
-   "sha256": "c8fbe74d1264f815cd2809ac3cb724c87969cd9a0f892f071c9e9c5cd333d2b5",
+   "size": 2488443,
+   "sha256": "4489beaab5897f19876a57139e0604f3260734f5b2c69a769a1eaba89ea60dd9",
    "version": "v4.32",
    "coordinates": "真北ワールド（建物中心まわりに回転、m、Y上、-Z=真北、+X=東）",
-   "note": "カメラ96・材質212・オブジェクト1102・撮影は src/shoot.py（手で編集しない）・model_hash=addd3d119831924198ef0e5fb6f334f2e3eb18d207008669fca66ee523113407"
+   "note": "カメラ96・材質212・オブジェクト1102・撮影は src/shoot.py（手で編集しない）・model_hash=9e98d75f7beef06d79b59c72bf0d4fb3811d9dc7eba83719b9b4e03c81532805"
   },
   {
    "file": "model_exterior.fbx",
    "format": "FBX",
    "size": 1132412,
-   "sha256": "7420f538a5cf490603047e127d407ad898d9de3d6d47ce782adb01253adbabb4",
+   "sha256": "a4f01f15cf09f53a37798ac21aba85471113c7ba54ae7b4dbc2e8ff9b3c97f51",
    "version": "v4.32",
    "coordinates": "真北ワールド（建物中心まわりに回転、m、Y上、-Z=真北、+X=東）",
    "note": "glb_sha256=c51c8601220f3a435ca5b7afd7b4b6f70d5a0668adecb758f95d0c0f10191816"
@@ -204,7 +204,7 @@
    "file": "model_interior.fbx",
    "format": "FBX",
    "size": 3459196,
-   "sha256": "957ff591f2cca7301b0a140bf8ff01b308899dfc7cd3d9e575d1b36677652966",
+   "sha256": "5ce57f346f3e7d02930d3c0f2156b9b91d322e87f9b0073c241993efaf7b8165",
    "version": "v4.32",
    "coordinates": "真北ワールド（建物中心まわりに回転、m、Y上、-Z=真北、+X=東）",
    "note": "glb_sha256=7eceaa47eadc4f2b5a0d498367e4a03963156c7e328e08d3062b3b0e92e87d1e"
@@ -212,8 +212,8 @@
   {
    "file": "model_exterior.usdz",
    "format": "USDZ",
-   "size": 1549214,
-   "sha256": "095e39d037ff517f713f2777505f42c9ad61b51e3e150f8f08588628c40abeec",
+   "size": 1549228,
+   "sha256": "e4c2a3d300a679ec4e3176a1b7fe8cc625ff9894af6f9efb3f0248a7d67d58e3",
    "version": "v4.32",
    "coordinates": "真北ワールド（建物中心まわりに回転、m、Y上、-Z=真北、+X=東）",
    "note": "glb_sha256=c51c8601220f3a435ca5b7afd7b4b6f70d5a0668adecb758f95d0c0f10191816"
