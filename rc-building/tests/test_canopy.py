@@ -30,7 +30,7 @@ def test_canopy_geometry():
     assert (south[0], south[2]) == (-1245, 10900) and west[3] == 4500
     zip_top = max(b.z1 for op, b in h.blinds if op.label in ("AW-LS", "AW-LW"))
     west = h.canopies[1]
-    assert west[1] <= 1225 - 50 and west[3] >= 3325 + 50      # v4.37 西庇が西窓と ZIP を覆う
+    assert west[1] <= 1900 - 50 and west[3] >= 4000 + 50      # v4.38 西窓 u1,900〜4,000 と ZIP 1,850〜4,050 を覆う
     assert h.canopy_z >= zip_top and h.canopy_z == h.fl["1F"] + 2900      # 下端 FL+2,900 ≧ ZIP ボックスの上端
 
 

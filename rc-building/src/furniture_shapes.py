@@ -165,7 +165,7 @@ def front_of(rect, room_c):
 
 
 # ====================================================================== 造作・箱物
-def case(mb, rect, z0, H, front, key, plinth=60, setback=40, pitch=450, joints=True, top=None):
+def case(mb, rect, z0, H, front, key, plinth=60, setback=40, pitch=450, joints=True, top=None, hj=1100):
     """台輪付きの箱。扉面に細い目地。top: (材質, 厚さ) 天板を別材質にする。"""
     L = LF(mb, rect, front)
     L.box("plinth", 0, L.W, 0, L.D - setback, z0, z0 + plinth + 1)
@@ -181,8 +181,8 @@ def case(mb, rect, z0, H, front, key, plinth=60, setback=40, pitch=450, joints=T
             u = L.W * k / n
             L.box("joint", u - 2, u + 2, L.D, L.D + 1, z0 + plinth + 5, zt - 5)
         # 上下端の水平目地は省く（面が単調になるのを避けるため中段に1本）
-        if H > 1800:
-            L.box("joint", 3, L.W - 3, L.D, L.D + 1, z0 + 1100, z0 + 1104)
+        if hj and H > max(1800, hj + 300):
+            L.box("joint", 3, L.W - 3, L.D, L.D + 1, z0 + hj, z0 + hj + 4)
 
 
 def bookcase(mb, rect, z0, H, front, key="case_oak", seed=7):

@@ -317,6 +317,7 @@ def footlines(h, its=None):
     """v4.28 すべての廊下・ホールの壁（床上 300）に付ける連続ラインの足元灯。
     壁の面に沿って連続させ（戸口・家具の前は切る）、人が前を横切ると光が遮られて存在が分かるようにする。
     死角（曲がり角・T字／出会い頭の戸口・階段口）の前後は警告として明るい区間（warn）にする。
+    v4.38 家具（Item.footline）の外周にも回す（H-S3 の台輪）。
     戻り値: (pieces, markers)。pieces=[dict(id, floor, room, code, p0, p1, L, lm_per_m, warn, n)]、markers=[dict(kind, p, floor)]。"""
     from shapely.geometry import MultiLineString
     import furniture as FU
@@ -371,6 +372,15 @@ def footlines(h, its=None):
         for kind, p, rad in mk:
             markers.append(dict(kind=kind, p=[round(p[0]), round(p[1])], floor=fl, room=r.name, radius=rad))
         zones = unary_union([Point(*p).buffer(rad) for _, p, rad in mk]) if mk else None
+        cab = []
+        for it in its:
+            if it.footline and it.floor == fl and room_poly.buffer(1).contains(sbox(*it.rect).centroid):
+                ix0, iy0, ix1, iy1 = it.rect
+                for ln_, n_ in ((LineString([(ix0, iy0), (ix1, iy0)]), (0, -1)), (LineString([(ix0, iy1), (ix1, iy1)]), (0, 1)),
+                                (LineString([(ix0, iy0), (ix0, iy1)]), (-1, 0)), (LineString([(ix1, iy0), (ix1, iy1)]), (1, 0))):
+                    sg = ln_.difference(walls)
+                    if not sg.is_empty and sg.length >= fc["min_piece"]:
+                        cab.append((sg, n_))
         for ax, c, a, b, n in edges:
             ln = LineString([(a, c), (b, c)] if ax == "x" else [(c, a), (c, b)])
             seg = ln.intersection(walls)
@@ -395,6 +405,18 @@ def footlines(h, its=None):
                             (xa, ya), (xb, yb) = (xb, yb), (xa, ya)
                         pieces.append(dict(floor=fl, room=r.name, code=code, p0=[round(xa), round(ya), round(z)], p1=[round(xb), round(yb), round(z)],
                                            L=round(g2.length), lm_per_m=fc["warn_lm_per_m"] if warn else fc["base_lm_per_m"], warn=warn, n=list(n), axis=ax))
+        cp_ = []
+        for sg, n_ in cab:
+            for g2 in getattr(sg, "geoms", [sg]):
+                (xa, ya), (xb, yb) = g2.coords[0], g2.coords[-1]
+                if (xa, ya) > (xb, yb):
+                    (xa, ya), (xb, yb) = (xb, yb), (xa, ya)
+                warn = zones is not None and g2.intersects(zones)
+                cp_.append(((ya + yb) / 2, (xa + xb) / 2,
+                            dict(floor=fl, room=r.name, code=code, p0=[round(xa), round(ya), round(z)], p1=[round(xb), round(yb), round(z)],
+                                 L=round(g2.length), lm_per_m=fc["warn_lm_per_m"] if warn else fc["base_lm_per_m"], warn=warn, n=list(n_),
+                                 axis="x" if ya == yb else "y", mount="家具")))
+        pieces += [d for _, _, d in sorted(cp_, key=lambda t: t[:2])]
     for fl in ("1F", "2F"):
         for i, d in enumerate([d for d in pieces if d["floor"] == fl], 1):
             d["id"] = f"{fl}-FL{i:02d}"

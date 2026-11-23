@@ -305,7 +305,7 @@ def test_csv_headers_and_rows(h, outdir):
     lns = LI.lines(h, its)
     n_light = len(lns) + len(LI.downlights(h, its, lns)) + len(LI.footlights(h)) + len(LI.footlines(h, its)[0])
     n = len(list(csv.reader((d / "csv" / "lights.csv").read_bytes().decode("utf-8-sig").splitlines()))) - 1
-    assert n == n_light == 269
+    assert n == n_light == 272
 
 
 def test_xlsx_matches_csv_and_summary(h, outdir):

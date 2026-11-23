@@ -54,13 +54,16 @@ def envelope(h, side=None):
     Hc = h.fl["RF"] - h.fl["1F"]                             # 外皮の高さ（1FL〜RFL）
     win = sum(op.width * op.height for op in h.openings(exterior=True)
               if op.kind == "window") / 1e6
+    qd = h.spec["glazing"].get("quad") or {}
+    win_q = sum(op.width * op.height for op in h.openings(exterior=True)
+                if op.kind == "window" and op.label in qd.get("labels", [])) / 1e6
     door = sum(op.width * op.height for op in h.openings(exterior=True)
                if op.kind == "door" and op.floor in ("1F", "2F")) / 1e6
     wall_gross = 4 * L * Hc / 1e6
     wall = wall_gross - win - door
     roof = floor = (L / 1000) ** 2
     parts = [("外壁", wall, U["wall"], 1.0), ("屋根", roof, U["roof"], 1.0), ("床（床下ピット上）", floor, U["floor"], FLOOR_TEMP_FACTOR),
-             ("窓（FIX）", win, U["window"], 1.0), ("玄関ドア", door, U["door"], 1.0)]
+             ("窓（FIX）", win - win_q, U["window"], 1.0)] + ([("窓（FIX・クアッド）", win_q, qd["uw"], 1.0)] if win_q else []) + [("玄関ドア", door, U["door"], 1.0)]
     q = sum(a * u * f for _, a, u, f in parts)
     area = sum(a for _, a, _, _ in parts)
     return dict(parts=parts, area=area, q=q, UA=q / area, L=L, Hc=Hc, win=win)
@@ -361,7 +364,9 @@ def seismic(h):
 
 def condensation(h):
     """LDK の窓まわりの結露判定（v4.18。v4.36 でコーナー窓を撤回）。室内側表面温度 = t_out + f_Rsi × (t_in − t_out) が、露点 + margin 以上であること。
-    f_Rsi は spec.condensation.parts の仮定値（メーカーの 2 次元熱解析に置き換える）。[(部位, 対策なし ℃, 対策後 ℃, 下限 ℃, 適合)] と露点を返す。"""
+    f_Rsi は spec.condensation.parts の仮定値（メーカーの 2 次元熱解析に置き換える）。
+    v4.38 LDK 窓はクアッド・吹出しなし。rows の 2 列目は ZIP を上げた夜、3 列目は冬の夜 ZIP。
+    [(部位, ZIP を上げた夜 ℃, 冬の夜 ZIP ℃, 下限 ℃, 適合)] と露点を返す。"""
     c = h.spec["condensation"]
     td = dew_point(c["t_in"], c["rh"])
     lim = td + c["margin_k"]
@@ -371,3 +376,14 @@ def condensation(h):
         t1 = c["t_out"] + f1 * (c["t_in"] - c["t_out"])
         rows.append((name, t0, t1, lim, t1 >= lim - 0.05))      # 0.05K の丸め許容（下限ケースは 14.9℃）
     return dict(dew=td, limit=lim, rows=rows, ok=all(r[4] for r in rows))
+
+
+def cold_draft(h, x=1.0):
+    """v4.38 LDK 窓（クアッド）のコールドドラフト（Heiselberg の式）。dT = Ug×0.13×(t_in−t_out)（ガラス中央の表面温度との差）、
+    v_near = 0.055√(dT·H)（窓際）、v_x = 0.095√(dT·H)/(x+1.32)（窓から x m、0.4≦x≦2.0）。H は窓高 m。"""
+    c = h.spec["condensation"]
+    q = h.spec["glazing"]["quad"]
+    ops = [op for op in h.openings(exterior=True) if op.kind == "window" and op.label in q["labels"]]
+    H = max(op.height for op in ops) / 1000
+    dT = q["ug"] * 0.13 * (c["t_in"] - c["t_out"])
+    return dict(dT=dT, H=H, v_near=0.055 * math.sqrt(dT * H), v_x=0.095 * math.sqrt(dT * H) / (x + 1.32))

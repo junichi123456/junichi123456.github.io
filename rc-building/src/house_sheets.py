@@ -742,10 +742,10 @@ def floor_plan(h, floor, number):
                   ("t", "ジム床: 5,000N/m²（提案）・浮き床。直天井（CH 約2,900）を推奨"),
                   ("t", "ジムの窓: 外部扉なし。天井際の FIX 高窓（窓台 FL+2,000）に集約"),
                   ("t", "防音: ジムは浮き床＋遮音ドア Ts-45（二重壁D-55相当）、機械室・WIC を緩衝帯として居室Aと分離。真上は2階シアター（騒音ゾーンを上下に集約）"),
-                  ("t", "排煙: LDK・ジム・居室Aは機械排煙（令126条の3）。窓は全窓 FIX の樹脂サッシ・Low-E トリプル（UVカット防犯合わせ CP、全窓）。南・東・西は外付け電動スクリーン（M-03）")]
+                  ("t", "排煙: LDK・ジム・居室Aは機械排煙（令126条の3）。窓は全窓 FIX の樹脂サッシ・Low-E トリプル（LDK の 2 窓はクアッド）（UVカット防犯合わせ CP、全窓）。南・東・西は外付け電動スクリーン（M-03）")]
     else:
         notes += [("t", "回遊③: ホール→図書室→南廊下→ホール。回遊④: ホール→北廊下→階段2ホール→図書室→ホール"),
-                  ("t", "窓: 全窓 FIX（樹脂サッシ・Low-E トリプル・UVカット合わせガラス、Uw≦0.90）。南・東・西は外付け電動スクリーン（M-03）。排煙は各居室の天井排煙口による機械排煙（A-10 参照）"),
+                  ("t", "窓: 全窓 FIX（樹脂サッシ・Low-E トリプル（LDK の 2 窓はクアッド）・UVカット合わせガラス、Uw≦0.90）。南・東・西は外付け電動スクリーン（M-03）。排煙は各居室の天井排煙口による機械排煙（A-10 参照）"),
                   ("t", "防音: シアターは前室（音響ロック）＋両開き遮音扉 Ts-40。主寝室とは前室・WIC の2層で分離"),
                   ("t", "居室B・C・D は収納・WIC を間に挟んで隣室と分離（戸境に収納）"),
                   ("t", "v4.28（8.webp）: 2階のランドリー・ファミクロは設けない（洗濯・乾燥は1階で完結）。北西は居室E 19.6m²＋収納 2.2m²。窓 AW-9（北 W1,600×H800 FIX）"),
@@ -860,7 +860,7 @@ def elevations(h, number):
     k = ext_txt.index("、腰壁") + 1
     sh.text(f"外壁: {ext_txt[:k]}", (18, 38), 2.2, "A-TEXT", paper=True)
     sh.text(f"　　　{ext_txt[k:]}", (18, 34), 2.2, "A-TEXT", paper=True)
-    sh.text("窓: 全窓 FIX 樹脂サッシ・Low-E トリプル（UVカット合わせ）。南・東・西の窓上の箱は外付け電動スクリーンのボックス（M-03）", (18, 29), 2.2, "A-TEXT", paper=True)
+    sh.text("窓: 全窓 FIX 樹脂サッシ・Low-E トリプル（LDK の 2 窓はクアッド）（UVカット合わせ）。南・東・西の窓上の箱は外付け電動スクリーンのボックス（M-03）", (18, 29), 2.2, "A-TEXT", paper=True)
     return sh
 
 
@@ -1000,7 +1000,7 @@ def wall_plan(h, number, wall_rows):
     vdim(sh, t, h.gy, -1450)
     sh.text("べた基礎 t=350（外周 500 張出し）", t(h.W / 2, -1000), 1.8, "S-TEXT", "MIDDLE_CENTER")
     sh.view_title("基礎伏図・耐力壁配置図（1階）", "1:100", (24, 22))
-    sh.text("南西角は RC の耐力壁（L 字窓の撤回 v4.36・西窓 AW-LW u1,225〜3,325 は v4.37）", t(300, -300), 1.6, "S-TEXT", "MIDDLE_LEFT")
+    sh.text("南西角は RC の耐力壁（L 字窓の撤回 v4.36・西窓 AW-LW u1,900〜4,000 は v4.38）", t(300, -300), 1.6, "S-TEXT", "MIDDLE_LEFT")
     sh.text("網掛け=RC耐力壁 t=250（1・2階 同位置。1階 LDK の南 350・西 300 は室内側へ増し打ち）、破線=開口", (24, 15), 2.2, "A-TEXT", paper=True)
     sh.text(f"階高 {h.H['1F']:,}（構造スラブ天端の間隔 {h.H['1F']:,} 固定。令78条の2・告示1026号の上限 3,500）。壁厚 250 ≧ max(150, {h.H['1F'] / 22:.0f})", (24, 10), 2.0, "A-TEXT", paper=True)
     sh.text("壁量・壁式構造の規定（平13国交告1026号）", (250, 280), 2.6, "A-TEXT", paper=True)
@@ -1165,7 +1165,7 @@ def openings_smoke_sheet(h, number):
     sh.text("(4) ジム開口部の改善（防犯・熱貫流）", (190, y2 - 6), 2.8, "A-TEXT", paper=True)
     y2 = sh.table(190, y2 - 9, [32, 80, 96], rows, row_h=5.0, h=2.0)
     notes = [("h", "窓の仕様（全窓 FIX）"),
-             ("t", f"枠: 樹脂サッシ、ガラス: 全窓 Low-E トリプル（アルゴン）＋室外側 UVカット合わせガラス（紫外線約99%カット）、Uw≦{HL.U_WIN:.2f} W/m²K。南・東・西は外付け電動スクリーン（M-03）"),
+             ("t", f"枠: 樹脂サッシ、ガラス: 全窓 Low-E トリプル（アルゴン。LDK の 2 窓はクアッド）＋室外側 UVカット合わせガラス（紫外線約99%カット）、Uw≦{HL.U_WIN:.2f} W/m²K。南・東・西は外付け電動スクリーン（M-03）"),
              ("t", "全窓（1・2階）: 外側を防犯合わせガラス（CP 認定品）。窓台: 居室 FL+1,000、ジム FL+2,000"),
              ("t", "換気は全館空調・全熱交換（窓に依存しない）。排煙時は機械室の給気ダンパーが連動して開く"),
              ("t", "開口 H2,200 で天井 2,800 のため防煙垂れ壁 600（≧500）。欄間パネル100 は不要（ガラス扉の欄間は意匠として残す）（要確認）"),
@@ -1288,24 +1288,26 @@ def glazing_uv_sheet(h, number):
     from shapely.geometry import box as sbox
     gz, us = h.spec["glazing"], h.spec["uv_shading"]
     sh = frame(h, number, "窓仕様・紫外線対策", 1, label="—")
-    sh.text("窓仕様・紫外線対策 — 全窓 樹脂サッシ＋Low-E トリプルガラス、UVカット合わせガラス＋外付け電動スクリーン", (12, 280), 3.6, "A-TEXT", paper=True)
+    sh.text("窓仕様・紫外線対策 — 全窓 樹脂サッシ＋Low-E トリプルガラス（LDK の 2 窓はクアッド）、UVカット合わせガラス＋外付け電動スクリーン", (12, 280), 3.6, "A-TEXT", paper=True)
     names = {"S": "南", "E": "東", "N": "北", "W": "西"}
     blinded = {id(op) for op, _ in h.blinds}
     rows = [["記号", "階", "名称", "方位", "W×H", "Low-E の種類", "g", "外付けスクリーン"]]
     for op in sorted((o for o in h.openings(exterior=True) if o.kind == "window"), key=lambda o: (o.floor, "SEWN".index(o.side), o.u0)):
-        t = gz["types"][gz["side_type"][op.side]]
+        qd = gz.get("quad") or {}
+        t = (qd["types"] if op.label in qd.get("labels", []) else gz["types"])[gz["side_type"][op.side]]
         rows.append([op.label, op.floor, op.name.replace("FIX", "FIX "), names[op.side], f"{op.width:,.0f}×{op.height:,.0f}",
-                     t["name"].replace(" Low-E トリプル", ""), f"{t['g']:.2f}", "あり（電動）" if id(op) in blinded else "—"])
+                     t["name"].replace(" Low-E トリプル", ""), f"{SS.op_g(h, op):.2f}", "あり（電動）" if id(op) in blinded else "—"])
     sh.text(f"(1) 窓の一覧（全{len(rows) - 1}か所・すべて FIX）", (12, 271), 2.8, "A-TEXT", paper=True)
     y = sh.table(12, 268, [14, 10, 36, 12, 24, 24, 12, 30], rows, row_h=4.8, h=2.0)
     rows = [["項目", "仕様"],
             ["サッシ", gz["frame"] + f"、Uw≦{gz['uw']:.2f} W/m²K"],
             ["ガラス（1階）", gz["build_1f"]],
+            ["ガラス（LDK の AW-LS・AW-LW）", f"{gz['quad']['build_1f'].split('   #')[0]}。{gz['quad']['name']} Ug {gz['quad']['ug']:.2f}・Uw {gz['quad']['uw']:.2f}。結露は夜間 ZIP で {min(r_[2] for r_ in PF.condensation(h)['rows']):.1f}℃（吹出しなし）"],
             ["ガラス（2階）", gz["build_2f"]],
             ["Low-E", f"膜 {gz['low_e']}面、Ug {gz['ug']:.2f} W/m²K。南・北は日射取得型（冬の日射を取り込む）、東・西は遮熱型（朝夕の低い日射を防ぐ）"],
             ["紫外線", f"室外側の合わせガラス中間膜で紫外線を約{(1 - gz['tuv']) * 100:.0f}%カット（透過率 {gz['tuv'] * 100:.0f}%以下）。全窓共通"],
             ["外付けスクリーン", f"{us['type']}。{'・'.join(names[k] for k in us['sides'])}面の窓 {len(h.blinds)}か所、{us['months'][0]}〜{us['months'][-1]}月は日射センサーで自動降下（遮蔽係数 {us['fc']:.2f}）"]]
-    sh.text("(2) 窓の仕様（全窓共通）", (12, y - 6), 2.8, "A-TEXT", paper=True)
+    sh.text("(2) 窓の仕様（全窓共通・LDK の 2 窓はクアッド）", (12, y - 6), 2.8, "A-TEXT", paper=True)
     y = sh.table(12, y - 9, [30, 142], rows, row_h=5.0, h=2.0)
     # (3) 紫外線
     uv = SS.uv_exposure(h)

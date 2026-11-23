@@ -100,6 +100,22 @@ def test_footlights_300():
         assert hit and all(b.mat == "lgs" for b in hit), (f, hit)
 
 
+def test_footline_hs3():
+    """v4.38 H-S3 の台輪 H350 の外周に足元灯ライン（施主回答 Q10 採用済み）。"""
+    import furniture as FU
+    import lighting as L
+    h = house()
+    its = FU.items(h)
+    fp, _ = L.footlines(h, its)
+    cab = [d for d in fp if d.get("mount") == "家具"]
+    assert len(cab) == 3 and [d["L"] for d in cab] == [442, 1450, 442]
+    assert [d["id"] for d in cab] == ["1F-FL22", "1F-FL23", "1F-FL24"]
+    assert cab[1]["p0"][:2] == [11550, 6650] and cab[1]["n"] == [-1, 0]
+    assert sum(d["L"] for d in fp if d["floor"] == "1F") == 25109 and len(fp) == 113
+    wall = [d for d in fp if d["floor"] == "1F" and d["p0"][0] == 12000 and d["axis"] == "y"]
+    assert any(d["p0"][1] == 6250 and d["p1"][1] == 6620 for d in wall) and any(d["p0"][1] == 8130 and d["p1"][1] == 9200 for d in wall)
+
+
 def test_channels_schedule():
     import lighting as L
     sp = house().spec

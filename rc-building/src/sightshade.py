@@ -256,6 +256,15 @@ def glazing_g(h, side):
     return gz["types"][gz["side_type"][side]]["g"]
 
 
+def op_g(h, op):
+    """窓ごとの g（spec.glazing.quad の labels はクアッドの値）。"""
+    gz = h.spec["glazing"]
+    q = gz.get("quad") or {}
+    if op.label in q.get("labels", []):
+        return q["types"][gz["side_type"][op.side]]["g"]
+    return glazing_g(h, op.side)
+
+
 def blind_factor(h, side, month, blinds=True):
     """外付けスクリーンを下ろす時期・方位なら遮蔽係数 fc、それ以外は 1。"""
     us = h.spec.get("uv_shading")
@@ -323,10 +332,12 @@ def window_solar(h, gamma_deg=None, shgc=None, blinds=True, canopy=True):
     """窓の日射取得。gamma: 建物南面の方位（真南から西回り）。shgc を与えると全方位その値（比較用）。"""
     g = h.facade_az if gamma_deg is None else gamma_deg
     glass = {k: 0.0 for k in SIDE_AZ}
+    real = {k: 0.0 for k in SIDE_AZ}                    # 実面積（v4.38 glass は g の違うクアッドを等価面積にするため別に集計）
     ov = {k: [] for k in SIDE_AZ}                       # 庇の下の窓 [(面積 m², (出, すき間, 高さ))]
     for op in h.openings(exterior=True):
         if op.kind == "window" and op.side in glass:
-            a_ = op.width * op.height / 1e6
+            real[op.side] += op.width * op.height / 1e6
+            a_ = op.width * op.height / 1e6 * (op_g(h, op) / glazing_g(h, op.side) if shgc is None else 1.0)
             gm = overhang_geom(h, op) if canopy else None
             if gm:
                 ov[op.side].append((a_, gm))
@@ -356,8 +367,7 @@ def window_solar(h, gamma_deg=None, shgc=None, blinds=True, canopy=True):
                     cool[k] += mean
         if m in (7, 8):
             peak = max(peak, tot)
-    glass = {k: glass[k] + sum(a_ for a_, _ in ov[k]) for k in glass}
-    return dict(glass=glass, heat=heat, cool=cool, peak=peak / 1000, gamma=g, g=gs)
+    return dict(glass=real, heat=heat, cool=cool, peak=peak / 1000, gamma=g, g=gs)
 
 
 # 紫外線透過率の比較対象（メーカー公表値の代表的な値）

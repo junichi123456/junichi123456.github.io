@@ -36,7 +36,7 @@ def test_window_dimensions():
         assert o[k].z1 - fl == ch - 100 == 2700, k           # 上端 = 天井 − 100
         assert o[k].z0 - fl == 700 and o[k].height == 2000
     assert (o["AW-LS"].u0, o["AW-LS"].u1) == (1900, 4000)
-    assert (o["AW-LW"].u0, o["AW-LW"].u1) == (1225, 3325)
+    assert (o["AW-LW"].u0, o["AW-LW"].u1) == (1900, 4000)      # v4.38 施主回答 Q1 で構造優先の南窓と対称の位置へ
     assert h.room_windows(h.ldk) >= 8.4 - 1e-9
     assert 8.4 * 3.0 >= h.ldk.daylight_area * 0.1529 * 2.4
 
@@ -54,13 +54,34 @@ def test_structure():
     assert 250 >= max(150, max(h.H.values()) / 22)
     assert not [b for b in h.boxes if b.level == "1F" and b.tag in ("角柱", "方立", "角の方立")]
     lw = [o for w in h.walls if w.floor == "1F" and w.cat == "wall" and w.axis == "y" and w.c == 0 for o in w.openings if o.kind == "window"]
-    assert min(o.u0 for o in lw) - h.t / 2 >= 690          # 角の西の壁 125〜1,225（1,100）≧ 690
+    assert min(o.u0 for o in lw) - h.t / 2 >= 690          # 角の西の壁 ≧ 690
+    assert min(o.u0 for o in lw) - h.t / 2 == 1775         # v4.38 角の西の壁 125〜1,900
 
 
 def test_condensation():
     h = house()
     c = PF.condensation(h)
     assert c["ok"] and all(r[2] >= c["dew"] + 2.0 - 0.05 for r in c["rows"]), c
+    assert all(r[1] >= c["limit"] - 0.05 for r in c["rows"])          # v4.38 ZIP を上げた夜も適合（クアッド・吹出しなし）
+    d = PF.cold_draft(h)
+    assert d["v_x"] <= 0.15 and abs(d["v_x"] - 0.062) < 0.005, d
+
+
+def test_glazing_quad():
+    import sightshade as SS
+    h = house()
+    q = h.spec["glazing"]["quad"]
+    assert set(q["labels"]) == {"AW-LS", "AW-LW"}
+    env = PF.envelope(h)
+    parts = {p[0]: p for p in env["parts"]}
+    assert abs(parts["窓（FIX・クアッド）"][1] - 8.40) < 1e-6 and parts["窓（FIX・クアッド）"][2] == 0.65
+    assert 0.2085 <= env["UA"] <= 0.2100, env["UA"]
+    o = _ops(h)
+    assert SS.op_g(h, o["AW-LS"]) == 0.40 and SS.op_g(h, o["AW-LW"]) == 0.25
+    for op in h.openings(exterior=True):
+        if op.kind == "window" and op.label not in q["labels"]:
+            assert SS.op_g(h, op) == SS.glazing_g(h, op.side)
+    assert abs(sum(SS.window_solar(h)["glass"].values()) - 20.16) < 0.01         # 実面積（等価面積ではない）
 
 
 def test_local_thickness_geometry():
