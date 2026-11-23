@@ -81,7 +81,8 @@
    },
    "shoot_flags": [],
    "texture_fallbacks": [],
-   "palette_mismatch": []
+   "palette_mismatch": [],
+   "stale_since": "v4.38"
   },
   "Z1-11b": {
    "id": "Z1-11b",
@@ -305,7 +306,8 @@
    },
    "shoot_flags": [],
    "texture_fallbacks": [],
-   "palette_mismatch": []
+   "palette_mismatch": [],
+   "stale_since": "v4.38"
   },
   "Z1-31a": {
    "id": "Z1-31a",
@@ -563,7 +565,7 @@
     1280,
     720
    ],
-   "render_seconds": 153.5,
+   "render_seconds": 156.1,
    "time_limit": 150,
    "time_limit_hit": true,
    "clearance": 915,
@@ -571,26 +573,26 @@
    "metrics": {
     "black": 0.0003,
     "white": 0.0053,
-    "mean": 152.3008,
-    "std": 64.8975,
-    "window_area": 0.1411,
-    "window_ratio": 0.8514,
-    "window_std": 65.7326
+    "mean": 153.5122,
+    "std": 63.8913,
+    "window_area": 0.1409,
+    "window_ratio": 0.9512,
+    "window_std": 65.3288
    },
    "status": "flag",
    "issues": [
-    "窓の外が見えない（窓領域の平均は画像平均の 0.85 倍・標準偏差 65.7）"
+    "窓の外が見えない（窓領域の平均は画像平均の 0.95 倍・標準偏差 65.3）"
    ],
    "def_hash": "7402b8583358",
    "master": {
-    "file": "master_new.blend",
+    "file": "kawazanyo_master.blend",
     "model_version": "v4.32",
-    "model_hash": "9e98d75f7beef06d79b59c72bf0d4fb3811d9dc7eba83719b9b4e03c81532805",
-    "generated_at": "2026-11-22T14:54:57"
+    "model_hash": "e444c5e806a698009a79d0784f8664c2a730dbbb91b71f802107194b8785de12",
+    "generated_at": "2026-11-23T16:45:29"
    },
    "shoot": {
     "def_hash": "7402b8583358",
-    "model_hash": "9e98d75f7beef06d79b59c72bf0d4fb3811d9dc7eba83719b9b4e03c81532805",
+    "model_hash": "e444c5e806a698009a79d0784f8664c2a730dbbb91b71f802107194b8785de12",
     "args_hash": "28a6dbce2614",
     "seed": 0
    },
@@ -675,7 +677,8 @@
    },
    "shoot_flags": [],
    "texture_fallbacks": [],
-   "palette_mismatch": []
+   "palette_mismatch": [],
+   "stale_since": "v4.38"
   },
   "Z1-22b": {
    "id": "Z1-22b",
@@ -754,7 +757,8 @@
    },
    "shoot_flags": [],
    "texture_fallbacks": [],
-   "palette_mismatch": []
+   "palette_mismatch": [],
+   "stale_since": "v4.38"
   },
   "Z1-32a": {
    "id": "Z1-32a",
@@ -1026,7 +1030,8 @@
    },
    "shoot_flags": [],
    "texture_fallbacks": [],
-   "palette_mismatch": []
+   "palette_mismatch": [],
+   "stale_since": "v4.38"
   },
   "Z1-23a": {
    "id": "Z1-23a",
@@ -2520,9 +2525,9 @@
  ],
  "total_seconds": 5481.6,
  "master": {
-  "file": "master_new.blend",
+  "file": "kawazanyo_master.blend",
   "model_version": "v4.32",
-  "model_hash": "9e98d75f7beef06d79b59c72bf0d4fb3811d9dc7eba83719b9b4e03c81532805",
-  "generated_at": "2026-11-22T14:54:57"
+  "model_hash": "e444c5e806a698009a79d0784f8664c2a730dbbb91b71f802107194b8785de12",
+  "generated_at": "2026-11-23T16:45:29"
  }
 }

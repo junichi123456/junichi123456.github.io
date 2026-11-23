@@ -235,11 +235,11 @@
      "D": 0,
      "F": 0
     },
-    "render_seconds": 316.4,
+    "render_seconds": 325.1,
     "metrics": {
-     "mean": 143.5738,
-     "std": 70.8312,
-     "black": 0.0058,
+     "mean": 143.5736,
+     "std": 70.8077,
+     "black": 0.0053,
      "white": 0.0
     },
     "status": "ok",
@@ -313,19 +313,19 @@
      "D": 0,
      "F": 0
     },
-    "render_seconds": 616.4,
+    "render_seconds": 317.7,
     "metrics": {
-     "black": 0.0001,
+     "black": 0.0,
      "white": 0.0031,
-     "mean": 123.795,
-     "std": 56.7951,
-     "window_area": 0.3138,
-     "window_ratio": 0.838,
-     "window_std": 33.8368
+     "mean": 122.7356,
+     "std": 57.3309,
+     "window_area": 0.3579,
+     "window_ratio": 0.8936,
+     "window_std": 43.415
     },
     "status": "flag",
     "issues": [
-     "窓の外が見えない（窓領域の平均は画像平均の 0.84 倍・標準偏差 33.8）"
+     "窓の外が見えない（窓領域の平均は画像平均の 0.89 倍・標準偏差 43.4）"
     ],
     "def_hash": "97fcd1cc4e01",
     "clearance": 463,
@@ -450,12 +450,12 @@
      "D": 0,
      "F": 0
     },
-    "render_seconds": 616.5,
+    "render_seconds": 317.7,
     "metrics": {
      "black": 0.0,
      "white": 0.0,
-     "mean": 144.7813,
-     "std": 57.6565,
+     "mean": 144.3677,
+     "std": 57.8457,
      "window_area": 0.0
     },
     "status": "ok",
@@ -772,7 +772,8 @@
     "clearance": 700,
     "front_mm": 5087,
     "wall_angle": 25.0,
-    "alt": null
+    "alt": null,
+    "stale_since": "v4.38"
    },
    "R1-12_fcl": {
     "id": "R1-12_fcl",
@@ -1952,12 +1953,12 @@
    }
   },
   "master": {
-   "file": "master_new.blend",
-   "model_hash": "9e98d75f7beef06d",
-   "generated_at": "2026-11-22T15:29:20"
+   "file": "kawazanyo_master.blend",
+   "model_hash": "e444c5e806a69800",
+   "generated_at": "2026-11-23T17:04:13"
   },
   "version": "v4.34",
-  "total_seconds": 8987.4
+  "total_seconds": 9630.8
  },
  "master": {
   "file": "kawazanyo_master.blend",
