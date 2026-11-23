@@ -493,7 +493,7 @@ $SKPOLY
   9
 $TDCREATE
  40
-2461354.6605439815
+2461368.6936689815
   9
 $TDUCREATE
  40
@@ -501,7 +501,7 @@ $TDUCREATE
   9
 $TDUPDATE
  40
-2461354.6608449076
+2461368.693958333
   9
 $TDUUPDATE
  40
@@ -933,11 +933,11 @@ $PSTYLEMODE
   9
 $FINGERPRINTGUID
   2
-{36FCB5D5-67D6-4E85-BAF5-8139F14C0608}
+{0A39F389-D7B8-4117-A2C9-F73D5F2D974F}
   9
 $VERSIONGUID
   2
-{E57FF4B3-785E-46CB-A70C-DAAC57DF56FA}
+{88EF5644-5A7E-4F82-A4AA-B0F73BFD2724}
   9
 $EXTNAMES
 290
@@ -1327,9 +1327,9 @@ ISM
   0
 CLASS
   1
-ACDBPLACEHOLDER
+LAYOUT
   2
-AcDbPlaceHolder
+AcDbLayout
   3
 ObjectDBX Classes
  90
@@ -1343,9 +1343,9 @@ ObjectDBX Classes
   0
 CLASS
   1
-LAYOUT
+ACDBPLACEHOLDER
   2
-AcDbLayout
+AcDbPlaceHolder
   3
 ObjectDBX Classes
  90
@@ -20411,7 +20411,7 @@ A-VIS
 100
 AcDbPolyline
  90
-23
+22
  70
 0
  10
@@ -20461,17 +20461,13 @@ AcDbPolyline
  10
 4955.0
  20
-7425.0
+9200.0
  10
 4955.0
  20
 7175.0
  10
 4955.0
- 20
-7055.0
- 10
-5075.0
  20
 7055.0
  10
@@ -31213,7 +31209,7 @@ AcDbText
  40
 210.0
   1
-窓: 全窓 FIX（樹脂サッシ・Low-E トリプル・UVカット合わせガラス、Uw≦0.90）。南
+窓: 全窓 FIX（樹脂サッシ・Low-E トリプル（LDK の 2 窓はクアッド）・UVカット合
   7
 JP
  11
@@ -31245,7 +31241,7 @@ AcDbText
  40
 210.0
   1
-・東・西は外付け電動スクリーン（M-03）。排煙は各居室の天井排煙口による機械排煙（
+わせガラス、Uw≦0.90）。南・東・西は外付け電動スクリーン（M-03）。排煙は各居室の
   7
 JP
  11
@@ -31277,7 +31273,7 @@ AcDbText
  40
 210.0
   1
-A-10 参照）
+天井排煙口による機械排煙（A-10 参照）
   7
 JP
  11
@@ -32839,7 +32835,7 @@ DictionaryVariables
 280
 0
   1
-1.4.5 @ 2026-11-09T15:51:11.951188+00:00
+1.4.5 @ 2026-11-23T16:38:53.563596+00:00
   0
 VISUALSTYLE
   5
@@ -39401,7 +39397,7 @@ DictionaryVariables
 280
 0
   1
-1.4.5 @ 2026-11-09T15:51:37.293846+00:00
+1.4.5 @ 2026-11-23T16:39:18.567329+00:00
   0
 ENDSEC
   0

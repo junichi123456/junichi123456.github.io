@@ -493,7 +493,7 @@ $SKPOLY
   9
 $TDCREATE
  40
-2461367.6165625
+2461368.6936689815
   9
 $TDUCREATE
  40
@@ -501,7 +501,7 @@ $TDUCREATE
   9
 $TDUPDATE
  40
-2461367.6169212963
+2461368.6940625
   9
 $TDUUPDATE
  40
@@ -933,11 +933,11 @@ $PSTYLEMODE
   9
 $FINGERPRINTGUID
   2
-{6E638363-BBCE-468E-BCE8-C0F7C1B9B5C6}
+{ACB0FF51-97AE-41BA-AFE2-D63CA02AE907}
   9
 $VERSIONGUID
   2
-{77694E05-295A-4539-92C8-A69063FB8A2C}
+{583556A8-8639-4444-92B6-4CB69EA6FB28}
   9
 $EXTNAMES
 290
@@ -1327,9 +1327,9 @@ ISM
   0
 CLASS
   1
-ACDBPLACEHOLDER
+LAYOUT
   2
-AcDbPlaceHolder
+AcDbLayout
   3
 ObjectDBX Classes
  90
@@ -1343,9 +1343,9 @@ ObjectDBX Classes
   0
 CLASS
   1
-LAYOUT
+ACDBPLACEHOLDER
   2
-AcDbLayout
+AcDbPlaceHolder
   3
 ObjectDBX Classes
  90
@@ -10509,7 +10509,7 @@ AcDbText
  40
 2.1
   1
-年間電力需要 約21,054kWh ×1.2 を賄う → 24.1kWp
+年間電力需要 約21,028kWh ×1.2 を賄う → 24.0kWp
   7
 JP
  11
@@ -11009,7 +11009,7 @@ AcDbText
  40
 2.1
   1
-全館空調2系統＋全熱交換＋デシカント調湿。暖房 9.3kW・冷房 11.9kW・除湿 74L/日・加湿 63L/日
+全館空調2系統＋全熱交換＋デシカント調湿。暖房 9.2kW・冷房 11.9kW・除湿 74L/日・加湿 63L/日
   7
 JP
  11
@@ -14387,7 +14387,7 @@ AcDbText
  40
 2.1
   1
-型・東西 遮熱型
+型・東西 遮熱型。LDK の AW-LS・AW-LW は Low-E クアッド（Kr）（Ug0.35・Uw0.65、v4.38）
   7
 JP
  11
@@ -17099,7 +17099,7 @@ DictionaryVariables
 280
 0
   1
-1.4.5 @ 2026-11-22T14:47:51.818893+00:00
+1.4.5 @ 2026-11-23T16:38:53.839535+00:00
   0
 VISUALSTYLE
   5
@@ -23661,7 +23661,7 @@ DictionaryVariables
 280
 0
   1
-1.4.5 @ 2026-11-22T14:48:22.239606+00:00
+1.4.5 @ 2026-11-23T16:39:27.238886+00:00
   0
 ENDSEC
   0

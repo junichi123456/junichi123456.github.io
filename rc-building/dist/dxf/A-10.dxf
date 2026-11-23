@@ -493,7 +493,7 @@ $SKPOLY
   9
 $TDCREATE
  40
-2461367.6165625
+2461368.6936689815
   9
 $TDUCREATE
  40
@@ -501,7 +501,7 @@ $TDUCREATE
   9
 $TDUPDATE
  40
-2461367.6168981483
+2461368.694039352
   9
 $TDUUPDATE
  40
@@ -933,11 +933,11 @@ $PSTYLEMODE
   9
 $FINGERPRINTGUID
   2
-{245358ED-48CB-48B6-A84A-55E1A75A473C}
+{D8E5E3E8-C29C-407B-9F56-7D213EC19C68}
   9
 $VERSIONGUID
   2
-{C2D52C6F-42F9-4426-83C9-23983201F4E5}
+{0C5E61D9-C9E6-4D83-A91A-DFB972D1E33C}
   9
 $EXTNAMES
 290
@@ -1327,9 +1327,9 @@ ISM
   0
 CLASS
   1
-ACDBPLACEHOLDER
+LAYOUT
   2
-AcDbPlaceHolder
+AcDbLayout
   3
 ObjectDBX Classes
  90
@@ -1343,9 +1343,9 @@ ObjectDBX Classes
   0
 CLASS
   1
-LAYOUT
+ACDBPLACEHOLDER
   2
-AcDbLayout
+AcDbPlaceHolder
   3
 ObjectDBX Classes
  90
@@ -16573,7 +16573,7 @@ AcDbText
  40
 2.1
   1
-枠: 樹脂サッシ、ガラス: 全窓 Low-E トリプル（アルゴン）＋室外側 UVカット合わせガラス（紫外線約99%カット）、Uw≦0.90 W/m²K。南・東・西は外付け
+枠: 樹脂サッシ、ガラス: 全窓 Low-E トリプル（アルゴン。LDK の 2 窓はクアッド）＋室外側 UVカット合わせガラス（紫外線約99%カット）、Uw≦0.90 W
   7
 JP
  11
@@ -16605,7 +16605,7 @@ AcDbText
  40
 2.1
   1
-電動スクリーン（M-03）
+/m²K。南・東・西は外付け電動スクリーン（M-03）
   7
 JP
  11
@@ -17879,7 +17879,7 @@ DictionaryVariables
 280
 0
   1
-1.4.5 @ 2026-11-22T14:47:51.806966+00:00
+1.4.5 @ 2026-11-23T16:38:53.827096+00:00
   0
 VISUALSTYLE
   5
@@ -24441,7 +24441,7 @@ DictionaryVariables
 280
 0
   1
-1.4.5 @ 2026-11-22T14:48:20.898182+00:00
+1.4.5 @ 2026-11-23T16:39:25.900360+00:00
   0
 ENDSEC
   0
