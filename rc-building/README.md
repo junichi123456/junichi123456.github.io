@@ -7,6 +7,8 @@
 
 固定資産税・都市計画税の概算評価（家屋の評価額・新築減額の適否・土地の住宅用地特例・10年の税額見込み）は [`docs/property_tax_assessment.md`](docs/property_tax_assessment.md)、検算スクリプトは [`docs/tax_calc.py`](docs/tax_calc.py) です。
 
+長期優良住宅の認定に向けた適合評価書は [`docs/long_life_housing.md`](docs/long_life_housing.md) を参照してください。
+
 ![外観CG（南東上空）](docs/cg_C02_aerial.jpg)
 
 ![3Dモデル](docs/preview_3d.png)
