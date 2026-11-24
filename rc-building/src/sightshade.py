@@ -247,6 +247,27 @@ def annual_poa(tilt_deg, az_surf_deg, months=range(1, 13)):
     return tot
 
 
+def day_irradiance(m, tilt_deg, az_surf_deg, step_h=0.5):
+    """v4.39 月 m（1〜12）の21日の面日射 W/m² を step_h ごと（スロット中央の時刻）に返す。(晴天, 曇天) の各 24/step_h 個。"""
+    phi = math.radians(LAT)
+    n = 21 + int(30.4 * (m - 1))
+    d = math.radians(23.45 * math.sin(math.radians(360 * (284 + n) / 365)))
+    clear, cloudy = [], []
+    for i in range(int(round(24 / step_h))):
+        tc = i * step_h + step_h / 2
+        H = math.radians(15 * (tc - 12))
+        sa = math.sin(phi) * math.sin(d) + math.cos(phi) * math.cos(d) * math.cos(H)
+        if sa <= 0.05:
+            clear.append(0.0); cloudy.append(0.0); continue
+        alt = math.asin(sa)
+        az = math.atan2(math.sin(H), math.cos(H) * math.sin(phi) - math.tan(d) * math.cos(phi))
+        dni = 1000 * 0.7 ** ((1 / sa) ** 0.678)
+        clear.append(surface_irradiance(alt, az, dni, tilt_deg, az_surf_deg))
+        dhi, _ = _sky(alt, dni)
+        cloudy.append(dhi * 0.8 * (1 + math.cos(math.radians(tilt_deg))) / 2)
+    return clear, cloudy
+
+
 SIDE_AZ = {"S": 0.0, "W": 90.0, "N": 180.0, "E": -90.0}
 
 

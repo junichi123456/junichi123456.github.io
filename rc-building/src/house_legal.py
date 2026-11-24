@@ -165,7 +165,7 @@ def checks(h):
     pg = h.pergola
     pg_area = (pg[2] - pg[0]) * (pg[3] - pg[1]) / 1e6
     add("ブリーフ", "太陽光発電（本館と分離した屋根付き設備）", "施主指示（v4.1・v4.2）", f"年間電力需要 約{en['total']:,.0f}kWh ×1.2 を賄う → {en['need_kwp_margin']:.1f}kWp",
-        f"ソーラーパーゴラ {en['pg_kwp']:.1f}kWp＋3台用カーポート {en['cp_kwp']:.1f}kWp（影損失込み）→ 年 約{en['pv_gen']:,.0f}kWh",
+        f"ソーラーパーゴラ {en['pg_kwp']:.1f}kWp＋3台用カーポート {en['cp_kwp']:.1f}kWp（影損失込み）→ 年 約{en['pv_gen']:,.0f}kWh（全量自家消費・売電しない）",
         judge(en["pv_gen"] >= en["total"] * 1.2 * 0.99))
     import sightshade as SS
     S_ = ["南側道路"]
@@ -193,13 +193,20 @@ def checks(h):
     add("集団規定", "建ぺい率（予約ゾーンを満たした場合・参考）", "法53条・法2条1号", "屋根と柱をもつ架台は建築物として扱う見込み",
         f"RZ-a のみ {pr_pct:.2f}%／RZ 全体（{h.pv_reserve.area / 1e6:.1f}m²）{pr_all:.2f}%（60%以下）。地上置きで架台下を利用しない場合は建築物に当たらない扱いの技術的助言あり（国住指4936号と記憶、要確認）",
         judge(pr_all <= h.spec["site"]["coverage_limit"] * 100))
+    sc, sce = PF.self_consumption(h, en, bs), PF.self_consumption(h, en, bs, eol=True)
+    ext = PF.self_consumption(h, en, bs, kwp_pg=en["pg_kwp"] + en["rz_kwp"] * (en["rz_gen"] / en["rz_kwp"]) / (en["pg_gen"] / en["pg_kwp"]))
+    ps = h.spec["pv_self"]["pcs_kw"]
     add("ブリーフ", "太陽光の拡張（予約ゾーン）", "施主指示（v4.23）", f"塀内面から {h.spec['pv_reserve']['offset'] / 1000:.1f}m までの予約ゾーン",
-        f"現状 {en['pv_kwp']:.2f}kWp・{en['pv_gen']:,.0f}kWh/年（需要の{en['pv_gen'] / en['total'] * 100:.0f}%）／拡張後 {en['pv_kwp_ext']:.1f}kWp・約{en['pv_gen_ext']:,.0f}kWh/年（{en['pv_gen_ext'] / en['total'] * 100:.0f}%）。影の損失 {h.spec['pv_reserve']['shade_loss'] * 100:.0f}% は推定",
+        f"現状 {en['pv_kwp']:.2f}kWp・{en['pv_gen']:,.0f}kWh/年（需要の{en['pv_gen'] / en['total'] * 100:.0f}%）／拡張後 {en['pv_kwp_ext']:.1f}kWp・約{en['pv_gen_ext']:,.0f}kWh/年（{en['pv_gen_ext'] / en['total'] * 100:.0f}%）。影の損失 {h.spec['pv_reserve']['shade_loss'] * 100:.0f}% は推定"
+        f"。全量自家消費では拡張の効果は自家消費 +約{ext['self'] - sc['self']:,.0f}kWh/年（主に冬・停電時）",
         judge(h.pv_reserve.area > 0))
+    add("ブリーフ", "太陽光の全量自家消費（逆潮流なし）", "施主指示（v4.39）・ブリーフ47章", "売電しない。余剰は昼の給湯・躯体蓄熱・蓄電池（停電7日の予約より上）へ、残りは PCS で出力抑制",
+        f"自家消費 約{sc['self']:,.0f}kWh/年（自家消費率 {sc['sc_rate'] * 100:.0f}%・自給率 {sc['ss_rate'] * 100:.0f}%）、出力抑制 約{sc['curtail']:,.0f}kWh、買電 約{sc['grid']:,.0f}kWh。寿命末期は自家消費 約{sce['self']:,.0f}kWh・買電 約{sce['grid']:,.0f}kWh。停電7日の予約 {sc['reserve']:.0f}kWh は日常に使わない",
+        judge(sc["band"] >= 0 and sce["band"] >= 0 and bs["days_eol_net"] >= bt["days_target"]))
     add("関連法令", "蓄電池の届出・位置構造", "対象火気省令・東京都火災予防条例", "定格容量の閾値超で届出・離隔／区画（閾値・条番号とも確信なし）",
         f"{bt['nominal_kwh']}kWh 級 → 所轄消防署（八王子消防署）と事前協議。蓄電室は1時間耐火区画を自主設定", CHK)
-    add("関連法令", "電気工作物の区分・低圧連系（拡張後）", "電気事業法・電技解釈 第8章・系統連系規程 JEAC 9701", "低圧連系は 50kW 未満。区分・届出は規模による",
-        f"拡張後 {en['pv_kwp_ext']:.1f}kWp → PCS 合計を {h.spec['pv_reserve']['pcs_limit_kw']}kW 以下に制限（パネル過積載）。小規模事業用電気工作物の届出・使用前自己確認／自家用の要否は要確認", CHK)
+    add("関連法令", "電気工作物の区分・系統連系（逆潮流なし）", "電気事業法・電技解釈 第8章（第227条ほか）・系統連系規程 JEAC 9701", "低圧連系は 50kW 未満。逆潮流なしは逆電力継電器（RPR）等の保護装置（条番号・要件は要確認）",
+        f"売電しない。受電点の CT で PV・蓄電 PCS を負荷追従で出力抑制（最大 約{sc['peak_surplus']:.0f}kW）、逆電力で RPR が PCS を止める。PCS 合計 {h.spec['pv_reserve']['pcs_limit_kw']}kW（PV {ps['pergola'] + ps['carport']:.1f}＋蓄電 {ps['battery']:.1f}）、拡張後 {en['pv_kwp_ext']:.1f}kWp も同じ上限。{en['pv_kwp']:.1f}kWp は小規模事業用電気工作物の見込み（届出・使用前自己確認）。東京電力パワーグリッドと連系協議", CHK)
     add("関連法令", "汚水管 勾配（φ150）", "下水道法施行令 第8条ほか・市の排水設備指針", "1/100 以上（φ150 は 1.5/100 を推奨する指針あり、要確認）",
         f"計画 {h.spec['utilities']['sewer']['slope']}。1.5/100 とした場合、最終桝の管底は約 GL-{h.spec['lifeline']['depths']['sewer_final_invert_m'] * 1000:.0f}", CHK)
     add("ブリーフ", "駐車台数", "ブリーフv3 2章", f"{req['parking']}台", f"{len(h.stalls)}台（屋根なし・Dotcon+）", judge(len(h.stalls) >= req["parking"]))

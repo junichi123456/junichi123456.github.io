@@ -217,6 +217,100 @@ def battery_sizing(h, en):
                 weight_t=nom / b["kwh_per_t"])
 
 
+def self_consumption(h, en, bs=None, eol=False, **over):
+    """v4.39 全量自家消費（逆潮流なし）の年間収支の概算。各月21日の晴天・曇天の2日型・30分ごと。
+    月合計は energy() の発電量に合わせる。蓄電池は停電7日の予約より上だけを日常に使う。
+    over: band・hw_day・heat_shift・ev・margin・kwp_pg・kwp_cp。"""
+    import sightshade as SS
+    ps = h.spec["pv_self"]
+    b = h.spec["battery"]
+    if bs is None:
+        bs = battery_sizing(h, en)
+    STEP = 0.5
+    N = int(24 / STEP)
+    TT = [i * STEP for i in range(N)]
+    D = SS.DAYS
+    it = dict(en["items"])
+    tm = ps["t_month"]
+    hdd = [max(0, 19 - t) * d for t, d in zip(tm, D)]
+    cdd = [max(0, t - 20) * d for t, d in zip(tm, D)]
+    kwp_pg = over.get("kwp_pg", en["pg_kwp"]); kwp_cp = over.get("kwp_cp", en["cp_kwp"])
+    hw_day = over.get("hw_day", ps["hot_water_day"]); shift_heat = over.get("heat_shift", ps["heat_shift"])
+    ev = over.get("ev", 0.0); margin = over.get("margin", ps["grid_margin_kw"]); bat_kw = ps["pcs_kw"]["battery"]
+    eff = b["eff"]
+    reserve = (bs["rows"]["C"]["kwh"] * b["days_target"] + b["emergency_fixed_kwh"]) / eff
+    band = over.get("band", max(0.0, b["nominal_kwh"] * b["dod"] * (b["soh_eol"] if eol else 1.0) - reserve))
+    tilt_pg = h.spec["exterior"]["solar_pergola"]["tilt"]
+    raw, tot = {}, {"pg": 0.0, "cp": 0.0}
+    for m in range(1, 13):
+        for key, tilt in (("pg", tilt_pg), ("cp", 3)):
+            c, cl = SS.day_irradiance(m, tilt, h.facade_az, STEP); raw[(m, key)] = (c, cl)
+            tot[key] += (SS.SUNSHINE * sum(c) + (1 - SS.SUNSHINE) * sum(cl)) * STEP * D[m - 1]
+    k = {"pg": en["pg_gen"] / en["pg_kwp"] / tot["pg"], "cp": en["cp_gen"] / en["cp_kwp"] / tot["cp"]}
+
+    def shape(fn):
+        w = [fn(t + STEP / 2) for t in TT]; s = sum(w) * STEP
+        return [x / s for x in w]
+    flat = shape(lambda t: 1)
+    night = shape(lambda t: 1 if 1 <= t < 5 else 0)
+    lo, hi = ps["day_window"]
+    midday = shape(lambda t: 1 if lo <= t < hi else 0)
+    light = shape(lambda t: 1 if (17 <= t < 23 or 6 <= t < 8) else 0)
+    appl = shape(lambda t: 0.2 / 2 if 7 <= t < 9 else 0.2 / 2 if 11 <= t < 13 else 0.45 / 4 if 17 <= t < 21 else 0.15 / 16)
+    gym = shape(lambda t: 1 if (7 <= t < 8 or 18 <= t < 19) else 0)
+    theater = shape(lambda t: 1 if 19 <= t < 23 else 0)
+    cool = shape(lambda t: 0.4 + 0.6 * max(0, math.sin(math.pi * (t - 8) / 12)) if 8 <= t < 20 else 0.4)
+    heat = shape(lambda t: 1.0 + 0.25 * math.cos(2 * math.pi * (t - 5) / 24))
+
+    def load_day(m):
+        i = m - 1
+        eH = it["暖房（ヒートポンプ SCOP 3.5）"] * hdd[i] / sum(hdd) / D[i]
+        eHum = it["加湿（ヒートポンプ式 COP 3.0）"] * hdd[i] / sum(hdd) / D[i]
+        eC = it["冷房・除湿（SEER 4.0）"] * cdd[i] / sum(cdd) / D[i]
+        comp = [
+            (eH * (1 - shift_heat), heat), (eH * shift_heat, midday), (eHum, heat), (eC, cool),
+            (it["全熱交換換気 2系統（120W×2・常時）"] / 365, flat), (it["排水ポンプ待機・防犯設備（常時100W）"] / 365, flat),
+            (it["給湯（ヒートポンプ給湯機・4人）"] / 365, midday if hw_day else night),
+            (it["照明（LED 2W/m²・1日4時間）"] / 365, light), (it["家電・調理（IH）"] / 365, appl),
+            (it["ジム機器（トレッドミル2台ほか）"] / 365, gym), (it["シアター"] / 365, theater), (ev, midday)]
+        return [sum(e * s[j] for e, s in comp) for j in range(N)]
+
+    res = dict(gen=0.0, load=0.0, direct=0.0, batt=0.0, curtail=0.0, grid=0.0, peak_surplus=0.0)
+    months = []
+    for m in range(1, 13):
+        L = load_day(m)
+        mm = dict(m=m, gen=0.0, load=0.0, self=0.0, curtail=0.0, grid=0.0)
+        for typ, idx, w in (("clear", 0, SS.SUNSHINE), ("cloudy", 1, 1 - SS.SUNSHINE)):
+            P = [raw[(m, "pg")][idx][j] * k["pg"] * kwp_pg + raw[(m, "cp")][idx][j] * k["cp"] * kwp_cp for j in range(N)]
+            soc = 0.0
+            for _ in range(3):                       # 日をまたぐ SOC は日ごとの定常（3 回まわして収束）で近似
+                g = dict(direct=0.0, batt=0.0, curtail=0.0, grid=0.0, ps=0.0)
+                for j in range(N):
+                    net = (P[j] - L[j]) * STEP
+                    if net >= 0:
+                        mg = min(margin, L[j]) * STEP
+                        g["grid"] += mg; net += mg
+                        g["direct"] += L[j] * STEP - mg
+                        ch = min(net, band - soc, bat_kw * STEP); soc += ch
+                        g["curtail"] += net - ch; g["ps"] = max(g["ps"], P[j] - L[j])
+                    else:
+                        g["direct"] += P[j] * STEP
+                        need = -net; dis = min(need, soc * eff, bat_kw * STEP)
+                        soc -= dis / eff; g["batt"] += dis; g["grid"] += need - dis
+            n = D[m - 1] * w
+            for kk in ("direct", "batt", "curtail", "grid"):
+                res[kk] += g[kk] * n
+            res["peak_surplus"] = max(res["peak_surplus"], g["ps"])
+            res["gen"] += sum(P) * STEP * n; res["load"] += sum(L) * STEP * n
+            mm["gen"] += sum(P) * STEP * n; mm["load"] += sum(L) * STEP * n
+            mm["self"] += (g["direct"] + g["batt"]) * n; mm["curtail"] += g["curtail"] * n; mm["grid"] += g["grid"] * n
+        months.append(mm)
+    res["self"] = res["direct"] + res["batt"]
+    res["sc_rate"] = res["self"] / res["gen"]; res["ss_rate"] = res["self"] / res["load"]
+    res.update(band=band, reserve=reserve, months=months)
+    return res
+
+
 # ------------------------------------------------------------------ 耐震
 FC = 24.0
 GAMMA_RC = 24.0               # kN/m³

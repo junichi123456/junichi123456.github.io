@@ -1215,9 +1215,10 @@ def energy_sheet(h, number):
     notes = [("t", f"湿度55〜60%を通年保つため、夏は除湿（露点 約{PF.dew_point(25, 55):.0f}℃まで）、冬は加湿が主な負荷。湿度幅は狭いので、全熱交換＋デシカント（調湿）を各系統に設け、室ごとの湿度センサーで制御する"),
              ("t", f"結露: 冬（外気{c['t_win']}℃）の窓の室内表面温度は約{win_in:.1f}℃で、室内露点 {PF.dew_point(21, 60):.1f}℃を上回る。外断熱のため躯体の熱橋も小さい"),
              ("t", f"条件: {c['name']}、外気 冬{c['t_win']}℃・夏{c['t_sum']}℃（{c['x_sum']}g/kg）、換気 {PF.ACH}回/h（全熱交換 {PF.RECOVERY * 100:.0f}%回収）、HDD {new['hdd']:.0f}・CDD {new['cdd']:.0f}")]
-    side_panel(sh, 12, y - 6, notes, width=175)
+    yl = side_panel(sh, 12, y - 6, notes, width=175)
     en = PF.energy(h, new)
     bsz = PF.battery_sizing(h, en)
+    sc = PF.self_consumption(h, en, bsz)
     rows = [["用途", "年間電力 kWh"]] + [[k, f"{v:,.0f}"] for k, v in en["items"]] + [["合計", f"{en['total']:,.0f}"]]
     sh.text("(4) 年間電力需要", (200, 271), 2.8, "A-TEXT", paper=True)
     y2 = sh.table(200, 268, [120, 40], rows, row_h=5.0, h=2.0)
@@ -1230,6 +1231,7 @@ def energy_sheet(h, number):
             ["3台用ソーラーカーポート", f"{en['cp_area']:.0f}m² → {en['cp_kwp']:.1f}kWp・影損失{en['shade']['carport']['loss'] * 100:.1f}% → {en['cp_gen']:,.0f}kWh"],
             ["パーゴラの損失（被覆率70%＋影）", f"全面被覆に対し 約{en['coverage_deficit'] + en['shade_deficit']:,.0f}kWh → カーポートで{en['cp_gen'] / (en['coverage_deficit'] + en['shade_deficit']) * 100:.0f}%を補う"],
             ["合計 年間発電量", f"{en['pv_kwp']:.1f}kWp・{en['pv_gen']:,.0f} kWh（需要の {en['pv_gen'] / en['total'] * 100:.0f}%）"],
+            ["全量自家消費（逆潮流なし）", f"自家消費 {sc['self']:,.0f}kWh（{sc['sc_rate'] * 100:.0f}%）・出力抑制 {sc['curtail']:,.0f}kWh・買電 {sc['grid']:,.0f}kWh（自給率 {sc['ss_rate'] * 100:.0f}%）"],
             ["拡張後（予約ゾーン RZ）", f"RZ {h.pv_reserve.area / 1e6:.0f}m² → {en['rz_kwp']:.1f}kWp・{en['rz_gen']:,.0f}kWh（影3%は推定）。合計 {en['pv_kwp_ext']:.1f}kWp・約{en['pv_gen_ext']:,.0f}kWh（需要の {en['pv_gen_ext'] / en['total'] * 100:.0f}%）"],
             ["蓄電池（停電時）", f"{bsz['rows']['C']['kwh']:.1f}kWh/日の防災モードで7日 → 必要公称 {bsz['rows']['C']['nominal']:.0f}kWh → 200kWh級（蓄電室 {h.battery_room.area:.1f}m²）。A年平均 {bsz['rows']['A']['nominal']:.0f}・B冬 {bsz['rows']['B']['nominal']:.0f}kWh は南半分に収まらない"]]
     sh.text("(5) 必要発電量 — 日よけ付き菜園（ソーラーパーゴラ）＋3台用ソーラーカーポート", (200, y2 - 6), 2.8, "A-TEXT", paper=True)
@@ -1237,8 +1239,27 @@ def energy_sheet(h, number):
     side_panel(sh, 200, y2 - 6, [("t", "本館とは構造的に分離した独立架台（鉄骨・軒高2.8m・南向き10°）。パネルを列状にすき間をあけて並べ（被覆率70%）、光と雨を下の菜園・庭に落とす。営農型太陽光（ソーラーシェアリング）やソーラーパーゴラとして実例がある"),
                                  ("t", "下は半日陰を好む作物（葉物・ハーブ・ミョウガ・シソ・ベリー類）向き。パネルの雨水は雨どいで地下貯留槽へ集め、散水に使う（内水対策と兼用）"),
                                  ("t", "影損失は各月21日・30分ごとの太陽位置で本館・塀・隣家（高さ6.5m仮定）の影を追跡して算定。パーゴラは本館の西9mで、冬の朝に一部が影に入る（12月 直達の約5%）"),
-                                 ("t", "パーゴラ・カーポートとも屋根と柱をもつため建築物として扱われる見込み（建築面積に算入・確認申請が必要）。余剰電力は売電または将来のEV充電に充てる"),
+                                 ("t", "パーゴラ・カーポートとも屋根と柱をもつため建築物として扱われる見込み（建築面積に算入・確認申請が必要）。売電しない（全量自家消費・逆潮流なし、v4.39）。余剰は昼の給湯・躯体蓄熱・蓄電池へ、残りは PCS で出力抑制"),
                                  ("t", "実施設計で、発電量シミュレーション（建物・塀の影）と住宅の一次エネルギー計算で確定する")], width=205)
+    mrows = [["月", "発電", "需要", "自家消費", "出力抑制", "買電"]]
+    for mm in sc["months"]:
+        mrows.append([f"{mm['m']}月"] + [f"{mm[k]:,.0f}" for k in ("gen", "load", "self", "curtail", "grid")])
+    mrows.append(["計", f"{sc['gen']:,.0f}", f"{sc['load']:,.0f}", f"{sc['self']:,.0f}", f"{sc['curtail']:,.0f}", f"{sc['grid']:,.0f}"])
+    sh.text("(6) 全量自家消費の月別収支（kWh、蓄電池 新品・概算）", (12, yl - 2), 2.8, "A-TEXT", paper=True)
+    yl = sh.table(12, yl - 5, [18, 26, 26, 26, 26, 26], mrows, row_h=4.6, h=1.8)
+    ev = h.spec["battery"]["profile_assumptions"]["ev_kwh_day_future"]
+    crows = [["ケース", "自家消費", "出力抑制", "買電", "自家消費率"]]
+    for lab, kw in (("0 蓄電池を日常に使わない・給湯は夜", dict(band=0, hw_day=False, heat_shift=0)),
+                    ("1 ＋給湯を昼に", dict(band=0, heat_shift=0)),
+                    ("2 ＋蓄電池（予約より上）", dict(heat_shift=0)),
+                    ("3 ＋暖房の30%を昼に（基本・新品）", {}),
+                    ("3e 同・蓄電池の寿命末期", dict(eol=True)),
+                    (f"4 ＋将来EV {ev:g}kWh/日", dict(ev=ev))):
+        r_ = PF.self_consumption(h, en, bsz, **kw)
+        crows.append([lab, f"{r_['self']:,.0f}", f"{r_['curtail']:,.0f}", f"{r_['grid']:,.0f}", f"{r_['sc_rate'] * 100:.1f}%"])
+    sh.text("(7) 余剰の振り分けの効果（年 kWh）", (12, yl - 6), 2.8, "A-TEXT", paper=True)
+    yl = sh.table(12, yl - 9, [70, 26, 26, 26, 22], crows, row_h=4.6, h=1.8)
+    side_panel(sh, 12, yl - 4, [("t", f"停電7日の予約（{sc['reserve']:.0f}kWh）は日常に使わない。月平均気温・日内の形・暖房の昼移し30%は仮定。実施設計で時刻別の発電・負荷シミュレーションで確定")], width=175)
     return sh
 
 
@@ -1645,7 +1666,7 @@ def control_sheet(h, number):
         sh.line(sh.P(x, 236), sh.P(x, 229), "A-VIS", lineweight=25)
     sh.line(sh.P(103, 252), sh.P(103, 245), "A-VIS", lineweight=25)
     devs = [(14, f"外付けスクリーン {len(h.blinds)}台", "照明（調光・調色）", "日射・風・雨センサー"),
-            (74, "掃除ロボット 2台", "スマートロック（ジム）", ""), (134, "全館空調 2系統", "全熱交換・調湿", "太陽光・蓄電池")]
+            (74, "掃除ロボット 2台", "スマートロック（ジム）", ""), (134, "全館空調 2系統", "全熱交換・調湿", "太陽光・蓄電池（逆潮流なし）")]
     for x, *ds in devs:
         sh.line(sh.P(x + 28, 220), sh.P(x + 28, 214), "A-VIS", lineweight=25)
         yy = 210
@@ -2556,7 +2577,7 @@ LIFELINE_STANDARDS = [
     ["桝の間隔", "管内径の120倍以下（φ150 で18m）、起点・曲がり・合流に設置", "施行令 第8条", "最大 13.7m（適合）"],
     ["汚水桝と雨水桝", "法定値なし（推定: 1.0m 以上・別系統）", "市の排水設備基準（要確認）", "1.4m"],
     ["最終桝", "境界から1m 以内（推定）", "八王子市 排水設備（要確認）", "0.69m"],
-    ["系統連系", "低圧連系は 50kW 未満", "電技解釈 第8章（分散型電源）・系統連系規程 JEAC 9701", "拡張後は PCS 合計を 49.5kW 以下に制限（パネル過積載）。電気事業法の区分（小規模事業用電気工作物の届出・使用前自己確認、50kW 以上は自家用）は要確認"],
+    ["系統連系（逆潮流なし）", "低圧連系は 50kW 未満。逆潮流なしは逆電力継電器（RPR）等が要る", "電技解釈 第8章（第227条ほか）・系統連系規程 JEAC 9701（要確認）", "売電しない。受電点の CT で PCS を負荷追従制御・RPR で停止。PCS 合計 49.5kW（PV 29.5＋蓄電 20）。小規模事業用電気工作物の届出・使用前自己確認（要確認）"],
     ["蓄電池の届出・離隔", "定格 10kWh 超で届出・位置構造基準（従前 4,800Ah・セル）。20kWh 超で不燃区画等の可能性", "対象火気省令（令和5年改正）・東京都火災予防条例（閾値・条番号とも要確認）", "200kWh 級 → 所轄消防署（八王子消防署）と事前協議"],
     ["蓄電池（建築基準法）", "建築設備（法2条3号）。専用の離隔規定は見当たらない（要確認）", "—", "1時間耐火の区画を自主設定"],
     ["排煙の予備電源", "30分以上", "令126条の3（告示の適合は要確認）", "特定負荷に排煙機"],
@@ -2598,7 +2619,7 @@ def lifeline_tables(h, number):
     r1, r2, r3 = 276, 259, 242
     _flow_box(sh, cx[0], r1, W, H_, "配電線（南側道路・地中引込）")
     _flow_box(sh, cx[1], r1, W, H_, "引込開閉器盤＋電力量計（門の塀）")
-    _flow_box(sh, cx[2], r1, W, H_, "主分電盤（機械室・東）")
+    _flow_box(sh, cx[2], r1, W, H_, "主分電盤（機械室・東）・CT・RPR")
     _flow_box(sh, cx[3], r1, W, H_, "一般負荷（照明・空調・IH ほか）")
     _flow_line(sh, [(cx[0] + W, r1 - 4.5), (cx[1], r1 - 4.5)])
     _flow_line(sh, [(cx[1] + W, r1 - 4.5), (cx[2], r1 - 4.5)])
@@ -2611,16 +2632,17 @@ def lifeline_tables(h, number):
     _flow_box(sh, cx[3], r3, W, H_, "特定負荷: 排煙機・排水ポンプ・冷蔵庫・通信警備・照明・HP空調1系統・給湯・IH1口")
     _flow_line(sh, [(cx[2] + W / 2, r2 - H_), (cx[2] + W / 2, r3)])
     _flow_line(sh, [(cx[2] + W, r3 - 4.5), (cx[3], r3 - 4.5)])
-    _flow_box(sh, cx[0], r2, W, H_, "PCS パーゴラ 27.1kWp（屋外・AC 連系）", "E-PV")
-    _flow_box(sh, cx[1], r2, W, H_, "PCS カーポート 10.2kWp（柱）", "E-PV")
-    _flow_box(sh, cx[0], r3, W, H_, "予約ゾーン 41.0kWp（将来・PCS 追加。合計 49.5kW 以下）", "E-PV", dashed=True)
+    _flow_box(sh, cx[0], r2, W, H_, "PCS パーゴラ 27.1kWp→20kW（屋外・出力制御）", "E-PV")
+    _flow_box(sh, cx[1], r2, W, H_, "PCS カーポート 10.2kWp→9.5kW（柱）", "E-PV")
+    _flow_box(sh, cx[0], r3, W, H_, "予約ゾーン 41.0kWp（将来。PCS は合計 49.5kW の範囲で過積載）", "E-PV", dashed=True)
     bus = r1 - H_ - 4
     _flow_line(sh, [(cx[0] + W / 2, r2), (cx[0] + W / 2, bus), (cx[2] + W / 2, bus)], "E-PV", arrow=False)
     _flow_line(sh, [(cx[1] + W / 2, r2), (cx[1] + W / 2, bus)], "E-PV", arrow=False)
     _flow_line(sh, [(cx[0] + W / 2, r3), (cx[0] + W / 2, r2 - H_)], "E-SPARE", arrow=False)
-    sh.text("商用停電時は蓄電 PCS が自立出力に切り替え、特定負荷だけに給電。PV は日中の充電・給電に連系", (X0, r3 - H_ - 4), 1.6, "A-TEXT", paper=True)
+    sh.text("平常時は逆潮流なし（売電しない）: 受電点の CT で PV・蓄電 PCS を負荷追従制御、逆電力で RPR が停止。", (X0, r3 - H_ - 4), 1.6, "A-TEXT", paper=True)
+    sh.text("商用停電時は蓄電 PCS が自立出力に切り替え、特定負荷だけに給電し、PV が充電", (X0, r3 - H_ - 7), 1.6, "A-TEXT", paper=True)
     # ---- 蓄電容量表
-    yy = r3 - H_ - 11
+    yy = r3 - H_ - 14
     sh.text("蓄電容量（7日分・公称 = 必要値 ÷ (DoD 0.9 × 寿命末期 SOH 0.8 × 効率 0.95 = %.3f)）" % bs["factor"], (X0, yy), 2.2, "A-TEXT", paper=True)
     rows = [["ケース", "kWh/日", "7日 使用可能量", "公称容量", "面積（推定）", "重量（推定）"]]
     for k in "ABCD":
@@ -2634,7 +2656,7 @@ def lifeline_tables(h, number):
     yy = side_panel(sh, X0, yy - 4, notes, width=176)
     sh.text("要確認（追加）", (X0, yy - 1), 2.4, "A-TEXT", paper=True)
     chk = ["1 南側道路の電柱・通信柱・公共汚水/雨水桝・配水管の位置と深さ、分流式か", "2 地中電線の埋設深さ（電技解釈120条の改正）と離隔", "3 東京都水道局の土被り・量水器位置",
-           "4 排水管 φ150 の勾配（1/100 か 1.5/100）", "5 蓄電池の火災予防条例上の閾値・届出・区画（八王子消防署）", "6 電気事業法の区分と低圧連系の上限（PCS 49.5kW 制限）",
+           "4 排水管 φ150 の勾配（1/100 か 1.5/100）", "5 蓄電池の火災予防条例上の閾値・届出・区画（八王子消防署）", "6 逆潮流なしの系統連系（RPR・単独運転検出）と電気事業法の区分、PCS 合計 49.5kW（蓄電 PCS を含むか）",
            "7 地上置きパネルの建築物該当性", "8 蓄電室の束壁と S-03 の偏心率", "9 ジム機器の移動の了承（施主）", "10 現地の浸透試験（雨水貯留槽の要否）"]
     side_panel(sh, X0, yy - 6, [("t", "　".join(chk))], width=176)
     return sh

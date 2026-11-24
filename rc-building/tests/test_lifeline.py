@@ -63,11 +63,33 @@ def test_legal_rows():
     c = _get()
     items = {r["item"]: r for r in c["rows"]}
     assert sum(r["result"] == house_legal.NG for r in c["rows"]) == 0
-    for k in ("蓄電池（理論上1週間）", "建ぺい率（予約ゾーンを満たした場合・参考）", "蓄電池の届出・位置構造", "電気工作物の区分・低圧連系（拡張後）", "汚水管 勾配（φ150）"):
+    for k in ("蓄電池（理論上1週間）", "建ぺい率（予約ゾーンを満たした場合・参考）", "蓄電池の届出・位置構造", "電気工作物の区分・系統連系（逆潮流なし）", "太陽光の全量自家消費（逆潮流なし）", "汚水管 勾配（φ150）"):
         assert k in items, k
     assert items["蓄電池の届出・位置構造"]["result"] == house_legal.CHK
+    k = "電気工作物の区分・系統連系（逆潮流なし）"
+    assert items[k]["result"] == house_legal.CHK and "RPR" in items[k]["planned"]
+    assert items["太陽光の全量自家消費（逆潮流なし）"]["result"] == house_legal.OK
+    assert len(c["rows"]) == 136
+    assert sum(r["result"] == house_legal.CHK for r in c["rows"]) == 32
     assert "35.21%" in items["建ぺい率（予約ゾーンを満たした場合・参考）"]["planned"], items["建ぺい率（予約ゾーンを満たした場合・参考）"]["planned"]
     assert "32.83%" in items["建ぺい率（予約ゾーンを満たした場合・参考）"]["planned"]
+
+
+def test_self_consumption():
+    c = _get(); h, en, bs = c["h"], c["en"], c["bs"]
+    sc = PF.self_consumption(h, en, bs)
+    assert abs(sc["gen"] - en["pv_gen"]) < 5 and abs(sc["load"] - en["total"]) < 5
+    assert abs(sc["self"] + sc["grid"] - en["total"]) < 5                 # 需要＝自家消費＋買電
+    assert abs(sc["self"] - 14955) < 30 and abs(sc["curtail"] - 23332) < 50 and abs(sc["grid"] - 6073) < 30
+    assert 0.38 < sc["sc_rate"] < 0.39 and 0.70 < sc["ss_rate"] < 0.72 and 30.5 < sc["peak_surplus"] < 30.9
+    assert abs(sc["reserve"] - 142.7) < 0.1 and abs(sc["band"] - 37.3) < 0.1
+    e = PF.self_consumption(h, en, bs, eol=True)
+    assert abs(e["band"] - 1.3) < 0.1 and abs(e["self"] - 9554) < 30 and abs(e["grid"] - 11474) < 30
+    assert len(sc["months"]) == 12 and abs(sum(m["self"] for m in sc["months"]) - sc["self"]) < 5
+    assert sc["months"][11]["gen"] < sc["months"][11]["load"] and sc["months"][4]["curtail"] > 3000   # 12月は不足、5月は抑制
+    ps = h.spec["pv_self"]["pcs_kw"]
+    assert abs(sum(ps.values()) - h.spec["pv_reserve"]["pcs_limit_kw"]) < 1e-9 and h.spec["pv_self"]["export"] == "none"
+    assert bs["days_eol_net"] >= 7.0                                      # 停電7日は不変
 
 
 def test_battery_room():
