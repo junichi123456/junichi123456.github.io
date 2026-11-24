@@ -3,6 +3,8 @@
 八王子市大和田町7丁目（ひよどり山トンネル南口の西、A3（エースリー）店舗とその西側駐車場の土地）に計画する住宅の基本計画です。
 設計条件は [`docs/kawazanyo_design_brief_v3.md`](docs/kawazanyo_design_brief_v3.md)（v2 から敷地・高低差・外構を更新）と、その数値版の [`spec.yaml`](spec.yaml) にまとめています。
 
+住宅会社向けの設計要求仕様書（絶対条件・自由領域・提出物）は [`docs/design_requirements_for_builder.md`](docs/design_requirements_for_builder.md) を参照してください。
+
 ![外観CG（南東上空）](docs/cg_C02_aerial.jpg)
 
 ![3Dモデル](docs/preview_3d.png)
