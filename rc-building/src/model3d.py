@@ -342,10 +342,14 @@ def exterior_parts(h, P, spec):
     gravel = foot.buffer(1000, join_style=2).difference(foot).difference(porch).difference(dot_union).intersection(site_in)
     for p in polys_of(gravel):
         P.add("外構（砂利）", "-", "gravel", prism(p, fgl - 100, fgl + 30))
+    for p in polys_of(h.pipe_strip):                         # v4.40 管路帯（給水・汚水。防草シート＋砂利、外せる）
+        P.add("外構（砂利）", "-", "gravel", prism(p, fgl - 100, fgl + 30))
 
     # ---- 門前の広場（透水性コンクリート）
-    for p in polys_of(h.forecourt):
+    for p in polys_of(h.forecourt.difference(h.pipe_strip_fc)):
         P.add("外構（土間）", "-", "porous_concrete", prism(p, fgl - 100, fgl + 20))
+    for p in polys_of(h.pipe_strip_fc):                      # v4.40 外せる透水インターロッキング（給水・汚水の管路帯）
+        P.add("外構（土間）", "-", "interlocking", prism(p, fgl - 100, fgl + 20))
 
     # ---- ソーラーパーゴラ
     pg = spec["exterior"]["solar_pergola"]

@@ -84,7 +84,7 @@ def test_dotcon_zones_inside_fence():
         assert g.difference(inner).area < 1, g.difference(inner).area
     ne = _zones(h)["north_east"]
     assert abs(ne.area / 1e6 - 122.4) < 1.0, ne.area / 1e6
-    assert abs(h.ext_storage["dotcon_area"] - 828) < 3, h.ext_storage["dotcon_area"]       # 旧 838m²
+    assert abs(h.ext_storage["dotcon_area"] - 815) < 3, h.ext_storage["dotcon_area"]       # 旧 838m²・v4.40 管路帯のため駐車場の西端を後退して 約815m²
 
 
 def test_dotcon_zones_no_overlap():
@@ -94,7 +94,7 @@ def test_dotcon_zones_no_overlap():
     bld = Polygon([(0, 0), (h.W, 0), (h.W, h.D), (0, h.D)]).buffer(1000)            # 建物＋防草砂利帯 1.0m
     for z in zs:
         assert bld.intersection(z).area < 1
-        assert z.intersection(h.dotcon_farm).area < 1 and z.distance(h.dotcon_farm) > 150
+        assert z.intersection(h.dotcon_farm).area < 1 and z.distance(h.dotcon_farm) > 140   # v4.40 菜園を東へ 700（北東の帯まで 約150）
         assert z.intersection(h.dotcon).area < 1 and z.intersection(h.approach).area < 1
 
 
@@ -151,13 +151,13 @@ def test_utilities_layout():
     for key, gs in h.pipes.items():
         for g in gs:
             assert h.site.buffer(5).contains(g), key
-            if key == "sewer":
-                assert g.distance(bld) > 1000, key                      # 汚水管は建物の砂利帯の外（雨水は縦樋の足元から出る）
+            if key == "sewer":                                          # v4.40 汚水の始点は建物の S 面（基礎立上りのスリーブ）、2 点目以降は建物から 1,000 以上
+                assert Point(g.coords[0]).distance(Point(7000, -245)) < 1 and all(Point(c).distance(bld) > 1000 for c in list(g.coords)[1:]), key
     water_end = Point(h.pipes["water"][0].coords[-1])
-    assert abs(water_end.x - 12600) < 1 and abs(water_end.y + 245) < 1
+    assert abs(water_end.x - 14800) < 1 and abs(water_end.y + 245) < 1
     assert h.water_meter[1] < h.y_gate                                   # 量水器は門の外（検針で門を開けない）
     sw = h.pipes["sewer"][0]
-    assert 50 < sw.length / 1000 < 60, sw.length                         # 建物出口から最終桝まで 約55m
+    assert 30 < sw.length / 1000 < 35, sw.length                         # 建物出口から最終桝まで 約32m（v4.40）
     assert tuple(sw.coords[-1]) == h.sewer_final and tuple(h.pipes["storm_e"][1].coords[-1]) == h.storm_final
     assert Point(h.sewer_final).distance(Point(h.storm_final)) > 1000    # 汚水と雨水は別の最終桝
     # 桝: 15m 以内ごと（汚水）

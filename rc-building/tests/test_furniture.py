@@ -176,7 +176,7 @@ def test_storage_v437():
         it = its[k]
         assert it.z0 + it.h <= FU.stair_soffit(h, it.under, it.poly()) - 50, k
     assert FU.check(h, list(its.values())) == []
-    assert len(its) == 73
+    assert len(its) == 76
     assert its["LDK-C1"].slot is None and its["LDK-C2"].slot is None          # v4.38 クアッドで吹出しを廃止
     assert its["H-S3"].footline and its["H-S3"].plinth == 350
     assert [its[k].leaves for k in ("L-K2", "L-K3", "H-S3", "H-S4", "R-S1")] == [3, 2, 2, 2, 2]

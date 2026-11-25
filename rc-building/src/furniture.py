@@ -135,6 +135,10 @@ def items(h):
     add("T1-H", "1F", "トイレ（手洗い付）", "手洗いカウンター（一体成形・浮かせ）", "counter_float", (8750, 10500, 9050, 11400), 850, "solid_surface", base="float650")
     add("T2-W", "1F", "トイレ", "タンク式便器（フチなし）", "toilet", (10550, 17425, 11050, 18125), 800, "ceramic", base="none")
     add("T2-H", "1F", "トイレ", "手洗いカウンター（一体成形・浮かせ）", "counter_float", (11700, 16600, 12000, 17600), 850, "solid_surface", base="float650")
+    # v4.40 PS（パイプスペース）: LGS＋耐水PB・EP、点検扉 1 枚（FL+60〜2,700）。2F の排水・給水を通す（long_life.ps、48章）
+    for pid, room, rect, front, note in h.spec["long_life"]["ps"]:
+        add(pid, "1F", room, f"PS（パイプスペース）LGS＋耐水PB・点検扉 1 枚 FL+60〜2,700・{note}", "ps", tuple(rect), h.ch["1F"], "wet_panel",
+            base="none", front=front, leaves=1, hjoint=0.0)
     add("W1-C", "1F", "洗面・脱衣", "洗面カウンター（一体成形ボウル・浮かせ。鏡は突っ張り枠で天井まで）", "counter_float", (8950, 13450, 9500, 14800), 850, "solid_surface", base="float650")
     add("W1-S", "1F", "洗面・脱衣", "リネン収納（天井まで）", "tall", (6900, 12250, 8500, 12700), h.ch["1F"], "case_ash")
     add("B1-U", "1F", "浴室", "ユニットバスの浴槽（エプロン一体）", "tub", (7600, 17300, 9400, 18125), 550, "tub", base="unit")
@@ -369,7 +373,7 @@ def build_item(h, it, prod=None):
             getattr(KO, k)(mb, rect, fz)
     elif k == "island":
         FS.island(mb, rect, z0, P)
-    elif k in ("tall", "cabinet", "bench"):
+    elif k in ("tall", "cabinet", "bench", "ps"):
         top = None
         if it.id in ("R-SK", "J-K1"):
             top = ("countertop", 20)

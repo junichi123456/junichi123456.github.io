@@ -1,7 +1,7 @@
 """性能検討（概算）: 冷暖房負荷・耐震性（壁式RC）・年間電力需要と必要発電量。
 
 いずれも基本計画段階の概算であり、実施設計で
-省エネ計算（WEBPRO/住宅版）・構造計算（許容応力度計算）・太陽光発電量シミュレーションにより確定する。
+省エネ計算（住宅版のエネルギー消費性能計算プログラム。WEBPRO は非住宅用）・構造計算（許容応力度計算）・太陽光発電量シミュレーションにより確定する。
 """
 from __future__ import annotations
 
@@ -67,6 +67,77 @@ def envelope(h, side=None):
     q = sum(a * u * f for _, a, u, f in parts)
     area = sum(a for _, a, _, _ in parts)
     return dict(parts=parts, area=area, q=q, UA=q / area, L=L, Hc=Hc, win=win)
+
+
+# ------------------------------------------------------------------ v4.40 長期優良住宅: 熱橋込み外皮・ηAC・BEI 概算
+def _ll_energy(h):
+    return h.spec["long_life"]["energy"]
+
+
+def _ext_windows(h):
+    return [op for op in h.openings(exterior=True) if op.kind == "window"]
+
+
+def envelope_tb(h):
+    """熱橋（ψ・χ、仮定値）を足した外皮。envelope() の面積・U は変えない。{env, items=[(名称, ψ, 長さ m, ψL)], chi, q_tb, UA_tb}"""
+    ee = _ll_energy(h)
+    env = envelope(h)
+    wins = _ext_windows(h)
+    length = {"perimeter": env["L"] / 1000 * 4,
+              "window_perimeter": sum(2 * (op.width + op.height) for op in wins) / 1000,
+              "window_top": sum(op.width for op in wins) / 1000}
+    items = [(n, psi, length[k], psi * length[k]) for n, psi, k in ee["tb"]]
+    chi = ee["chi"]["value"] * ee["chi"]["n"]
+    q_tb = env["q"] + sum(i[3] for i in items) + chi
+    return dict(env=env, items=items, chi=chi, q_tb=q_tb, UA_tb=q_tb / env["area"])
+
+
+def eta_ac(h):
+    """冷房期の平均日射熱取得率 ηAC（窓 g×f×ν、不透明部 0.034U×ν）。ZIP スクリーンは算入しない（安全側）。"""
+    ee = _ll_energy(h)
+    nu, f = ee["nu"], ee["f_win"]
+    env = envelope(h)
+    wins = _ext_windows(h)
+    gl = h.spec["glazing"]
+    qd = gl.get("quad") or {}
+    win = 0.0
+    for op in wins:
+        t = gl["side_type"][op.side]
+        g = qd["types"][t]["g"] if op.label in qd.get("labels", []) else gl["types"][t]["g"]
+        win += op.width * op.height / 1e6 * g * f * nu[op.side]
+    side_gross = env["L"] / 1000 * env["Hc"] / 1000
+    door_a = sum(op.width * op.height for op in h.openings(exterior=True) if op.kind == "door" and op.floor in ("1F", "2F")) / 1e6
+    wall_s = {k: side_gross - sum(op.width * op.height / 1e6 for op in wins if op.side == k) - (door_a if k == "S" else 0) for k in "NESW"}
+    roof = env["L"] ** 2 / 1e6
+    opaque = (sum(0.034 * U["wall"] * a * nu[k] for k, a in wall_s.items()) + 0.034 * U["roof"] * roof * nu["top"]
+              + 0.034 * U["door"] * door_a * nu["S"])
+    return dict(value=(win + opaque) / env["area"] * 100, win=win, opaque=opaque, area=env["area"])
+
+
+def bei_estimate(h, hl=None, en=None):
+    """一次エネルギー消費量の概算（BEI）。住宅版プログラムの代わりではない。基準の仕様は long_life.energy.ref の仮定。"""
+    ee = _ll_energy(h)
+    hl = hl or heat_load(h)
+    en = en or energy(h, hl)
+    tb = envelope_tb(h)
+    env = hl["env"]
+    E, ref = ee["primary_mj_per_kwh"], ee["ref"]
+    H_tb = tb["q_tb"] + hl["Hv"]
+    hdd, cdd = hl["hdd"], hl["cdd"]
+    heat_kwh = max(0.0, H_tb * hdd * 24 / 1000 - hl["solar_heat_use"])
+    cool_kwh = hl["cool_kwh"] + (H_tb - hl["H"]) * cdd * 24 / 1000
+    vent, V = hl["vent"], hl["V"]
+    H_ref = ref["ua"] * env["area"] + 0.34 * vent + 0.34 * V * ACH_INF
+    heat_r = max(0.0, H_ref * hdd * 24 / 1000 - hl["solar_heat_use"])
+    cool_r = hl["cool_kwh"] + (H_ref - hl["H"]) * cdd * 24 / 1000
+    light_kwh = next(v for n, v in en["items"] if n.startswith("照明"))
+    design = dict(heat=heat_kwh / 3.5 * E, cool=cool_kwh / 4.0 * E, vent=0.24 * 8760 * E, hw=1300 * E, light=light_kwh * E)
+    refd = dict(heat=heat_r / ref["heat_eff"] * E, cool=cool_r / ref["cool_eff"] * E,
+                vent=ref["vent_w_per_m3h"] * vent / 1000 * 8760 * E,
+                hw=1300 * ref["hw_cop_design"] / ref["hw_gas_eff"] * 3.6, light=design["light"] * ref["light_factor"])
+    Ed, Er = sum(design.values()), sum(refd.values())
+    return dict(design=design, ref=refd, E_design=Ed, E_ref=Er, bei=Ed / Er, heat_kwh_tb=heat_kwh, cool_kwh_tb=cool_kwh,
+                H_tb=H_tb, H_ref=H_ref, heat_kwh_ref=heat_r, cool_kwh_ref=cool_r, d_heat_kwh=heat_kwh - hl["heat_kwh"])
 
 
 def heat_load(h, side=None, ind=None, gamma=None, shgc=None, blinds=True):

@@ -550,9 +550,18 @@ class House:
         self._window("2F", "N", 14000, 15600, 1000, 800, "FIX窓（主寝室）")
         self._window("2F", "N", 1200, 2800, 1000, 800, "FIX窓（居室E）")              # v4.28 AW-9: 居室E の北窓 W1,600×H800 FL+1,000（Q4）
         self._window("2F", "E", 15500, 16500, 1000, 800, "FIX窓（主寝室）")
-        self.rc_walls["FDN"]["S"].add(Opening("door", 4200, 5000, self.fgl + 150, self.fgl + 750, "FDN", "S", "床下点検口（防水扉）", "swing",
-                                              exterior=True, swing=-1))
-        self.rc_walls["FDN"]["ins_S"].add(Opening("door", 4200, 5000, self.fgl + 150, self.fgl + 750, "FDN", "S", "", "swing"))
+        # v4.40 外の防水扉（FDN S x4,200〜5,000）は廃止（想定浸水深より下・防犯・基礎の連続性）。点検は屋内の床点検口と人通口（long_life、_pit）
+        self._pit()
+
+    def _pit(self):
+        """v4.40 床下ピットの人通口（W600×H700）と区画。operation "opening" は穴だけ（扉の板・ラベルなし）。"""
+        ll = self.spec["long_life"]
+        z0, z1 = ll["pit"]["manway"]["z"]
+        for mid, wall, u0, u1, a, b in ll["manways"]:
+            self.rc_walls["FDN"][wall].add(Opening("door", u0, u1, z0, z1, "FDN", "I", f"人通口 {mid}", "opening"))
+        gx, gy = self.gx, self.gy
+        cols, rows = {"W": (gx[0], gx[1]), "C": (gx[1], gx[2]), "E": (gx[2], gx[3])}, {"S": (gy[0], gy[1]), "M": (gy[1], gy[2]), "N": (gy[2], gy[3])}
+        self.pit_cells = {c + r: (cols[c][0], rows[r][0], cols[c][1], rows[r][1]) for r in "SMN" for c in "WCE"}
 
     def _stairs(self):
         H = self.H["1F"]
@@ -681,8 +690,10 @@ class House:
         cx0, cy0 = ex["carport_origin"]
         self.carport = (cx0, cy0, cx0 + cp["w"], cy0 + cp["d"])
         self.stalls = [(cx0 + 300 + i * 2800, cy0 + 300, cx0 + 300 + i * 2800 + 2600, cy0 + 300 + 5500) for i in range(3)]
-        pave = Polygon([(cx0 - 1200, y_g + self.fence_t), (cx0 + cp["w"] + 1500, y_g + self.fence_t), (cx0 + cp["w"] + 1500, cy0 + cp["d"] + 900),
-                        (cx0 - 1200, cy0 + cp["d"] + 900)]).intersection(self.fence_poly.buffer(-self.fence_t))
+        pp = ex.get("parking_pave", {"west_margin": 1200, "nw_chamfer": 0})      # v4.40 給水の管路帯のため西端を 11,800→12,800、北西を面取り
+        X0, top, ch = cx0 - pp["west_margin"], cy0 + cp["d"] + 900, pp["nw_chamfer"]
+        pave = Polygon([(X0, y_g + self.fence_t), (cx0 + cp["w"] + 1500, y_g + self.fence_t), (cx0 + cp["w"] + 1500, top),
+                        (X0 + ch, top), (X0, top - ch)]).intersection(self.fence_poly.buffer(-self.fence_t))
         self.dotcon = pave                    # 駐車場（v4.14: 門前の広場は Dotcon+ に含めない＝施主の再配置図）
         # ゴミ収集ボックス（門の外・西の角、v4.10）: 西の塀と門の塀に沿わせ、扉は東向き。南に目隠し壁＋東端の袖壁
         gb, gs = ex["garbage_box"], ex["garbage_screen"]
@@ -822,12 +833,24 @@ class House:
                 p = Point(gx1 - 500 - i * g, gy1 - 500 - j * g)
                 if core.contains(p) and not avoid.contains(p):
                     self.pv_reserve_foundations.append((p.x, p.y))
+        # v4.40 管路帯（給水・汚水の線の両側 300。Dotcon+ と見切りを除く）。門前は外せるインターロッキング、他は防草シート＋砂利
+        sw_ = u["strip"]["w"] / 2
+        inner = self.fence_poly.buffer(-self.fence_t)
+        dot = unary_union([self.dotcon, self.approach.intersection(inner), self.dotcon_farm, self.dotcon_garden]).buffer(100)
+        ws_ = u["water"]["sleeve"]
+        wl = list(u["water"]["line"])
+        open_w = [L(wl[:ws_["from"] + 1]), L(wl[ws_["to"]:])]                                # さや管の区間を除く
+        strip = unary_union([g.buffer(sw_, cap_style=2) for g in open_w + [self.pipes["sewer"][0]]]).difference(dot).intersection(inner)
+        self.pipe_strip_fc = strip.intersection(self.forecourt)
+        self.pipe_strip = strip.difference(self.forecourt)
+        self.water_sleeve = L(wl[ws_["from"]:ws_["to"] + 1])
 
     def _exterior_lights(self, gates):
         """防虫の外構照明（低色温度・下向き・人感センサー）。玄関ドアの真上には付けず、足元を照らす。"""
         el = self.spec["exterior_lighting"]
         L = self.approach_line
         lights = []
+        sw_line = LineString(self.spec["utilities"]["sewer"]["line"])
         n = int(L.length // el["spacing"])
         for i in range(n + 1):
             d = min(L.length - 1500, 1500 + i * el["spacing"])
@@ -835,7 +858,10 @@ class House:
             q = L.interpolate(min(L.length, d + 10))
             ang = math.atan2(q.y - p.y, q.x - p.x)
             off = 950                                                   # 通路の脇（幅1.5m の外側）
-            lights.append(("ボラード", (p.x - math.sin(ang) * off, p.y + math.cos(ang) * off)))
+            pt_ = (p.x - math.sin(ang) * off, p.y + math.cos(ang) * off)
+            if sw_line.distance(Point(pt_)) < 600:                      # v4.40 汚水管の真上は避け、通路の反対側へ
+                pt_ = (p.x + math.sin(ang) * off, p.y - math.cos(ang) * off)
+            lights.append(("ボラード", pt_))
         x0, y0, x1, y1 = self.porch
         lights.append(("足元灯（外部階段）", (x0 + 200, (y0 + y1) / 2)))
         lights.append(("足元灯（外部階段）", (x1 - 200, (y0 + y1) / 2)))

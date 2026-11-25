@@ -207,8 +207,12 @@ def checks(h):
         f"{bt['nominal_kwh']}kWh 級 → 所轄消防署（八王子消防署）と事前協議。蓄電室は1時間耐火区画を自主設定", CHK)
     add("関連法令", "電気工作物の区分・系統連系（逆潮流なし）", "電気事業法・電技解釈 第8章（第227条ほか）・系統連系規程 JEAC 9701", "低圧連系は 50kW 未満。逆潮流なしは逆電力継電器（RPR）等の保護装置（条番号・要件は要確認）",
         f"売電しない。受電点の CT で PV・蓄電 PCS を負荷追従で出力抑制（最大 約{sc['peak_surplus']:.0f}kW）、逆電力で RPR が PCS を止める。PCS 合計 {h.spec['pv_reserve']['pcs_limit_kw']}kW（PV {ps['pergola'] + ps['carport']:.1f}＋蓄電 {ps['battery']:.1f}）、拡張後 {en['pv_kwp_ext']:.1f}kWp も同じ上限。{en['pv_kwp']:.1f}kWp は小規模事業用電気工作物の見込み（届出・使用前自己確認）。東京電力パワーグリッドと連系協議", CHK)
+    import maintenance as MT
+    u_sw = h.spec["utilities"]["sewer"]
+    prof = MT.sewer_profile(h)
     add("関連法令", "汚水管 勾配（φ150）", "下水道法施行令 第8条ほか・市の排水設備指針", "1/100 以上（φ150 は 1.5/100 を推奨する指針あり、要確認）",
-        f"計画 {h.spec['utilities']['sewer']['slope']}。1.5/100 とした場合、最終桝の管底は約 GL-{h.spec['lifeline']['depths']['sewer_final_invert_m'] * 1000:.0f}", CHK)
+        f"建物出口 GL+{u_sw['exit_invert']}（基礎立上りのスリーブ）から汚2 まで 2/100、以降 {u_sw['slope']}。延長 約{MT.sewer_length_m(h):.0f}m・最終桝の管底 約GL{prof[-1][3]:+.0f}。"
+        f"1.5/100 とした場合 約GL{MT.final_invert_15(h):+.0f}", CHK)
     add("ブリーフ", "駐車台数", "ブリーフv3 2章", f"{req['parking']}台", f"{len(h.stalls)}台（屋根なし・Dotcon+）", judge(len(h.stalls) >= req["parking"]))
     add("ブリーフ", "RC塀", "ブリーフv3 4章", f"H{req['fence_height']:,}（防犯）", "全周 H2.0m 以上（東側坂道沿いは道路面+1.2m以上）", OK)
     add("ブリーフ", "敷地境界・塀の再配置", "施主指示（v4.21）・令2条1項1号", "北東を斜めに切り、東の塀を約2.4〜2.6m内側へ",
@@ -434,7 +438,9 @@ def checks(h):
     add("構造", "耐力壁で囲まれた面積", "平13国交告1026号 第5", "60m²以下", f"最大 {max(cells):.1f}m²", judge(max(cells) <= 60))
     add("構造", "階高・軒高・階数", "平13国交告1026号 第1", "階高3.5m以下・軒高20m以下・階数5以下",
         f"階高{h.H['1F'] / 1000:.1f}m（上限まで余裕 {3500 - h.H['1F']}mm。構造スラブ天端の間隔 {h.H['1F']:,} 固定）・軒高{h.fl['RF'] / 1000:.1f}m・2階", judge(h.H["1F"] <= 3500 and h.H["2F"] <= 3500))
-    add("構造", "コンクリート強度", "平13国交告1026号 第2・令74条", "Fc18以上", f"Fc{s['structure']['concrete']['Fc']}", judge(s["structure"]["concrete"]["Fc"] >= 18))
+    c_ = s["structure"]["concrete"]
+    add("構造", "コンクリート強度", "平13国交告1026号 第2・令74条", "Fc18以上",
+        f"Fc{c_['Fc']}・W/C {c_['wc_max'] * 100:.0f}%以下・単位水量 {c_['unit_water_max']}kg/m³ 以下（S-05）", judge(c_["Fc"] >= 18))
     lx_max = max(min(a2 - a1, b2 - b1) for a1, a2 in zip(h.gx, h.gx[1:]) for b1, b2 in zip(h.gy, h.gy[1:])) - h.t
     add("構造", "床版の厚さ", "令77条の2・告示1026号", f"8cm以上かつ短辺内法/40 = {lx_max / 40:.0f}mm", f"t={h.slab_t}（短辺 内法 {lx_max / 1000:.2f}m）", judge(h.slab_t >= lx_max / 40))
     import performance as PF
@@ -512,7 +518,7 @@ def checks(h):
     add("構造", "保有水平耐力（目安）", "令82条の3（参考）", f"Qu ≧ Qun（Ds={se['Ds']}）", f"最小 Qu/Qun = {qmin:.1f}", judge(qmin >= 1.0))
     add("構造", "地盤の接地圧（長期）", "令93条", "長期許容支持力度 150kN/m²（要地盤調査）", f"{se['bearing']:.1f}kN/m²", judge(se["bearing"] <= 150))
     add("構造", "かぶり厚さ", "令79条", "壁・床20（耐力壁30）／土に接する40／基礎60",
-        "設計かぶり 壁40・床30・土に接する50・基礎70", OK)
+        "設計かぶり 壁内50・壁外60・床40・屋根50・土に接する60・基礎80（最小かぶりは 40/50/30/40/50/70、S-05。v4.40）", OK)
     add("構造", "構造計算", "法20条1項3号", "壁式RC 2階建て（延べ200m²超）→ 構造計算（許容応力度等）", "別途 構造計算書", CHK)
     add("構造", "地盤・基礎", "令38条", "地盤調査に基づく基礎", "べた基礎（杭の要否は調査後）", CHK)
 
@@ -523,4 +529,45 @@ def checks(h):
     add("関連法令", "建築物省エネ法", "建築物省エネ法 10条（住宅の適合義務）", "地域区分6: 外皮 UA 0.87以下 ほか", "UA 0.25〜0.29（ブリーフ）", OK)
     add("関連法令", "宅地造成・盛土等規制法", "同法", "規制区域内の切土・盛土", "切土・盛土なし（現況地盤を維持）", OK)
     add("関連法令", "雨水浸透", "八王子市 雨水浸透施設の指導・助成", "設置基準・補助の確認", "貯留槽25m³・Dotcon+ 透水舗装・浸透桝", CHK)
+
+    # ---------------- 長期優良住宅（v4.40。docs/long_life_housing.md の 13 行の案）
+    import performance as PF_
+    ll = s["long_life"]
+    cm, cd_ = s["structure"]["cover_min"], s["structure"]["cover_design"]
+    ac, cv = MT.access(h), MT.cover_check(h)
+    tb, ea, be, mp = PF_.envelope_tb(h), PF_.eta_ac(h), PF_.bei_estimate(h), MT.plan(h)
+    gr = ll["energy"]["grade"]
+    fa = [h.floor_area(f) for f in h.floors]
+    LL = "長期優良"
+    add(LL, "住戸面積", "長期優良住宅法施行規則4条", "床面積の合計 75m²以上かつ一の階（階段部分を除く）40m²以上（上限なし）",
+        f"延べ {sm['total']:.1f}m²、1F {fa[0]:.1f}m²・2F {fa[1]:.1f}m²", judge(sm["total"] >= 75 and min(fa) >= 40))
+    ok_c = (c_["wc_max"] <= 0.50 and cm["wall_in"] >= 40 and cm["wall_out"] >= 50 and cm["slab"] >= 30 and cm["roof_top"] >= 40
+            and cm["earth_contact"] >= 50 and cm["foundation"] >= 70 and all(cd_[k] == cm[k] + 10 for k in cm))
+    add(LL, "劣化対策（RC）", "告示209号 第3 1(2)③・評価方法基準 3-1 等級3", "W/C 45%以下＋最小かぶり（イ）、または W/C 50%以下＋最小かぶり（ロ）。外断熱面は屋外側 −10mm 可",
+        f"W/C {c_['wc_max'] * 100:.0f}%以下・最小かぶり 壁内{cm['wall_in']}/壁外{cm['wall_out']}/床{cm['slab']}/屋根{cm['roof_top']}/土接{cm['earth_contact']}/基礎{cm['foundation']}（外断熱の減は使わない）・設計かぶり＋10。"
+        f"単位水量{c_['unit_water_max']}以下ほか（S-05）。壁の有効せいの減は構造計算で確認", judge(ok_c))
+    add(LL, "耐震性", "告示209号 第3 2(2)②イ・評価方法基準 1-1", "耐震等級2以上（許容応力度計算、Co=0.25）。目標 等級3（Co=0.30）",
+        f"Co=0.3 でせん断余裕 {wv['耐震等級3（Co=0.3）']['ratio']:.1f}倍（概算）。人通口 {ac['manways']}・スリーブの補強を含め構造計算書で確定", CHK)
+    add(LL, "維持管理（専用配管）: 埋込み", "告示209号 第3 4・評価方法基準 4-1 等級3", "給排水管をコンクリートに埋め込まない（貫通部を除く）",
+        "2F の排水はスリーブ貫通だけ、横引きは 1F 天井内・床下ピット内。給水・給湯はさや管ヘッダー（HD-1・HD-2）", OK)
+    add(LL, "維持管理（専用配管）: 地中管の上のコンクリート", "告示209号 第3 4・評価方法基準 4-1 等級3", "地中の専用配管の上にコンクリートを打設しない（外構土間・基礎の下を含む）",
+        f"給水 Dotcon+ の下 {cv['water_under'] / 1000:.1f}m（アプローチの横断 {cv['sleeve_m'] / 1000:.2f}m はさや管 VU75・両端に点検桝）、汚水 {cv['sewer_under'] / 1000:.1f}m。"
+        f"汚水の建物出口 GL+{cv['exit_invert']}（基礎立上り）。管路帯は砂利・門前は外せるインターロッキング", judge(cv["water_under"] < 1 and cv["sewer_under"] < 1 and cv["exit_ok"]))
+    add(LL, "維持管理（専用配管）: 点検口・掃除口", "告示209号 第3 4・評価方法基準 4-1 等級3", "主要接合部等・掃除口が隠れる場合は点検・清掃用の開口",
+        f"床下ピット 9 区画を人通口 {ac['manways']} で連結、床点検口 {ac['hatches']}（外の防水扉は廃止）、天井点検口 {ac['ch']}、PS {ac['ps']}（点検扉）、掃除口 {ac['co']}、ヘッダー {ac['headers']}（A-03M・S-06・M-05）", judge(ac["ok"]))
+    add(LL, "省エネ（外皮）", "告示209号 第3 6・評価方法基準 5-1 等級5", f"地域区分6: UA {gr['ua'][0]:.2f}以下・ηAC {gr['eta_ac']}以下",
+        f"熱橋込み UA {tb['UA_tb']:.3f}（ψ・χ は仮定）・ηAC {ea['value']:.2f}（M-06）。等級6（{gr['ua'][1]:.2f}）・等級7（{gr['ua'][2]:.2f}）も満たす見込み",
+        judge(tb["UA_tb"] <= gr["ua"][0] and ea["value"] <= gr["eta_ac"]))
+    add(LL, "省エネ（一次エネ）", "告示209号 第3 6・評価方法基準 5-2 等級6", f"BEI {gr['bei6']}以下（再エネ・家電等を除く。住宅版プログラム）",
+        f"BEI 概算 {be['bei']:.2f}（基準仕様は仮定、M-06）。住宅版プログラムの入力表を M-06 に整備、計算書で確定", CHK)
+    add(LL, "居住環境", "告示208号・八王子市の運用", "地区計画・景観計画・建築協定に適合、都市計画施設等の区域外",
+        "地区計画は大和田町五丁目のみ（7丁目は区域外の見込み）。他は未確認", CHK)
+    add(LL, "災害配慮", "告示208号・八王子市の運用", "土砂災害特別警戒区域・急傾斜地崩壊危険区域・地すべり防止区域の外",
+        "段差 3.2〜3.3m（5m 未満）。区域マップ未確認", CHK)
+    add(LL, "維持保全計画", "法6条・告示209号 第4", "期間30年以上、点検間隔10年以内、地震・台風時の臨時点検、見直し規定",
+        f"{mp['years']}年・点検 最大 {mp['max_interval']}年ごと・{len(mp['rows'])} 部位、臨時点検（震度5弱以上・台風・大雨・浸水）・見直し・記録（M-07、docs/maintenance_plan.md）",
+        judge(mp["years"] >= 30 and mp["max_interval"] <= 10))
+    add(LL, "資金計画", "法6条", "建築・維持保全を確実に行える資金計画",
+        f"工事費 約2.5億〜3.0億円（推定）＋長期優良の増分・審査、自己資金（仮定）。維持保全 30 年 約{mp['total']:,}万円＝積立 月 約{mp['monthly_all']:.1f}万円（M-07）", CHK)
+    add(LL, "申請時期", "法5条・八王子市", "着工の前日までに認定申請（技術的審査の確認書を添付）", "着工時期 未定", CHK)
     return rows, sm, wq

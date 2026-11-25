@@ -352,6 +352,10 @@ def interior_parts(h, its):
             for p in _polys(cp):
                 MBfor(G, c.floor, c.cmat).slab_poly(c.cmat, p, zc, zc + 20)
 
+    # ---------------- v4.40 点検口（床点検口の枠・天井点検口の目地）
+    import maintenance as MT
+    MT.interior_parts(h, MBfor)
+
     # ---------------- 開口部の床（壁の厚み分、扉・開口の幅）。黒い帯の対策
     for w in h.walls:
         if w.cat == "insul":
