@@ -493,7 +493,7 @@ $SKPOLY
   9
 $TDCREATE
  40
-2461369.278171296
+2461370.310046296
   9
 $TDUCREATE
  40
@@ -501,7 +501,7 @@ $TDUCREATE
   9
 $TDUPDATE
  40
-2461369.2785185184
+2461370.310578704
   9
 $TDUUPDATE
  40
@@ -933,11 +933,11 @@ $PSTYLEMODE
   9
 $FINGERPRINTGUID
   2
-{54EA8558-3B69-4887-87BF-4CAA88D132B4}
+{FEE4E783-8A7A-4A10-81A8-18ACDC77D67A}
   9
 $VERSIONGUID
   2
-{28E1F563-A37D-4E8E-A1BA-B23EB2366819}
+{104F4C14-DFAD-4BDF-AB52-6D4AD24654EA}
   9
 $EXTNAMES
 290
@@ -1327,9 +1327,9 @@ ISM
   0
 CLASS
   1
-ACDBPLACEHOLDER
+LAYOUT
   2
-AcDbPlaceHolder
+AcDbLayout
   3
 ObjectDBX Classes
  90
@@ -1343,9 +1343,9 @@ ObjectDBX Classes
   0
 CLASS
   1
-LAYOUT
+ACDBPLACEHOLDER
   2
-AcDbLayout
+AcDbPlaceHolder
   3
 ObjectDBX Classes
  90
@@ -7717,7 +7717,7 @@ AcDbText
  40
 4.4
   1
-法規チェックリスト（2/5）
+法規チェックリスト（2/6）
   7
 JP
  11
@@ -11765,7 +11765,7 @@ AcDbText
  40
 2.1
   1
-日なたのプランター菜園 植付21.6m²（影損失 年3.0%）を Dotcon+ の上に脚付きで設置。パーゴラ下は半日陰の作物
+日なたのプランター菜園 植付21.6m²（影損失 年4.2%）を Dotcon+ の上に脚付きで設置。パーゴラ下は半日陰の作物
   7
 JP
  11
@@ -16637,7 +16637,7 @@ DictionaryVariables
 280
 0
   1
-1.4.5 @ 2026-11-24T06:40:34.293695+00:00
+1.4.5 @ 2026-11-25T07:26:28.511688+00:00
   0
 VISUALSTYLE
   5
@@ -23199,7 +23199,7 @@ DictionaryVariables
 280
 0
   1
-1.4.5 @ 2026-11-24T06:41:04.708631+00:00
+1.4.5 @ 2026-11-25T07:27:14.994804+00:00
   0
 ENDSEC
   0

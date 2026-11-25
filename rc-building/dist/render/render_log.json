@@ -560,12 +560,12 @@
     "floor": "1F",
     "room": "トイレ（手洗い付）",
     "cam": [
-     9450,
+     9900,
      10600,
      3100
     ],
     "target": [
-     11070.720961432966,
+     8279.279038567034,
      13124.532345835918,
      3100
     ],
@@ -582,17 +582,17 @@
      "D": 0,
      "F": 0
     },
-    "render_seconds": 946.8,
+    "render_seconds": 164.2,
     "metrics": {
      "black": 0.0,
      "white": 0.0,
-     "mean": 177.9838,
-     "std": 48.2917,
+     "mean": 179.3919,
+     "std": 48.2988,
      "window_area": 0.0
     },
     "status": "ok",
     "issues": [],
-    "def_hash": "459c27b88c9c",
+    "def_hash": "d3639afff848",
     "clearance": 700,
     "front_mm": 1664,
     "wall_angle": 32.7,
@@ -1954,11 +1954,11 @@
   },
   "master": {
    "file": "kawazanyo_master.blend",
-   "model_hash": "e444c5e806a69800",
-   "generated_at": "2026-11-23T17:04:13"
+   "model_hash": "fe79508e7b95b8da",
+   "generated_at": "2026-11-25T07:37:50"
   },
   "version": "v4.34",
-  "total_seconds": 9630.8
+  "total_seconds": 9795.3
  },
  "master": {
   "file": "kawazanyo_master.blend",

@@ -569,7 +569,7 @@
 仮置き: False
 根拠: 
 標高TP_m: 109.0
-面積m2: 172.94</description>
+面積m2: 157.4</description>
         <ExtendedData>
           <Data name="区分">
             <value>Dotcon+</value>
@@ -590,14 +590,14 @@
             <value>109.0</value>
           </Data>
           <Data name="面積m2">
-            <value>172.94</value>
+            <value>157.4</value>
           </Data>
         </ExtendedData>
         <Polygon>
           <tessellate>1</tessellate>
           <outerBoundaryIs>
             <LinearRing>
-              <coordinates>139.340452948,35.66733316,0 139.340576991,35.667311227,0 139.340577668,35.66731294,0 139.340612563,35.667443193,0 139.340488312,35.667465163,0 139.340452948,35.66733316,0</coordinates>
+              <coordinates>139.340463753,35.66733125,0 139.340576991,35.667311227,0 139.340577668,35.66731294,0 139.340612563,35.667443193,0 139.340509921,35.667461342,0 139.340496765,35.667454475,0 139.340463753,35.66733125,0</coordinates>
             </LinearRing>
           </outerBoundaryIs>
         </Polygon>
@@ -637,7 +637,7 @@
           <tessellate>1</tessellate>
           <outerBoundaryIs>
             <LinearRing>
-              <coordinates>139.340524304,35.66748546,0 139.340621544,35.667468266,0 139.340635653,35.667520932,0 139.340538413,35.667538126,0 139.340524304,35.66748546,0</coordinates>
+              <coordinates>139.340531867,35.667484123,0 139.340629107,35.667466929,0 139.340643216,35.667519595,0 139.340545976,35.667536789,0 139.340531867,35.667484123,0</coordinates>
             </LinearRing>
           </outerBoundaryIs>
         </Polygon>

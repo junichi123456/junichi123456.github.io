@@ -14,6 +14,7 @@ from ezdxf.enums import TextEntityAlignment
 FONT = "ipag.ttf"
 
 # レイヤ名: (色 ACI, 線種, 線幅[1/100mm], 説明)
+LAZY_LAYERS = ("M-INSP", "E-STRIP", "E-CO")   # v4.40 の新レイヤー（使う図面にだけ足す）
 LAYERS = {
     "G-FRAME": (7, "Continuous", 70, "図枠"),
     "G-TITLE": (7, "Continuous", 25, "表題欄"),
@@ -105,6 +106,8 @@ class Sheet:
         self.doc.styles.add("JP", font=FONT)
         self.doc.styles.get("Standard").dxf.font = FONT
         for name, (color, lt, lw, desc) in LAYERS.items():
+            if name in LAZY_LAYERS:                      # v4.40: 使う図面にだけ足す（既存の図面の DXF を変えない。save で追加）
+                continue
             lay = self.doc.layers.add(name, color=color, linetype=lt, lineweight=lw)
             lay.description = desc
         ds = self.doc.dimstyles.new("JIS")
@@ -313,6 +316,11 @@ class Sheet:
         self.text(self.number, P(bx + 17, ys[2] + 1.0), 6.0, "G-TITLE", "BOTTOM_CENTER")
 
     def save(self, path):
+        used = {e.dxf.layer for e in self.msp}
+        for name in LAZY_LAYERS:
+            if name in used and name not in self.doc.layers:
+                color, lt, lw, desc = LAYERS[name]
+                self.doc.layers.add(name, color=color, linetype=lt, lineweight=lw).description = desc
         self.doc.saveas(path)
 
 
