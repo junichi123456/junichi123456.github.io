@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""取得費の見積もりと資産取り崩しモンテカルロ（仕様 spec_portfolio.md）。
+"""取得費の見積もりと資産取り崩しモンテカルロ（仕様 spec_portfolio.md、土地未取得の差分 spec_portfolio_land.md）。
 
 金額は 2026 年の円の実質値（税込、万円）。外部依存は numpy だけ。
   python3 finance/portfolio_mc.py --grid all --csv finance/results.csv --md finance/results_tables.md
@@ -39,11 +39,34 @@ CASH_ON_HAND = 3000
 TOTAL_ASSET = 100000  # 10億
 PROP_TAX = {"低": (320, 286), "中": (390, 369), "高": (470, 470)}  # 初年度, 10年目
 
+# ---- 土地未取得（主ケース）。万円、2026 年実質・税込
+LAND_BUY_AREA = 2629.64   # 購入面積(旧境界)【仮定】。寄付帯 203.2㎡ を含む
+LAND_RES_AREA = 2426.42   # 入居後の敷地(塀の外面)。課税面積
+LAND_EVAL_UNIT = {"低": 8.5, "中": 10.5, "高": 13.0}   # 固定資産評価の単価 万円/㎡
+REG_RATE = {"低": 0.015, "中": 0.015, "高": 0.02}      # 登録免許税率（軽減1.5%の延長は【要確認】）
+LAND_FIXED_ITEMS = {  # 低・中・高
+    "印紙・司法書士": (20, 30, 50),
+    "境界確定・官民査定・分筆・寄付手続": (100, 200, 400),
+    "解体・基礎杭撤去・土壌調査": (300, 2500, 6000),
+    "地盤改良・杭": (0, 800, 2500),
+    "造成・整地": (0, 100, 300),
+    "インフラ引込み(上下水・加入金・電力・通信)": (150, 300, 600),
+}
+PRE_YEARS = {"低": 2.5, "中": 2.75, "高": 3.0}   # 土地取得〜入居(年)
+RENT_M = {"低": 20, "中": 30, "高": 45}          # 仮住まい家賃 万円/月
+MOVE = {"低": 100, "中": 150, "高": 250}         # 引越し2回・敷金礼金・倉庫
+PRE_LIVING_PER_YEAR = 490.0                       # 基礎生活費 D360＋国保・年金130
+HOUSE_TAX = {"低": (193, 158), "中": (232, 211), "高": (275, 274)}  # 家屋分 1年目, 10年目
+REC = (0, 0.4)   # 推奨構成（バッファ年数, 債券比率）
 
-def acquisition_cost(case, land=False):
-    """取得費の内訳(万円)と合計。land=True なら土地未取得の加算を含む。"""
+
+def acquisition_cost(case, land=False, buy_land=False):
+    """取得費の内訳(万円)と合計。land=True なら旧・土地未取得の加算を含む。
+    buy_land=True は建物側だけ（「解体・土壌調査」は土地側 land_cost へ移すので 0）。"""
     i = CASES[case]
     items = {k: v[i] for k, v in COST_ITEMS.items()}
+    if buy_land:
+        items["解体・土壌調査"] = 0
     work = items["建築工事費"] + items["太陽光"] + items["蓄電池"] + items["外構"]
     items["予備費"] = round(work * CONTINGENCY[case])
     if land:
@@ -55,10 +78,114 @@ def acquisition_cost(case, land=False):
     return items, sum(items.values())
 
 
-def property_tax_path(case, t=T_YEARS):
-    """固定資産税・都市計画税の実質値(万円/年)。1〜10年目は線形補間、以降は10年目で一定。"""
-    a, b = PROP_TAX[case]
-    return np.array([a + (b - a) * min(k, 9) / 9 for k in range(t)], dtype=float)
+def land_tax_resid(area, u):
+    """入居後の土地の固都税・都市計画税(万円/年)。u=評価単価(万円/㎡)。小規模住宅用地の特例込み。"""
+    s_, r_ = min(200.0, area), max(area - 200.0, 0.0)
+    return (s_ * u / 6 + r_ * u / 3) * 0.014 + (s_ * u / 3 + r_ * u * 2 / 3) * 0.0027
+
+
+def property_tax_path(case, t=T_YEARS, land_case=None, land_area=LAND_RES_AREA, flat=None):
+    """固定資産税・都市計画税の実質値(万円/年)。1〜10年目は線形補間、以降は10年目で一定。
+    land_case を指定すると 家屋分(建物ケース) ＋ 土地分(土地ケース・land_area)。flat は一律の値。"""
+    if flat is not None:
+        return np.full(t, float(flat))
+    if land_case is None:
+        a, b = PROP_TAX[case]
+        return np.array([a + (b - a) * min(k, 9) / 9 for k in range(t)], dtype=float)
+    a, b = HOUSE_TAX[case]
+    land = land_tax_resid(land_area, LAND_EVAL_UNIT[land_case])
+    return np.array([a + (b - a) * min(k, 9) / 9 + land for k in range(t)], dtype=float)
+
+
+def land_cost(lcase, area=LAND_BUY_AREA, price=None, overrides=None):
+    """土地側の取得費(万円)の内訳と合計。price は万円/㎡（既定は LAND_PRICE）。"""
+    i = CASES[lcase]
+    pr = LAND_PRICE[lcase] if price is None else price
+    ev = area * LAND_EVAL_UNIT[lcase]
+    p = area * pr
+    items = {
+        "土地代": round(p),
+        "仲介手数料": round((p * 0.03 + 6) * 1.1),
+        "登録免許税(所有権移転)": round(ev * REG_RATE[lcase]),
+        "不動産取得税(土地)": round(ev * 0.5 * 0.03),
+    }
+    for k, v in LAND_FIXED_ITEMS.items():
+        items[k] = v[i]
+    for k, v in (overrides or {}).items():
+        items[k] = v
+    return items, sum(items.values())
+
+
+def pre_occupancy_cost(lcase, area=LAND_BUY_AREA, pre_living=True):
+    """土地取得〜入居の建築期間中の取り崩し P(万円)。実質0%で確定的に差し引く。"""
+    i = CASES[lcase]
+    y = PRE_YEARS[lcase]
+    ev = area * LAND_EVAL_UNIT[lcase]
+    items = {
+        "仮住まい家賃": round(RENT_M[lcase] * 12 * y),
+        "引越し2回・敷金礼金・倉庫": MOVE[lcase],
+        "土地の固都税(非住宅用地)": round(ev * 0.7 * 0.0167 * y),
+    }
+    if pre_living:
+        items["基礎生活費(D+国保・年金)"] = round(PRE_LIVING_PER_YEAR * y)
+    return items, sum(items.values())
+
+
+def base_spend0(bcase, lcase, d0=360.0):
+    """入居後 初年度の基準支出(万円)。"""
+    return (d0 + HOUSE_TAX[bcase][0] + land_tax_resid(LAND_RES_AREA, LAND_EVAL_UNIT[lcase])
+            + 130.0 + 164.4 + 35.0 + 10.0)
+
+
+def total_cost(bcase, lcase):
+    """建物×土地の総所要額と運用元本。W0<=0 は不成立、W0<10×初年度基準支出は実質不成立。"""
+    b = acquisition_cost(bcase, buy_land=True)[1]
+    l_ = land_cost(lcase)[1]
+    pc = pre_occupancy_cost(lcase)[1]
+    w0 = TOTAL_ASSET - CASH_ON_HAND - b - l_ - pc
+    if w0 <= 0:
+        v = "不成立"
+    elif w0 < 10 * base_spend0(bcase, lcase):
+        v = "実質不成立"
+    else:
+        v = "成立"
+    return dict(建物=b, 土地=l_, P=pc, 総所要額=b + l_ + pc, W0=w0, 判定=v)
+
+
+# 代替案（spec 5 章）。建物は spec の値、土地・P は land_cost / pre_occupancy_cost の式で計算する。
+ALT_CASES = {
+    "案1 建物縮小(300㎡)": dict(
+        建物=22559, area=LAND_BUY_AREA, price=None, over=None,
+        sim=dict(case="中", prop_tax_flat=263.0, repair=74.0, insurance=25.0), lumps=None),
+    "案2 土地縮小(800㎡)": dict(
+        建物=40179, area=800.0, price=16, over={"境界確定・官民査定・分筆・寄付手続": 150, "解体・基礎杭撤去・土壌調査": 500,
+                                              "地盤改良・杭": 800, "インフラ引込み(上下水・加入金・電力・通信)": 300},
+        sim=dict(case="中", land_case="中", land_area=800.0), lumps=None),
+    "案1+2 300㎡・敷地500㎡": dict(
+        建物=18652, area=500.0, price=16, over={"境界確定・官民査定・分筆・寄付手続": 150, "解体・基礎杭撤去・土壌調査": 500,
+                                              "地盤改良・杭": 500, "インフラ引込み(上下水・加入金・電力・通信)": 300},
+        sim=dict(case="中", prop_tax_flat=132.0, repair=74.0, insurance=25.0), lumps=None),
+    "案3 段階導入(案2＋5年目に後払い)": dict(
+        建物=35279, area=800.0, price=16, over={"境界確定・官民査定・分筆・寄付手続": 150, "解体・基礎杭撤去・土壌調査": 500,
+                                              "地盤改良・杭": 800, "インフラ引込み(上下水・加入金・電力・通信)": 300},
+        sim=dict(case="中", land_case="中", land_area=800.0), lumps={4: 4900.0}),
+}
+
+
+def alt_totals(name):
+    a = ALT_CASES[name]
+    lcost = land_cost("中", a["area"], a["price"], a["over"])[1]
+    pc = pre_occupancy_cost("中", a["area"])[1]
+    w0 = TOTAL_ASSET - CASH_ON_HAND - a["建物"] - lcost - pc
+    return dict(建物=a["建物"], 土地=lcost, P=pc, 総所要額=a["建物"] + lcost + pc, W0=w0)
+
+
+def alt4_delay(years=3.0):
+    """案4: 中×中で着工を years 年遅らせる（試算せず金額だけ）。"""
+    hold = (round(LAND_BUY_AREA * LAND_EVAL_UNIT["中"] * 0.7 * 0.0167)
+            + RENT_M["中"] * 12 + PRE_LIVING_PER_YEAR)
+    base = total_cost("中", "中")
+    return dict(年間保有コスト=hold, 追加P=hold * years, W0=base["W0"] - hold * years)
 
 
 # ---------------------------------------------------------------- 乱数
@@ -120,6 +247,9 @@ DEFAULTS = dict(
     # ポートフォリオ
     bond_w=0.0, buffer_years=0.0, nisa=0.0, rebal_band=0.05,
     r1_add=0.002, r1_lag=True,
+    # 土地ケース連動の固都税・一時支出（既定値は旧動作と同じ）
+    land_case=None, land_area=LAND_RES_AREA, prop_tax_flat=None,
+    lumps=None,          # {t: 実質額}。削れない一時支出
 )
 
 
@@ -143,8 +273,17 @@ def simulate(params, z):
     rb_nom = (1 + rb_real) * (1 + infl) - 1
 
     # 支出の基準
-    pt = property_tax_path(p["case"], T) if p["prop_tax"] else np.zeros(T)
+    if not p["prop_tax"]:
+        pt = np.zeros(T)
+    elif p["prop_tax_flat"] is not None or p["land_case"] is not None:
+        pt = property_tax_path(p["case"], T, p["land_case"], p["land_area"], p["prop_tax_flat"])
+    else:
+        pt = property_tax_path(p["case"], T)
     fixed = pt + p["kokuho"] + p["repair"] + p["insurance"] + p["utility"]
+    if p["lumps"]:
+        for tt, v in p["lumps"].items():
+            if tt < T:
+                fixed[tt] += v
     pen = np.array([p["pension"] if (p["age0"] + t) >= p["pension_start"] else 0.0 for t in range(T)])
     if p["spend_total"] is not None:
         base = np.full(T, float(p["spend_total"]))
@@ -306,6 +445,14 @@ def case_params(case, land=False, **kw):
     return p, cost
 
 
+def case_params_land(bcase, lcase, **kw):
+    """土地・建物とも未取得: 運用元本は total_cost の W0。固都税は建物×土地ケース連動。"""
+    tc = total_cost(bcase, lcase)
+    p = dict(case=bcase, land_case=lcase, w0=float(tc["W0"]), nisa=1800.0)
+    p.update(kw)
+    return p, tc
+
+
 def run_case(label, params, n, seed, extra=None):
     z = get_shocks(n, seed, params.get("dist", "normal"))
     t0 = time.time()
@@ -413,6 +560,85 @@ def grid_BIS(n, seed, rec):
                          "構成": lab, "取得費上限": round(c), "元本": round(TOTAL_ASSET - CASH_ON_HAND - c)})
     return rows
 
+# ---------------------------------------------------------------- 土地未取得（主ケース）
+CONFIGS = [("株100%・R0", (0, 0.0), "R0"), ("株100%・R3", (0, 0.0), "R3"), ("推奨・R3", REC, "R3")]
+G4_PAIRS = [("低", "低"), ("低", "中"), ("中", "低"), ("中", "中"), ("高", "低")]
+
+
+def grid_G4(n, seed):
+    """主表: 土地・建物とも未取得。成立する 5 組（W0>0）× μ × 3 構成 = 45 行。"""
+    rows = []
+    for bc, lc in G4_PAIRS:
+        tc = total_cost(bc, lc)
+        assert tc["W0"] > 0, (bc, lc)
+        for mu in (0.03, 0.04, 0.05):
+            for lab, (k, b), rule in CONFIGS:
+                p, _ = case_params_land(bc, lc, mu=mu, rule=rule, buffer_years=k, bond_w=b)
+                rows.append(run_case("建%s×土%s μ%d%% %s" % (bc, lc, round(mu * 100), lab), p, n, seed,
+                                     dict(グリッド="G4", 建物ケース=bc, 土地ケース=lc, 建物=tc["建物"], 土地=tc["土地"],
+                                          総所要額=tc["総所要額"], 建築期間P=tc["P"], 判定=tc["判定"], μ=mu * 100,
+                                          規則=rule, 構成=lab, 株比率=round((1 - b) * 100), バッファ=k)))
+    return rows
+
+
+def grid_ALT(n, seed):
+    """代替案 案1・案2・案1+2・案3 × μ × {株100%・R0, 推奨・R3} = 24 行。"""
+    rows = []
+    for name, a in ALT_CASES.items():
+        tc = alt_totals(name)
+        for mu in (0.03, 0.04, 0.05):
+            for lab, (k, b), rule in (CONFIGS[0], CONFIGS[2]):
+                p = dict(w0=float(tc["W0"]), nisa=1800.0, mu=mu, rule=rule, buffer_years=k, bond_w=b, lumps=a["lumps"])
+                p.update(a["sim"])
+                rows.append(run_case("%s μ%d%% %s" % (name, round(mu * 100), lab), p, n, seed,
+                                     dict(グリッド="ALT", 案=name, 建物=tc["建物"], 土地=tc["土地"], 総所要額=tc["総所要額"],
+                                          建築期間P=tc["P"], μ=mu * 100, 規則=rule, 構成=lab,
+                                          株比率=round((1 - b) * 100), バッファ=k)))
+    return rows
+
+
+def max_total(mu, n, seed, kb, rule, targets=(10.0, 15.0, 20.0), P=None, iters=14):
+    """50年枯渇 <= 目標% を満たす最大の「土地＋建物」X(万円) を2分探索。
+    W0 = 97,000 − P − X。支出は中×中で固定（予算が小さいほど実際の税・修繕は小さいので上限は保守側）。
+    dep(W0) はキャッシュして目標間で共有。返り値 {目標: X}。"""
+    if P is None:
+        P = pre_occupancy_cost("中")[1]
+    k, b = kb
+    z = get_shocks(n, seed, "normal")
+    cache = {}
+
+    def dep(c):  # c = P + X（総所要額）
+        if c not in cache:
+            p = dict(case="中", land_case="中", w0=TOTAL_ASSET - CASH_ON_HAND - c, nisa=1800.0, mu=mu, rule=rule,
+                     buffer_years=k, bond_w=b)
+            cache[c] = float(np.mean(simulate(p, z)["depl_year"] <= 50) * 100)
+        return cache[c]
+
+    out = {}
+    for tg in targets:
+        lo, hi = 0.0, float(TOTAL_ASSET - CASH_ON_HAND)
+        for _ in range(iters):
+            mid = (lo + hi) / 2
+            if dep(mid) <= tg:
+                lo = mid
+            else:
+                hi = mid
+        out[tg] = max(lo - P, 0.0)
+    return out
+
+
+def grid_BIS2(n, seed):
+    P = pre_occupancy_cost("中")[1]
+    rows = []
+    for mu in (0.03, 0.04, 0.05):
+        for lab, kb, rule in (("株100%・R0", (0, 0.0), "R0"), ("推奨・R3", REC, "R3")):
+            res = max_total(mu, n, seed, kb, rule, (10.0, 15.0, 20.0), P)
+            for tg, x in res.items():
+                rows.append({"グリッド": "BIS2", "ケース": "μ%d%% %s 枯渇%d%%以内" % (round(mu * 100), lab, tg), "μ": mu * 100,
+                             "構成": lab, "目標": tg, "建築期間P": P, "土地建物上限": round(x),
+                             "元本": round(TOTAL_ASSET - CASH_ON_HAND - P - x)})
+    return rows
+
 
 def run_grid(name, n=100000, seed=SEED):
     if name == "T0":
@@ -427,11 +653,21 @@ def run_grid(name, n=100000, seed=SEED):
     if name == "BIS":
         rec = pick_recommended(grid_G2(n, seed, mus=(0.04,)))
         return grid_BIS(n, seed, rec)
+    if name == "G4":
+        return grid_G4(n, seed)
+    if name == "ALT":
+        return grid_ALT(n, seed)
+    if name == "BIS2":
+        return grid_BIS2(n, seed)
+    if name == "land":
+        return grid_G4(n, seed) + grid_ALT(n, seed) + grid_BIS2(n, seed)
     if name == "all":
         rows = grid_T0(n, seed) + grid_G1(n, seed)
         g2 = grid_G2(n, seed)
         rec = pick_recommended(g2)
+        assert (rec["バッファ"], round(1 - rec["株比率"] / 100, 6)) == REC, rec
         rows += g2 + grid_G3(n, seed, rec) + grid_BIS(n, seed, rec)
+        rows += grid_G4(n, seed) + grid_ALT(n, seed) + grid_BIS2(n, seed)
         return rows
     raise ValueError(name)
 
@@ -448,20 +684,36 @@ def to_markdown(rows):
         groups.setdefault(r["グリッド"], []).append(r)
     titles = {"T0": "T0 施主試算の再現", "G1": "G1 取得費×μ×規則（建物のみ、株100%・バッファ0）",
               "G1土地": "G1 土地未取得", "G2": "G2 ポートフォリオ（取得費 中）", "G3": "G3 感度（推奨構成）",
-              "BIS": "取得費の上限（50年枯渇 10% 以下）"}
+              "BIS": "取得費の上限（50年枯渇 10% 以下）",
+              "G4": "G4 土地・建物とも未取得（主表。成立する 5 組×μ×構成。判定＝実質不成立は元本が初年度基準支出の10年分未満）",
+              "ALT": "ALT 代替案（案1 建物縮小・案2 土地縮小・案1+2・案3 段階導入。案4 は試算せず金額のみ）",
+              "BIS2": "成立する最大予算: 土地＋建物の上限（目標＝50年枯渇の上限%）"}
     for g, rs in groups.items():
         out.append("### " + titles.get(g, g) + "\n")
         if g == "BIS":
             out.append("| ケース | 取得費の上限(万円) | 運用元本(万円) |\n|---|---:|---:|")
             for r in rs:
                 out.append("| %s | %s | %s |" % (r["ケース"], format(r["取得費上限"], ","), format(r["元本"], ",")))
+        elif g == "BIS2":
+            out.append("| 目標(50年枯渇) | μ | 構成 | 土地＋建物の上限(万円) | 運用元本(万円) |\n|---:|---:|---|---:|---:|")
+            for r in rs:
+                out.append("| %d%%以内 | %d%% | %s | %s | %s |" % (r["目標"], r["μ"], r["構成"],
+                                                              format(r["土地建物上限"], ","), format(r["元本"], ",")))
         else:
             hdr = ["ケース", "元本(万円)", "50年枯渇%", "30年枯渇%", "20年枯渇%", "終価中央値(万円)", "終価10%点(万円)",
                    "削減年割合%", "最低支出比 中央", "最低支出比 10%点", "初年度取崩率%"]
+            extra = g in ("G4", "ALT")
+            if extra:
+                hdr = hdr[:1] + ["建物", "土地", "総所要額", "建築P"] + (["判定"] if g == "G4" else []) + hdr[1:]
             out.append("| " + " | ".join(hdr) + " |\n|---|" + "---:|" * (len(hdr) - 1))
             for r in rs:
-                out.append("| %s | %s | %.1f | %.1f | %.1f | %s | %s | %.1f | %.2f | %.2f | %.2f |" % (
-                    r["ケース"], format(r["元本"], ","), r["枯渇50年"], r["枯渇30年"], r["枯渇20年"],
+                pre = ""
+                if extra:
+                    pre = " %s | %s | %s | %s |" % tuple(format(r[k], ",") for k in ("建物", "土地", "総所要額", "建築期間P"))
+                    if g == "G4":
+                        pre += " %s |" % r["判定"]
+                out.append("| %s |%s %s | %.1f | %.1f | %.1f | %s | %s | %.1f | %.2f | %.2f | %.2f |" % (
+                    r["ケース"], pre, format(r["元本"], ","), r["枯渇50年"], r["枯渇30年"], r["枯渇20年"],
                     format(round(r["終価中央値"]), ","), format(round(r["終価10%点"]), ","),
                     r["削減年割合"], r["最低支出比中央"], r["最低支出比10%点"], r["初年度取崩率"]))
         out.append("")
