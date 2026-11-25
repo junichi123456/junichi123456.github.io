@@ -235,11 +235,11 @@
      "D": 0,
      "F": 0
     },
-    "render_seconds": 325.1,
+    "render_seconds": 326.4,
     "metrics": {
-     "mean": 143.5736,
-     "std": 70.8077,
-     "black": 0.0053,
+     "mean": 143.5199,
+     "std": 70.9277,
+     "black": 0.0071,
      "white": 0.0
     },
     "status": "ok",
@@ -851,12 +851,12 @@
      "D": 0,
      "F": 0
     },
-    "render_seconds": 954.2,
+    "render_seconds": 161.9,
     "metrics": {
-     "black": 0.0004,
+     "black": 0.0006,
      "white": 0.0,
-     "mean": 161.6679,
-     "std": 34.4732,
+     "mean": 161.881,
+     "std": 34.7181,
      "window_area": 0.0
     },
     "status": "ok",
@@ -1955,10 +1955,10 @@
   "master": {
    "file": "kawazanyo_master.blend",
    "model_hash": "fe79508e7b95b8da",
-   "generated_at": "2026-11-25T07:37:50"
+   "generated_at": "2026-11-25T07:51:32"
   },
   "version": "v4.34",
-  "total_seconds": 9795.3
+  "total_seconds": 10284.3
  },
  "master": {
   "file": "kawazanyo_master.blend",

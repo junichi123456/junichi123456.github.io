@@ -168,6 +168,60 @@
    "stale_since": "v4.37"
   },
   {
+   "id": "I10",
+   "file": "dist/render/interior/I10_washroom_bath.png",
+   "seconds": 252.5,
+   "render_seconds": 252.3,
+   "samples": 64,
+   "time_limit": 240,
+   "res": [
+    1600,
+    900
+   ],
+   "exposure": -1,
+   "wb": 5000,
+   "lamp_k": 4625,
+   "lamp_pct": 100.0,
+   "channels": {
+    "L": [
+     4625,
+     100.0
+    ],
+    "D": [
+     2200,
+     0.0
+    ],
+    "F": [
+     2200,
+     0.0
+    ]
+   },
+   "hdri_sun": [
+    145.8,
+    47.9,
+    -137.4
+   ],
+   "texture_fallbacks": [],
+   "family": "I",
+   "time_limit_hit": true,
+   "when": "2026-03-21T14:00",
+   "status": "ok",
+   "master": {
+    "file": "kawazanyo_master.blend",
+    "model_version": "v4.32",
+    "model_hash": "fe79508e7b95b8daf988239bbe80a37b7f6eb4a14f19236cf72c04c59fc95a0b",
+    "generated_at": "2026-11-25T07:29:26"
+   },
+   "shoot": {
+    "def_hash": "7de12eb647bc",
+    "model_hash": "fe79508e7b95b8daf988239bbe80a37b7f6eb4a14f19236cf72c04c59fc95a0b",
+    "args_hash": "a3cce0f4edd0",
+    "seed": 0
+   },
+   "shoot_flags": [],
+   "palette_mismatch": []
+  },
+  {
    "id": "I12",
    "file": "dist/render/interior/I12_genkan_glass.png",
    "seconds": 242.7,
@@ -577,14 +631,14 @@
  "master": {
   "file": "kawazanyo_master.blend",
   "model_version": "v4.32",
-  "model_hash": "e444c5e806a698009a79d0784f8664c2a730dbbb91b71f802107194b8785de12",
-  "generated_at": "2026-11-23T16:45:29"
+  "model_hash": "fe79508e7b95b8daf988239bbe80a37b7f6eb4a14f19236cf72c04c59fc95a0b",
+  "generated_at": "2026-11-25T07:29:26"
  },
  "last_shoot": {
-  "at": "2026-11-23T17:17:05",
-  "seconds": 770.0,
+  "at": "2026-11-25T07:56:00",
+  "seconds": 265.7,
   "seed": 0,
-  "material_colors_checked": 122
+  "material_colors_checked": 124
  },
  "texture_missing": []
 }
