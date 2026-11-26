@@ -62,7 +62,7 @@
     "window_ratio": 0.8918,
     "window_std": 29.3368
    },
-   "status": "flag",
+   "status": "stale",
    "issues": [
     "窓の外が見えない（窓領域の平均は画像平均の 0.89 倍・標準偏差 29.3）"
    ],
@@ -82,7 +82,9 @@
    "shoot_flags": [],
    "texture_fallbacks": [],
    "palette_mismatch": [],
-   "stale_since": "v4.38"
+   "stale_since": "v4.43",
+   "prev_stale_since": "v4.38",
+   "note": "外形 16.25m 角へ縮小（未撮影）"
   },
   "Z1-11b": {
    "id": "Z1-11b",
@@ -144,7 +146,7 @@
     "std": 52.2864,
     "window_area": 0.0
    },
-   "status": "ok",
+   "status": "stale",
    "issues": [],
    "def_hash": "ab4f194cb071",
    "master": {
@@ -162,7 +164,9 @@
    "shoot_flags": [],
    "texture_fallbacks": [],
    "palette_mismatch": [],
-   "stale_since": "v4.37"
+   "stale_since": "v4.43",
+   "prev_stale_since": "v4.37",
+   "note": "外形 16.25m 角へ縮小（未撮影）"
   },
   "Z1-21a": {
    "id": "Z1-21a",
@@ -224,10 +228,12 @@
     "std": 64.8963,
     "window_area": 0.0
    },
-   "status": "ok",
+   "status": "stale",
    "issues": [],
    "def_hash": "00711d31d194",
-   "stale_since": "v4.37"
+   "stale_since": "v4.43",
+   "prev_stale_since": "v4.37",
+   "note": "外形 16.25m 角へ縮小（未撮影）"
   },
   "Z1-21b": {
    "id": "Z1-21b",
@@ -289,7 +295,7 @@
     "std": 52.7578,
     "window_area": 0.0
    },
-   "status": "ok",
+   "status": "stale",
    "issues": [],
    "def_hash": "c71641229a99",
    "master": {
@@ -307,7 +313,9 @@
    "shoot_flags": [],
    "texture_fallbacks": [],
    "palette_mismatch": [],
-   "stale_since": "v4.38"
+   "stale_since": "v4.43",
+   "prev_stale_since": "v4.38",
+   "note": "外形 16.25m 角へ縮小（未撮影）"
   },
   "Z1-31a": {
    "id": "Z1-31a",
@@ -369,9 +377,11 @@
     "std": 63.6331,
     "window_area": 0.0
    },
-   "status": "ok",
+   "status": "stale",
    "issues": [],
-   "def_hash": "715a8c5c037b"
+   "def_hash": "715a8c5c037b",
+   "stale_since": "v4.43",
+   "note": "外形 16.25m 角へ縮小（未撮影）"
   },
   "Z1-31b": {
    "id": "Z1-31b",
@@ -433,9 +443,11 @@
     "std": 79.1699,
     "window_area": 0.0
    },
-   "status": "ok",
+   "status": "stale",
    "issues": [],
-   "def_hash": "fd9baa5c6de2"
+   "def_hash": "fd9baa5c6de2",
+   "stale_since": "v4.43",
+   "note": "外形 16.25m 角へ縮小（未撮影）"
   },
   "Z1-12a": {
    "id": "Z1-12a",
@@ -497,7 +509,7 @@
     "std": 64.4704,
     "window_area": 0.0
    },
-   "status": "ok",
+   "status": "stale",
    "issues": [],
    "def_hash": "115d3bbac6e7",
    "master": {
@@ -515,7 +527,9 @@
    "shoot_flags": [],
    "texture_fallbacks": [],
    "palette_mismatch": [],
-   "stale_since": "v4.37"
+   "stale_since": "v4.43",
+   "prev_stale_since": "v4.37",
+   "note": "外形 16.25m 角へ縮小（未撮影）"
   },
   "Z1-12b": {
    "id": "Z1-12b",
@@ -579,7 +593,7 @@
     "window_ratio": 0.9512,
     "window_std": 65.3288
    },
-   "status": "flag",
+   "status": "stale",
    "issues": [
     "窓の外が見えない（窓領域の平均は画像平均の 0.95 倍・標準偏差 65.3）"
    ],
@@ -598,7 +612,9 @@
    },
    "shoot_flags": [],
    "texture_fallbacks": [],
-   "palette_mismatch": []
+   "palette_mismatch": [],
+   "stale_since": "v4.43",
+   "note": "外形 16.25m 角へ縮小（未撮影）"
   },
   "Z1-22a": {
    "id": "Z1-22a",
@@ -660,7 +676,7 @@
     "std": 45.2978,
     "window_area": 0.0
    },
-   "status": "ok",
+   "status": "stale",
    "issues": [],
    "def_hash": "247d7541170a",
    "master": {
@@ -678,7 +694,9 @@
    "shoot_flags": [],
    "texture_fallbacks": [],
    "palette_mismatch": [],
-   "stale_since": "v4.38"
+   "stale_since": "v4.43",
+   "prev_stale_since": "v4.38",
+   "note": "外形 16.25m 角へ縮小（未撮影）"
   },
   "Z1-22b": {
    "id": "Z1-22b",
@@ -740,7 +758,7 @@
     "std": 41.2731,
     "window_area": 0.0
    },
-   "status": "ok",
+   "status": "stale",
    "issues": [],
    "def_hash": "e04ba1c9ee04",
    "master": {
@@ -758,7 +776,9 @@
    "shoot_flags": [],
    "texture_fallbacks": [],
    "palette_mismatch": [],
-   "stale_since": "v4.38"
+   "stale_since": "v4.43",
+   "prev_stale_since": "v4.38",
+   "note": "外形 16.25m 角へ縮小（未撮影）"
   },
   "Z1-32a": {
    "id": "Z1-32a",
@@ -820,9 +840,11 @@
     "std": 67.6039,
     "window_area": 0.0
    },
-   "status": "ok",
+   "status": "stale",
    "issues": [],
-   "def_hash": "ab144712bae4"
+   "def_hash": "ab144712bae4",
+   "stale_since": "v4.43",
+   "note": "外形 16.25m 角へ縮小（未撮影）"
   },
   "Z1-32b": {
    "id": "Z1-32b",
@@ -884,9 +906,11 @@
     "std": 49.6908,
     "window_area": 0.0
    },
-   "status": "ok",
+   "status": "stale",
    "issues": [],
-   "def_hash": "1b765ba78dd1"
+   "def_hash": "1b765ba78dd1",
+   "stale_since": "v4.43",
+   "note": "外形 16.25m 角へ縮小（未撮影）"
   },
   "Z1-13a": {
    "id": "Z1-13a",
@@ -948,10 +972,12 @@
     "std": 81.7221,
     "window_area": 0.0
    },
-   "status": "ok",
+   "status": "stale",
    "issues": [],
    "def_hash": "6894ce308731",
-   "stale_since": "v4.37"
+   "stale_since": "v4.43",
+   "prev_stale_since": "v4.37",
+   "note": "外形 16.25m 角へ縮小（未撮影）"
   },
   "Z1-13b": {
    "id": "Z1-13b",
@@ -1013,7 +1039,7 @@
     "std": 32.2477,
     "window_area": 0.0
    },
-   "status": "ok",
+   "status": "stale",
    "issues": [],
    "def_hash": "04400dc29cd1",
    "master": {
@@ -1031,7 +1057,9 @@
    "shoot_flags": [],
    "texture_fallbacks": [],
    "palette_mismatch": [],
-   "stale_since": "v4.38"
+   "stale_since": "v4.43",
+   "prev_stale_since": "v4.38",
+   "note": "外形 16.25m 角へ縮小（未撮影）"
   },
   "Z1-23a": {
    "id": "Z1-23a",
@@ -1093,12 +1121,14 @@
     "std": 43.6847,
     "window_area": 0.0
    },
-   "status": "ok",
+   "status": "stale",
    "issues": [],
    "def_hash": "5d0160543ad5",
    "open_doors": {
     "x7400y14850": 1.0
-   }
+   },
+   "stale_since": "v4.43",
+   "note": "外形 16.25m 角へ縮小（未撮影）"
   },
   "Z1-23b": {
    "id": "Z1-23b",
@@ -1160,9 +1190,11 @@
     "std": 58.7721,
     "window_area": 0.0
    },
-   "status": "ok",
+   "status": "stale",
    "issues": [],
-   "def_hash": "0d5c28e668a8"
+   "def_hash": "0d5c28e668a8",
+   "stale_since": "v4.43",
+   "note": "外形 16.25m 角へ縮小（未撮影）"
   },
   "Z1-33a": {
    "id": "Z1-33a",
@@ -1226,11 +1258,13 @@
     "window_ratio": 0.3796,
     "window_std": 27.4218
    },
-   "status": "flag",
+   "status": "stale",
    "issues": [
     "窓の外が見えない（窓領域の平均は画像平均の 0.38 倍・標準偏差 27.4）"
    ],
-   "def_hash": "dff81067a848"
+   "def_hash": "dff81067a848",
+   "stale_since": "v4.43",
+   "note": "外形 16.25m 角へ縮小（未撮影）"
   },
   "Z1-33b": {
    "id": "Z1-33b",
@@ -1292,9 +1326,11 @@
     "std": 65.074,
     "window_area": 0.0
    },
-   "status": "ok",
+   "status": "stale",
    "issues": [],
-   "def_hash": "6fd69a6b025c"
+   "def_hash": "6fd69a6b025c",
+   "stale_since": "v4.43",
+   "note": "外形 16.25m 角へ縮小（未撮影）"
   },
   "Z2-11a": {
    "id": "Z2-11a",
@@ -1358,11 +1394,13 @@
     "window_ratio": 0.5487,
     "window_std": 32.0473
    },
-   "status": "flag",
+   "status": "stale",
    "issues": [
     "窓の外が見えない（窓領域の平均は画像平均の 0.55 倍・標準偏差 32.0）"
    ],
-   "def_hash": "0196022a63be"
+   "def_hash": "0196022a63be",
+   "stale_since": "v4.43",
+   "note": "外形 16.25m 角へ縮小（未撮影）"
   },
   "Z2-11b": {
    "id": "Z2-11b",
@@ -1424,9 +1462,11 @@
     "std": 56.8736,
     "window_area": 0.0
    },
-   "status": "ok",
+   "status": "stale",
    "issues": [],
-   "def_hash": "ca769efa6c9d"
+   "def_hash": "ca769efa6c9d",
+   "stale_since": "v4.43",
+   "note": "外形 16.25m 角へ縮小（未撮影）"
   },
   "Z2-21a": {
    "id": "Z2-21a",
@@ -1490,11 +1530,13 @@
     "window_ratio": 0.5194,
     "window_std": 29.7649
    },
-   "status": "flag",
+   "status": "stale",
    "issues": [
     "窓の外が見えない（窓領域の平均は画像平均の 0.52 倍・標準偏差 29.8）"
    ],
-   "def_hash": "1dba3dacdf75"
+   "def_hash": "1dba3dacdf75",
+   "stale_since": "v4.43",
+   "note": "外形 16.25m 角へ縮小（未撮影）"
   },
   "Z2-21b": {
    "id": "Z2-21b",
@@ -1556,9 +1598,11 @@
     "std": 62.5335,
     "window_area": 0.0
    },
-   "status": "ok",
+   "status": "stale",
    "issues": [],
-   "def_hash": "f85fc78f91e4"
+   "def_hash": "f85fc78f91e4",
+   "stale_since": "v4.43",
+   "note": "外形 16.25m 角へ縮小（未撮影）"
   },
   "Z2-31a": {
    "id": "Z2-31a",
@@ -1620,11 +1664,13 @@
     "std": 75.982,
     "window_area": 0.0
    },
-   "status": "flag",
+   "status": "stale",
    "issues": [
     "平均輝度 151（許容 35〜150）"
    ],
-   "def_hash": "6e24cb832a49"
+   "def_hash": "6e24cb832a49",
+   "stale_since": "v4.43",
+   "note": "外形 16.25m 角へ縮小（未撮影）"
   },
   "Z2-31b": {
    "id": "Z2-31b",
@@ -1686,11 +1732,13 @@
     "std": 35.4834,
     "window_area": 0.0
    },
-   "status": "flag",
+   "status": "stale",
    "issues": [
     "平均輝度 195（許容 35〜150）"
    ],
-   "def_hash": "760814dfbf15"
+   "def_hash": "760814dfbf15",
+   "stale_since": "v4.43",
+   "note": "外形 16.25m 角へ縮小（未撮影）"
   },
   "Z2-12a": {
    "id": "Z2-12a",
@@ -1754,11 +1802,13 @@
     "window_ratio": 0.2284,
     "window_std": 25.7121
    },
-   "status": "flag",
+   "status": "stale",
    "issues": [
     "窓の外が見えない（窓領域の平均は画像平均の 0.23 倍・標準偏差 25.7）"
    ],
-   "def_hash": "c2926a9de356"
+   "def_hash": "c2926a9de356",
+   "stale_since": "v4.43",
+   "note": "外形 16.25m 角へ縮小（未撮影）"
   },
   "Z2-12b": {
    "id": "Z2-12b",
@@ -1820,9 +1870,11 @@
     "std": 60.4939,
     "window_area": 0.0
    },
-   "status": "ok",
+   "status": "stale",
    "issues": [],
-   "def_hash": "dde69eb2d29b"
+   "def_hash": "dde69eb2d29b",
+   "stale_since": "v4.43",
+   "note": "外形 16.25m 角へ縮小（未撮影）"
   },
   "Z2-22a": {
    "id": "Z2-22a",
@@ -1884,9 +1936,11 @@
     "std": 56.3534,
     "window_area": 0.0
    },
-   "status": "ok",
+   "status": "stale",
    "issues": [],
-   "def_hash": "9fbcc46b5cba"
+   "def_hash": "9fbcc46b5cba",
+   "stale_since": "v4.43",
+   "note": "外形 16.25m 角へ縮小（未撮影）"
   },
   "Z2-22b": {
    "id": "Z2-22b",
@@ -1948,9 +2002,11 @@
     "std": 57.9692,
     "window_area": 0.0
    },
-   "status": "ok",
+   "status": "stale",
    "issues": [],
-   "def_hash": "73582ec1b33a"
+   "def_hash": "73582ec1b33a",
+   "stale_since": "v4.43",
+   "note": "外形 16.25m 角へ縮小（未撮影）"
   },
   "Z2-32a": {
    "id": "Z2-32a",
@@ -2012,9 +2068,11 @@
     "std": 17.1635,
     "window_area": 0.0
    },
-   "status": "ok",
+   "status": "stale",
    "issues": [],
-   "def_hash": "5a998d250e0d"
+   "def_hash": "5a998d250e0d",
+   "stale_since": "v4.43",
+   "note": "外形 16.25m 角へ縮小（未撮影）"
   },
   "Z2-32b": {
    "id": "Z2-32b",
@@ -2076,9 +2134,11 @@
     "std": 51.0315,
     "window_area": 0.0
    },
-   "status": "ok",
+   "status": "stale",
    "issues": [],
-   "def_hash": "565310441205"
+   "def_hash": "565310441205",
+   "stale_since": "v4.43",
+   "note": "外形 16.25m 角へ縮小（未撮影）"
   },
   "Z2-13a": {
    "id": "Z2-13a",
@@ -2145,8 +2205,9 @@
    "status": "stale",
    "issues": [],
    "def_hash": "a459061adbe0",
-   "stale_since": "v4.42",
-   "note": "居室E→書庫（bpy 環境がなく未撮影）"
+   "stale_since": "v4.43",
+   "note": "外形 16.25m 角へ縮小（未撮影）",
+   "prev_stale_since": "v4.42"
   },
   "Z2-13b": {
    "id": "Z2-13b",
@@ -2211,8 +2272,9 @@
    "status": "stale",
    "issues": [],
    "def_hash": "3a4eaa98b314",
-   "stale_since": "v4.42",
-   "note": "居室E→書庫（bpy 環境がなく未撮影）"
+   "stale_since": "v4.43",
+   "note": "外形 16.25m 角へ縮小（未撮影）",
+   "prev_stale_since": "v4.42"
   },
   "Z2-23a": {
    "id": "Z2-23a",
@@ -2274,7 +2336,7 @@
     "std": 63.6433,
     "window_area": 0.0
    },
-   "status": "ok",
+   "status": "stale",
    "issues": [],
    "def_hash": "cd98f5c21cf1",
    "master": {
@@ -2291,7 +2353,9 @@
    },
    "shoot_flags": [],
    "texture_fallbacks": [],
-   "palette_mismatch": []
+   "palette_mismatch": [],
+   "stale_since": "v4.43",
+   "note": "外形 16.25m 角へ縮小（未撮影）"
   },
   "Z2-23b": {
    "id": "Z2-23b",
@@ -2353,7 +2417,7 @@
     "std": 60.8104,
     "window_area": 0.0
    },
-   "status": "ok",
+   "status": "stale",
    "issues": [],
    "def_hash": "a01eaf2be464",
    "master": {
@@ -2370,7 +2434,9 @@
    },
    "shoot_flags": [],
    "texture_fallbacks": [],
-   "palette_mismatch": []
+   "palette_mismatch": [],
+   "stale_since": "v4.43",
+   "note": "外形 16.25m 角へ縮小（未撮影）"
   },
   "Z2-33a": {
    "id": "Z2-33a",
@@ -2434,11 +2500,13 @@
     "window_ratio": 0.2718,
     "window_std": 32.8968
    },
-   "status": "flag",
+   "status": "stale",
    "issues": [
     "窓の外が見えない（窓領域の平均は画像平均の 0.27 倍・標準偏差 32.9）"
    ],
-   "def_hash": "e5e38fd1f5ee"
+   "def_hash": "e5e38fd1f5ee",
+   "stale_since": "v4.43",
+   "note": "外形 16.25m 角へ縮小（未撮影）"
   },
   "Z2-33b": {
    "id": "Z2-33b",
@@ -2500,9 +2568,11 @@
     "std": 52.4846,
     "window_area": 0.0
    },
-   "status": "ok",
+   "status": "stale",
    "issues": [],
-   "def_hash": "119a42b2269d"
+   "def_hash": "119a42b2269d",
+   "stale_since": "v4.43",
+   "note": "外形 16.25m 角へ縮小（未撮影）"
   }
  },
  "settings": {

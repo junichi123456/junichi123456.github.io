@@ -42,7 +42,7 @@
    "family": "I",
    "time_limit_hit": true,
    "when": "2026-03-21T14:00",
-   "status": "ok",
+   "status": "stale",
    "master": {
     "file": "kawazanyo_master.blend",
     "model_version": "v4.32",
@@ -56,7 +56,9 @@
     "seed": 0
    },
    "shoot_flags": [],
-   "palette_mismatch": []
+   "palette_mismatch": [],
+   "stale_since": "v4.43",
+   "note": "外形 16.25m 角へ縮小（未撮影）"
   },
   {
    "id": "I02",
@@ -96,7 +98,7 @@
    "family": "I",
    "time_limit_hit": true,
    "when": "2026-03-21T14:00",
-   "status": "ok",
+   "status": "stale",
    "master": {
     "file": "kawazanyo_master.blend",
     "model_version": "v4.32",
@@ -110,7 +112,9 @@
     "seed": 0
    },
    "shoot_flags": [],
-   "palette_mismatch": []
+   "palette_mismatch": [],
+   "stale_since": "v4.43",
+   "note": "外形 16.25m 角へ縮小（未撮影）"
   },
   {
    "id": "I03",
@@ -150,7 +154,7 @@
    "family": "I",
    "time_limit_hit": true,
    "when": "2026-03-21T14:00",
-   "status": "ok",
+   "status": "stale",
    "master": {
     "file": "kawazanyo_master.blend",
     "model_version": "v4.32",
@@ -165,7 +169,9 @@
    },
    "shoot_flags": [],
    "palette_mismatch": [],
-   "stale_since": "v4.37"
+   "stale_since": "v4.43",
+   "prev_stale_since": "v4.37",
+   "note": "外形 16.25m 角へ縮小（未撮影）"
   },
   {
    "id": "I09",
@@ -205,7 +211,7 @@
    "family": "I",
    "time_limit_hit": false,
    "when": "2026-10-24T21:30",
-   "status": "ok",
+   "status": "stale",
    "master": {
     "file": "kawazanyo_master.blend",
     "model_version": "v4.32",
@@ -219,7 +225,9 @@
     "seed": 0
    },
    "shoot_flags": [],
-   "palette_mismatch": []
+   "palette_mismatch": [],
+   "stale_since": "v4.43",
+   "note": "外形 16.25m 角へ縮小（未撮影）"
   },
   {
    "id": "I10",
@@ -259,7 +267,7 @@
    "family": "I",
    "time_limit_hit": true,
    "when": "2026-03-21T14:00",
-   "status": "ok",
+   "status": "stale",
    "master": {
     "file": "kawazanyo_master.blend",
     "model_version": "v4.32",
@@ -273,7 +281,9 @@
     "seed": 0
    },
    "shoot_flags": [],
-   "palette_mismatch": []
+   "palette_mismatch": [],
+   "stale_since": "v4.43",
+   "note": "外形 16.25m 角へ縮小（未撮影）"
   },
   {
    "id": "I11",
@@ -313,7 +323,7 @@
    "family": "I",
    "time_limit_hit": true,
    "when": "2026-10-24T10:00",
-   "status": "ok",
+   "status": "stale",
    "master": {
     "file": "kawazanyo_master.blend",
     "model_version": "v4.32",
@@ -327,7 +337,9 @@
     "seed": 0
    },
    "shoot_flags": [],
-   "palette_mismatch": []
+   "palette_mismatch": [],
+   "stale_since": "v4.43",
+   "note": "外形 16.25m 角へ縮小（未撮影）"
   },
   {
    "id": "I12",
@@ -367,7 +379,7 @@
    "family": "I",
    "time_limit_hit": true,
    "when": "2026-03-21T14:00",
-   "status": "ok",
+   "status": "stale",
    "master": {
     "file": "master_new.blend",
     "model_version": "v4.32",
@@ -381,7 +393,9 @@
     "seed": 0
    },
    "shoot_flags": [],
-   "palette_mismatch": []
+   "palette_mismatch": [],
+   "stale_since": "v4.43",
+   "note": "外形 16.25m 角へ縮小（未撮影）"
   },
   {
    "id": "I14",
@@ -421,7 +435,7 @@
    "family": "I",
    "time_limit_hit": true,
    "when": "2026-03-21T14:00",
-   "status": "ok",
+   "status": "stale",
    "master": {
     "file": "kawazanyo_master.blend",
     "model_version": "v4.32",
@@ -435,7 +449,9 @@
     "seed": 0
    },
    "shoot_flags": [],
-   "palette_mismatch": []
+   "palette_mismatch": [],
+   "stale_since": "v4.43",
+   "note": "外形 16.25m 角へ縮小（未撮影）"
   },
   {
    "id": "R1-01_ld",
@@ -475,7 +491,7 @@
    "family": "R",
    "time_limit_hit": true,
    "when": "2026-06-21T08:00",
-   "status": "ok",
+   "status": "stale",
    "master": {
     "file": "kawazanyo_master.blend",
     "model_version": "v4.32",
@@ -489,7 +505,9 @@
     "seed": 0
    },
    "shoot_flags": [],
-   "palette_mismatch": []
+   "palette_mismatch": [],
+   "stale_since": "v4.43",
+   "note": "外形 16.25m 角へ縮小（未撮影）"
   },
   {
    "id": "R1-03_doma",
@@ -529,7 +547,7 @@
    "family": "R",
    "time_limit_hit": true,
    "when": "2026-06-21T08:00",
-   "status": "ok",
+   "status": "stale",
    "master": {
     "file": "kawazanyo_master.blend",
     "model_version": "v4.32",
@@ -543,7 +561,9 @@
     "seed": 0
    },
    "shoot_flags": [],
-   "palette_mismatch": []
+   "palette_mismatch": [],
+   "stale_since": "v4.43",
+   "note": "外形 16.25m 角へ縮小（未撮影）"
   },
   {
    "id": "T1_plan_1F",
@@ -583,7 +603,7 @@
    "family": "T",
    "time_limit_hit": true,
    "when": "2026-06-21T08:00",
-   "status": "ok",
+   "status": "stale",
    "master": {
     "file": "kawazanyo_master.blend",
     "model_version": "v4.32",
@@ -597,7 +617,9 @@
     "seed": 0
    },
    "shoot_flags": [],
-   "palette_mismatch": []
+   "palette_mismatch": [],
+   "stale_since": "v4.43",
+   "note": "外形 16.25m 角へ縮小（未撮影）"
   }
  ],
  "textures": {

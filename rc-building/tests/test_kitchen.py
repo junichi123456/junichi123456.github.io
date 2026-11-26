@@ -52,10 +52,10 @@ def test_passages_1200():
 def test_L_kitchen():
     h = house()
     its = {i.id: i for i in FU.items(h)}
-    assert its["KB-C2"].rect == (5400, 9050, 6000, 11350)
-    assert its["KB-C"].rect[2] == 6000
+    assert its["KB-C2"].rect == (5275, 9050, 5775, 11350)   # v4.43: キッチン幅 5,650 に合わせ D500（通路 ≧1,200 を保つ）
+    assert its["KB-C"].rect[2] == 5775
     assert its["KB-F"].rect == (1800, 11350, 2500, 11950)
-    assert its["K-I1"].rect == (1800, 9050, 4200, 10050)
+    assert its["K-I1"].rect == (1675, 9050, 4075, 10050)   # v4.43: 西へ 125（KS-W は奥行 350）
 
 
 def test_pantry_removed():
@@ -64,7 +64,7 @@ def test_pantry_removed():
     ids = {i.id for i in FU.items(h)}
     assert "P-O1" not in ids and "KB-K" not in ids and "KS-W" in ids
     kit = next(r for r in h.rooms if r.name == "キッチン")
-    assert kit.rect == (125, 6250, 6000, 12000)
+    assert kit.rect == (125, 6250, 5775, 12000)
 
 
 if __name__ == "__main__":

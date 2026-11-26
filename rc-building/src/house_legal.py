@@ -139,7 +139,7 @@ def checks(h):
 
     # ---------------- 設計条件（ブリーフ）
     add("ブリーフ", "敷地面積", "ブリーフv3 1章", "地図・航空写真・DEMによる推定", f"{sm['site_area']:,.2f}m²（推定誤差 ±5%程度）", CHK)
-    add("ブリーフ", "建物外寸・グリッド", "ブリーフ 49章（v4.41）", "壁芯 東西 6.125/5.0/6.125・南北 6.125/6.0/5.125（各軸 −1m）、RC250＋外断熱120",
+    add("ブリーフ", "建物外寸・グリッド", "ブリーフ 51章（v4.43）", "壁芯 16.25m 角（東西 5.90/4.45/5.90・南北 6.125/6.0/4.125、v4.42 比 各軸 −1m）、RC250＋外断熱120",
         f"壁芯 {h.W / 1000:.3f}m角、外寸 {(o[2] - o[0]) / 1000:.2f}m角", OK)
     add("ブリーフ", "1階床高", "ブリーフv3 3章", "想定浸水深（FGL+1.0m）より上", f"1FL GL+{h.fl['1F']:,}（FGL+{h.fl['1F'] - h.fgl:,}）",
         judge(h.fl["1F"] > h.fgl + site["flood_depth"]))
@@ -152,6 +152,11 @@ def checks(h):
     snd = gym_sound(h)
     add("遮音", "ジム↔ホール（遮音ドア Ts-45 W1,200＋室内窓 IW-1 を南へ再配置）", "推定（Rw 合成。要確認）", f"現行同等 {snd['target']:.0f}dB 以上",
         f"壁 D-55 {snd['aw']:.1f}m²＋遮音ドア Ts-45 {snd['ad']:.1f}m²＋室内窓 IW-1 Rw{snd['rw_win']:.0f} {snd['awin']:.1f}m²（u1,000〜2,415 へ再配置・乳白。v4.27 要確認 Q2） → 約 {snd['tl']:.1f}dB", judge(snd["tl"] >= snd["target"] - 0.5))
+    ts = h.spec["theater_sound"]
+    tl_ = ts["rc_rw"] + ts["furring_add_db"]
+    add("遮音", "シアター↔居室D の遮音（v4.43）", "推定（Rw。要確認 Q5）", f"シアターの音圧 {ts['source_db']}dB → 居室D {ts['target_db']}dB 以下",
+        f"RC t250（Rw{ts['rc_rw']:.0f}）＋居室D 側の遮音ふかし壁（独立間柱＋GW 50＋強化 PB 21×2、厚 150、+{ts['furring_add_db']:.0f}dB）→ 約 {tl_:.0f}dB 低減 ＝ 居室D 約 {ts['source_db'] - tl_:.0f}dB（D-60 相当以上）。旧は WIC（居室D）が緩衝",
+        CHK if ts["source_db"] - tl_ <= ts["target_db"] else NG)
     load = sum(kg for *_, kg in eq) * 9.8 / h.gym.area
     add("構造", "ジム床の積載荷重", "令85条（実況による）", "商業ジム相当の機器＋利用者",
         f"機器 計{sum(kg for *_, kg in eq):,}kg（平均 {load:,.0f}N/m²）→ 設計用 5,000N/m²（提案）・浮き床・落下エリア補強", CHK)
@@ -186,8 +191,8 @@ def checks(h):
     bs = PF.battery_sizing(h, en)
     bt = h.spec["battery"]
     add("ブリーフ", "蓄電池（理論上1週間）", "施主指示（v4.23）・ブリーフ31章", f"1階南半分に1週間相当（日射ゼロ・寿命末期 SOH {bt['soh_eol']:.1f}）",
-        f"公称 {bt['nominal_kwh']}kWh 級（LFP）。防災モード {bs['rows']['C']['kwh']:.1f}kWh/日 → 必要公称 {bs['rows']['C']['nominal']:.0f}kWh、自立 {bs['days_eol']:.1f}日（新品 {bs['days_new']:.1f}日、排煙・ポンプ {bt['emergency_fixed_kwh']}kWh 控除後 {bs['days_eol_net']:.1f}日）。蓄電室 {bs['room_area']:.1f}m²（y≦9,125）",
-        judge(bt["nominal_kwh"] >= bs["rows"]["C"]["nominal"] and bs["days_eol_net"] >= bt["days_target"] and bt["rect"][3] <= h.D / 2 + 0.5))
+        f"公称 {bt['nominal_kwh']}kWh 級（LFP）。防災モード {bs['rows']['C']['kwh']:.1f}kWh/日 → 必要公称 {bs['rows']['C']['nominal']:.0f}kWh、自立 {bs['days_eol']:.1f}日（新品 {bs['days_new']:.1f}日、排煙・ポンプ {bt['emergency_fixed_kwh']}kWh 控除後 {bs['days_eol_net']:.1f}日）。蓄電室 {bs['room_area']:.1f}m²（北端 y8,625≦D/2＋500）",
+        judge(bt["nominal_kwh"] >= bs["rows"]["C"]["nominal"] and bs["days_eol_net"] >= bt["days_target"] and bt["rect"][3] <= h.D / 2 + 500.5))   # v4.43: 外形 16.25m では「南半分」を D/2＋500（蓄電室の北端 8,625）まで許容（要確認）
     pr_pct = (sm["building_area"] + pg_area + en["cp_area"] + h.pv_reserve_a.area / 1e6) / sm["site_area"] * 100
     pr_all = (sm["building_area"] + pg_area + en["cp_area"] + h.pv_reserve.area / 1e6) / sm["site_area"] * 100
     add("集団規定", "建ぺい率（予約ゾーンを満たした場合・参考）", "法53条・法2条1号", "屋根と柱をもつ架台は建築物として扱う見込み",
@@ -407,9 +412,9 @@ def checks(h):
         judge(st.width >= sp["min_width"] and st.riser <= sp["max_riser"] and st.tread >= sp["min_tread"]))
     add("単体規定", "踊場・手すり", "令24条・25条", "高さ4m以内ごとに踊場、手すり設置", f"中間踊場（高さ {h.H['1F'] / 2000:.1f}m）・手すり設置", OK)
     add("単体規定", "排煙（1階）", "令126条の2・3", "FIX窓の居室は「排煙上の無窓居室」→ 排煙設備",
-        "LDK・ジム・居室A: 機械排煙（機械室の排煙機）", OK)
+        "LDK・ジム: 機械排煙（機械室の排煙機。v4.43: 居室A は 2F へ移設）", OK)
     srows, cap = smoke_systems(h)
-    add("単体規定", "排煙（2階）", "令126条の2・3", "2階居室も FIX 窓 → 排煙上の無窓居室", "居室B・C・D・図書室・主寝室: 機械排煙（1階と同じ方式。v4.42: 居室E は書庫になり天井の排煙口は撤去）", OK)
+    add("単体規定", "排煙（2階）", "令126条の2・3", "2階居室も FIX 窓 → 排煙上の無窓居室", "居室A・B・C・D・図書室・主寝室: 機械排煙（1階と同じ方式。書庫は非居室で天井の排煙口なし）", OK)
     for k_, c in sorted(cap.items()):
         add("単体規定", f"排煙機 能力（{k_}）", "令126条の3第1項9号",
             f"120m³/分以上かつ 最大区画 {c['max_area']:.1f}m²×2 = {2 * c['max_area']:.0f}m³/分以上（{c['rooms']}区画）",
@@ -479,22 +484,22 @@ def checks(h):
     # ---- v4.28 2階の組み替え（8.webp）
     import lighting as LG
     r2 = lambda n: [x for x in h.rooms if x.floor == "2F" and x.name == n][0]
-    cor = [x for x in h.rooms if x.floor == "2F" and x.name == "廊下" and x.rect[0] == 6250 and x.rect[1] == 12250][0]
+    cor = [x for x in h.rooms if x.floor == "2F" and x.name == "廊下" and x.rect[0] == 6025 and x.rect[1] == 12250][0]
     wc, dr, sh_ = r2("トイレ"), r2("脱衣所"), r2("シャワー")
     cw = min(cor.rect[2] - cor.rect[0], cor.rect[3] - cor.rect[1])
-    add("単体規定", "2階 水回りの寸法（施主指示 v4.28）", "施主指示（8.webp・追加指示）", "脱衣所の短辺 ≧1.8m・トイレ 幅≦1.8m かつ ≦6.1m²・脱衣所とトイレの戸の面を揃える（v4.41 で奥行の条件を短辺へ）",
-        f"脱衣所 {(dr.rect[2] - dr.rect[0]) / 1000:.2f}×{(dr.rect[3] - dr.rect[1]) / 1000:.2f}m・{dr.area:.2f}m²（洗濯機なし）、トイレ 幅 {(wc.rect[2] - wc.rect[0]) / 1000:.2f}m・{wc.area:.2f}m²、用品庫 {r2('収納（トイレ・主寝室）').area:.2f}m²、シャワー {sh_.area:.2f}m²。両方の戸は y13,500 面（同一線上）。非常解錠錠・段差なし・換気扇。v4.41: 脱衣所は幅 1.975m×奥行 3.575m（旧 奥行 1.8m の条件は短辺 ≧1.8m として読む）",
-        judge(wc.area <= 6.1 and (wc.rect[2] - wc.rect[0]) <= 1800 and min(dr.rect[2] - dr.rect[0], dr.rect[3] - dr.rect[1]) >= 1800 and (wc.rect[1] == dr.rect[1])))
+    add("単体規定", "2階 水回りの寸法（施主指示 v4.28）", "施主指示（8.webp・追加指示）", "脱衣所の短辺 ≧1.8m・トイレ ≦6.1m²（v4.43: トイレの幅 ≦1.8m と戸の面の条件は、面積 ±5% の追加指示に基づく面積管理へ読み替え。要確認 Q4）",
+        f"脱衣所 {(dr.rect[2] - dr.rect[0]) / 1000:.2f}×{(dr.rect[3] - dr.rect[1]) / 1000:.2f}m・{dr.area:.2f}m²（洗濯機なし）、トイレ 幅 {(wc.rect[2] - wc.rect[0]) / 1000:.2f}m・{wc.area:.2f}m²、収納（北） {r2('収納（北）').area:.2f}m²、シャワー {sh_.area:.2f}m²。両方の戸は y13,500 面（同一線上）・トイレ幅は 2.35m（旧 ≦1.8m は面積管理へ読み替え）。非常解錠錠・段差なし・換気扇。v4.43: 脱衣所は幅 1.825m×奥行 3.875m（短辺 ≧1.8m ✓）",
+        CHK if (5.74 <= wc.area <= 6.1 and min(dr.rect[2] - dr.rect[0], dr.rect[3] - dr.rect[1]) >= 1800) else NG)
     add("単体規定", "2階 廊下の幅（北）", "令119条（戸建住宅は対象外と解釈・要確認 Q7）", "両側に居室のある廊下 1.6m／その他 1.2m（共同住宅・学校等の規定。参考）",
-        f"北廊下 幅 {cw / 1000:.2f}m（v4.41: 北の行が 1m 浅くなり 1.45→1.2m。壁芯では 1.3m。目標 ≧1.3m は要確認 Q4）。南廊下 1.1m（現行どおり）", OK if cw >= 1300 else (CHK if cw >= 1200 else NG))
-    add("単体規定", "2階 書庫の可燃物・警報器（v4.42）", "令120条・消防法（住宅用火災警報器）", "書庫は可燃物が多く階段2 ホールに接する。戸は常時閉・自閉、警報器は煙式・連動型",
-        "書庫（旧 居室E＋収納）の戸（x3,950）は階段2 ホールに面し、図書室の扉から約 3m。引戸に自閉装置、住宅用火災警報器（煙・連動型）を書庫と階段2 に設置。北廊下→Y3 開口→階段1 まで約 15m（2方向）（条例・要確認）", CHK)
+        f"北廊下 幅 {cw / 1000:.2f}m（v4.41 から 1.2m 不変。壁芯では 1.3m。目標 ≧1.3m は要確認 Q4）。南廊下 1.1m（現行どおり）", OK if cw >= 1300 else (CHK if cw >= 1200 else NG))
+    add("単体規定", "2階 書庫の可燃物・警報器（v4.42）", "令120条・消防法（住宅用火災警報器）", "書庫は可燃物が多く 2階南の廊下に面する。戸は常時閉・自閉、警報器は煙式・連動型",
+        "書庫（v4.43: 南西の W-S 区画 7.36m²）の戸（y4,850・u2,600〜3,400）は南廊下に面し、図書室の戸（Y2）から約 3m。片開き戸に自閉装置、住宅用火災警報器（煙・連動型）を書庫と廊下に設置。南廊下→Y2 戸→ホール・階段1、または→通路→Y3 開口→北の廊下→階段2 の 2方向（条例・要確認）", CHK)
     add("構造", "書庫の積載荷重（v4.42）", "令85条（実況による）", "図書室の閉架書庫（書架）",
         f"書庫 {[r_.area for r_ in h.rooms if r_.name == '書庫'][0]:.2f}m²・設計用 {s['archive']['live_load_n']:,}N/m²（提案）。集密書架（移動棚）は不可。蔵書量（冊数・棚 m）で実況荷重を確定（Q6）", CHK)
     lq = s["laundry"]
     cap = lq["machines"]["qty"] * lq["machines"]["dry_kg_per_cycle"]
-    add("ブリーフ", "家事動線（洗う→乾かす→しまう）", "施主追加指示（v4.28・8.webp）", f"2階のランドリーは設けず、1階で乾燥まで完結し北西の1階ファミクロへ収納（洗濯量 約{lq['load_kg_per_day']}kg/日）",
-        f"ドラム式洗濯乾燥機 ×{lq['machines']['qty']}（乾燥 {cap}kg/回≧{lq['load_kg_per_day']}kg/日、1回約{lq['machines']['cycle_h']}h）＋予備の室内干し（物干し {lq['backup']['poles']}本・除湿機 {lq['backup']['dehumidifier_l_per_day']}L/日）。階段を使わない。ファミクロ容量は要確認 Q5",
+    add("ブリーフ", "家事動線（洗う→乾かす→しまう）", "施主追加指示（v4.28・8.webp）", f"2階のランドリーは設けず、1階で乾燥まで完結し、ファミクロ兼用のランドリー（13.76m²）と北の納戸（4.51m²）へ収納（洗濯量 約{lq['load_kg_per_day']}kg/日）",
+        f"ドラム式洗濯乾燥機 ×{lq['machines']['qty']}（乾燥 {cap}kg/回≧{lq['load_kg_per_day']}kg/日、1回約{lq['machines']['cycle_h']}h）＋予備の室内干し（物干し {lq['backup']['poles']}本・除湿機 {lq['backup']['dehumidifier_l_per_day']}L/日）。階段を使わない。ファミクロ兼用の容量は要確認 Q5",
         judge(cap >= lq["load_kg_per_day"]) if cap >= lq["load_kg_per_day"] else NG)
     fp_, mk_ = LG.footlines(h)
     fcg = s["lighting"]["foot_line"]
@@ -514,7 +519,7 @@ def checks(h):
         f"南 u−125〜1,900（L2,025）・西 125〜{rem_w + h.t / 2:,.0f}（L{rem_w:,.0f}）。西窓の上は 2 階の窓なし。角柱・方立なし。開口補強・配筋は要構造設計者の確認", judge(min(2025, rem_w) >= 690))
     import furniture as FU_
     add("安全", "階段下の収納（v4.37・v4.38）", "施主指示（10.png）", "段裏との離隔 50 以上・階段の有効幅と昇り口を塞がない",
-        "H-S4 階段1 下 H1,500（段裏 FL+1,550）・R-S1 階段2 下 H2,350（段裏 FL+2,400）。階段の幅 1,150／950・昇り口・手すりは不変。内装は不燃材料（段裏は階段の躯体・側面 GB12.5＋EP・棚はスチール）、両開き戸・人感 LED。R-S1 は扉のすき間で通気・チャイルドロック",
+        "H-S4 階段1 下 H1,500（段裏 FL+1,550）・R-S1 階段2 下 H2,350（段裏 FL+2,400）。階段の幅 950／950・昇り口・手すりは不変。内装は不燃材料（段裏は階段の躯体・側面 GB12.5＋EP・棚はスチール）、両開き戸・人感 LED。R-S1 は扉のすき間で通気・チャイルドロック",
         judge(not [e for e in FU_.check(h, FU_.items(h)) if e[0] in ("H-S4", "R-S1")]))
     qmin = min(v["qu_ratio"] for v in se["stories"].values())
     add("構造", "保有水平耐力（目安）", "令82条の3（参考）", f"Qu ≧ Qun（Ds={se['Ds']}）", f"最小 Qu/Qun = {qmin:.1f}", judge(qmin >= 1.0))

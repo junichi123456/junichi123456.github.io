@@ -493,7 +493,7 @@ $SKPOLY
   9
 $TDCREATE
  40
-2461371.0164583335
+2461371.0976157407
   9
 $TDUCREATE
  40
@@ -501,7 +501,7 @@ $TDUCREATE
   9
 $TDUPDATE
  40
-2461371.017013889
+2461371.098148148
   9
 $TDUUPDATE
  40
@@ -933,11 +933,11 @@ $PSTYLEMODE
   9
 $FINGERPRINTGUID
   2
-{023E85EC-37A0-4232-B649-2B002F1E665B}
+{0BC3690A-9C2A-4A94-A790-7277F039B376}
   9
 $VERSIONGUID
   2
-{784B0476-28ED-48CB-BEB3-13C15D147798}
+{F6DC8593-9B02-4734-ABDF-F39E51AD78ED}
   9
 $EXTNAMES
 290
@@ -1327,9 +1327,9 @@ ISM
   0
 CLASS
   1
-ACDBPLACEHOLDER
+LAYOUT
   2
-AcDbPlaceHolder
+AcDbLayout
   3
 ObjectDBX Classes
  90
@@ -1343,9 +1343,9 @@ ObjectDBX Classes
   0
 CLASS
   1
-LAYOUT
+ACDBPLACEHOLDER
   2
-AcDbLayout
+AcDbPlaceHolder
   3
 ObjectDBX Classes
  90
@@ -11129,7 +11129,7 @@ AcDbText
  40
 1.6
   1
-X2 13,800
+X2 12,800
   7
 JP
  11
@@ -12515,7 +12515,7 @@ AcDbText
  40
 1.6
   1
-X3 16,800
+X3 15,700
   7
 JP
  11
@@ -12579,7 +12579,7 @@ AcDbText
  40
 1.6
   1
-1F トイレ（北東）の枝管（管底。v4.41 新設）
+1F 収納（洗面）・2F の水廻り（PS-2）の枝管（管底。v4.43 位置変更）
   7
 JP
  11
@@ -12757,7 +12757,7 @@ AcDbText
  40
 1.5
   1
-掃除口（ピット内。床点検口から人通口で到達）: CO-1 PS-1 の下端（EN）／CO-2 PS-2 の下端（CN）／CO-3 PS-3 の下端（CM）／CO-4 主管の上流端（CN）／CO-5 主管の出口の手前（CS）／CO-6 台所の枝管の上流端（WM）／CO-7 ランドリーの枝管の上流端（WN）／CO-8 機械室の枝管の上流端（EM）
+掃除口（ピット内。床点検口から人通口で到達）: CO-1 PS-1 の下端（CN）／CO-2 PS-2 の下端（EN）／CO-3 PS-3 の下端（CM）／CO-4 主管の上流端（CN）／CO-5 主管の出口の手前（CS）／CO-6 台所の枝管の上流端（WM）／CO-7 ランドリーの枝管の上流端（WN）／CO-8 機械室の枝管の上流端（EM）
   7
 JP
  11
@@ -17869,7 +17869,7 @@ DictionaryVariables
 280
 0
   1
-1.4.5 @ 2026-11-26T00:23:42.131305+00:00
+1.4.5 @ 2026-11-26T02:20:34.558607+00:00
   0
 VISUALSTYLE
   5
@@ -24431,7 +24431,7 @@ DictionaryVariables
 280
 0
   1
-1.4.5 @ 2026-11-26T00:24:30.438174+00:00
+1.4.5 @ 2026-11-26T02:21:20.907884+00:00
   0
 ENDSEC
   0

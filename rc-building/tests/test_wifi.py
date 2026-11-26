@@ -32,7 +32,7 @@ def _sel(stats, cls):
 
 def test_room_counts(stats):
     """上質 12 室・水回り 8 室（spec の分類が実在の室と対応している）。v4.41: 2F 収納（トイレ・主寝室）は主寝室に LGS 1 枚で接する一般の収納へ（水回り 9→8）。"""
-    assert len(_sel(stats, "premium")) == 11 and len(_sel(stats, "quiet")) == 8
+    assert len(_sel(stats, "premium")) == 11 and len(_sel(stats, "quiet")) == 11   # v4.43: 水回りブロック内の収納 3 室（収納（洗面）・リネン庫・収納（北））を水回りに加える
 
 
 def test_premium_rooms_fully_covered(h, stats):

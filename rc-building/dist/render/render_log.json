@@ -21,7 +21,10 @@
    ],
    "sky_fallback": false,
    "texture_fallbacks": [],
-   "stale_since": "v4.41"
+   "stale_since": "v4.43",
+   "prev_stale_since": "v4.41",
+   "status": "stale",
+   "note": "外形 16.25m 角へ縮小（未撮影）"
   },
   {
    "id": "C01b",
@@ -41,7 +44,10 @@
    ],
    "sky_fallback": false,
    "texture_fallbacks": [],
-   "stale_since": "v4.41"
+   "stale_since": "v4.43",
+   "prev_stale_since": "v4.41",
+   "status": "stale",
+   "note": "外形 16.25m 角へ縮小（未撮影）"
   },
   {
    "id": "C02",
@@ -65,7 +71,7 @@
    "time_limit": 420,
    "time_limit_hit": false,
    "when": "2026-10-24T14:00",
-   "status": "ok",
+   "status": "stale",
    "master": {
     "file": "kawazanyo_master.blend",
     "model_version": "v4.32",
@@ -79,7 +85,9 @@
     "seed": 0
    },
    "shoot_flags": [],
-   "palette_mismatch": []
+   "palette_mismatch": [],
+   "stale_since": "v4.43",
+   "note": "外形 16.25m 角へ縮小（未撮影）"
   },
   {
    "id": "C03",
@@ -103,7 +111,7 @@
    "time_limit": 420,
    "time_limit_hit": false,
    "when": "2026-10-24T10:30",
-   "status": "ok",
+   "status": "stale",
    "master": {
     "file": "kawazanyo_master.blend",
     "model_version": "v4.32",
@@ -118,7 +126,9 @@
    },
    "shoot_flags": [],
    "palette_mismatch": [],
-   "stale_since": "v4.41"
+   "stale_since": "v4.43",
+   "prev_stale_since": "v4.41",
+   "note": "外形 16.25m 角へ縮小（未撮影）"
   },
   {
    "id": "C04",
@@ -138,7 +148,10 @@
    ],
    "sky_fallback": false,
    "texture_fallbacks": [],
-   "stale_since": "v4.41"
+   "stale_since": "v4.43",
+   "prev_stale_since": "v4.41",
+   "status": "stale",
+   "note": "外形 16.25m 角へ縮小（未撮影）"
   },
   {
    "id": "C05",
@@ -162,7 +175,7 @@
    "time_limit": 420,
    "time_limit_hit": false,
    "when": "2026-10-24T09:30",
-   "status": "ok",
+   "status": "stale",
    "master": {
     "file": "kawazanyo_master.blend",
     "model_version": "v4.32",
@@ -176,7 +189,9 @@
     "seed": 0
    },
    "shoot_flags": [],
-   "palette_mismatch": []
+   "palette_mismatch": [],
+   "stale_since": "v4.43",
+   "note": "外形 16.25m 角へ縮小（未撮影）"
   },
   {
    "id": "C06",
@@ -196,7 +211,10 @@
    ],
    "sky_fallback": false,
    "texture_fallbacks": [],
-   "stale_since": "v4.41"
+   "stale_since": "v4.43",
+   "prev_stale_since": "v4.41",
+   "status": "stale",
+   "note": "外形 16.25m 角へ縮小（未撮影）"
   }
  ],
  "textures": {
@@ -262,9 +280,11 @@
      "black": 0.0162,
      "white": 0.0
     },
-    "status": "ok",
+    "status": "stale",
     "issues": [],
-    "def_hash": "e556062fc631"
+    "def_hash": "e556062fc631",
+    "stale_since": "v4.43",
+    "note": "外形 16.25m 角へ縮小（未撮影）"
    },
    "T2_plan_2F": {
     "id": "T2_plan_2F",
@@ -301,9 +321,11 @@
      "black": 0.0507,
      "white": 0.0
     },
-    "status": "ok",
+    "status": "stale",
     "issues": [],
-    "def_hash": "6fc5e82f0599"
+    "def_hash": "6fc5e82f0599",
+    "stale_since": "v4.43",
+    "note": "外形 16.25m 角へ縮小（未撮影）"
    },
    "R1-01_ld": {
     "id": "R1-01_ld",
@@ -343,7 +365,7 @@
      "window_ratio": 0.8936,
      "window_std": 43.415
     },
-    "status": "flag",
+    "status": "stale",
     "issues": [
      "窓の外が見えない（窓領域の平均は画像平均の 0.89 倍・標準偏差 43.4）"
     ],
@@ -351,7 +373,9 @@
     "clearance": 463,
     "front_mm": 6907,
     "wall_angle": 44.7,
-    "alt": null
+    "alt": null,
+    "stale_since": "v4.43",
+    "note": "外形 16.25m 角へ縮小（未撮影）"
    },
    "R1-02_kitchen": {
     "id": "R1-02_kitchen",
@@ -389,14 +413,16 @@
      "std": 58.4397,
      "window_area": 0.0
     },
-    "status": "ok",
+    "status": "stale",
     "issues": [],
     "def_hash": "e61efa1a9971",
     "clearance": 860,
     "front_mm": 7217,
     "wall_angle": 44.2,
     "alt": null,
-    "stale_since": "v4.37"
+    "stale_since": "v4.43",
+    "prev_stale_since": "v4.37",
+    "note": "外形 16.25m 角へ縮小（未撮影）"
    },
    "R1-03_doma": {
     "id": "R1-03_doma",
@@ -434,13 +460,15 @@
      "std": 68.0125,
      "window_area": 0.0
     },
-    "status": "ok",
+    "status": "stale",
     "issues": [],
     "def_hash": "96275ee9e105",
     "clearance": 431,
     "front_mm": 2725,
     "wall_angle": 25.3,
-    "alt": null
+    "alt": null,
+    "stale_since": "v4.43",
+    "note": "外形 16.25m 角へ縮小（未撮影）"
    },
    "R1-04_hall": {
     "id": "R1-04_hall",
@@ -478,13 +506,15 @@
      "std": 50.238,
      "window_area": 0.0
     },
-    "status": "ok",
+    "status": "stale",
     "issues": [],
     "def_hash": "7424508d60b4",
     "clearance": 775,
     "front_mm": 3962,
     "wall_angle": 40.1,
-    "alt": null
+    "alt": null,
+    "stale_since": "v4.43",
+    "note": "外形 16.25m 角へ縮小（未撮影）"
    },
    "R1-05_gym": {
     "id": "R1-05_gym",
@@ -522,13 +552,15 @@
      "std": 64.3743,
      "window_area": 0.0
     },
-    "status": "ok",
+    "status": "stale",
     "issues": [],
     "def_hash": "fcec27a33af8",
     "clearance": 440,
     "front_mm": 8287,
     "wall_angle": 31.2,
-    "alt": null
+    "alt": null,
+    "stale_since": "v4.43",
+    "note": "外形 16.25m 角へ縮小（未撮影）"
    },
    "R1-06_stair1": {
     "id": "R1-06_stair1",
@@ -566,57 +598,15 @@
      "std": 48.9323,
      "window_area": 0.0
     },
-    "status": "ok",
+    "status": "stale",
     "issues": [],
     "def_hash": "4667afffe886",
     "clearance": 820,
     "front_mm": 4469,
     "wall_angle": 25.0,
-    "alt": null
-   },
-   "R1-07_wc1a": {
-    "id": "R1-07_wc1a",
-    "kind": "R",
-    "floor": "1F",
-    "room": "トイレ（手洗い付）",
-    "cam": [
-     9375,
-     11100,
-     3100
-    ],
-    "target": [
-     10642.854785222098,
-     8381.07663889005,
-     3100
-    ],
-    "lens": 24,
-    "exposure": -0.5,
-    "when": "2026-06-21T08:00",
-    "wb": 5500,
-    "sun_k": 3900,
-    "channels": {
-     "L": [
-      5000,
-      100
-     ],
-     "D": 0,
-     "F": 0
-    },
-    "render_seconds": 949.9,
-    "metrics": {
-     "black": 0.0,
-     "white": 0.0,
-     "mean": 170.9041,
-     "std": 56.8071,
-     "window_area": 0.0
-    },
-    "status": "ok",
-    "issues": [],
-    "def_hash": "3a82216879f2",
-    "clearance": 400,
-    "front_mm": 1538,
-    "wall_angle": 25.0,
-    "alt": null
+    "alt": null,
+    "stale_since": "v4.43",
+    "note": "外形 16.25m 角へ縮小（未撮影）"
    },
    "R1-08_mechW": {
     "id": "R1-08_mechW",
@@ -654,13 +644,15 @@
      "std": 55.0349,
      "window_area": 0.0
     },
-    "status": "ok",
+    "status": "stale",
     "issues": [],
     "def_hash": "95d9ed651bbb",
     "clearance": 425,
     "front_mm": 2593,
     "wall_angle": 25.0,
-    "alt": "4 隅（壁から 700 内側）はいずれも離隔 400mm・正面 1,500mm を満たさない（SW・SE・NE・NW）ため、戸口（SSD-4@x11750y8950）から室内へ 450mm 入った位置に立ち戸を開け、22mm（水平 79°）を例外として許可。正面の壁まで 2593mm"
+    "alt": "4 隅（壁から 700 内側）はいずれも離隔 400mm・正面 1,500mm を満たさない（SW・SE・NE・NW）ため、戸口（SSD-4@x11750y8950）から室内へ 450mm 入った位置に立ち戸を開け、22mm（水平 79°）を例外として許可。正面の壁まで 2593mm",
+    "stale_since": "v4.43",
+    "note": "外形 16.25m 角へ縮小（未撮影）"
    },
    "R1-09_mechE": {
     "id": "R1-09_mechE",
@@ -698,13 +690,15 @@
      "std": 47.2099,
      "window_area": 0.0
     },
-    "status": "ok",
+    "status": "stale",
     "issues": [],
     "def_hash": "80138af84b5d",
     "clearance": 424,
     "front_mm": 2177,
     "wall_angle": 43.6,
-    "alt": null
+    "alt": null,
+    "stale_since": "v4.43",
+    "note": "外形 16.25m 角へ縮小（未撮影）"
    },
    "R1-10_battery": {
     "id": "R1-10_battery",
@@ -742,13 +736,15 @@
      "std": 68.8804,
      "window_area": 0.0
     },
-    "status": "ok",
+    "status": "stale",
     "issues": [],
     "def_hash": "0d1c1dcab74d",
     "clearance": 700,
     "front_mm": 8551,
     "wall_angle": 25.0,
-    "alt": null
+    "alt": null,
+    "stale_since": "v4.43",
+    "note": "外形 16.25m 角へ縮小（未撮影）"
    },
    "R1-11_laundry": {
     "id": "R1-11_laundry",
@@ -786,61 +782,15 @@
      "std": 66.0412,
      "window_area": 0.0
     },
-    "status": "ok",
+    "status": "stale",
     "issues": [],
     "def_hash": "a4752e293a3e",
     "clearance": 700,
     "front_mm": 4162,
     "wall_angle": 38.7,
-    "alt": null
-   },
-   "R1-12_fcl": {
-    "id": "R1-12_fcl",
-    "kind": "R",
-    "floor": "1F",
-    "room": "ファミリークローゼット",
-    "cam": [
-     1320,
-     17086,
-     3100
-    ],
-    "target": [
-     3795.3404948348866,
-     15391.098989725187,
-     3100
-    ],
-    "lens": 26,
-    "exposure": -1.0,
-    "when": "2026-06-21T08:00",
-    "wb": 5500,
-    "sun_k": 3900,
-    "channels": {
-     "L": [
-      5000,
-      100
-     ],
-     "D": 0,
-     "F": 0
-    },
-    "render_seconds": 947.2,
-    "metrics": {
-     "black": 0.0,
-     "white": 0.0,
-     "mean": 199.2751,
-     "std": 11.5798,
-     "window_area": 0.0
-    },
-    "status": "flag",
-    "issues": [
-     "平均輝度 199（許容 70〜185）",
-     "標準偏差 11.6 < 12（壁の中・単色）"
-    ],
-    "def_hash": "bd9ecbbf719d",
-    "clearance": 439,
-    "front_mm": 3126,
-    "wall_angle": 34.4,
     "alt": null,
-    "stale_since": "v4.37"
+    "stale_since": "v4.43",
+    "note": "外形 16.25m 角へ縮小（未撮影）"
    },
    "R1-13_wash": {
     "id": "R1-13_wash",
@@ -878,13 +828,15 @@
      "std": 34.7181,
      "window_area": 0.0
     },
-    "status": "ok",
+    "status": "stale",
     "issues": [],
     "def_hash": "c18d5bb9a799",
     "clearance": 700,
     "front_mm": 3031,
     "wall_angle": 31.9,
-    "alt": null
+    "alt": null,
+    "stale_since": "v4.43",
+    "note": "外形 16.25m 角へ縮小（未撮影）"
    },
    "R1-14_bath": {
     "id": "R1-14_bath",
@@ -922,13 +874,15 @@
      "std": 72.5338,
      "window_area": 0.0
     },
-    "status": "ok",
+    "status": "stale",
     "issues": [],
     "def_hash": "ba53163c09db",
     "clearance": 700,
     "front_mm": 3608,
     "wall_angle": 25.0,
-    "alt": null
+    "alt": null,
+    "stale_since": "v4.43",
+    "note": "外形 16.25m 角へ縮小（未撮影）"
    },
    "R1-15_corr1": {
     "id": "R1-15_corr1",
@@ -966,13 +920,15 @@
      "std": 37.5938,
      "window_area": 0.0
     },
-    "status": "ok",
+    "status": "stale",
     "issues": [],
     "def_hash": "a993d4866d62",
     "clearance": 700,
     "front_mm": 1876,
     "wall_angle": 25.0,
-    "alt": null
+    "alt": null,
+    "stale_since": "v4.43",
+    "note": "外形 16.25m 角へ縮小（未撮影）"
    },
    "R1-16_wc1b": {
     "id": "R1-16_wc1b",
@@ -1010,105 +966,15 @@
      "std": 51.3875,
      "window_area": 0.0
     },
-    "status": "ok",
+    "status": "stale",
     "issues": [],
     "def_hash": "69880d2d6ec8",
     "clearance": 700,
     "front_mm": 2366,
     "wall_angle": 25.0,
-    "alt": null
-   },
-   "R1-17_roomA": {
-    "id": "R1-17_roomA",
-    "kind": "R",
-    "floor": "1F",
-    "room": "居室A",
-    "cam": [
-     15125,
-     14250,
-     3100
-    ],
-    "target": [
-     16665.62375617451,
-     16824.194717170933,
-     3100
-    ],
-    "lens": 24,
-    "exposure": -0.5,
-    "when": "2026-06-21T08:00",
-    "wb": 5500,
-    "sun_k": 3900,
-    "channels": {
-     "L": [
-      5000,
-      100
-     ],
-     "D": 0,
-     "F": 0
-    },
-    "render_seconds": 164.0,
-    "metrics": {
-     "black": 0.0,
-     "white": 0.0,
-     "mean": 145.2086,
-     "std": 62.908,
-     "window_area": 0.1227,
-     "window_ratio": 0.6859,
-     "window_std": 58.5682
-    },
-    "status": "flag",
-    "issues": [
-     "窓の外が見えない（窓領域の平均は画像平均の 0.69 倍・標準偏差 58.6）"
-    ],
-    "def_hash": "9dc2279aa2e7",
-    "clearance": 700,
-    "front_mm": 3349,
-    "wall_angle": 30.9,
-    "alt": null
-   },
-   "R1-18_wic1": {
-    "id": "R1-18_wic1",
-    "kind": "R",
-    "floor": "1F",
-    "room": "WIC",
-    "cam": [
-     15352,
-     13270,
-     3100
-    ],
-    "target": [
-     18070.923361109948,
-     14537.854785222098,
-     3100
-    ],
-    "lens": 26,
-    "exposure": -1.0,
-    "when": "2026-06-21T08:00",
-    "wb": 5500,
-    "sun_k": 3900,
-    "channels": {
-     "L": [
-      5000,
-      100
-     ],
-     "D": 0,
-     "F": 0
-    },
-    "render_seconds": 954.6,
-    "metrics": {
-     "black": 0.0,
-     "white": 0.0,
-     "mean": 168.149,
-     "std": 16.2728,
-     "window_area": 0.0
-    },
-    "status": "ok",
-    "issues": [],
-    "def_hash": "8d1c5d94a1fd",
-    "clearance": 420,
-    "front_mm": 3060,
-    "wall_angle": 25.0,
-    "alt": null
+    "alt": null,
+    "stale_since": "v4.43",
+    "note": "外形 16.25m 角へ縮小（未撮影）"
    },
    "R2-01_roomB": {
     "id": "R2-01_roomB",
@@ -1148,7 +1014,7 @@
      "window_ratio": 0.7888,
      "window_std": 35.9432
     },
-    "status": "flag",
+    "status": "stale",
     "issues": [
      "窓の外が見えない（窓領域の平均は画像平均の 0.79 倍・標準偏差 35.9）"
     ],
@@ -1156,7 +1022,9 @@
     "clearance": 725,
     "front_mm": 3194,
     "wall_angle": 25.0,
-    "alt": null
+    "alt": null,
+    "stale_since": "v4.43",
+    "note": "外形 16.25m 角へ縮小（未撮影）"
    },
    "R2-02_roomC": {
     "id": "R2-02_roomC",
@@ -1196,7 +1064,7 @@
      "window_ratio": 0.4567,
      "window_std": 38.7825
     },
-    "status": "flag",
+    "status": "stale",
     "issues": [
      "窓の外が見えない（窓領域の平均は画像平均の 0.46 倍・標準偏差 38.8）"
     ],
@@ -1204,7 +1072,9 @@
     "clearance": 700,
     "front_mm": 3254,
     "wall_angle": 25.0,
-    "alt": null
+    "alt": null,
+    "stale_since": "v4.43",
+    "note": "外形 16.25m 角へ縮小（未撮影）"
    },
    "R2-03_corr2w": {
     "id": "R2-03_corr2w",
@@ -1242,13 +1112,15 @@
      "std": 53.8912,
      "window_area": 0.0
     },
-    "status": "ok",
+    "status": "stale",
     "issues": [],
     "def_hash": "cd030e31cb19",
     "clearance": 425,
     "front_mm": 1834,
     "wall_angle": 25.0,
-    "alt": "4 隅（壁から 700 内側）はいずれも離隔 400mm・正面 1,500mm を満たさない（SW・SE・NE・NW）ため、戸口（WD-6@x1400y6125）から室内へ 450mm 入った位置に立ち戸を開け、22mm（水平 79°）を例外として許可。正面の壁まで 1834mm"
+    "alt": "4 隅（壁から 700 内側）はいずれも離隔 400mm・正面 1,500mm を満たさない（SW・SE・NE・NW）ため、戸口（WD-6@x1400y6125）から室内へ 450mm 入った位置に立ち戸を開け、22mm（水平 79°）を例外として許可。正面の壁まで 1834mm",
+    "stale_since": "v4.43",
+    "note": "外形 16.25m 角へ縮小（未撮影）"
    },
    "R2-04_roomD": {
     "id": "R2-04_roomD",
@@ -1288,7 +1160,7 @@
      "window_ratio": 0.8806,
      "window_std": 37.6906
     },
-    "status": "flag",
+    "status": "stale",
     "issues": [
      "窓の外が見えない（窓領域の平均は画像平均の 0.88 倍・標準偏差 37.7）"
     ],
@@ -1296,51 +1168,9 @@
     "clearance": 722,
     "front_mm": 3254,
     "wall_angle": 25.0,
-    "alt": null
-   },
-   "R2-05_wicD": {
-    "id": "R2-05_wicD",
-    "kind": "R",
-    "floor": "2F",
-    "room": "WIC",
-    "cam": [
-     10300,
-     4100,
-     6500
-    ],
-    "target": [
-     9032.145214777902,
-     1381.0766388900497,
-     6500
-    ],
-    "lens": 26,
-    "exposure": -1.0,
-    "when": "2026-06-21T08:00",
-    "wb": 5500,
-    "sun_k": 3900,
-    "channels": {
-     "L": [
-      5000,
-      100
-     ],
-     "D": 0,
-     "F": 0
-    },
-    "render_seconds": 911.2,
-    "metrics": {
-     "black": 0.0,
-     "white": 0.0,
-     "mean": 176.2524,
-     "std": 45.2371,
-     "window_area": 0.0
-    },
-    "status": "ok",
-    "issues": [],
-    "def_hash": "03ca9e2fbdf0",
-    "clearance": 412,
-    "front_mm": 4386,
-    "wall_angle": 25.0,
-    "alt": null
+    "alt": null,
+    "stale_since": "v4.43",
+    "note": "外形 16.25m 角へ縮小（未撮影）"
    },
    "R2-06_corr2s": {
     "id": "R2-06_corr2s",
@@ -1378,13 +1208,15 @@
      "std": 47.9019,
      "window_area": 0.0
     },
-    "status": "ok",
+    "status": "stale",
     "issues": [],
     "def_hash": "9fae835c3c71",
     "clearance": 550,
     "front_mm": 1538,
     "wall_angle": 25.0,
-    "alt": null
+    "alt": null,
+    "stale_since": "v4.43",
+    "note": "外形 16.25m 角へ縮小（未撮影）"
    },
    "R2-07_theater": {
     "id": "R2-07_theater",
@@ -1422,13 +1254,15 @@
      "std": 84.2212,
      "window_area": 0.0
     },
-    "status": "ok",
+    "status": "stale",
     "issues": [],
     "def_hash": "42749e7c76d9",
     "clearance": 700,
     "front_mm": 7319,
     "wall_angle": 45.0,
-    "alt": null
+    "alt": null,
+    "stale_since": "v4.43",
+    "note": "外形 16.25m 角へ縮小（未撮影）"
    },
    "R2-08_ante": {
     "id": "R2-08_ante",
@@ -1466,13 +1300,15 @@
      "std": 34.7343,
      "window_area": 0.0
     },
-    "status": "ok",
+    "status": "stale",
     "issues": [],
     "def_hash": "611a624dc3ae",
     "clearance": 700,
     "front_mm": 2958,
     "wall_angle": 25.0,
-    "alt": null
+    "alt": null,
+    "stale_since": "v4.43",
+    "note": "外形 16.25m 角へ縮小（未撮影）"
    },
    "R2-09_wicM": {
     "id": "R2-09_wicM",
@@ -1510,13 +1346,15 @@
      "std": 28.9318,
      "window_area": 0.0
     },
-    "status": "ok",
+    "status": "stale",
     "issues": [],
     "def_hash": "c8d5807c0ca9",
     "clearance": 700,
     "front_mm": 5986,
     "wall_angle": 28.2,
-    "alt": null
+    "alt": null,
+    "stale_since": "v4.43",
+    "note": "外形 16.25m 角へ縮小（未撮影）"
    },
    "R2-10_library": {
     "id": "R2-10_library",
@@ -1556,7 +1394,7 @@
      "window_ratio": 0.6334,
      "window_std": 51.5201
     },
-    "status": "flag",
+    "status": "stale",
     "issues": [
      "窓の外が見えない（窓領域の平均は画像平均の 0.63 倍・標準偏差 51.5）"
     ],
@@ -1564,7 +1402,9 @@
     "clearance": 422,
     "front_mm": 7117,
     "wall_angle": 44.2,
-    "alt": null
+    "alt": null,
+    "stale_since": "v4.43",
+    "note": "外形 16.25m 角へ縮小（未撮影）"
    },
    "R2-11_stair1": {
     "id": "R2-11_stair1",
@@ -1602,13 +1442,15 @@
      "std": 50.1327,
      "window_area": 0.0
     },
-    "status": "ok",
+    "status": "stale",
     "issues": [],
     "def_hash": "43244d0fbef7",
     "clearance": 700,
     "front_mm": 4579,
     "wall_angle": 25.0,
-    "alt": null
+    "alt": null,
+    "stale_since": "v4.43",
+    "note": "外形 16.25m 角へ縮小（未撮影）"
    },
    "R2-14_stair2": {
     "id": "R2-14_stair2",
@@ -1646,13 +1488,15 @@
      "std": 49.3241,
      "window_area": 0.0
     },
-    "status": "ok",
+    "status": "stale",
     "issues": [],
     "def_hash": "cb192198b236",
     "clearance": 725,
     "front_mm": 1621,
     "wall_angle": 30.3,
-    "alt": null
+    "alt": null,
+    "stale_since": "v4.43",
+    "note": "外形 16.25m 角へ縮小（未撮影）"
    },
    "R2-15_corr2n": {
     "id": "R2-15_corr2n",
@@ -1690,13 +1534,15 @@
      "std": 47.529,
      "window_area": 0.0
     },
-    "status": "ok",
+    "status": "stale",
     "issues": [],
     "def_hash": "760be5d683db",
     "clearance": 425,
     "front_mm": 1893,
     "wall_angle": 25.0,
-    "alt": "4 隅（壁から 700 内側）はいずれも離隔 400mm・正面 1,500mm を満たさない（SW・SE・NE・NW）ため、戸口（WD-12@x7400y13500）から室内へ 450mm 入った位置に立ち戸を開け、22mm（水平 79°）を例外として許可。正面の壁まで 1893mm"
+    "alt": "4 隅（壁から 700 内側）はいずれも離隔 400mm・正面 1,500mm を満たさない（SW・SE・NE・NW）ため、戸口（WD-12@x7400y13500）から室内へ 450mm 入った位置に立ち戸を開け、22mm（水平 79°）を例外として許可。正面の壁まで 1893mm",
+    "stale_since": "v4.43",
+    "note": "外形 16.25m 角へ縮小（未撮影）"
    },
    "R2-16_dress": {
     "id": "R2-16_dress",
@@ -1734,7 +1580,7 @@
      "std": 17.9409,
      "window_area": 0.0
     },
-    "status": "flag",
+    "status": "stale",
     "issues": [
      "平均輝度 213（許容 70〜185）"
     ],
@@ -1742,7 +1588,9 @@
     "clearance": 700,
     "front_mm": 3017,
     "wall_angle": 25.0,
-    "alt": null
+    "alt": null,
+    "stale_since": "v4.43",
+    "note": "外形 16.25m 角へ縮小（未撮影）"
    },
    "R2-17_shower": {
     "id": "R2-17_shower",
@@ -1780,13 +1628,15 @@
      "std": 28.5799,
      "window_area": 0.0
     },
-    "status": "ok",
+    "status": "stale",
     "issues": [],
     "def_hash": "93e3fa2177dd",
     "clearance": 700,
     "front_mm": 3333,
     "wall_angle": 30.4,
-    "alt": null
+    "alt": null,
+    "stale_since": "v4.43",
+    "note": "外形 16.25m 角へ縮小（未撮影）"
    },
    "R2-18_wc2b": {
     "id": "R2-18_wc2b",
@@ -1824,111 +1674,42 @@
      "std": 60.3057,
      "window_area": 0.0
     },
-    "status": "ok",
+    "status": "stale",
     "issues": [],
     "def_hash": "835410cc91e7",
     "clearance": 700,
     "front_mm": 2366,
     "wall_angle": 25.0,
-    "alt": null
-   },
-   "R2-19_master": {
-    "id": "R2-19_master",
-    "kind": "R",
-    "floor": "2F",
-    "room": "主寝室",
-    "cam": [
-     15125,
-     14250,
-     6500
-    ],
-    "target": [
-     16665.62375617451,
-     16824.194717170933,
-     6500
-    ],
-    "lens": 24,
-    "exposure": -0.5,
-    "when": "2026-06-21T08:00",
-    "wb": 5500,
-    "sun_k": 3900,
-    "channels": {
-     "L": [
-      5000,
-      100
-     ],
-     "D": 0,
-     "F": 0
-    },
-    "render_seconds": 632.1,
-    "metrics": {
-     "black": 0.0003,
-     "white": 0.0,
-     "mean": 159.0243,
-     "std": 54.9465,
-     "window_area": 0.2355,
-     "window_ratio": 0.5572,
-     "window_std": 52.7881
-    },
-    "status": "flag",
-    "issues": [
-     "窓の外が見えない（窓領域の平均は画像平均の 0.56 倍・標準偏差 52.8）"
-    ],
-    "def_hash": "7500eb7e24d3",
-    "clearance": 700,
-    "front_mm": 3349,
-    "wall_angle": 30.9,
-    "alt": null
-   },
-   "R2-12_wc2a": {
-    "id": "R2-12_wc2a",
-    "kind": "R",
-    "floor": "2F",
-    "room": "トイレ（手洗い付）",
-    "cam": [
-     9375,
-     11200,
-     6500
-    ],
-    "target": [
-     10642.854785222098,
-     8481.07663889005,
-     6500
-    ],
-    "lens": 24,
-    "exposure": -0.5,
-    "when": "2026-06-21T08:00",
-    "wb": 5500,
-    "sun_k": 3900,
-    "channels": {
-     "L": [
-      5000,
-      100
-     ],
-     "D": 0,
-     "F": 0
-    },
-    "render_seconds": 946.4,
-    "metrics": {
-     "black": 0.0,
-     "white": 0.0,
-     "mean": 163.5243,
-     "std": 56.4383,
-     "window_area": 0.0
-    },
-    "status": "ok",
-    "issues": [],
-    "def_hash": "3f9e46995eb0",
-    "clearance": 625,
-    "front_mm": 1538,
-    "wall_angle": 25.0,
-    "alt": null
+    "alt": null,
+    "stale_since": "v4.43",
+    "note": "外形 16.25m 角へ縮小（未撮影）"
    },
    "R2-13_archive": {
     "status": "stale",
-    "stale_since": "v4.42",
-    "note": "居室E を書庫に変更（bpy 環境がなく未撮影）。旧 R2-13_roomE は廃止",
-    "prev": "6b0cd202f6eb"
+    "stale_since": "v4.43",
+    "note": "外形 16.25m 角へ縮小（未撮影）",
+    "prev": "6b0cd202f6eb",
+    "prev_stale_since": "v4.42"
+   },
+   "R2-05_master": {
+    "id": "R2-05_master",
+    "kind": "R",
+    "floor": "2F",
+    "room": "主寝室",
+    "status": "stale",
+    "issues": [],
+    "stale_since": "v4.43",
+    "note": "外形 16.25m 角へ縮小（新しい室・未撮影）"
+   },
+   "R2-19_roomA": {
+    "id": "R2-19_roomA",
+    "kind": "R",
+    "floor": "2F",
+    "room": "居室A",
+    "status": "stale",
+    "issues": [],
+    "stale_since": "v4.43",
+    "note": "外形 16.25m 角へ縮小（新しい室・未撮影）"
    }
   },
   "master": {

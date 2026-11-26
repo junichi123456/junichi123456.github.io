@@ -29,7 +29,7 @@ if not BPY.exists():
 needs_bpy = pytest.mark.skipif(not BPY.exists() or not BM.MASTER.exists(), reason="bpy の入った python かマスターが無い")
 _C = {}
 # R1-03 は玄関土間 8.0㎡＋式台 1.7㎡（仕様書の 8.0 は土間のみ）
-AREAS = {"R1-01_ld": 33.6, "R1-02_kitchen": 33.8, "R1-03_doma": 7.4, "R1-04_hall": 11.7, "R1-05_gym": 51.6, "R1-06_stair1": 12.1, "R1-07_wc1a": 3.9, "R1-08_mechW": 8.6, "R1-09_mechE": 8.8, "R1-10_battery": 4.7, "R1-11_laundry": 12.5, "R1-13_wash": 8.3, "R1-14_bath": 10.2, "R1-15_corr1": 3.6, "R1-16_wc1b": 6.1, "R1-17_roomA": 9.7, "R2-01_roomB": 9.6, "R2-02_roomC": 9.7, "R2-03_corr2w": 6.5, "R2-04_roomD": 9.7, "R2-05_wicD": 12.0, "R2-06_corr2s": 5.2, "R2-07_theater": 34.5, "R2-08_ante": 10.9, "R2-09_wicM": 22.3, "R2-10_library": 33.8, "R2-11_stair1": 12.1, "R2-12_wc2a": 3.9, "R2-13_archive": 18.4, "R2-14_stair2": 3.5, "R2-15_corr2n": 5.7, "R2-16_dress": 7.1, "R2-17_shower": 9.6, "R2-18_wc2b": 6.1, "R2-19_master": 9.7}      # v4.42: R2-13 は書庫 18.4。v4.41: 寝室 4.5〜6 畳・北の行の組み替え（R1-12・R1-18 は視点が取れず除外 37→35）
+AREAS = {"R1-01_ld": 32.3, "R1-02_kitchen": 32.5, "R1-03_doma": 6.0, "R1-04_hall": 9.5, "R1-05_gym": 49.6, "R1-06_stair1": 7.8, "R1-08_mechW": 8.2, "R1-09_mechE": 8.4, "R1-10_battery": 4.7, "R1-11_laundry": 13.8, "R1-13_wash": 8.3, "R1-14_bath": 10.3, "R1-15_corr1": 5.0, "R1-16_wc1b": 6.1, "R2-01_roomB": 9.3, "R2-02_roomC": 8.8, "R2-03_corr2w": 6.2, "R2-04_roomD": 8.8, "R2-05_master": 9.7, "R2-06_corr2s": 4.6, "R2-07_theater": 33.2, "R2-08_ante": 10.5, "R2-09_wicM": 21.5, "R2-10_library": 32.5, "R2-11_stair1": 7.8, "R2-13_archive": 7.4, "R2-14_stair2": 1.7, "R2-15_corr2n": 5.0, "R2-16_dress": 7.1, "R2-17_shower": 9.6, "R2-18_wc2b": 6.1, "R2-19_roomA": 9.6}      # v4.43: 外形 16.25m 角（1F トイレ（手洗い付）・2F 同は幅 1,000 で正面 1,500 が取れず除外）
 
 
 def ctx():
@@ -52,11 +52,11 @@ def test_counts_and_ids():
     c = ctx()
     R = [k for k, d in c["defs"].items() if d["kind"] == "R"]
     T = [k for k, d in c["defs"].items() if d["kind"] == "T"]
-    assert len(R) == 35 and sorted(T) == ["T1_plan_1F", "T2_plan_2F"]
-    assert sum(1 for k in R if k.startswith("R1-")) == 16 and sum(1 for k in R if k.startswith("R2-")) == 19
+    assert len(R) == 32 and sorted(T) == ["T1_plan_1F", "T2_plan_2F"]
+    assert sum(1 for k in R if k.startswith("R1-")) == 14 and sum(1 for k in R if k.startswith("R2-")) == 18
     assert all(re.fullmatch(r"R[12]-\d\d_[A-Za-z0-9]+", k) for k in R)
     assert set(R) == set(AREAS)
-    assert len(c["Y"]["excluded"]) == 13          # v4.42: 14→13（収納（居室E）は書庫に統合）。v4.41: 7→14
+    assert len(c["Y"]["excluded"]) == 10          # v4.43: 13→10（居室A・WIC・FC・収納の廃止、トイレ（手洗い付）2 室を追加）。v4.42: 14→13（収納（居室E）は書庫に統合）。v4.41: 7→14
     for k, a in AREAS.items():
         assert abs(c["defs"][k]["cut"]["area"] - a) <= 0.15, (k, c["defs"][k]["cut"]["area"], a)
 
@@ -118,8 +118,8 @@ def test_direct_and_screens_prediction():
     c = ctx()
     d = c["defs"]
     assert d["R1-05_gym"]["cut"]["direct"] and d["R1-05_gym"]["cut"]["screens_down"]                                 # ジム高窓（東）は下ろす
-    assert d["R1-17_roomA"]["cut"]["direct"] and not d["R1-17_roomA"]["cut"]["screens_down"] and d["R1-17_roomA"]["cut"]["blackout_raised"]
-    assert d["R2-19_master"]["cut"]["blackout_raised"] and not d["R2-19_master"]["cut"]["screens_down"]
+    assert not d["R2-19_roomA"]["cut"]["direct"] and not d["R2-19_roomA"]["cut"]["screens_down"]      # v4.43: 居室A は 2F 西窓（朝の直射なし）
+    assert not d["R2-05_master"]["cut"]["direct"] and not d["R2-05_master"]["cut"]["screens_down"]    # v4.43: 主寝室は 2F 南窓
     assert not d["R1-01_ld"]["cut"]["direct"] and not d["R2-10_library"]["cut"]["direct"]                           # 南・西の窓に直射なし
 
 
@@ -154,8 +154,8 @@ def test_master_has_96_cameras_and_old_hashes():
             "print('JSON:'+json.dumps(dict(cams=cams,cols=cols,caps=caps,mh=bpy.context.scene['model_hash'])))")
     r = bpy_json(code, str(BM.MASTER))
     cams = r["cams"]
-    assert len(cams) == 94
-    assert sum(1 for c in cams.values() if c["fam"] == "R") == 35 and sum(1 for c in cams.values() if c["fam"] == "T") == 2
+    assert len(cams) == 91      # v4.43: R 35→32
+    assert sum(1 for c in cams.values() if c["fam"] == "R") == 32 and sum(1 for c in cams.values() if c["fam"] == "T") == 2
     for k, v in base.items():
         assert cams[k]["h"] == v, k                                                                              # 既存 57 の def_hash は不変
     for k in ("T1_plan_1F", "T2_plan_2F"):
@@ -214,7 +214,7 @@ def _rooms_log():
 def test_T_outputs_if_present():
     """T1・T2: 注記帯つき JPEG（≦1.5MB）・室名つき画像・検査に合格（平均 [60,190]・断面キャップ>0・外形が枠内）。"""
     lg = _rooms_log().get("cuts", {})
-    if "T1_plan_1F" not in lg:
+    if "T1_plan_1F" not in lg or lg["T1_plan_1F"].get("stale_since"):      # v4.43: 外形が変わり T1・T2 は未撮影（stale_since）
         pytest.skip("T 未撮影")
     from PIL import Image
     Y = ctx()["Y"]

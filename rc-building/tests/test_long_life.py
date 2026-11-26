@@ -122,10 +122,10 @@ def test_hatch_clearance():
 def test_envelope_tb():
     h = _get()["h"]
     tb, ea, be = PF.envelope_tb(h), PF.eta_ac(h), PF.bei_estimate(h)
-    assert abs(tb["UA_tb"] - 0.2392) < 0.001 and tb["UA_tb"] <= 0.26      # v4.41: 0.2377→0.2403（外皮が縮み、熱橋の割合が増える）。等級7（0.26）は維持
-    assert abs(ea["value"] - 0.531) < 0.01 and abs(be["bei"] - 0.3165) < 0.005      # v4.42: 居室E の西窓廃止で UA 0.2403→0.2392・ηAC 0.546→0.531・BEI 0.317→0.3165。v4.41: ηAC 0.53→0.55（居室D の窓縮小・居室E の窓が西へ）、BEI 0.310→0.317
-    assert abs(be["E_design"] - 121530) < 200 and abs(be["E_ref"] - 384027) < 500
-    assert abs(PF.energy(h, PF.heat_load(h))["total"] - 19948.46) < 1
+    assert abs(tb["UA_tb"] - 0.2412) < 0.001 and tb["UA_tb"] <= 0.26      # v4.43: 外形 16.25m 角・窓 3 削除 3 追加で 0.2392→0.2412。v4.41: 0.2377→0.2403（外皮が縮み、熱橋の割合が増える）。等級7（0.26）は維持
+    assert abs(ea["value"] - 0.5424) < 0.01 and abs(be["bei"] - 0.3243) < 0.005      # v4.43: ηAC 0.531→0.542（2F 南・西に窓を追加し、東・北の窓を減らした）・BEI 0.3165→0.3243。v4.42: 居室E の西窓廃止で UA 0.2403→0.2392・ηAC 0.546→0.531・BEI 0.317→0.3165。v4.41: ηAC 0.53→0.55（居室D の窓縮小・居室E の窓が西へ）、BEI 0.310→0.317
+    assert abs(be["E_design"] - 113235) < 200 and abs(be["E_ref"] - 349183) < 500      # v4.43
+    assert abs(PF.energy(h, PF.heat_load(h))["total"] - 18919.19) < 1      # v4.43
 
 
 def test_maintenance_plan():
@@ -143,7 +143,7 @@ def test_legal_long_life():
     ok = {0, 1, 3, 4, 5, 6, 10}
     for i, r in enumerate(ll):
         assert r["result"] == (house_legal.OK if i in ok else house_legal.CHK), (i, r["item"], r["result"])
-    assert len(rows) == 149 and sum(r["result"] == house_legal.CHK for r in rows) == 40 and not any(r["result"] == house_legal.NG for r in rows)
+    assert len(rows) == 150 and sum(r["result"] == house_legal.CHK for r in rows) == 42 and not any(r["result"] == house_legal.NG for r in rows)
 
 
 if __name__ == "__main__":

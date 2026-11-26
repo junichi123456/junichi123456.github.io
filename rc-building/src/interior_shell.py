@@ -62,8 +62,8 @@ def cells(h):
         out.append(Cell("1F", s.name + "の下", (s.x0, min(s.y_entry, h.stair_end(s)), s.x1, max(s.y_entry, h.stair_end(s))),
                         h.fl["1F"], "floor_oak", "ceiling_paint", extra=True))
     for fl in ("1F", "2F"):
-        out.append(Cell(fl, "ホール（階段脇）", (10100, 8800, 11000, 12000), h.fl[fl], "floor_oak", "ceiling_paint", extra=True))
-    out.append(Cell("1F", "階段2前", (3950, 14000, 6000, 14100), h.fl["1F"], "floor_oak", "ceiling_paint", extra=True))
+        out.append(Cell(fl, "ホール（階段脇）", (9225, 8150, 10225, 12000), h.fl[fl], "floor_oak", "ceiling_paint", extra=True))      # v4.43 通路（X3 沿い 有効 1,000）
+    out.append(Cell("1F", "階段1前", (6025, 8100, 8025, 8500), h.fl["1F"], "floor_oak", "ceiling_paint", extra=True))           # v4.43 昇り口の前（ホールと階段の間）
     return out
 
 

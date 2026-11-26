@@ -136,11 +136,7 @@ def _override(h, r):
     if r.floor == "1F" and r.name == "キッチン":
         return [("x", y, 700, 5500) for y in (7550, 9550, 11300)], 3000
     if r.floor == "1F" and r.name.startswith("ランドリー"):
-        return [("x", y, 600, 3400) for y in (13000, 14300)], 2000      # v4.41: L 形の室の西側（階段2前の床は別の室）
-    if r.floor == "1F" and r.name == "WIC":                               # v4.41: 幅 1,275 の WIC（棚 D600 の東の通路に 1 本）
-        return [("y", 14000, 14300, 16800)], 1500
-    if r.floor == "1F" and r.name == "ファミリークローゼット":            # v4.41: 北の収納（D600）の南へ 1 本（幅 1,475 の室）
-        return [("x", 16100, 900, 3600)], 1500
+        return [("x", y, 600, 3200) for y in (13000, 14300, 15500)], 2000      # v4.43: ファミクロ兼用の 3,550×3,875（階段2前の床は別の室）
     return None
 
 

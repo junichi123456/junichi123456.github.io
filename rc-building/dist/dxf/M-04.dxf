@@ -493,7 +493,7 @@ $SKPOLY
   9
 $TDCREATE
  40
-2461371.016423611
+2461371.0975925927
   9
 $TDUCREATE
  40
@@ -501,7 +501,7 @@ $TDUCREATE
   9
 $TDUPDATE
  40
-2461371.017002315
+2461371.098136574
   9
 $TDUUPDATE
  40
@@ -933,11 +933,11 @@ $PSTYLEMODE
   9
 $FINGERPRINTGUID
   2
-{092C90E4-4E43-4386-89EE-B85353A0545B}
+{2D817759-6DD9-482F-95D2-9735C734CCAA}
   9
 $VERSIONGUID
   2
-{631A244C-D43C-40C9-80AD-91140CC4FC46}
+{D0EF5333-6EE8-44DF-856E-31B8B5D65DC9}
   9
 $EXTNAMES
 290
@@ -1327,9 +1327,9 @@ ISM
   0
 CLASS
   1
-ACDBPLACEHOLDER
+LAYOUT
   2
-AcDbPlaceHolder
+AcDbLayout
   3
 ObjectDBX Classes
  90
@@ -1343,9 +1343,9 @@ ObjectDBX Classes
   0
 CLASS
   1
-LAYOUT
+ACDBPLACEHOLDER
   2
-AcDbLayout
+AcDbPlaceHolder
   3
 ObjectDBX Classes
  90
@@ -8541,7 +8541,7 @@ AcDbText
  40
 1.9
   1
-居室A
+居室B
   7
 JP
  11
@@ -8573,7 +8573,7 @@ AcDbText
  40
 1.9
   1
-1F
+2F
   7
 JP
  11
@@ -8605,7 +8605,7 @@ AcDbText
  40
 1.9
   1
-27m³
+26m³
   7
 JP
  11
@@ -8637,7 +8637,7 @@ AcDbText
  40
 1.9
   1
-14m³/h
+13m³/h
   7
 JP
  11
@@ -8669,7 +8669,7 @@ AcDbText
  40
 1.9
   1
-1,456ppm
+1,490ppm
   7
 JP
  11
@@ -8701,7 +8701,7 @@ AcDbText
  40
 1.9
   1
-37m³/h（1.36回/h）
+37m³/h（1.41回/h）
   7
 JP
  11
@@ -8791,7 +8791,7 @@ AcDbText
  40
 1.9
   1
-居室B
+居室C
   7
 JP
  11
@@ -8855,7 +8855,7 @@ AcDbText
  40
 1.9
   1
-27m³
+25m³
   7
 JP
  11
@@ -8887,7 +8887,7 @@ AcDbText
  40
 1.9
   1
-13m³/h
+12m³/h
   7
 JP
  11
@@ -8919,7 +8919,7 @@ AcDbText
  40
 1.9
   1
-1,463ppm
+1,561ppm
   7
 JP
  11
@@ -8951,7 +8951,7 @@ AcDbText
  40
 1.9
   1
-37m³/h（1.37回/h）
+37m³/h（1.50回/h）
   7
 JP
  11
@@ -9041,7 +9041,7 @@ AcDbText
  40
 1.9
   1
-居室C
+主寝室
   7
 JP
  11
@@ -9355,7 +9355,7 @@ AcDbText
  40
 1.9
   1
-27m³
+25m³
   7
 JP
  11
@@ -9387,7 +9387,7 @@ AcDbText
  40
 1.9
   1
-14m³/h
+12m³/h
   7
 JP
  11
@@ -9419,7 +9419,7 @@ AcDbText
  40
 1.9
   1
-1,451ppm
+1,561ppm
   7
 JP
  11
@@ -9451,7 +9451,7 @@ AcDbText
  40
 1.9
   1
-37m³/h（1.36回/h）
+37m³/h（1.50回/h）
   7
 JP
  11
@@ -9541,7 +9541,7 @@ AcDbText
  40
 1.9
   1
-主寝室
+居室A
   7
 JP
  11
@@ -9637,7 +9637,7 @@ AcDbText
  40
 1.9
   1
-14m³/h
+13m³/h
   7
 JP
  11
@@ -9669,7 +9669,7 @@ AcDbText
  40
 1.9
   1
-1,456ppm
+1,463ppm
   7
 JP
  11
@@ -9701,7 +9701,7 @@ AcDbText
  40
 1.9
   1
-37m³/h（1.36回/h）
+37m³/h（1.37回/h）
   7
 JP
  11
@@ -9983,7 +9983,7 @@ AcDbText
  40
 2.1
   1
-寝室ごとに CO2 センサーで換気量を自動で増やす（需要制御）。必要量は1人 約37m³/h。増える換気は合計 約117m³/h で、全熱交換
+寝室ごとに CO2 センサーで換気量を自動で増やす（需要制御）。必要量は1人 約37m³/h。増える換気は合計 約120m³/h で、全熱交換
   7
 JP
  11
@@ -10015,7 +10015,7 @@ AcDbText
  40
 2.1
   1
-で回収するため冷暖房の増加は年 約245kWh
+で回収するため冷暖房の増加は年 約252kWh
   7
 JP
  11
@@ -13951,7 +13951,7 @@ DictionaryVariables
 280
 0
   1
-1.4.5 @ 2026-11-26T00:23:39.966596+00:00
+1.4.5 @ 2026-11-26T02:20:32.570866+00:00
   0
 VISUALSTYLE
   5
@@ -20513,7 +20513,7 @@ DictionaryVariables
 280
 0
   1
-1.4.5 @ 2026-11-26T00:24:29.371598+00:00
+1.4.5 @ 2026-11-26T02:21:19.916391+00:00
   0
 ENDSEC
   0

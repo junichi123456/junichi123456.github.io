@@ -113,9 +113,10 @@ def test_sun_and_channels():
 
 def test_exceptions():
     d = ctx()["defs"]
-    assert d["Z1-23a"]["spec"]["open_doors"] == {"x7400y14850": 1.0}
+    # v4.43: Z1-23a の戸（浴室へ開ける x7400y14850）は洗面の組み替えで廃止（浴室は E-N へ）
+    assert "open_doors" not in d["Z1-23a"]["spec"]
     assert d["Z2-22a"]["spec"]["also_1f"] is True
-    assert sum(1 for x in d.values() if x["spec"].get("open_doors") or x["spec"].get("also_1f")) == 2
+    assert sum(1 for x in d.values() if x["spec"].get("open_doors") or x["spec"].get("also_1f")) == 1
 
 
 def test_def_hash_changes():

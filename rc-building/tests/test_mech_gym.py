@@ -37,17 +37,17 @@ def test_wall_quantity_and_eccentricity():
 
 def test_three_rooms_one_door_each_into_gym():
     h = _h()
-    w89 = next(w for w in h.walls if w.floor == "1F" and w.axis == "x" and w.c == 8950 and w.a == 11250)
-    assert [(o.u0, o.u1) for o in w89.openings] == [(11350, 12150), (14350, 15150)]                # v4.41: x −1,000
+    w89 = next(w for w in h.walls if w.floor == "1F" and w.axis == "x" and w.c == 8950 and w.a == 10475)
+    assert [(o.u0, o.u1) for o in w89.openings] == [(10575, 11375), (13500, 14300)]                # v4.43: 機械室の幅 2,750／2,800
     assert all(o.swing == 1 and o.hinge == 0 for o in w89.openings)                 # 内開き
-    w15 = next(w for w in h.walls if w.floor == "1F" and w.axis == "y" and w.c == 14150)
+    w15 = next(w for w in h.walls if w.floor == "1F" and w.axis == "y" and w.c == 13275)
     assert not w15.openings                                                          # 機械室どうしの扉は廃止
     d = h.battery_door
     assert d.swing == -1 and d.width == 900 and (d.u0, d.u1) == (6500, 7400)
     gym = sb(*h.gym.rect)
     assert gym.buffer(1).intersects(sb(*h.battery_room.rect)) and abs(h.battery_room.area - 4.17) < 0.05
     mw, me = (r for r in h.rooms if r.name.startswith("機械室"))
-    assert abs(mw.area - 8.6) < 0.1 and abs(me.area - 8.8) < 0.1
+    assert abs(mw.area - 8.25) < 0.1 and abs(me.area - 8.40) < 0.1      # v4.43: −3.5%・−4.3%
     for r in (mw, me):                                                               # 扉のある壁（y8,950）がジムに接する
         assert abs(r.rect[1] - 9000) < 1 and gym.intersects(sb(r.rect[0], 8900, r.rect[2], 9000))
 
@@ -59,7 +59,7 @@ def test_clearance_800_and_swing():
     assert not r["battery_swing_hits"] and not r["lane_hits"]
     assert not any(r["mech_swing_hits"].values())                                    # 分電盤・機器が扉の軌跡に入らない
     assert r["usable"] >= 44.85, r["usable"]
-    assert abs(h.gym.area - 46.27) < 0.05 and abs(h.gym.daylight_area - 53.91) < 0.05      # v4.41: 蓄電室を y8,625 までに縮め +0.51
+    assert abs(h.gym.area - 44.31) < 0.05 and abs(h.gym.daylight_area - 52.24) < 0.05      # v4.43: ジム 5,650×8,775（−蓄電室−増し打ち帯）＋拡張部 7.93
     assert r["rack_front"] >= h.spec["mech_rooms"]["rack_front_min"]
     z = h.mech_zones()
     for n, rc, *_ in h.equipment:

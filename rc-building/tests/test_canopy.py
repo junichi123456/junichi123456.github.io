@@ -37,7 +37,7 @@ def test_canopy_geometry():
 def test_building_area_includes_canopy():
     h = house()
     a = h.building_area()
-    assert 312.0 < a < 313.2, a           # v4.41: 壁芯 17.25m 角に縮小（旧 347.5〜348.6）
+    assert 278.5 < a < 279.6, a           # v4.43: 壁芯 16.25m 角に縮小（v4.41・42 は 312.0〜313.2、旧 347.5〜348.6）
     assert a / (h.site.area / 1e6) < 0.60
 
 

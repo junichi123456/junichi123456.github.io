@@ -48,8 +48,8 @@ def test_donation_not_overlapping_north_sidewalk():
 
 def test_coverage_far_values():
     _, rows, sm, _ = _get()
-    assert abs(sm["coverage"] * 100 - 12.88) < 0.01, sm["coverage"]
-    assert abs(sm["far"] * 100 - 24.53) < 0.01, sm["far"]
+    assert abs(sm["coverage"] * 100 - 11.50) < 0.01   # v4.43: 壁芯 16.25m 角（建築面積 279.04m²。v4.42 は 12.88）, sm["coverage"]
+    assert abs(sm["far"] * 100 - 21.77) < 0.01   # v4.43: 延べ 528.13m²（v4.42 は 24.53）, sm["far"]
     ng = [r for r in rows if r["result"] == house_legal.NG]
     assert not ng, ng
     items = {r["item"]: r for r in rows}

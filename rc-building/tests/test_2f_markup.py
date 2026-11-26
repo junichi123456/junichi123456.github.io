@@ -28,24 +28,26 @@ def _room(h, name, fl="2F"):
 def test_room_areas():
     h = house()
     # v4.41: 寝室は 4.5〜6 畳（居室E 9.63・主寝室 9.65）。収納・水廻りは北の行の組み替え後の値（ブリーフ 49 章）
-    exp = {"書庫": 18.40,  # v4.42: 居室E＋収納（居室E）を一体化
-            "脱衣所": 7.06, "シャワー": 9.56, "トイレ": 6.08, "収納（トイレ・主寝室）": 4.56, "廊下": None,
-           "収納（居室B）": 3.47, "収納（居室C）": 3.62, "主寝室": 9.65, "WIC（主寝室）": 22.32}
+    # v4.43: 外形 16.25m 角。書庫は南西の W-S 区画 7.36m²（4.5 畳）、居室A は 2F へ、主寝室は南へ。固定の部屋は v4.42 比 −3.8% 以内
+    exp = {"書庫": 7.36, "居室A": 9.59, "居室B": 9.35, "居室C": 8.77, "居室D": 8.77,
+           "脱衣所": 7.07, "シャワー": 9.59, "トイレ": 6.05, "収納（北）": 4.51, "リネン庫": 4.47, "収納（居室A）": 3.82,
+           "廊下": None, "主寝室": 9.70, "WIC（主寝室）": 21.47}
     for n, a in exp.items():
         if a is not None:
             assert abs(_room(h, n).area - a) < 0.05, (n, _room(h, n).area)
     assert "ファミリークローゼット" not in [r.name for r in h.rooms if r.floor == "2F"]
+    assert not [r for r in h.rooms if r.name in ("収納（居室B）", "収納（居室C）", "収納（トイレ・主寝室）", "収納（主寝室）")]     # v4.43 廃止
 
 
 def test_wc_and_dressing_constraints():
     h = house()
     wc, dr = _room(h, "トイレ"), _room(h, "脱衣所")
-    assert wc.area <= 6.1 and (wc.rect[2] - wc.rect[0]) <= 1800
-    # v4.41: 脱衣所は 1,975×3,575（短辺 ≧1.8m）、戸の面は y13,500 の同一線上（C-N の脱衣所・NE のトイレ）
-    assert min(dr.rect[2] - dr.rect[0], dr.rect[3] - dr.rect[1]) >= 1800 and abs(dr.rect[1] - wc.rect[1]) < 1
+    # v4.43: トイレの幅 ≦1.8m は面積管理（5.74〜6.10m²）へ読み替え（面積 ±5% の追加指示。要確認 Q4）。脱衣所は 1,825×3,875（短辺 ≧1.8m）
+    assert 5.74 <= wc.area <= 6.1 and (wc.rect[2] - wc.rect[0]) == 2350
+    assert min(dr.rect[2] - dr.rect[0], dr.rect[3] - dr.rect[1]) >= 1800
     walls = [w for w in h.walls if w.floor == "2F" and w.axis == "x" and w.c == 13500]
-    assert [sorted((o.u0, o.u1) for o in w.openings) for w in sorted(walls, key=lambda w: w.a)] == [[(7000, 7800)], [(11500, 12300), (13300, 14100), (14600, 15400)]]
-    cor = [r for r in h.rooms if r.floor == "2F" and r.name == "廊下" and r.rect[0] == 6250 and r.rect[1] == 12250][0]
+    assert [sorted((o.u0, o.u1) for o in w.openings) for w in sorted(walls, key=lambda w: w.a)] == [[(6400, 7200), (8800, 9600)]]     # v4.43: 北の行の C 列（トイレ・収納（北））。脱衣所の戸は X3
+    cor = [r for r in h.rooms if r.floor == "2F" and r.name == "廊下" and r.rect[0] == 6025 and r.rect[1] == 12250][0]
     assert cor.rect[3] - cor.rect[1] >= 1200                        # v4.41: 北廊下 1.45→1.2m（壁芯 1.3m。要確認 Q4）
 
 
@@ -60,9 +62,10 @@ def test_red_lines_standard_thickness():
 
 def test_window_aw9_and_daylight():
     h = house()
-    # v4.42: 居室E は書庫になり西窓 AW-9 は廃止。書庫に窓がなく、2F W 面に u12,900 の窓がない
+    # v4.43: 書庫に窓がなく（南の W-S 区画の北側）、2F W 面 u12,900〜14,500 に居室A の西窓（AW-9 を復活。W1,600×H800）がある
     assert not [x for x in HL.window_table(h) if x["room"] in ("居室E", "書庫")]
-    assert not [o for w in h.walls for o in w.openings if "FIX窓" in o.name and o.u0 == 12900]
+    assert [o for w in h.walls for o in w.openings if w.floor == "2F" and w.side == "W" and "FIX窓（居室A）" in o.name and (o.u0, o.u1) == (12900, 14500)]
+    assert [x for x in HL.window_table(h) if x["room"] == "居室A" and x["floor"] == "2F"]
 
 
 def test_structure_2f():

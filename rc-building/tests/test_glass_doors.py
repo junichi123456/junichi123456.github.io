@@ -28,7 +28,7 @@ def _find(label):
 
 
 def test_gd_position():
-    for label, wall_c, axis_u in (("GD-1", 6125, (2800, 4000)), ("GD-2", 6125, (6500, 9500))):
+    for label, wall_c, axis_u in (("GD-1", 5900, (2800, 4000)), ("GD-2", 6125, (6225, 8475))):   # v4.43: X2 は x5,900、GD-2 は W2,250（u6,225〜8,475）
         r = _find(label)
         assert len(r) == 1, label
         w, op = r[0]
@@ -52,7 +52,7 @@ def test_gym_door_unchanged():
     h = house()
     ssd = [(w, op) for w in h.walls for op in w.openings if op.kind == "door" and "遮音ドア" in op.name and op.floor == "1F"]
     # v4.25: 遮音ドア（Ts-40）は y3,000〜4,000 のまま、取付壁は x10,600 の LGS（t200）。v4.41: 取付壁は x9,600（x −1,000。ジム拡張部の幅 1,300 は不変）。X3（RC）は施主の書き込みで W4,835（815〜5,650）の開口に拡幅
-    assert [(w.c, w.cat, op.u0, op.u1, op.height) for w, op in ssd] == [(9600, "partition", 4550, 5750, 2300)]
+    assert [(w.c, w.cat, op.u0, op.u1, op.height) for w, op in ssd] == [(8775, "partition", 4550, 5750, 2300)]   # v4.43: 取付壁は x8,775（拡張部の幅 1,350）
     assert ssd[0][1].hinge == 1                      # v4.27: 7.png の扉（描かれた弧）へ移動。蝶番は北。SSD-2 は塞ぐ
     x3 = [op for w in h.walls if w.floor == "1F" and w.axis == "y" and w.c == h.gx[2] for op in w.openings if (op.u0, op.u1) == (815, 4850)]
     assert len(x3) == 1 and x3[0].operation == "opening" and x3[0].height == 2300

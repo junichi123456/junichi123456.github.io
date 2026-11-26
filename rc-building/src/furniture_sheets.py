@@ -191,8 +191,8 @@ def furniture_plan(h, floor, number):
         z = h.treadmill_zone
         sh.rect(*t(z[0], z[1]), *t(z[2], z[3]), "A-HIDDEN")
         # 縦手すり
-        sh.circle(t(10943, 1898), 17.5, "A-FURN")
-        sh.text("縦手すり φ35", t(10850, 1898), 1.2, "A-TEXT", "MIDDLE_RIGHT")
+        sh.circle(t(10168, 1898), 17.5, "A-FURN")
+        sh.text("縦手すり φ35", t(10075, 1898), 1.2, "A-TEXT", "MIDDLE_RIGHT")
     # チェアの注記（引出線）
     ch = next((i for i in its if i.chair), None)
     if ch:
@@ -207,8 +207,6 @@ def furniture_plan(h, floor, number):
             x0, y0, x1, y1 = it.rect
             sh.text("要施主確認", t((x0 + x1) / 2, y0 - 120), 1.3, "A-TEXT", "TOP_CENTER") if it.id != "LB-B1" else \
                 sh.text("要施主確認", t(x1 + 80, y0 + 300), 1.3, "A-TEXT", "MIDDLE_LEFT")
-    if floor == "2F":
-        sh.text("主寝室 北窓 AW-5: 遮光 ZIP スクリーンを追加する提案（要施主確認・CG のみ描画）", t(14800, h.D + 700), 1.5, "A-TEXT", "MIDDLE_CENTER")
     sh.north_arrow(sh.P(395, 268), 7, rot=h.facade_az)
     sh.view_title(names[floor], "1:100", (24, 22))
     sh.text(f"{floor[:-1]}FL = 設計GL+{fl:,}（TP+{tp(h, fl):.2f}）／天井高 CH={h.ch[floor]:,}／○ = 埋込ダウンライト（弱）、太線 = 直付ライン LED", (24, 15), 2.4, "A-TEXT", paper=True)

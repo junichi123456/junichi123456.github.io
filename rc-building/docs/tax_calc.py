@@ -3,7 +3,7 @@ import csv, os
 REPO = "/home/user/junichi123456.github.io/rc-building"
 
 # ---------- 1. 面積（現行モデル） ----------
-W = 17.25  # 壁芯 m（v4.41: 東西 6.125+5.0+6.125、南北 6.125+6.0+5.125。旧 v4.40 は 18.25）
+W = 16.25  # 壁芯 m（v4.43: 東西 5.90+4.45+5.90、南北 6.125+6.0+4.125。v4.41・42 は 17.25、v4.40 は 18.25）
 floor = W * W
 total = 2 * floor
 rooms = list(csv.DictReader(open(f"{REPO}/dist/export/csv/rooms.csv", encoding="utf-8-sig")))

@@ -168,15 +168,15 @@ def test_kitchen_open():
 def test_storage_v437():
     h = house()
     its = {i.id: i for i in FU.items(h)}
-    assert its["L-K2"].rect == (175, 4000, 1000, 5550) and its["L-K3"].rect == (5550, 4050, 6000, 5400)
-    assert its["H-S3"].rect == (10550, 6650, 11000, 8100) and its["H-S4"].rect == (7500, 9800, 8650, 10840)
-    assert its["R-S1"].rect == (5050, 14100, 6000, 14900)
+    assert its["L-K2"].rect == (175, 4000, 1000, 5550) and its["L-K3"].rect == (5325, 4050, 5775, 5400)     # v4.43: LDK 幅 5,600
+    assert its["H-S3"].rect == (9775, 6650, 10225, 8100) and its["H-S4"].rect == (7075, 9800, 8025, 10840)   # v4.43
+    assert its["R-S1"].rect == (4825, 13100, 5775, 13900)
     assert its["L-K3"].pocket == 130
     for k in ("H-S4", "R-S1"):
         it = its[k]
         assert it.z0 + it.h <= FU.stair_soffit(h, it.under, it.poly()) - 50, k
     assert FU.check(h, list(its.values())) == []
-    assert len(its) == 77
+    assert len(its) == 70      # v4.43: 家具 77→70（1F 居室A・FC・WIC・2F 居室D の WIC・収納 B/C の廃止、書庫・居室A の組み替え）
     assert its["LDK-C1"].slot is None and its["LDK-C2"].slot is None          # v4.38 クアッドで吹出しを廃止
     assert its["H-S3"].footline and its["H-S3"].plinth == 350
     assert [its[k].leaves for k in ("L-K2", "L-K3", "H-S3", "H-S4", "R-S1")] == [3, 2, 2, 2, 2]
