@@ -143,7 +143,7 @@ def pit_plan(h, number):
     sh.rect(*t(s[0], s[1]), *t(s[2], s[3]), "M-INSP", lineweight=35)
     sh.line(t(s[0], s[1]), t(s[2], s[3]), "M-INSP")
     sh.text("釜場 SP", t(s[2] + 150, (s[1] + s[3]) / 2), 1.4, "A-TEXT", "MIDDLE_LEFT")
-    for xb in (17550, 17850):                                       # 束壁（既存・破線）
+    for xb in (16550, 16850):                                       # 束壁（既存・破線。v4.41 x −1,000）
         sh.line(t(xb, 100), t(xb, 8800), "A-HIDDEN")
     sh.view_title("床下ピット伏図", "1:100", (12, 22))
     sh.text("網掛け=ピットの RC 壁（GL±0〜1FL）、□=人通口 W600×H700（下端 GL+200）、破線□×=1F の床点検口、◎=掃除口、○=スリーブ、破線=束壁", (12, 15), 1.8, "A-TEXT", paper=True)

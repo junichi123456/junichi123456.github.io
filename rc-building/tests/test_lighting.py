@@ -109,11 +109,12 @@ def test_footline_hs3():
     fp, _ = L.footlines(h, its)
     cab = [d for d in fp if d.get("mount") == "家具"]
     assert len(cab) == 3 and [d["L"] for d in cab] == [442, 1450, 442]
-    assert [d["id"] for d in cab] == ["1F-FL22", "1F-FL23", "1F-FL24"]
-    assert cab[1]["p0"][:2] == [11550, 6650] and cab[1]["n"] == [-1, 0]
-    assert sum(d["L"] for d in fp if d["floor"] == "1F") == 25109 and len(fp) == 113
-    wall = [d for d in fp if d["floor"] == "1F" and d["p0"][0] == 12000 and d["axis"] == "y"]
-    assert any(d["p0"][1] == 6250 and d["p1"][1] == 6620 for d in wall) and any(d["p0"][1] == 8130 and d["p1"][1] == 9200 for d in wall)
+    # v4.41: H-S3 は x −1,000（X3 の内面 11,000 に付く）。足元灯は 113→99 本（1F 延長 25,109→21,939。ホール・通路の縮小）
+    assert [d["id"] for d in cab] == ["1F-FL17", "1F-FL18", "1F-FL19"]
+    assert cab[1]["p0"][:2] == [10550, 6650] and cab[1]["n"] == [-1, 0]
+    assert sum(d["L"] for d in fp if d["floor"] == "1F") == 21939 and len(fp) == 99
+    wall = [d for d in fp if d["floor"] == "1F" and d["p0"][0] == 11000 and d["axis"] == "y"]
+    assert any(d["p0"][1] == 6250 and d["p1"][1] == 6620 for d in wall) and any(d["p0"][1] == 8200 and d["p1"][1] == 8800 for d in wall)
 
 
 def test_channels_schedule():
@@ -136,7 +137,7 @@ def test_glb_nodes():
     names = list(sc.geometry.keys())
     n_line = sum(n.startswith("照明器具|") and "|line_face|" in n for n in names)
     n_foot = sum(n.startswith("照明器具|") and "|foot_face|" in n for n in names)
-    assert n_line >= 55 and n_foot == 18, (n_line, n_foot)
+    assert n_line >= 53 and n_foot == 18, (n_line, n_foot)       # v4.41: 55→53（水回り・収納の組み替え）
     assert any(n.startswith("扉|1F|glass_door|GD-1@") for n in names) and any(n.startswith("扉|1F|glass_door|GD-2@") for n in names)
     assert any(n.startswith("台所小物|1F|stainless") for n in names)
     assert not any("hex" in n.lower() or "六角" in n for n in names)

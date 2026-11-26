@@ -27,8 +27,9 @@ def _room(h, name, fl="2F"):
 
 def test_room_areas():
     h = house()
-    exp = {"居室E": 19.63, "収納（居室E）": 2.17, "脱衣所": 7.02, "シャワー": 9.46, "トイレ": 6.04, "収納（トイレ）": 1.44, "廊下": None,
-           "収納（居室B）": 1.23, "収納（居室C）": 1.29, "主寝室": 34.52, "WIC（主寝室）": 22.32}
+    # v4.41: 寝室は 4.5〜6 畳（居室E 9.63・主寝室 9.65）。収納・水廻りは北の行の組み替え後の値（ブリーフ 49 章）
+    exp = {"居室E": 9.63, "収納（居室E）": 8.40, "脱衣所": 7.06, "シャワー": 9.56, "トイレ": 6.08, "収納（トイレ・主寝室）": 4.56, "廊下": None,
+           "収納（居室B）": 3.47, "収納（居室C）": 3.62, "主寝室": 9.65, "WIC（主寝室）": 22.32}
     for n, a in exp.items():
         if a is not None:
             assert abs(_room(h, n).area - a) < 0.05, (n, _room(h, n).area)
@@ -39,11 +40,12 @@ def test_wc_and_dressing_constraints():
     h = house()
     wc, dr = _room(h, "トイレ"), _room(h, "脱衣所")
     assert wc.area <= 6.1 and (wc.rect[2] - wc.rect[0]) <= 1800
-    assert abs((dr.rect[3] - dr.rect[1]) - 1800) < 1 and abs(dr.rect[1] - wc.rect[1]) < 1       # 奥行 1.8m・戸の面（y13,800）が揃う
-    wall = [w for w in h.walls if w.floor == "2F" and w.axis == "x" and w.c == 13750][0]
-    assert sorted((o.u0, o.u1) for o in wall.openings) == [(7000, 7800), (10700, 11500)]
+    # v4.41: 脱衣所は 1,975×3,575（短辺 ≧1.8m）、戸の面は y13,500 の同一線上（C-N の脱衣所・NE のトイレ）
+    assert min(dr.rect[2] - dr.rect[0], dr.rect[3] - dr.rect[1]) >= 1800 and abs(dr.rect[1] - wc.rect[1]) < 1
+    walls = [w for w in h.walls if w.floor == "2F" and w.axis == "x" and w.c == 13500]
+    assert [sorted((o.u0, o.u1) for o in w.openings) for w in sorted(walls, key=lambda w: w.a)] == [[(7000, 7800)], [(11500, 12300), (13300, 14100), (14600, 15400)]]
     cor = [r for r in h.rooms if r.floor == "2F" and r.name == "廊下" and r.rect[0] == 6250 and r.rect[1] == 12250][0]
-    assert cor.rect[3] - cor.rect[1] >= 1300
+    assert cor.rect[3] - cor.rect[1] >= 1200                        # v4.41: 北廊下 1.45→1.2m（壁芯 1.3m。要確認 Q4）
 
 
 def test_red_lines_standard_thickness():
@@ -85,7 +87,7 @@ def test_footlines():
         assert d["p0"][2] == h.fl[d["floor"]] + 300 and d["lm_per_m"] in (fc["base_lm_per_m"], fc["warn_lm_per_m"])
         assert 20 <= d["lm_per_m"] <= 50
     # 脱衣所・トイレの戸口前に警告区間がある
-    assert any(m["kind"] == "戸口" and m["floor"] == "2F" and abs(m["p"][1] - 13750) < 1 for m in mk)
+    assert any(m["kind"] == "戸口" and m["floor"] == "2F" and abs(m["p"][1] - 13500) < 1 for m in mk)
     assert any(d["warn"] and d["floor"] == "2F" for d in fp)
     # 床面照度 1〜3 lx 程度（壁から 0.5〜0.7m）
     assert 1.0 <= LG.footline_floor_lx(fc, fc["base_lm_per_m"], 700) and LG.footline_floor_lx(fc, fc["warn_lm_per_m"], 500) <= 3.5

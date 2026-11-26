@@ -39,7 +39,7 @@ def _hits(a, b, rects):
 def _manhattan(p, q, rects):
     """p→q を直角の 2〜3 辺で結ぶ。水回りの室を避けられる最短の向きを選ぶ（天井内の迂回）。"""
     cands = [[p, (q[0], p[1]), q], [p, (p[0], q[1]), q]]
-    for v in range(250, 18250, 250):
+    for v in range(250, 17250, 250):
         cands.append([p, (p[0], v), (q[0], v), q])
         cands.append([p, (v, p[1]), (v, q[1]), q])
     cands.sort(key=lambda c: sum(abs(a[0] - b[0]) + abs(a[1] - b[1]) for a, b in zip(c, c[1:])))

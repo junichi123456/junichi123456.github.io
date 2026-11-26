@@ -2216,15 +2216,15 @@
    "id": "Z2-23a",
    "zone": "Z2-23",
    "room": "脱衣所",
-   "dir": "東",
+   "dir": "北",
    "cam": [
-    6900,
-    14700,
+    7200,
+    14100,
     6500
    ],
    "target": [
-    9900.0,
-    14700.0,
+    7200.0,
+    17100.0,
     6500
    ],
    "eye_mm": 1600,
@@ -2260,35 +2260,50 @@
     1280,
     720
    ],
-   "render_seconds": 138.3,
+   "render_seconds": 159.7,
    "time_limit": 150,
-   "time_limit_hit": false,
-   "clearance": 650,
-   "front_mm": 3250,
+   "time_limit_hit": true,
+   "clearance": 575,
+   "front_mm": 3025,
    "metrics": {
-    "black": 0.0001,
+    "black": 0.0,
     "white": 0.0,
-    "mean": 147.3586,
-    "std": 77.689,
+    "mean": 173.0519,
+    "std": 63.6433,
     "window_area": 0.0
    },
    "status": "ok",
    "issues": [],
-   "def_hash": "d17175834265"
+   "def_hash": "cd98f5c21cf1",
+   "master": {
+    "file": "kawazanyo_master.blend",
+    "model_version": "v4.32",
+    "model_hash": "0dbc81d6b703ffe6ca35de95bcb48db5aa11f54df22c1dbc92543a2e3c539050",
+    "generated_at": "2026-11-25T14:51:17"
+   },
+   "shoot": {
+    "def_hash": "cd98f5c21cf1",
+    "model_hash": "0dbc81d6b703ffe6ca35de95bcb48db5aa11f54df22c1dbc92543a2e3c539050",
+    "args_hash": "b30610348281",
+    "seed": 0
+   },
+   "shoot_flags": [],
+   "texture_fallbacks": [],
+   "palette_mismatch": []
   },
   "Z2-23b": {
    "id": "Z2-23b",
    "zone": "Z2-23",
    "room": "脱衣所",
-   "dir": "西",
+   "dir": "南",
    "cam": [
-    9700,
-    14700,
+    7200,
+    16600,
     6500
    ],
    "target": [
-    6700.0,
-    14700.0,
+    7200.0,
+    13600.0,
     6500
    ],
    "eye_mm": 1600,
@@ -2324,21 +2339,36 @@
     1280,
     720
    ],
-   "render_seconds": 142.6,
+   "render_seconds": 157.2,
    "time_limit": 150,
-   "time_limit_hit": false,
-   "clearance": 450,
-   "front_mm": 3450,
+   "time_limit_hit": true,
+   "clearance": 525,
+   "front_mm": 3075,
    "metrics": {
     "black": 0.0,
     "white": 0.0,
-    "mean": 146.5451,
-    "std": 76.219,
+    "mean": 162.0988,
+    "std": 60.8104,
     "window_area": 0.0
    },
    "status": "ok",
    "issues": [],
-   "def_hash": "8bbea9883837"
+   "def_hash": "a01eaf2be464",
+   "master": {
+    "file": "kawazanyo_master.blend",
+    "model_version": "v4.32",
+    "model_hash": "0dbc81d6b703ffe6ca35de95bcb48db5aa11f54df22c1dbc92543a2e3c539050",
+    "generated_at": "2026-11-25T14:51:17"
+   },
+   "shoot": {
+    "def_hash": "a01eaf2be464",
+    "model_hash": "0dbc81d6b703ffe6ca35de95bcb48db5aa11f54df22c1dbc92543a2e3c539050",
+    "args_hash": "5cf675438226",
+    "seed": 0
+   },
+   "shoot_flags": [],
+   "texture_fallbacks": [],
+   "palette_mismatch": []
   },
   "Z2-33a": {
    "id": "Z2-33a",
@@ -2527,7 +2557,7 @@
  "master": {
   "file": "kawazanyo_master.blend",
   "model_version": "v4.32",
-  "model_hash": "e444c5e806a698009a79d0784f8664c2a730dbbb91b71f802107194b8785de12",
-  "generated_at": "2026-11-23T16:45:29"
+  "model_hash": "0dbc81d6b703ffe6ca35de95bcb48db5aa11f54df22c1dbc92543a2e3c539050",
+  "generated_at": "2026-11-25T14:51:17"
  }
 }

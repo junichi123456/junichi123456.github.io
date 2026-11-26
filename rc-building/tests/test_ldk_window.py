@@ -48,8 +48,8 @@ def test_structure():
         assert v["wall_rate"] >= 12, (f, d)
         assert v["耐震等級3（Co=0.3）"]["ratio"] >= 1.0
         assert v["ecc"] <= 0.15, (f, d, v["ecc"])
-    assert abs(se["stories"][("1F", "X方向")]["ecc"] - 0.062) < 0.005     # v4.36: L 字窓の撤回（角を RC 化）で 0.113→0.061。v4.37 西窓 0.062
-    assert abs(se["stories"][("1F", "Y方向")]["ecc"] - 0.071) < 0.005     # 0.040→0.107。v4.37 西窓の追加で 0.107→0.071
+    assert abs(se["stories"][("1F", "X方向")]["ecc"] - 0.089) < 0.005     # v4.36: L 字窓の撤回（角を RC 化）で 0.113→0.061。v4.37 西窓 0.062。v4.41: X3 が西へ寄り北の行が浅くなって 0.089（≦0.12）
+    assert abs(se["stories"][("1F", "Y方向")]["ecc"] - 0.082) < 0.005     # 0.040→0.107。v4.37 西窓の追加で 0.107→0.071。v4.41: 0.082
     assert max(h.H.values()) <= 3500
     assert 250 >= max(150, max(h.H.values()) / 22)
     assert not [b for b in h.boxes if b.level == "1F" and b.tag in ("角柱", "方立", "角の方立")]
@@ -75,13 +75,13 @@ def test_glazing_quad():
     env = PF.envelope(h)
     parts = {p[0]: p for p in env["parts"]}
     assert abs(parts["窓（FIX・クアッド）"][1] - 8.40) < 1e-6 and parts["窓（FIX・クアッド）"][2] == 0.65
-    assert 0.2085 <= env["UA"] <= 0.2100, env["UA"]
+    assert 0.2085 <= env["UA"] <= 0.2115, env["UA"]            # v4.41: 外皮が縮み窓の比率が増えて 0.2100→0.2107
     o = _ops(h)
     assert SS.op_g(h, o["AW-LS"]) == 0.40 and SS.op_g(h, o["AW-LW"]) == 0.25
     for op in h.openings(exterior=True):
         if op.kind == "window" and op.label not in q["labels"]:
             assert SS.op_g(h, op) == SS.glazing_g(h, op.side)
-    assert abs(sum(SS.window_solar(h)["glass"].values()) - 20.16) < 0.01         # 実面積（等価面積ではない）
+    assert abs(sum(SS.window_solar(h)["glass"].values()) - 19.84) < 0.01      # v4.41: 居室D の窓 W1,600→1,200 で 20.16→19.84         # 実面積（等価面積ではない）
 
 
 def test_local_thickness_geometry():

@@ -696,7 +696,7 @@ def build_scene(h, interior=False):
     P = build_parts(h, interior=interior)
     scene = trimesh.Scene()
     # 建物座標 → 真北基準（建物中心まわりに alpha 回転）→ Y-up
-    rz = trimesh.transformations.rotation_matrix(h.alpha, [0, 0, 1], [h.W / 2000, h.D / 2000, 0])
+    rz = trimesh.transformations.rotation_matrix(h.alpha, [0, 0, 1], [h.FW / 2000, h.FD / 2000, 0])
     rot = trimesh.transformations.rotation_matrix(-np.pi / 2, [1, 0, 0]) @ rz
     missing = set()
     for (grp, lvl, mk), ms in sorted(P.d.items(), key=lambda kv: kv[0]):

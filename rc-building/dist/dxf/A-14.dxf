@@ -493,7 +493,7 @@ $SKPOLY
   9
 $TDCREATE
  40
-2461370.310046296
+2461370.9984027776
   9
 $TDUCREATE
  40
@@ -501,7 +501,7 @@ $TDUCREATE
   9
 $TDUPDATE
  40
-2461370.3106597224
+2461370.998854167
   9
 $TDUUPDATE
  40
@@ -933,11 +933,11 @@ $PSTYLEMODE
   9
 $FINGERPRINTGUID
   2
-{23A58526-6A4F-45A0-A17B-CCA30CAD9145}
+{F9319750-80C3-4B8B-9791-C3E97F1EA7F8}
   9
 $VERSIONGUID
   2
-{366729AE-C987-45B5-B9B9-71A2A0C08300}
+{853FE1EC-7EE3-4CFE-BCE2-DB40540254F8}
   9
 $EXTNAMES
 290
@@ -1327,9 +1327,9 @@ ISM
   0
 CLASS
   1
-LAYOUT
+ACDBPLACEHOLDER
   2
-AcDbLayout
+AcDbPlaceHolder
   3
 ObjectDBX Classes
  90
@@ -1343,9 +1343,9 @@ ObjectDBX Classes
   0
 CLASS
   1
-ACDBPLACEHOLDER
+LAYOUT
   2
-AcDbPlaceHolder
+AcDbLayout
   3
 ObjectDBX Classes
  90
@@ -7925,7 +7925,7 @@ AcDbText
  40
 2.6
   1
-2026-10-03
+2026-11-25
   7
 JP
  11
@@ -9227,7 +9227,7 @@ AcDbText
  40
 2.1
   1
-120m³/分以上かつ 最大区画 53.4m²×2 = 107m³/分以上（3区画）
+120m³/分以上かつ 最大区画 53.9m²×2 = 108m³/分以上（3区画）
   7
 JP
  11
@@ -10945,7 +10945,7 @@ AcDbText
  40
 2.1
   1
-耐力壁 54.5m / 床 333.1m² = 16.4cm/m²
+耐力壁 50.5m / 床 297.6m² = 17.0cm/m²
   7
 JP
  11
@@ -11163,7 +11163,7 @@ AcDbText
  40
 2.1
   1
-耐力壁 56.0m / 床 333.1m² = 16.8cm/m²
+耐力壁 51.6m / 床 297.6m² = 17.3cm/m²
   7
 JP
  11
@@ -11381,7 +11381,7 @@ AcDbText
  40
 2.1
   1
-耐力壁 61.1m / 床 333.1m² = 18.3cm/m²
+耐力壁 59.1m / 床 297.6m² = 19.9cm/m²
   7
 JP
  11
@@ -11599,7 +11599,7 @@ AcDbText
  40
 2.1
   1
-耐力壁 62.7m / 床 333.1m² = 18.8cm/m²
+耐力壁 57.1m / 床 297.6m² = 19.2cm/m²
   7
 JP
  11
@@ -13663,7 +13663,7 @@ AcDbText
  40
 2.1
   1
-面積 46.44m²（≧44.85）
+面積 46.95m²（≧44.85）
   7
 JP
  11
@@ -16791,7 +16791,7 @@ DictionaryVariables
 280
 0
   1
-1.4.5 @ 2026-11-25T07:26:28.538034+00:00
+1.4.5 @ 2026-11-25T23:57:42.204001+00:00
   0
 VISUALSTYLE
   5
@@ -23353,7 +23353,7 @@ DictionaryVariables
 280
 0
   1
-1.4.5 @ 2026-11-25T07:27:21.406695+00:00
+1.4.5 @ 2026-11-25T23:58:21.446089+00:00
   0
 ENDSEC
   0

@@ -191,8 +191,8 @@ def furniture_plan(h, floor, number):
         z = h.treadmill_zone
         sh.rect(*t(z[0], z[1]), *t(z[2], z[3]), "A-HIDDEN")
         # 縦手すり
-        sh.circle(t(11943, 1898), 17.5, "A-FURN")
-        sh.text("縦手すり φ35", t(11850, 1898), 1.2, "A-TEXT", "MIDDLE_RIGHT")
+        sh.circle(t(10943, 1898), 17.5, "A-FURN")
+        sh.text("縦手すり φ35", t(10850, 1898), 1.2, "A-TEXT", "MIDDLE_RIGHT")
     # チェアの注記（引出線）
     ch = next((i for i in its if i.chair), None)
     if ch:

@@ -310,8 +310,8 @@
 軒高TP_m: 117.3
 パラペット天端TP_m: 117.9
 階数: 2
-建築面積m2: 348.04
-面積m2: 351.19</description>
+建築面積m2: 312.54
+面積m2: 314.71</description>
         <ExtendedData>
           <Data name="区分">
             <value>建物</value>
@@ -341,17 +341,17 @@
             <value>2</value>
           </Data>
           <Data name="建築面積m2">
-            <value>348.04</value>
+            <value>312.54</value>
           </Data>
           <Data name="面積m2">
-            <value>351.19</value>
+            <value>314.71</value>
           </Data>
         </ExtendedData>
         <Polygon>
           <tessellate>1</tessellate>
           <outerBoundaryIs>
             <LinearRing>
-              <coordinates>139.340589231,35.667559065,0 139.340633299,35.667723559,0 139.340430824,35.66775936,0 139.340386756,35.667594867,0 139.340589231,35.667559065,0</coordinates>
+              <coordinates>139.340578427,35.667560976,0 139.340620143,35.667716691,0 139.340428473,35.667750582,0 139.340386756,35.667594867,0 139.340578427,35.667560976,0</coordinates>
             </LinearRing>
           </outerBoundaryIs>
         </Polygon>

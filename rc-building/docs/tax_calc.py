@@ -3,7 +3,7 @@ import csv, os
 REPO = "/home/user/junichi123456.github.io/rc-building"
 
 # ---------- 1. 面積（現行モデル） ----------
-W = 18.25  # 壁芯 m（grid 6.125+6.0+6.125）
+W = 17.25  # 壁芯 m（v4.41: 東西 6.125+5.0+6.125、南北 6.125+6.0+5.125。旧 v4.40 は 18.25）
 floor = W * W
 total = 2 * floor
 rooms = list(csv.DictReader(open(f"{REPO}/dist/export/csv/rooms.csv", encoding="utf-8-sig")))
@@ -16,7 +16,7 @@ print(f"各階 壁芯 {floor:.2f} m2, 延べ {total:.2f} m2, 室内法合計 {ne
 per = 4 * W
 ext = per * (3.4 * 2 + 0.6) * 0.25 - 30 * 0.25          # 外周壁（開口 約30m2 控除）
 thick = 6.25 * 3.4 * (0.10 + 0.05 + 0.05 + 0.05)        # 1F 増し打ち
-inner = ((54.5 + 56.0 - per) + (61.1 + 62.7 - per)) * 3.4 * 0.25
+inner = ((50.5 + 51.6 - per) + (59.1 + 57.1 - per)) * 3.4 * 0.25
 slab = floor * 0.22 * 2
 base = (W + 0.5) ** 2 * 0.35
 fbeam = (per + 4 * W) * 0.4 * 1.8

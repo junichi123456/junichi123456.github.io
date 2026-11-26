@@ -21,7 +21,7 @@
    ],
    "sky_fallback": false,
    "texture_fallbacks": [],
-   "stale_since": "v4.35"
+   "stale_since": "v4.41"
   },
   {
    "id": "C01b",
@@ -41,13 +41,13 @@
    ],
    "sky_fallback": false,
    "texture_fallbacks": [],
-   "stale_since": "v4.35"
+   "stale_since": "v4.41"
   },
   {
    "id": "C02",
    "file": "/home/user/junichi123456.github.io/rc-building/dist/render/C02_aerial.png",
-   "seconds": 131.1,
-   "render_seconds": 131.0,
+   "seconds": 180.3,
+   "render_seconds": 180.1,
    "samples": 128,
    "res": [
     1920,
@@ -69,18 +69,17 @@
    "master": {
     "file": "kawazanyo_master.blend",
     "model_version": "v4.32",
-    "model_hash": "c42cfaed817c94b7489f237719b098fe1c161ef1f07235b00a14e9ee6560f97d",
-    "generated_at": "2026-11-13T16:36:31"
+    "model_hash": "0dbc81d6b703ffe6ca35de95bcb48db5aa11f54df22c1dbc92543a2e3c539050",
+    "generated_at": "2026-11-25T14:51:17"
    },
    "shoot": {
     "def_hash": "6a397d2974cf",
-    "model_hash": "c42cfaed817c94b7489f237719b098fe1c161ef1f07235b00a14e9ee6560f97d",
+    "model_hash": "0dbc81d6b703ffe6ca35de95bcb48db5aa11f54df22c1dbc92543a2e3c539050",
     "args_hash": "9b59863f5e2d",
     "seed": 0
    },
    "shoot_flags": [],
-   "palette_mismatch": [],
-   "stale_since": "v4.37"
+   "palette_mismatch": []
   },
   {
    "id": "C03",
@@ -118,7 +117,8 @@
     "seed": 0
    },
    "shoot_flags": [],
-   "palette_mismatch": []
+   "palette_mismatch": [],
+   "stale_since": "v4.41"
   },
   {
    "id": "C04",
@@ -137,13 +137,14 @@
     -106.9
    ],
    "sky_fallback": false,
-   "texture_fallbacks": []
+   "texture_fallbacks": [],
+   "stale_since": "v4.41"
   },
   {
    "id": "C05",
    "file": "/home/user/junichi123456.github.io/rc-building/dist/render/C05_east_road.png",
-   "seconds": 182.2,
-   "render_seconds": 182.1,
+   "seconds": 138.8,
+   "render_seconds": 138.7,
    "samples": 128,
    "res": [
     1920,
@@ -156,7 +157,26 @@
     -54.1
    ],
    "sky_fallback": false,
-   "texture_fallbacks": []
+   "texture_fallbacks": [],
+   "family": "C",
+   "time_limit": 420,
+   "time_limit_hit": false,
+   "when": "2026-10-24T09:30",
+   "status": "ok",
+   "master": {
+    "file": "kawazanyo_master.blend",
+    "model_version": "v4.32",
+    "model_hash": "0dbc81d6b703ffe6ca35de95bcb48db5aa11f54df22c1dbc92543a2e3c539050",
+    "generated_at": "2026-11-25T14:51:17"
+   },
+   "shoot": {
+    "def_hash": "58690c4c71ae",
+    "model_hash": "0dbc81d6b703ffe6ca35de95bcb48db5aa11f54df22c1dbc92543a2e3c539050",
+    "args_hash": "a309cf2855a5",
+    "seed": 0
+   },
+   "shoot_flags": [],
+   "palette_mismatch": []
   },
   {
    "id": "C06",
@@ -176,7 +196,7 @@
    ],
    "sky_fallback": false,
    "texture_fallbacks": [],
-   "stale_since": "v4.36"
+   "stale_since": "v4.41"
   }
  ],
  "textures": {
@@ -213,13 +233,13 @@
     "floor": "1F",
     "room": "",
     "cam": [
-     9125,
-     9125,
+     8625,
+     8625,
      4300
     ],
     "target": [
-     9125,
-     10125,
+     8625,
+     9625,
      4300
     ],
     "lens": 26,
@@ -235,16 +255,16 @@
      "D": 0,
      "F": 0
     },
-    "render_seconds": 326.4,
+    "render_seconds": 648.3,
     "metrics": {
-     "mean": 143.5199,
-     "std": 70.9277,
-     "black": 0.0071,
+     "mean": 131.1805,
+     "std": 70.6748,
+     "black": 0.0162,
      "white": 0.0
     },
     "status": "ok",
     "issues": [],
-    "def_hash": "20ba02941f3b"
+    "def_hash": "e556062fc631"
    },
    "T2_plan_2F": {
     "id": "T2_plan_2F",
@@ -252,13 +272,13 @@
     "floor": "2F",
     "room": "",
     "cam": [
-     9125,
-     9125,
+     8625,
+     8625,
      7700
     ],
     "target": [
-     9125,
-     10125,
+     8625,
+     9625,
      7700
     ],
     "lens": 26,
@@ -274,16 +294,16 @@
      "D": 0,
      "F": 0
     },
-    "render_seconds": 647.8,
+    "render_seconds": 648.8,
     "metrics": {
-     "mean": 131.7562,
-     "std": 67.1571,
-     "black": 0.0103,
+     "mean": 114.2789,
+     "std": 66.3547,
+     "black": 0.0507,
      "white": 0.0
     },
     "status": "ok",
     "issues": [],
-    "def_hash": "ba6f6fd29f0b"
+    "def_hash": "6fc5e82f0599"
    },
    "R1-01_ld": {
     "id": "R1-01_ld",
@@ -384,13 +404,13 @@
     "floor": "1F",
     "room": "玄関土間・式台（框1）",
     "cam": [
-     9800,
-     825,
+     7131,
+     911,
      3100
     ],
     "target": [
-     7081.07663889005,
-     2092.8547852220986,
+     9843.247648982335,
+     2193.073590161577,
      3100
     ],
     "lens": 24,
@@ -406,20 +426,20 @@
      "D": 0,
      "F": 0
     },
-    "render_seconds": 326.2,
+    "render_seconds": 949.5,
     "metrics": {
-     "black": 0.0002,
-     "white": 0.0009,
-     "mean": 175.9332,
-     "std": 35.604,
+     "black": 0.0001,
+     "white": 0.001,
+     "mean": 135.0725,
+     "std": 68.0125,
      "window_area": 0.0
     },
     "status": "ok",
     "issues": [],
-    "def_hash": "ae5940dbc2fb",
-    "clearance": 700,
-    "front_mm": 3917,
-    "wall_angle": 25.0,
+    "def_hash": "96275ee9e105",
+    "clearance": 431,
+    "front_mm": 2725,
+    "wall_angle": 25.3,
     "alt": null
    },
    "R1-04_hall": {
@@ -428,13 +448,13 @@
     "floor": "1F",
     "room": "ホール",
     "cam": [
-     6950,
-     3100,
+     8800,
+     5300,
      3100
     ],
     "target": [
-     9323.67059890247,
-     4934.581120557494,
+     6867.62911071584,
+     3005.235797244705,
      3100
     ],
     "lens": 26,
@@ -450,20 +470,20 @@
      "D": 0,
      "F": 0
     },
-    "render_seconds": 317.7,
+    "render_seconds": 949.7,
     "metrics": {
-     "black": 0.0,
-     "white": 0.0,
-     "mean": 144.3677,
-     "std": 57.8457,
+     "black": 0.0008,
+     "white": 0.0013,
+     "mean": 154.83,
+     "std": 50.238,
      "window_area": 0.0
     },
     "status": "ok",
     "issues": [],
-    "def_hash": "9eaa5c046475",
-    "clearance": 762,
-    "front_mm": 4485,
-    "wall_angle": 37.7,
+    "def_hash": "7424508d60b4",
+    "clearance": 775,
+    "front_mm": 3962,
+    "wall_angle": 40.1,
     "alt": null
    },
    "R1-05_gym": {
@@ -472,12 +492,12 @@
     "floor": "1F",
     "room": "ジム",
     "cam": [
-     13521,
+     12521,
      7260,
      3100
     ],
     "target": [
-     15075.08102811939,
+     14075.08102811939,
      4693.90721951848,
      3100
     ],
@@ -494,17 +514,17 @@
      "D": 0,
      "F": 0
     },
-    "render_seconds": 952.4,
+    "render_seconds": 949.8,
     "metrics": {
      "black": 0.0031,
      "white": 0.002,
-     "mean": 116.3699,
-     "std": 64.2186,
+     "mean": 116.5001,
+     "std": 64.3743,
      "window_area": 0.0
     },
     "status": "ok",
     "issues": [],
-    "def_hash": "ca83acb8fba1",
+    "def_hash": "fcec27a33af8",
     "clearance": 440,
     "front_mm": 8287,
     "wall_angle": 31.2,
@@ -516,13 +536,13 @@
     "floor": "1F",
     "room": "ホール・階段1",
     "cam": [
-     11300,
-     9100,
+     6950,
+     6950,
      3100
     ],
     "target": [
-     8610.54070884968,
-     7770.786427527461,
+     9668.92336110995,
+     8217.854785222098,
      3100
     ],
     "lens": 26,
@@ -538,20 +558,20 @@
      "D": 0,
      "F": 0
     },
-    "render_seconds": 616.5,
+    "render_seconds": 949.8,
     "metrics": {
-     "black": 0.0,
-     "white": 0.001,
-     "mean": 171.6289,
-     "std": 37.4833,
+     "black": 0.002,
+     "white": 0.0,
+     "mean": 131.7067,
+     "std": 48.9323,
      "window_area": 0.0
     },
     "status": "ok",
     "issues": [],
-    "def_hash": "da4a4a958453",
-    "clearance": 700,
-    "front_mm": 11489,
-    "wall_angle": 26.3,
+    "def_hash": "4667afffe886",
+    "clearance": 820,
+    "front_mm": 4469,
+    "wall_angle": 25.0,
     "alt": null
    },
    "R1-07_wc1a": {
@@ -560,13 +580,13 @@
     "floor": "1F",
     "room": "トイレ（手洗い付）",
     "cam": [
-     9900,
-     10600,
+     9375,
+     11100,
      3100
     ],
     "target": [
-     8279.279038567034,
-     13124.532345835918,
+     10642.854785222098,
+     8381.07663889005,
      3100
     ],
     "lens": 24,
@@ -582,20 +602,20 @@
      "D": 0,
      "F": 0
     },
-    "render_seconds": 164.2,
+    "render_seconds": 949.9,
     "metrics": {
      "black": 0.0,
      "white": 0.0,
-     "mean": 179.3919,
-     "std": 48.2988,
+     "mean": 170.9041,
+     "std": 56.8071,
      "window_area": 0.0
     },
     "status": "ok",
     "issues": [],
-    "def_hash": "d3639afff848",
-    "clearance": 700,
-    "front_mm": 1664,
-    "wall_angle": 32.7,
+    "def_hash": "3a82216879f2",
+    "clearance": 400,
+    "front_mm": 1538,
+    "wall_angle": 25.0,
     "alt": null
    },
    "R1-08_mechW": {
@@ -604,12 +624,12 @@
     "floor": "1F",
     "room": "機械室（西系統）",
     "cam": [
-     12750,
+     11750,
      9400,
      3100
     ],
     "target": [
-     15468.92336110995,
+     14468.92336110995,
      10667.854785222098,
      3100
     ],
@@ -626,21 +646,21 @@
      "D": 0,
      "F": 0
     },
-    "render_seconds": 946.9,
+    "render_seconds": 950.0,
     "metrics": {
      "black": 0.0,
      "white": 0.0,
-     "mean": 85.9008,
-     "std": 55.4396,
+     "mean": 85.7159,
+     "std": 55.0349,
      "window_area": 0.0
     },
     "status": "ok",
     "issues": [],
-    "def_hash": "dd9db2808d03",
+    "def_hash": "95d9ed651bbb",
     "clearance": 425,
     "front_mm": 2593,
     "wall_angle": 25.0,
-    "alt": "4 隅（壁から 700 内側）はいずれも離隔 400mm・正面 1,500mm を満たさない（SW・SE・NE・NW）ため、戸口（SSD-4@x12750y8950）から室内へ 450mm 入った位置に立ち戸を開け、22mm（水平 79°）を例外として許可。正面の壁まで 2593mm"
+    "alt": "4 隅（壁から 700 内側）はいずれも離隔 400mm・正面 1,500mm を満たさない（SW・SE・NE・NW）ため、戸口（SSD-4@x11750y8950）から室内へ 450mm 入った位置に立ち戸を開け、22mm（水平 79°）を例外として許可。正面の壁まで 2593mm"
    },
    "R1-09_mechE": {
     "id": "R1-09_mechE",
@@ -648,12 +668,12 @@
     "floor": "1F",
     "room": "機械室（東系統）",
     "cam": [
-     16735,
+     15735,
      10576,
      3100
     ],
     "target": [
-     14666.14136879299,
+     13666.14136879299,
      8403.484415687597,
      3100
     ],
@@ -670,17 +690,17 @@
      "D": 0,
      "F": 0
     },
-    "render_seconds": 946.9,
+    "render_seconds": 951.2,
     "metrics": {
      "black": 0.0,
      "white": 0.0,
-     "mean": 152.0482,
-     "std": 46.406,
+     "mean": 153.171,
+     "std": 47.2099,
      "window_area": 0.0
     },
     "status": "ok",
     "issues": [],
-    "def_hash": "a790b1123610",
+    "def_hash": "80138af84b5d",
     "clearance": 424,
     "front_mm": 2177,
     "wall_angle": 43.6,
@@ -692,13 +712,13 @@
     "floor": "1F",
     "room": "蓄電室",
     "cam": [
-     17425,
-     8200,
+     16425,
+     7925,
      3100
     ],
     "target": [
-     16157.145214777902,
-     5481.07663889005,
+     15157.145214777902,
+     5206.07663889005,
      3100
     ],
     "lens": 24,
@@ -714,19 +734,19 @@
      "D": 0,
      "F": 0
     },
-    "render_seconds": 947.0,
+    "render_seconds": 951.3,
     "metrics": {
-     "black": 0.0087,
-     "white": 0.0037,
-     "mean": 126.9298,
-     "std": 69.6499,
+     "black": 0.0049,
+     "white": 0.0038,
+     "mean": 125.9763,
+     "std": 68.8804,
      "window_area": 0.0
     },
     "status": "ok",
     "issues": [],
-    "def_hash": "6d926ec7560d",
+    "def_hash": "0d1c1dcab74d",
     "clearance": 700,
-    "front_mm": 8855,
+    "front_mm": 8551,
     "wall_angle": 25.0,
     "alt": null
    },
@@ -737,12 +757,12 @@
     "room": "ランドリー・室内干し",
     "cam": [
      825,
-     12950,
+     14850,
      3100
     ],
     "target": [
-     3543.92336110995,
-     14217.854785222098,
+     3166.291222014989,
+     12974.272030992885,
      3100
     ],
     "lens": 26,
@@ -758,22 +778,21 @@
      "D": 0,
      "F": 0
     },
-    "render_seconds": 616.6,
+    "render_seconds": 951.4,
     "metrics": {
-     "black": 0.0003,
-     "white": 0.0011,
-     "mean": 179.2728,
-     "std": 38.017,
+     "black": 0.0002,
+     "white": 0.0,
+     "mean": 167.7724,
+     "std": 66.0412,
      "window_area": 0.0
     },
     "status": "ok",
     "issues": [],
-    "def_hash": "b4c840e3b62c",
+    "def_hash": "a4752e293a3e",
     "clearance": 700,
-    "front_mm": 5087,
-    "wall_angle": 25.0,
-    "alt": null,
-    "stale_since": "v4.38"
+    "front_mm": 4162,
+    "wall_angle": 38.7,
+    "alt": null
    },
    "R1-12_fcl": {
     "id": "R1-12_fcl",
@@ -878,8 +897,8 @@
      3100
     ],
     "target": [
-     9026.42952161122,
-     17765.280684295085,
+     9668.92336110995,
+     16867.854785222098,
      3100
     ],
     "lens": 26,
@@ -895,20 +914,20 @@
      "D": 0,
      "F": 0
     },
-    "render_seconds": 954.3,
+    "render_seconds": 951.4,
     "metrics": {
      "black": 0.0,
      "white": 0.0,
-     "mean": 128.8366,
-     "std": 72.3675,
+     "mean": 99.4169,
+     "std": 72.5338,
      "window_area": 0.0
     },
     "status": "ok",
     "issues": [],
-    "def_hash": "07da9d249c37",
+    "def_hash": "ba53163c09db",
     "clearance": 700,
-    "front_mm": 3498,
-    "wall_angle": 43.8,
+    "front_mm": 3608,
+    "wall_angle": 25.0,
     "alt": null
    },
    "R1-15_corr1": {
@@ -918,12 +937,12 @@
     "room": "廊下",
     "cam": [
      10300,
-     14800,
+     14100,
      3100
     ],
     "target": [
-     11726.872627210823,
-     12161.05428140015,
+     11567.854785222098,
+     11381.07663889005,
      3100
     ],
     "lens": 24,
@@ -939,20 +958,20 @@
      "D": 0,
      "F": 0
     },
-    "render_seconds": 954.4,
+    "render_seconds": 951.5,
     "metrics": {
-     "black": 0.0001,
-     "white": 0.0,
-     "mean": 114.6562,
-     "std": 50.1405,
+     "black": 0.0011,
+     "white": 0.0001,
+     "mean": 102.9942,
+     "std": 37.5938,
      "window_area": 0.0
     },
     "status": "ok",
     "issues": [],
-    "def_hash": "c877501a63cd",
+    "def_hash": "a993d4866d62",
     "clearance": 700,
-    "front_mm": 3154,
-    "wall_angle": 28.4,
+    "front_mm": 1876,
+    "wall_angle": 25.0,
     "alt": null
    },
    "R1-16_wc1b": {
@@ -961,13 +980,13 @@
     "floor": "1F",
     "room": "トイレ",
     "cam": [
-     10300,
-     16300,
+     11950,
+     14250,
      3100
     ],
     "target": [
-     12291.778637956724,
-     18543.394271495596,
+     13217.854785222098,
+     16968.923361109948,
      3100
     ],
     "lens": 24,
@@ -983,20 +1002,20 @@
      "D": 0,
      "F": 0
     },
-    "render_seconds": 954.5,
+    "render_seconds": 951.6,
     "metrics": {
-     "black": 0.0,
+     "black": 0.0009,
      "white": 0.0,
-     "mean": 175.0645,
-     "std": 64.349,
+     "mean": 169.0941,
+     "std": 51.3875,
      "window_area": 0.0
     },
     "status": "ok",
     "issues": [],
-    "def_hash": "3f461169e06c",
+    "def_hash": "69880d2d6ec8",
     "clearance": 700,
-    "front_mm": 2442,
-    "wall_angle": 41.6,
+    "front_mm": 2366,
+    "wall_angle": 25.0,
     "alt": null
    },
    "R1-17_roomA": {
@@ -1005,16 +1024,16 @@
     "floor": "1F",
     "room": "居室A",
     "cam": [
-     12950,
-     15400,
+     15125,
+     14250,
      3100
     ],
     "target": [
-     15668.92336110995,
-     16667.854785222098,
+     16665.62375617451,
+     16824.194717170933,
      3100
     ],
-    "lens": 26,
+    "lens": 24,
     "exposure": -0.5,
     "when": "2026-06-21T08:00",
     "wb": 5500,
@@ -1027,24 +1046,24 @@
      "D": 0,
      "F": 0
     },
-    "render_seconds": 954.5,
+    "render_seconds": 164.0,
     "metrics": {
      "black": 0.0,
-     "white": 0.0016,
-     "mean": 132.6239,
-     "std": 63.7893,
-     "window_area": 0.0411,
-     "window_ratio": 0.6351,
-     "window_std": 34.7485
+     "white": 0.0,
+     "mean": 145.2086,
+     "std": 62.908,
+     "window_area": 0.1227,
+     "window_ratio": 0.6859,
+     "window_std": 58.5682
     },
     "status": "flag",
     "issues": [
-     "窓の外が見えない（窓領域の平均は画像平均の 0.64 倍・標準偏差 34.7）"
+     "窓の外が見えない（窓領域の平均は画像平均の 0.69 倍・標準偏差 58.6）"
     ],
-    "def_hash": "d4ae230f209f",
+    "def_hash": "9dc2279aa2e7",
     "clearance": 700,
-    "front_mm": 5710,
-    "wall_angle": 25.0,
+    "front_mm": 3349,
+    "wall_angle": 30.9,
     "alt": null
    },
    "R1-18_wic1": {
@@ -1097,16 +1116,16 @@
     "floor": "2F",
     "room": "居室B",
     "cam": [
-     2100,
+     1475,
      4100,
      6500
     ],
     "target": [
-     832.1452147779025,
+     207.14521477790254,
      1381.0766388900497,
      6500
     ],
-    "lens": 26,
+    "lens": 24,
     "exposure": -0.5,
     "when": "2026-06-21T08:00",
     "wb": 5500,
@@ -1119,23 +1138,23 @@
      "D": 0,
      "F": 0
     },
-    "render_seconds": 946.6,
+    "render_seconds": 910.8,
     "metrics": {
      "black": 0.0,
      "white": 0.0,
-     "mean": 117.8549,
-     "std": 68.0076,
-     "window_area": 0.044,
-     "window_ratio": 0.7689,
-     "window_std": 38.8858
+     "mean": 101.9952,
+     "std": 60.7769,
+     "window_area": 0.0463,
+     "window_ratio": 0.7888,
+     "window_std": 35.9432
     },
     "status": "flag",
     "issues": [
-     "窓の外が見えない（窓領域の平均は画像平均の 0.77 倍・標準偏差 38.9）"
+     "窓の外が見えない（窓領域の平均は画像平均の 0.79 倍・標準偏差 35.9）"
     ],
-    "def_hash": "43d6b00b343d",
-    "clearance": 700,
-    "front_mm": 4386,
+    "def_hash": "b983f8bef16e",
+    "clearance": 725,
+    "front_mm": 3194,
     "wall_angle": 25.0,
     "alt": null
    },
@@ -1145,16 +1164,16 @@
     "floor": "2F",
     "room": "居室C",
     "cam": [
-     4150,
+     5300,
      4100,
      6500
     ],
     "target": [
-     5417.854785222099,
-     1381.0766388900502,
+     4032.1452147779028,
+     1381.0766388900497,
      6500
     ],
-    "lens": 26,
+    "lens": 24,
     "exposure": -0.5,
     "when": "2026-06-21T08:00",
     "wb": 5500,
@@ -1167,23 +1186,23 @@
      "D": 0,
      "F": 0
     },
-    "render_seconds": 946.8,
+    "render_seconds": 911.0,
     "metrics": {
-     "black": 0.0001,
+     "black": 0.0,
      "white": 0.0,
-     "mean": 111.5905,
-     "std": 63.2121,
-     "window_area": 0.0463,
-     "window_ratio": 0.7519,
-     "window_std": 37.3304
+     "mean": 176.6768,
+     "std": 43.2382,
+     "window_area": 0.0385,
+     "window_ratio": 0.4567,
+     "window_std": 38.7825
     },
     "status": "flag",
     "issues": [
-     "窓の外が見えない（窓領域の平均は画像平均の 0.75 倍・標準偏差 37.3）"
+     "窓の外が見えない（窓領域の平均は画像平均の 0.46 倍・標準偏差 38.8）"
     ],
-    "def_hash": "648f656bc601",
-    "clearance": 675,
-    "front_mm": 4377,
+    "def_hash": "a6727ac5cc6b",
+    "clearance": 700,
+    "front_mm": 3254,
     "wall_angle": 25.0,
     "alt": null
    },
@@ -1237,16 +1256,16 @@
     "floor": "2F",
     "room": "居室D",
     "cam": [
-     9200,
+     7625,
      4100,
      6500
     ],
     "target": [
-     7500.7812892255015,
-     1627.6214341339528,
+     6357.145214777903,
+     1381.0766388900497,
      6500
     ],
-    "lens": 26,
+    "lens": 24,
     "exposure": -0.5,
     "when": "2026-06-21T08:00",
     "wb": 5500,
@@ -1259,24 +1278,24 @@
      "D": 0,
      "F": 0
     },
-    "render_seconds": 947.0,
+    "render_seconds": 911.1,
     "metrics": {
      "black": 0.0,
-     "white": 0.0003,
-     "mean": 109.4878,
-     "std": 64.4498,
-     "window_area": 0.0838,
-     "window_ratio": 0.8857,
-     "window_std": 42.8536
+     "white": 0.0,
+     "mean": 100.7495,
+     "std": 59.8306,
+     "window_area": 0.0588,
+     "window_ratio": 0.8806,
+     "window_std": 37.6906
     },
     "status": "flag",
     "issues": [
-     "窓の外が見えない（窓領域の平均は画像平均の 0.89 倍・標準偏差 42.9）"
+     "窓の外が見えない（窓領域の平均は画像平均の 0.88 倍・標準偏差 37.7）"
     ],
-    "def_hash": "83f053740394",
-    "clearance": 700,
-    "front_mm": 4823,
-    "wall_angle": 34.5,
+    "def_hash": "18e9c02d77c8",
+    "clearance": 722,
+    "front_mm": 3254,
+    "wall_angle": 25.0,
     "alt": null
    },
    "R2-05_wicD": {
@@ -1285,16 +1304,16 @@
     "floor": "2F",
     "room": "WIC",
     "cam": [
-     11300,
+     10300,
      4100,
      6500
     ],
     "target": [
-     10032.145214777902,
+     9032.145214777902,
      1381.0766388900497,
      6500
     ],
-    "lens": 24,
+    "lens": 26,
     "exposure": -1.0,
     "when": "2026-06-21T08:00",
     "wb": 5500,
@@ -1307,19 +1326,19 @@
      "D": 0,
      "F": 0
     },
-    "render_seconds": 947.0,
+    "render_seconds": 911.2,
     "metrics": {
      "black": 0.0,
      "white": 0.0,
-     "mean": 176.706,
-     "std": 23.3795,
+     "mean": 176.2524,
+     "std": 45.2371,
      "window_area": 0.0
     },
     "status": "ok",
     "issues": [],
-    "def_hash": "069effedb094",
+    "def_hash": "03ca9e2fbdf0",
     "clearance": 412,
-    "front_mm": 3076,
+    "front_mm": 4386,
     "wall_angle": 25.0,
     "alt": null
    },
@@ -1373,12 +1392,12 @@
     "floor": "2F",
     "room": "シアター",
     "cam": [
-     12950,
+     11950,
      825,
      6500
     ],
     "target": [
-     15071.320343559642,
+     14071.320343559642,
      2946.3203435596424,
      6500
     ],
@@ -1395,17 +1414,17 @@
      "D": 0,
      "F": 0
     },
-    "render_seconds": 907.1,
+    "render_seconds": 911.2,
     "metrics": {
-     "black": 0.0001,
+     "black": 0.0,
      "white": 0.0041,
-     "mean": 112.3915,
-     "std": 84.1111,
+     "mean": 117.5186,
+     "std": 84.2212,
      "window_area": 0.0
     },
     "status": "ok",
     "issues": [],
-    "def_hash": "65387f96e361",
+    "def_hash": "42749e7c76d9",
     "clearance": 700,
     "front_mm": 7319,
     "wall_angle": 45.0,
@@ -1417,12 +1436,12 @@
     "floor": "2F",
     "room": "前室（音響ロック）",
     "cam": [
-     17425,
+     16425,
      7400,
      6500
     ],
     "target": [
-     14706.07663889005,
+     13706.07663889005,
      6132.145214777902,
      6500
     ],
@@ -1439,17 +1458,17 @@
      "D": 0,
      "F": 0
     },
-    "render_seconds": 907.2,
+    "render_seconds": 911.3,
     "metrics": {
      "black": 0.0,
      "white": 0.0005,
-     "mean": 101.4478,
-     "std": 34.9102,
+     "mean": 101.671,
+     "std": 34.7343,
      "window_area": 0.0
     },
     "status": "ok",
     "issues": [],
-    "def_hash": "5b1a872f8716",
+    "def_hash": "611a624dc3ae",
     "clearance": 700,
     "front_mm": 2958,
     "wall_angle": 25.0,
@@ -1461,12 +1480,12 @@
     "floor": "2F",
     "room": "WIC（主寝室）",
     "cam": [
-     17425,
+     16425,
      11300,
      6500
     ],
     "target": [
-     14781.089643805022,
+     13781.089643805022,
      9882.347705392838,
      6500
     ],
@@ -1483,17 +1502,17 @@
      "D": 0,
      "F": 0
     },
-    "render_seconds": 907.2,
+    "render_seconds": 946.2,
     "metrics": {
      "black": 0.0,
      "white": 0.0016,
-     "mean": 181.1445,
-     "std": 28.5936,
+     "mean": 180.1074,
+     "std": 28.9318,
      "window_area": 0.0
     },
     "status": "ok",
     "issues": [],
-    "def_hash": "8be66cfea3e0",
+    "def_hash": "c8d5807c0ca9",
     "clearance": 700,
     "front_mm": 5986,
     "wall_angle": 28.2,
@@ -1553,13 +1572,13 @@
     "floor": "2F",
     "room": "ホール・階段1",
     "cam": [
-     11300,
-     9100,
+     6950,
+     6950,
      6500
     ],
     "target": [
-     8610.54070884968,
-     7770.786427527461,
+     9668.92336110995,
+     8217.854785222098,
      6500
     ],
     "lens": 26,
@@ -1575,20 +1594,20 @@
      "D": 0,
      "F": 0
     },
-    "render_seconds": 907.4,
+    "render_seconds": 946.3,
     "metrics": {
-     "black": 0.0,
-     "white": 0.0013,
-     "mean": 141.7408,
-     "std": 50.886,
+     "black": 0.0001,
+     "white": 0.0,
+     "mean": 113.022,
+     "std": 50.1327,
      "window_area": 0.0
     },
     "status": "ok",
     "issues": [],
-    "def_hash": "19c8fb71ad55",
-    "clearance": 702,
-    "front_mm": 5745,
-    "wall_angle": 26.3,
+    "def_hash": "43244d0fbef7",
+    "clearance": 700,
+    "front_mm": 4579,
+    "wall_angle": 25.0,
     "alt": null
    },
    "R2-13_roomE": {
@@ -1597,16 +1616,16 @@
     "floor": "2F",
     "room": "居室E",
     "cam": [
-     825,
-     13625,
+     3200,
+     12950,
      6500
     ],
     "target": [
-     2414.7577926996146,
-     16169.144288469277,
+     499.0436857934196,
+     14255.693298116983,
      6500
     ],
-    "lens": 26,
+    "lens": 24,
     "exposure": -0.5,
     "when": "2026-06-21T08:00",
     "wb": 5500,
@@ -1619,24 +1638,24 @@
      "D": 0,
      "F": 0
     },
-    "render_seconds": 945.3,
+    "render_seconds": 946.4,
     "metrics": {
-     "black": 0.0,
-     "white": 0.0008,
-     "mean": 159.4039,
-     "std": 59.1044,
-     "window_area": 0.0654,
-     "window_ratio": 0.3855,
-     "window_std": 45.9665
+     "black": 0.0001,
+     "white": 0.0,
+     "mean": 144.2328,
+     "std": 52.2517,
+     "window_area": 0.1125,
+     "window_ratio": 0.4459,
+     "window_std": 46.3725
     },
     "status": "flag",
     "issues": [
-     "窓の外が見えない（窓領域の平均は画像平均の 0.39 倍・標準偏差 46.0）"
+     "窓の外が見えない（窓領域の平均は画像平均の 0.45 倍・標準偏差 46.4）"
     ],
-    "def_hash": "4d75e996daa2",
+    "def_hash": "6b0cd202f6eb",
     "clearance": 700,
-    "front_mm": 5307,
-    "wall_angle": 32.0,
+    "front_mm": 3539,
+    "wall_angle": 25.8,
     "alt": null
    },
    "R2-14_stair2": {
@@ -1646,12 +1665,12 @@
     "room": "ホール・階段2",
     "cam": [
      4700,
-     12950,
+     13300,
      6500
     ],
     "target": [
-     5967.854785222098,
-     15668.92336110995,
+     7290.186651820315,
+     11786.417128554942,
      6500
     ],
     "lens": 24,
@@ -1667,20 +1686,20 @@
      "D": 0,
      "F": 0
     },
-    "render_seconds": 945.3,
+    "render_seconds": 946.5,
     "metrics": {
-     "black": 0.0004,
+     "black": 0.0,
      "white": 0.0,
-     "mean": 87.9538,
-     "std": 53.726,
+     "mean": 100.948,
+     "std": 49.3241,
      "window_area": 0.0
     },
     "status": "ok",
     "issues": [],
-    "def_hash": "1693caad246a",
-    "clearance": 700,
-    "front_mm": 3076,
-    "wall_angle": 25.0,
+    "def_hash": "cb192198b236",
+    "clearance": 725,
+    "front_mm": 1621,
+    "wall_angle": 30.3,
     "alt": null
    },
    "R2-15_corr2n": {
@@ -1689,101 +1708,13 @@
     "floor": "2F",
     "room": "廊下",
     "cam": [
-     6950,
-     12950,
+     7400,
+     13050,
      6500
     ],
     "target": [
-     9668.92336110995,
-     14217.854785222098,
-     6500
-    ],
-    "lens": 24,
-    "exposure": -0.5,
-    "when": "2026-06-21T08:00",
-    "wb": 5500,
-    "sun_k": 3900,
-    "channels": {
-     "L": [
-      5000,
-      100
-     ],
-     "D": 0,
-     "F": 0
-    },
-    "render_seconds": 945.4,
-    "metrics": {
-     "black": 0.0007,
-     "white": 0.0005,
-     "mean": 92.5494,
-     "std": 42.3551,
-     "window_area": 0.0
-    },
-    "status": "ok",
-    "issues": [],
-    "def_hash": "6b08d1cf87ed",
-    "clearance": 700,
-    "front_mm": 1775,
-    "wall_angle": 25.0,
-    "alt": null
-   },
-   "R2-16_dress": {
-    "id": "R2-16_dress",
-    "kind": "R",
-    "floor": "2F",
-    "room": "脱衣所",
-    "cam": [
-     9450,
-     14900,
-     6500
-    ],
-    "target": [
-     6731.07663889005,
-     13632.145214777902,
-     6500
-    ],
-    "lens": 24,
-    "exposure": -0.5,
-    "when": "2026-06-21T08:00",
-    "wb": 5500,
-    "sun_k": 3900,
-    "channels": {
-     "L": [
-      5000,
-      100
-     ],
-     "D": 0,
-     "F": 0
-    },
-    "render_seconds": 945.5,
-    "metrics": {
-     "black": 0.0,
-     "white": 0.0,
-     "mean": 137.7576,
-     "std": 83.2692,
-     "window_area": 0.0
-    },
-    "status": "ok",
-    "issues": [],
-    "def_hash": "542b1b7d0834",
-    "clearance": 700,
-    "front_mm": 2662,
-    "wall_angle": 25.0,
-    "alt": null
-   },
-   "R2-17_shower": {
-    "id": "R2-17_shower",
-    "kind": "R",
-    "floor": "2F",
-    "room": "シャワー",
-    "cam": [
-     8800,
-     16100,
-     6500
-    ],
-    "target": [
-     6081.07663889005,
-     17367.854785222098,
+     10118.92336110995,
+     11782.145214777902,
      6500
     ],
     "lens": 22,
@@ -1799,35 +1730,35 @@
      "D": 0,
      "F": 0
     },
-    "render_seconds": 945.5,
+    "render_seconds": 946.5,
     "metrics": {
-     "black": 0.0,
+     "black": 0.0088,
      "white": 0.0,
-     "mean": 149.2188,
-     "std": 31.3419,
+     "mean": 104.9187,
+     "std": 47.529,
      "window_area": 0.0
     },
     "status": "ok",
     "issues": [],
-    "def_hash": "cc7d09151337",
+    "def_hash": "760be5d683db",
     "clearance": 425,
-    "front_mm": 2814,
+    "front_mm": 1893,
     "wall_angle": 25.0,
-    "alt": "4 隅（壁から 700 内側）はいずれも離隔 400mm・正面 1,500mm を満たさない（SW・SE・NE・NW）ため、戸口（WD-15@x8800y15650）から室内へ 450mm 入った位置に立ち戸を開け、22mm（水平 79°）を例外として許可。正面の壁まで 2814mm"
+    "alt": "4 隅（壁から 700 内側）はいずれも離隔 400mm・正面 1,500mm を満たさない（SW・SE・NE・NW）ため、戸口（WD-12@x7400y13500）から室内へ 450mm 入った位置に立ち戸を開け、22mm（水平 79°）を例外として許可。正面の壁まで 1893mm"
    },
-   "R2-18_wc2b": {
-    "id": "R2-18_wc2b",
+   "R2-16_dress": {
+    "id": "R2-16_dress",
     "kind": "R",
     "floor": "2F",
-    "room": "トイレ",
+    "room": "脱衣所",
     "cam": [
-     10950,
-     14500,
+     6950,
+     14250,
      6500
     ],
     "target": [
-     12217.854785222098,
-     17218.923361109948,
+     8217.854785222098,
+     16968.923361109948,
      6500
     ],
     "lens": 24,
@@ -1843,19 +1774,109 @@
      "D": 0,
      "F": 0
     },
-    "render_seconds": 945.6,
+    "render_seconds": 631.9,
     "metrics": {
-     "black": 0.0001,
+     "black": 0.0,
      "white": 0.0,
-     "mean": 163.7469,
-     "std": 54.4521,
+     "mean": 213.3895,
+     "std": 17.9409,
+     "window_area": 0.0
+    },
+    "status": "flag",
+    "issues": [
+     "平均輝度 213（許容 70〜185）"
+    ],
+    "def_hash": "7e95142b293c",
+    "clearance": 700,
+    "front_mm": 3017,
+    "wall_angle": 25.0,
+    "alt": null
+   },
+   "R2-17_shower": {
+    "id": "R2-17_shower",
+    "kind": "R",
+    "floor": "2F",
+    "room": "シャワー",
+    "cam": [
+     10300,
+     14250,
+     6500
+    ],
+    "target": [
+     8781.898707636508,
+     16837.541007621774,
+     6500
+    ],
+    "lens": 24,
+    "exposure": -0.5,
+    "when": "2026-06-21T08:00",
+    "wb": 5500,
+    "sun_k": 3900,
+    "channels": {
+     "L": [
+      5000,
+      100
+     ],
+     "D": 0,
+     "F": 0
+    },
+    "render_seconds": 632.0,
+    "metrics": {
+     "black": 0.0,
+     "white": 0.0,
+     "mean": 181.6647,
+     "std": 28.5799,
      "window_area": 0.0
     },
     "status": "ok",
     "issues": [],
-    "def_hash": "8e2b917b58fb",
+    "def_hash": "93e3fa2177dd",
     "clearance": 700,
-    "front_mm": 2485,
+    "front_mm": 3333,
+    "wall_angle": 30.4,
+    "alt": null
+   },
+   "R2-18_wc2b": {
+    "id": "R2-18_wc2b",
+    "kind": "R",
+    "floor": "2F",
+    "room": "トイレ",
+    "cam": [
+     11950,
+     14250,
+     6500
+    ],
+    "target": [
+     13217.854785222098,
+     16968.923361109948,
+     6500
+    ],
+    "lens": 24,
+    "exposure": -0.5,
+    "when": "2026-06-21T08:00",
+    "wb": 5500,
+    "sun_k": 3900,
+    "channels": {
+     "L": [
+      5000,
+      100
+     ],
+     "D": 0,
+     "F": 0
+    },
+    "render_seconds": 632.0,
+    "metrics": {
+     "black": 0.0005,
+     "white": 0.0,
+     "mean": 164.7104,
+     "std": 60.3057,
+     "window_area": 0.0
+    },
+    "status": "ok",
+    "issues": [],
+    "def_hash": "835410cc91e7",
+    "clearance": 700,
+    "front_mm": 2366,
     "wall_angle": 25.0,
     "alt": null
    },
@@ -1865,61 +1886,13 @@
     "floor": "2F",
     "room": "主寝室",
     "cam": [
-     12950,
-     12950,
+     15125,
+     14250,
      6500
     ],
     "target": [
-     15071.320343559642,
-     15071.320343559642,
-     6500
-    ],
-    "lens": 26,
-    "exposure": -0.5,
-    "when": "2026-06-21T08:00",
-    "wb": 5500,
-    "sun_k": 3900,
-    "channels": {
-     "L": [
-      5000,
-      100
-     ],
-     "D": 0,
-     "F": 0
-    },
-    "render_seconds": 166.1,
-    "metrics": {
-     "black": 0.0007,
-     "white": 0.0024,
-     "mean": 153.6503,
-     "std": 77.101,
-     "window_area": 0.0772,
-     "window_ratio": 0.5247,
-     "window_std": 51.6294
-    },
-    "status": "flag",
-    "issues": [
-     "窓の外が見えない（窓領域の平均は画像平均の 0.52 倍・標準偏差 51.6）"
-    ],
-    "def_hash": "afed288b0587",
-    "clearance": 700,
-    "front_mm": 7319,
-    "wall_angle": 45.0,
-    "alt": null
-   },
-   "R2-12_wc2a": {
-    "id": "R2-12_wc2a",
-    "kind": "R",
-    "floor": "2F",
-    "room": "トイレ（手洗い付）",
-    "cam": [
-     9450,
-     10600,
-     6500
-    ],
-    "target": [
-     11070.720961432966,
-     13124.532345835918,
+     16665.62375617451,
+     16824.194717170933,
      6500
     ],
     "lens": 24,
@@ -1935,42 +1908,90 @@
      "D": 0,
      "F": 0
     },
-    "render_seconds": 164.2,
+    "render_seconds": 632.1,
+    "metrics": {
+     "black": 0.0003,
+     "white": 0.0,
+     "mean": 159.0243,
+     "std": 54.9465,
+     "window_area": 0.2355,
+     "window_ratio": 0.5572,
+     "window_std": 52.7881
+    },
+    "status": "flag",
+    "issues": [
+     "窓の外が見えない（窓領域の平均は画像平均の 0.56 倍・標準偏差 52.8）"
+    ],
+    "def_hash": "7500eb7e24d3",
+    "clearance": 700,
+    "front_mm": 3349,
+    "wall_angle": 30.9,
+    "alt": null
+   },
+   "R2-12_wc2a": {
+    "id": "R2-12_wc2a",
+    "kind": "R",
+    "floor": "2F",
+    "room": "トイレ（手洗い付）",
+    "cam": [
+     9375,
+     11200,
+     6500
+    ],
+    "target": [
+     10642.854785222098,
+     8481.07663889005,
+     6500
+    ],
+    "lens": 24,
+    "exposure": -0.5,
+    "when": "2026-06-21T08:00",
+    "wb": 5500,
+    "sun_k": 3900,
+    "channels": {
+     "L": [
+      5000,
+      100
+     ],
+     "D": 0,
+     "F": 0
+    },
+    "render_seconds": 946.4,
     "metrics": {
      "black": 0.0,
      "white": 0.0,
-     "mean": 177.4626,
-     "std": 48.0085,
+     "mean": 163.5243,
+     "std": 56.4383,
      "window_area": 0.0
     },
     "status": "ok",
     "issues": [],
-    "def_hash": "f57254763736",
-    "clearance": 700,
-    "front_mm": 1664,
-    "wall_angle": 32.7,
+    "def_hash": "3f9e46995eb0",
+    "clearance": 625,
+    "front_mm": 1538,
+    "wall_angle": 25.0,
     "alt": null
    }
   },
   "master": {
    "file": "kawazanyo_master.blend",
-   "model_hash": "fe79508e7b95b8da",
-   "generated_at": "2026-11-25T07:51:32"
+   "model_hash": "0dbc81d6b703ffe6",
+   "generated_at": "2026-11-25T16:07:28"
   },
   "version": "v4.34",
-  "total_seconds": 10284.3
+  "total_seconds": 15489.5
  },
  "master": {
   "file": "kawazanyo_master.blend",
   "model_version": "v4.32",
-  "model_hash": "c42cfaed817c94b7489f237719b098fe1c161ef1f07235b00a14e9ee6560f97d",
-  "generated_at": "2026-11-13T16:36:31"
+  "model_hash": "0dbc81d6b703ffe6ca35de95bcb48db5aa11f54df22c1dbc92543a2e3c539050",
+  "generated_at": "2026-11-25T14:51:17"
  },
  "last_shoot": {
-  "at": "2026-11-13T17:31:24",
-  "seconds": 314.6,
+  "at": "2026-11-25T16:25:45",
+  "seconds": 773.2,
   "seed": 0,
-  "material_colors_checked": 122
+  "material_colors_checked": 124
  },
  "texture_missing": []
 }

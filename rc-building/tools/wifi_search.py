@@ -22,7 +22,7 @@ sys.path.insert(0, str(ROOT / "src"))
 import wifi as WF  # noqa: E402
 from house import House  # noqa: E402
 
-WET_CORR = {"1F": (9600, 12250, 12000, 15500), "2F": (6250, 12250, 12000, 13700)}   # 水回りブロック内の廊下
+WET_CORR = {"1F": (-1, -1, -1, -1), "2F": (-1, -1, -1, -1)}   # v4.41 北の行の廊下も AP の候補にする（水回りが北中央と北東に分かれ、廊下の AP なしでは浴室・シャワーが届かない）   # 水回りブロック内の廊下
 
 
 def inside(r, x, y, m=0):

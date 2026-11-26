@@ -38,7 +38,7 @@ def storeys(h):
 def world_matrix(h):
     """建物ローカル m（Z 上）→ 真北ワールド m（Y 上）の 4x4。model3d.build_scene と同一。"""
     import trimesh
-    rz = trimesh.transformations.rotation_matrix(h.alpha, [0, 0, 1], [h.W / 2000, h.D / 2000, 0])
+    rz = trimesh.transformations.rotation_matrix(h.alpha, [0, 0, 1], [h.FW / 2000, h.FD / 2000, 0])
     return trimesh.transformations.rotation_matrix(-np.pi / 2, [1, 0, 0]) @ rz
 
 

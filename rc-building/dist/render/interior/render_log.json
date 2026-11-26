@@ -168,6 +168,60 @@
    "stale_since": "v4.37"
   },
   {
+   "id": "I09",
+   "file": "/home/user/junichi123456.github.io/rc-building/dist/render/interior/I09_master_bedroom.png",
+   "seconds": 190.3,
+   "render_seconds": 190.1,
+   "samples": 64,
+   "time_limit": 240,
+   "res": [
+    1600,
+    900
+   ],
+   "exposure": 1.5,
+   "wb": 2900,
+   "lamp_k": 2200,
+   "lamp_pct": 20.0,
+   "channels": {
+    "L": [
+     2325,
+     0.0
+    ],
+    "D": [
+     2200,
+     20.0
+    ],
+    "F": [
+     2200,
+     30.0
+    ]
+   },
+   "hdri_sun": [
+    145.8,
+    47.9,
+    -54.1
+   ],
+   "texture_fallbacks": [],
+   "family": "I",
+   "time_limit_hit": false,
+   "when": "2026-10-24T21:30",
+   "status": "ok",
+   "master": {
+    "file": "kawazanyo_master.blend",
+    "model_version": "v4.32",
+    "model_hash": "0dbc81d6b703ffe6ca35de95bcb48db5aa11f54df22c1dbc92543a2e3c539050",
+    "generated_at": "2026-11-25T14:51:17"
+   },
+   "shoot": {
+    "def_hash": "5839157b5192",
+    "model_hash": "0dbc81d6b703ffe6ca35de95bcb48db5aa11f54df22c1dbc92543a2e3c539050",
+    "args_hash": "f288a5dd4942",
+    "seed": 0
+   },
+   "shoot_flags": [],
+   "palette_mismatch": []
+  },
+  {
    "id": "I10",
    "file": "dist/render/interior/I10_washroom_bath.png",
    "seconds": 252.5,
@@ -216,6 +270,60 @@
     "def_hash": "7de12eb647bc",
     "model_hash": "fe79508e7b95b8daf988239bbe80a37b7f6eb4a14f19236cf72c04c59fc95a0b",
     "args_hash": "a3cce0f4edd0",
+    "seed": 0
+   },
+   "shoot_flags": [],
+   "palette_mismatch": []
+  },
+  {
+   "id": "I11",
+   "file": "/home/user/junichi123456.github.io/rc-building/dist/render/interior/I11_laundry.png",
+   "seconds": 250.7,
+   "render_seconds": 250.6,
+   "samples": 64,
+   "time_limit": 240,
+   "res": [
+    1600,
+    900
+   ],
+   "exposure": -1,
+   "wb": 5000,
+   "lamp_k": 4875,
+   "lamp_pct": 100.0,
+   "channels": {
+    "L": [
+     4875,
+     100.0
+    ],
+    "D": [
+     2200,
+     0.0
+    ],
+    "F": [
+     2200,
+     0.0
+    ]
+   },
+   "hdri_sun": [
+    145.8,
+    47.9,
+    -62.4
+   ],
+   "texture_fallbacks": [],
+   "family": "I",
+   "time_limit_hit": true,
+   "when": "2026-10-24T10:00",
+   "status": "ok",
+   "master": {
+    "file": "kawazanyo_master.blend",
+    "model_version": "v4.32",
+    "model_hash": "0dbc81d6b703ffe6ca35de95bcb48db5aa11f54df22c1dbc92543a2e3c539050",
+    "generated_at": "2026-11-25T14:51:17"
+   },
+   "shoot": {
+    "def_hash": "738cdea0eafe",
+    "model_hash": "0dbc81d6b703ffe6ca35de95bcb48db5aa11f54df22c1dbc92543a2e3c539050",
+    "args_hash": "aed7ace86b20",
     "seed": 0
    },
    "shoot_flags": [],
@@ -631,12 +739,12 @@
  "master": {
   "file": "kawazanyo_master.blend",
   "model_version": "v4.32",
-  "model_hash": "fe79508e7b95b8daf988239bbe80a37b7f6eb4a14f19236cf72c04c59fc95a0b",
-  "generated_at": "2026-11-25T07:29:26"
+  "model_hash": "0dbc81d6b703ffe6ca35de95bcb48db5aa11f54df22c1dbc92543a2e3c539050",
+  "generated_at": "2026-11-25T14:51:17"
  },
  "last_shoot": {
-  "at": "2026-11-25T07:56:00",
-  "seconds": 265.7,
+  "at": "2026-11-25T16:25:45",
+  "seconds": 773.2,
   "seed": 0,
   "material_colors_checked": 124
  },

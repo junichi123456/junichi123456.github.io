@@ -115,7 +115,7 @@ class Frame:
 
     def __init__(self, h):
         self.a = h.alpha
-        self.piv = (h.W / 2000.0, h.D / 2000.0)
+        self.piv = (h.FW / 2000.0, h.FD / 2000.0)
 
     def to_bl(self, x, y, z):
         dx, dy = x / 1000 - self.piv[0], y / 1000 - self.piv[1]
@@ -221,7 +221,7 @@ def build_cfg(h, spec, args, assets, out_dir):
             z, w, cone = h.fgl + 340, 30.0, 120
         el_lights.append(dict(name=name, pos=fr.to_bl(x, y, z), watts=w, cone=cone))
     cfg = dict(
-        glb=str(ROOT / "dist" / "model.glb"), alpha=h.alpha, pivot=[h.W / 2000.0, h.D / 2000.0],
+        glb=str(ROOT / "dist" / "model.glb"), alpha=h.alpha, pivot=[h.FW / 2000.0, h.FD / 2000.0],
         materials=mats, colors_lin=colors_lin, textures=assets["textures"], hdri={k: v["path"] for k, v in assets["hdri"].items()},
         planters=planters,
         window_lights=wl if any(c["kind"] == "dusk" for c in cuts) else [],

@@ -124,68 +124,68 @@ def items(h):
     # ---- 玄関・ホール
     add("G-S1", "1F", "玄関土間", "下足入れ（造作・天井まで・扉付き・電波遮断キーボックス内蔵）", "tall", h.shoe, FL["1F"] + h.ch["1F"] - DOMA, "case_ash", z0=DOMA, front="+x")
     add("G-B1", "1F", "玄関土間", "腰掛けベンチ（造作、座 H420＋クッション）", "bench", h.bench, 420, "case_ash", z0=DOMA, seat=True, front="+y", note="座る家具。要施主確認")
-    add("H-S2", "1F", "ホール", "コート収納", "tall", (6250, 4200, 6700, 6000), h.ch["1F"], "case_ash")
-    add("H-S3", "1F", "ホール・階段1", "収納 東（天井まで・D450・引違い戸 2 枚（上吊り）・可動棚・台輪 H350 に足元灯ライン）", "tall", (11550, 6650, 12000, 8100), h.ch["1F"], "case_ash", front="-x", footline=True, plinth=350.0, leaves=2, hjoint=0.0)
+    add("H-S2", "1F", "ホール", "コート収納", "tall", (6250, 4000, 6700, 5300), h.ch["1F"], "case_ash")
+    add("H-S3", "1F", "ホール・階段1", "収納 東（天井まで・D450・引違い戸 2 枚（上吊り）・可動棚・台輪 H350 に足元灯ライン）", "tall", (10550, 6650, 11000, 8100), h.ch["1F"], "case_ash", front="-x", footline=True, plinth=350.0, leaves=2, hjoint=0.0)
     add("H-S4", "1F", "ホール・階段1", "階段1 下の収納（H1,500・両開き戸・棚 1 段＋キャスター付きワゴン 2・人感 LED・内装不燃）", "tall", (7500, 9800, 8650, 10840), 1500, "case_ash", front="-y", under="階段1", leaves=2)
     # ---- ジム（機器は h.equipment）
     add("J-M1", "1F", "ジム", "鏡（突っ張り枠・飛散防止フィルム。S 壁の内面・トレッドミルの正面）", "mirror", tuple(h.spec["gym_layout"]["mirror"]), 2000, "mirror", z0=FL["1F"] + 300, base="frame", stack=True)
     add("J-K1", "1F", "ジム", "測定コーナーのカウンター（体組成計は床、血圧計は天板）", "cabinet", tuple(h.spec["gym_layout"]["counter"]), 900, "case_ash")
     # ---- 水回り
-    add("T1-W", "1F", "トイレ（手洗い付）", "タンク式便器（フチなし）", "toilet", (9425, 11300, 9925, 12000), 800, "ceramic", base="none")
-    add("T1-H", "1F", "トイレ（手洗い付）", "手洗いカウンター（一体成形・浮かせ）", "counter_float", (8750, 10500, 9050, 11400), 850, "solid_surface", base="float650")
-    add("T2-W", "1F", "トイレ", "タンク式便器（フチなし）", "toilet", (10550, 17425, 11050, 18125), 800, "ceramic", base="none")
-    add("T2-H", "1F", "トイレ", "手洗いカウンター（一体成形・浮かせ）", "counter_float", (11700, 16600, 12000, 17600), 850, "solid_surface", base="float650")
+    add("T1-W", "1F", "トイレ（手洗い付）", "タンク式便器（フチなし）", "toilet", (8750, 11500, 9250, 12000), 800, "ceramic", base="none")
+    add("T1-H", "1F", "トイレ（手洗い付）", "手洗いカウンター（一体成形・浮かせ）", "counter_float", (8750, 10100, 9050, 11000), 850, "solid_surface", base="float650")
+    add("T2-W", "1F", "トイレ", "タンク式便器（フチなし）", "toilet", (11850, 16625, 12350, 17125), 800, "ceramic", base="none")
+    add("T2-H", "1F", "トイレ", "手洗いカウンター（一体成形・浮かせ）", "counter_float", (12650, 15700, 12950, 16700), 850, "solid_surface", base="float650")
     # v4.40 PS（パイプスペース）: LGS＋耐水PB・EP、点検扉 1 枚（FL+60〜2,700）。2F の排水・給水を通す（long_life.ps、48章）
     for pid, room, rect, front, note in h.spec["long_life"]["ps"]:
         add(pid, "1F", room, f"PS（パイプスペース）LGS＋耐水PB・点検扉 1 枚 FL+60〜2,700・{note}", "ps", tuple(rect), h.ch["1F"], "wet_panel",
             base="none", front=front, leaves=1, hjoint=0.0)
     add("W1-C", "1F", "洗面・脱衣", "洗面カウンター（一体成形ボウル・浮かせ。鏡は突っ張り枠で天井まで）", "counter_float", (8950, 13450, 9500, 14800), 850, "solid_surface", base="float650")
     add("W1-S", "1F", "洗面・脱衣", "リネン収納（天井まで）", "tall", (6900, 12250, 8500, 12700), h.ch["1F"], "case_ash")
-    add("B1-U", "1F", "浴室", "ユニットバスの浴槽（エプロン一体）", "tub", (7600, 17300, 9400, 18125), 550, "tub", base="unit")
+    add("B1-U", "1F", "浴室", "ユニットバスの浴槽（エプロン一体）", "tub", (7600, 16300, 9400, 17125), 550, "tub", base="unit")
     add("R-WD", "1F", "ランドリー・室内干し", "ドラム式洗濯乾燥機 ×2（W640×D720×H1060 各）", "washer2", (1500, 12250, 2800, 12970), 1060, "appliance_white", base="none", qty=2)
-    add("R-SK", "1F", "ランドリー・室内干し", "作業カウンター＋スロップシンク", "cabinet", (2800, 12250, 5100, 12900), 900, "solid_surface")
+    add("R-SK", "1F", "ランドリー・室内干し", "作業カウンター＋スロップシンク", "cabinet", (2800, 12250, 3900, 12900), 900, "solid_surface")
     add("R-DK", "1F", "ランドリー・室内干し", "掃除ロボットのドック（1階、自動ゴミ収集・給排水直結）", "dock", (125, 14500, 575, 15000), 600, "appliance_white", base="none")
-    add("R-HP", "1F", "ランドリー・室内干し", "物干しパイプ（天井付け・取外し式）×2", "hang_pole", (1200, 13600, 4800, 14400), 30, "stainless", z0=FL["1F"] + h.ch["1F"] - 450,
+    add("R-HP", "1F", "ランドリー・室内干し", "物干しパイプ（天井付け・取外し式）×2", "hang_pole", (1000, 13600, 3800, 14400), 30, "stainless", z0=FL["1F"] + h.ch["1F"] - 450,
         base="ceiling", qty=2, stack=True)
-    add("C1-W", "1F", "ファミリークローゼット", "収納（天井まで・扉付き）西", "tall", (125, 15100, 725, 18125), h.ch["1F"], "case_ash")
-    add("C1-N", "1F", "ファミリークローゼット", "収納（天井まで・扉付き）北", "tall", (725, 17525, 3900, 18125), h.ch["1F"], "case_ash")
-    add("R-S1", "1F", "ランドリー・室内干し", "階段2 下の収納（H2,350・両開き戸・チャイルドロック・スチール可動棚・人感 LED・内装不燃）", "tall", (5050, 15100, 6000, 15900), 2350, "case_ash", front="-y", under="階段2", leaves=2, hjoint=0.0)
-    add("M1-A", "1F", "機械室（西系統）", "空調機・全熱交換器（簡易ボリューム）", "machine", (12250, 10800, 15100, 12000), 1900, "machine", base="none")
-    add("M2-A", "1F", "機械室（東系統）", "浄水器・ネットワークラック・排煙機（簡易ボリューム）", "machine", (15200, 11000, 18125, 12000), 1900, "machine", base="none")
-    add("WA-S", "1F", "WIC", "棚・パイプ（突っ張りフレーム）", "tall", (14300, 12250, 18125, 12850), h.ch["1F"], "case_ash")
-    add("A-B1", "1F", "居室A", "ベッド シングル 1000×2000", "bed", (14700, 16100, 15700, 18125), 520, "case_oak", base="legs260", head="+y")
-    add("A-C1", "1F", "居室A", "チェスト", "cabinet", (16500, 14700, 17300, 15100), 700, "case_ash")
+    add("C1-W", "1F", "ファミリークローゼット", "収納（天井まで・扉付き）西", "tall", (125, 15650, 725, 17125), h.ch["1F"], "case_ash")
+    add("C1-N", "1F", "ファミリークローゼット", "収納（天井まで・扉付き）北", "tall", (725, 16525, 3900, 17125), h.ch["1F"], "case_ash")
+    add("R-S1", "1F", "ランドリー・室内干し", "階段2 下の収納（H2,350・両開き戸・チャイルドロック・スチール可動棚・人感 LED・内装不燃）", "tall", (5050, 14100, 6000, 14900), 2350, "case_ash", front="-y", under="階段2", leaves=2, hjoint=0.0)
+    add("M1-A", "1F", "機械室（西系統）", "空調機・全熱交換器（簡易ボリューム）", "machine", (11250, 10800, 14100, 12000), 1900, "machine", base="none")
+    add("M2-A", "1F", "機械室（東系統）", "浄水器・ネットワークラック・排煙機（簡易ボリューム）", "machine", (14200, 11000, 17125, 12000), 1900, "machine", base="none")
+    add("WA-S", "1F", "WIC", "棚・パイプ（突っ張りフレーム）", "tall", (13050, 14200, 13650, 17125), h.ch["1F"], "case_ash")
+    add("A-B1", "1F", "居室A", "ベッド シングル 1000×2000", "bed", (14425, 15125, 15425, 17125), 520, "case_oak", base="legs260", head="+y")
+    add("A-C1", "1F", "居室A", "チェスト", "cabinet", (16725, 14000, 17125, 14800), 700, "case_ash")
     # ---- 2F
-    add("B-B1", "2F", "居室B", "ベッド シングル", "bed", (1775, 1200, 2775, 3225), 520, "case_oak", base="legs260", head="+y")
-    add("C-B1", "2F", "居室C", "ベッド シングル", "bed", (3475, 1200, 4475, 3225), 520, "case_oak", base="legs260", head="+y")
-    add("D-B1", "2F", "居室D", "ベッド シングル", "bed", (8900, 1000, 9900, 3025), 520, "case_oak", base="legs260", head="+y")
+    add("B-B1", "2F", "居室B", "ベッド シングル", "bed", (1175, 1200, 2175, 3225), 520, "case_oak", base="legs260", head="+y")
+    add("C-B1", "2F", "居室C", "ベッド シングル", "bed", (3925, 1200, 4925, 3225), 520, "case_oak", base="legs260", head="+y")
+    add("D-B1", "2F", "居室D", "ベッド シングル", "bed", (7325, 1000, 8325, 3025), 520, "case_oak", base="legs260", head="+y")
     add("D-C1", "2F", "居室D", "チェスト", "cabinet", (6250, 125, 7050, 525), 700, "case_ash")
-    add("WD-S", "2F", "WIC", "棚・パイプ", "tall", (11400, 125, 12000, 3700), h.ch["2F"], "case_ash")
-    add("S-B", "2F", "収納（居室B）", "収納棚（扉付き）居室B専用", "tall", (2875, 2563, 3375, 3700), h.ch["2F"], "case_ash")
-    add("S-C", "2F", "収納（居室C）", "収納棚（扉付き）居室C専用", "tall", (2875, 1100, 3375, 2463), h.ch["2F"], "case_ash")
-    add("TH-S", "2F", "シアター", "スクリーン 120型（16:9・2,657×1,494、南の壁の前）", "screen", (13790, 125, 16590, 225), 1700, "screen", z0=FL["2F"] + 700, base="frame", stack=True)
-    add("TH-A", "2F", "シアター", "AV ボード（スピーカー内蔵）", "cabinet", (13600, 125, 16800, 575), 450, "theater_case")
-    add("TH-F", "2F", "シアター", "箱型ソファ 3人掛け（背・肘あり、台輪で床まで塞ぐ）", "sofa", (13700, 3300, 16700, 4250), 780, "sofa_olive", seat=True, front="-y",
+    add("WD-S", "2F", "WIC", "棚・パイプ", "tall", (10400, 125, 11000, 3700), h.ch["2F"], "case_ash")
+    add("S-B", "2F", "収納（居室B）", "収納棚（扉付き）居室B専用", "tall", (3325, 2563, 3825, 3700), h.ch["2F"], "case_ash")
+    add("S-C", "2F", "収納（居室C）", "収納棚（扉付き）居室C専用", "tall", (3325, 1100, 3825, 2463), h.ch["2F"], "case_ash")
+    add("TH-S", "2F", "シアター", "スクリーン 120型（16:9・2,657×1,494、南の壁の前）", "screen", (12790, 125, 15590, 225), 1700, "screen", z0=FL["2F"] + 700, base="frame", stack=True)
+    add("TH-A", "2F", "シアター", "AV ボード（スピーカー内蔵）", "cabinet", (12600, 125, 15800, 575), 450, "theater_case")
+    add("TH-F", "2F", "シアター", "箱型ソファ 3人掛け（背・肘あり、台輪で床まで塞ぐ）", "sofa", (12700, 3300, 15700, 4250), 780, "sofa_olive", seat=True, front="-y",
         note="座る家具。要施主確認")
     add("LB-S1", "2F", "図書室", "本棚（天井まで突っ張り・背面連結）東", "bookcase", (5650, 7500, 6000, 12000), h.ch["2F"], "case_oak")
     add("LB-S2", "2F", "図書室", "本棚（天井まで突っ張り・背面連結）北", "bookcase", (125, 11650, 3700, 12000), h.ch["2F"], "case_oak")
     add("LB-B1", "2F", "図書室", "窓下の造作ベンチ（収納兼用、座 H420、からし色のクッション）", "bench", (125, 6900, 575, 11100), 420, "case_oak", seat=True, front="+x", note="座る家具。要施主確認")
     add("LB-T1", "2F", "図書室", "閲覧台（立って読む H950）", "cabinet", (2300, 8500, 3800, 9300), 950, "case_oak")
     add("LB-P1", "2F", "図書室", "鉢植え（フィカス）φ400", "plant", (3700, 11600, 4100, 12000), 1500, "leaf", base="pot")
-    add("MB-B1", "2F", "主寝室", "ベッド セミダブル 1200×2000（1台、頭は西の壁）", "bed", (12250, 15000, 14350, 16200), 520, "case_oak", base="legs260", head="-x")
-    add("MB-N1", "2F", "主寝室", "ナイトテーブル", "cabinet", (12250, 16200, 12700, 16600), 450, "case_ash")
-    add("MB-C1", "2F", "主寝室", "チェスト", "cabinet", (13800, 12250, 15000, 12700), 700, "case_ash")
-    add("MW-S", "2F", "WIC（主寝室）", "棚（突っ張り）＋耐火金庫（床に固定、避難室）", "tall", (13100, 8200, 18125, 8800), h.ch["2F"], "case_ash")
-    add("E-B1", "2F", "居室E", "ベッド ダブル 1400×2000（頭は西の壁）", "bed", (125, 15400, 2125, 16800), 520, "case_oak", base="legs260", head="-x")
-    add("E-D1", "2F", "居室E", "デスク（北窓の下。H720）", "cabinet", (1300, 17525, 2500, 18125), 720, "case_oak")
-    add("E-S1", "2F", "収納（居室E）", "収納棚（扉付き・天井まで。引戸は東寄り）", "tall", (125, 12250, 1900, 12825), h.ch["2F"], "case_ash")
-    add("D2-DK", "2F", "廊下", "掃除ロボットのドック（2階。脱衣所の給排水から壁越しに直結）", "dock", (6250, 13250, 6700, 13700), 600, "appliance_white", base="none")
-    add("W2-C", "2F", "脱衣所", "洗面カウンター（浮かせ・奥行 450。通路の残り 1,350）", "counter_float", (8050, 13800, 10150, 14250), 850, "solid_surface", base="float650")
-    add("T3-W", "2F", "トイレ（手洗い付）", "タンク式便器（フチなし）", "toilet", (9425, 11300, 9925, 12000), 800, "ceramic", base="none")
-    add("T3-H", "2F", "トイレ（手洗い付）", "手洗いカウンター（浮かせ）", "counter_float", (8750, 10500, 9050, 11400), 850, "solid_surface", base="float650")
-    add("T4-W", "2F", "トイレ", "タンク式便器（フチなし）", "toilet", (10550, 16700, 11050, 17200), 800, "ceramic", base="none")
-    add("T4-H", "2F", "トイレ", "手洗いカウンター（浮かせ）", "counter_float", (11700, 15200, 12000, 16200), 850, "solid_surface", base="float650")
-    add("SH-U", "2F", "シャワー", "シャワーユニット（水栓・ベンチなし）", "shower", (8000, 16700, 9500, 18125), 2000, "tub", base="unit")
+    add("MB-B1", "2F", "主寝室", "ベッド セミダブル 1200×2000（1台、頭は西の壁）", "bed", (14425, 14800, 16525, 16000), 520, "case_oak", base="legs260", head="-x")
+    add("MB-N1", "2F", "主寝室", "ナイトテーブル", "cabinet", (14425, 16000, 14875, 16400), 450, "case_ash")
+    add("MB-C1", "2F", "主寝室", "チェスト", "cabinet", (15000, 16675, 16200, 17125), 700, "case_ash")
+    add("MW-S", "2F", "WIC（主寝室）", "棚（突っ張り）＋耐火金庫（床に固定、避難室）", "tall", (12100, 8200, 17125, 8800), h.ch["2F"], "case_ash")
+    add("E-B1", "2F", "居室E", "ベッド ダブル 1400×2000（頭は西の壁）", "bed", (125, 12800, 2125, 14200), 520, "case_oak", base="legs260", head="-x")
+    add("E-D1", "2F", "居室E", "デスク（東の壁際。H720）", "cabinet", (3300, 13800, 3900, 14800), 720, "case_oak")
+    add("E-S1", "2F", "収納（居室E）", "収納棚（扉付き・天井まで。引戸は東寄り）", "tall", (125, 16525, 2500, 17125), h.ch["2F"], "case_ash")
+    add("D2-DK", "2F", "廊下", "掃除ロボットのドック（2階。脱衣所の給排水から壁越しに直結）", "dock", (7900, 13000, 8350, 13450), 600, "appliance_white", base="none")
+    add("W2-C", "2F", "脱衣所", "洗面カウンター（浮かせ・奥行 450、西の壁沿い）", "counter_float", (6250, 14300, 6700, 16300), 850, "solid_surface", base="float650")
+    add("T3-W", "2F", "トイレ（手洗い付）", "タンク式便器（フチなし）", "toilet", (8750, 11500, 9250, 12000), 800, "ceramic", base="none")
+    add("T3-H", "2F", "トイレ（手洗い付）", "手洗いカウンター（浮かせ）", "counter_float", (8750, 10100, 9050, 11000), 850, "solid_surface", base="float650")
+    add("T4-W", "2F", "トイレ", "タンク式便器（フチなし）", "toilet", (11850, 16625, 12350, 17125), 800, "ceramic", base="none")
+    add("T4-H", "2F", "トイレ", "手洗いカウンター（浮かせ）", "counter_float", (12650, 15700, 12950, 16700), 850, "solid_surface", base="float650")
+    add("SH-U", "2F", "シャワー", "シャワーユニット（水栓・ベンチなし）", "shower", (9500, 15625, 11000, 17125), 2000, "tub", base="unit")
     # ---- 切替: 座る家具をまとめて外す（シアターのソファ・図書室のベンチ・玄関ベンチ）
     if not sp.get("optional_seating", True):
         out = [i for i in out if not i.seat]
@@ -245,7 +245,7 @@ def door_zones(h, fl):
 def stair_zone(h, fl):
     out = []
     for s in h.stairs:
-        out.append(sbox(*s.footprint(12000 if s.name == "階段1" else 18125)) if fl == "1F" else sbox(*s.hole))
+        out.append(sbox(*s.footprint(h.stair_end(s))) if fl == "1F" else sbox(*s.hole))
     return out
 
 
@@ -253,7 +253,7 @@ def stair_soffit(h, name, poly):
     """階段 name の段板・踊場の箱のうち、平面で poly と重なるものの下端の最小（絶対 z）。v4.37 階段下の収納。"""
     import house as HM
     s = [x for x in h.stairs if x.name == name][0]
-    zs = [b.z0 for b in s.boxes(12000 if s.name == "階段1" else 18125) if sbox(b.x0, b.y0, b.x1, b.y1).intersection(poly).area > 1]
+    zs = [b.z0 for b in s.boxes(h.stair_end(s)) if sbox(b.x0, b.y0, b.x1, b.y1).intersection(poly).area > 1]
     return min(zs) if zs else float("inf")
 
 
@@ -293,7 +293,7 @@ def check(h, its):
         p = it.poly()
         rp = room_polys(h, it.floor, it.room)
         if it.under:
-            rp = rp + [sbox(*s.footprint(12000 if s.name == "階段1" else 18125)) for s in h.stairs if s.name == it.under]
+            rp = rp + [sbox(*s.footprint(h.stair_end(s))) for s in h.stairs if s.name == it.under]
             rp = [unary_union(rp)]
         if not any(r.buffer(1).contains(p) for r in rp):
             errs.append((it.id, "室の外にはみ出す"))

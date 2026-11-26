@@ -169,8 +169,8 @@ def test_storage_v437():
     h = house()
     its = {i.id: i for i in FU.items(h)}
     assert its["L-K2"].rect == (175, 4000, 1000, 5550) and its["L-K3"].rect == (5550, 4050, 6000, 5400)
-    assert its["H-S3"].rect == (11550, 6650, 12000, 8100) and its["H-S4"].rect == (7500, 9800, 8650, 10840)
-    assert its["R-S1"].rect == (5050, 15100, 6000, 15900)
+    assert its["H-S3"].rect == (10550, 6650, 11000, 8100) and its["H-S4"].rect == (7500, 9800, 8650, 10840)
+    assert its["R-S1"].rect == (5050, 14100, 6000, 14900)
     assert its["L-K3"].pocket == 130
     for k in ("H-S4", "R-S1"):
         it = its[k]

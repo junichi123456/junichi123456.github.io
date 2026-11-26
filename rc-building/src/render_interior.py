@@ -42,7 +42,7 @@ def scenery_cfg(h, spec):
     rnd = random.Random(t["seed"])
     road, _ = _site_road_polys(h)
     block = unary_union([Polygon(b).buffer(0) for b in list(h.neighbors) + list(h.existing)] + [Polygon(w).buffer(0) for w in h.water] + [road]).buffer(0)
-    cx, cy = h.W / 2.0, h.D / 2.0
+    cx, cy = h.FW / 2.0, h.FD / 2.0
     # 地形メッシュの範囲（model3d.build_terrain: x −70〜60 m, y −70〜65 m を原点 (ox, oy) からの相対で取る）内だけに置く
     x_lo, x_hi, y_lo, y_hi = (-70 - h.ox) * 1000, (60 - h.ox) * 1000, (-70 - h.oy) * 1000, (65 - h.oy) * 1000
     az0 = math.radians(h.facade_az)                       # 建物座標の方位 = 真方位 − facade_az
@@ -126,7 +126,7 @@ def interior_cfg(h, spec, args, assets, out_dir, glb_path):
     scr = next(i for i in its if i.id == "TH-S")
     scn = scenery_cfg(h, spec)
     cfg = dict(
-        mode="interior", glb=str(glb_path), alpha=h.alpha, pivot=[h.W / 2000.0, h.D / 2000.0], materials=mats, colors_lin=colors_lin,
+        mode="interior", glb=str(glb_path), alpha=h.alpha, pivot=[h.FW / 2000.0, h.FD / 2000.0], materials=mats, colors_lin=colors_lin,
         textures=assets["textures"], hdri={k: v["path"] for k, v in assets["hdri"].items()}, planters=scn["planters"], scenery=scn, window_lights=[], ext_lights=[],
         lamp_color=list(RC.LAMP_LIN), lamp_strength=0.0, room_light=dict(kelvin=3000, strength=0.0), sky_clamp=spec["cg"].get("sky_clamp", 30.0),
         adaptive_threshold=ic["adaptive_threshold"], max_bounces=8, cuts=cuts, preview=bool(args.preview), raw_log=str(out_dir / "render_log_raw.json"),

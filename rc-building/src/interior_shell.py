@@ -59,11 +59,11 @@ def cells(h):
         out.append(Cell(r.floor, r.name, tuple(r.rect), z, floor_mat(r.name), ceiling_mat(r.name)))
     # 室の外の空き（階段の下・階段脇のホール）
     for s in h.stairs:
-        out.append(Cell("1F", s.name + "の下", (s.x0, min(s.y_entry, 12000 if s.name == "階段1" else 18125), s.x1, max(s.y_entry, 12000 if s.name == "階段1" else 18125)),
+        out.append(Cell("1F", s.name + "の下", (s.x0, min(s.y_entry, h.stair_end(s)), s.x1, max(s.y_entry, h.stair_end(s))),
                         h.fl["1F"], "floor_oak", "ceiling_paint", extra=True))
     for fl in ("1F", "2F"):
-        out.append(Cell(fl, "ホール（階段脇）", (10650, 9800, 12000, 12000), h.fl[fl], "floor_oak", "ceiling_paint", extra=True))
-    out.append(Cell("1F", "階段2前", (3950, 15000, 6000, 15100), h.fl["1F"], "floor_oak", "ceiling_paint", extra=True))
+        out.append(Cell(fl, "ホール（階段脇）", (10100, 8800, 11000, 12000), h.fl[fl], "floor_oak", "ceiling_paint", extra=True))
+    out.append(Cell("1F", "階段2前", (3950, 14000, 6000, 14100), h.fl["1F"], "floor_oak", "ceiling_paint", extra=True))
     return out
 
 

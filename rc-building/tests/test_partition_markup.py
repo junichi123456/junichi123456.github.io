@@ -23,11 +23,12 @@ def _room(h, name, floor="1F", idx=0):
 
 def test_room_areas():
     h = _h()
-    assert abs(h.room_A.area - 20.12) < 0.01
-    assert abs(_room(h, "WIC").area - 10.63) < 0.01
-    assert abs(h.gym_annex.area - 7.64) < 0.01 and abs(h.gym.daylight_area - 53.40) < 0.02       # v4.27: ジム本体 46.35→45.76（S・E の増し打ち帯）
-    assert abs(_room(h, "浴室").area - 10.16) < 0.01 and abs(_room(h, "玄関土間").area - 7.97) < 0.01
-    assert abs(_room(h, "トイレ").area - 6.06) < 0.01 and abs(_room(h, "洗面・脱衣").area - 8.29) < 0.01
+    # v4.41: 居室A は 5.96 畳（9.65m²）、WIC 4.56、玄関土間 6.09（幅 4,250→3,250）、浴室 10.24、トイレ 6.08。ジムは蓄電室を y8,625 までにして +0.51
+    assert abs(h.room_A.area - 9.65) < 0.01
+    assert abs(_room(h, "WIC").area - 4.56) < 0.01
+    assert abs(h.gym_annex.area - 7.64) < 0.01 and abs(h.gym.daylight_area - 53.91) < 0.02       # v4.27: ジム本体 46.35→45.76（S・E の増し打ち帯）→ v4.41 46.27
+    assert abs(_room(h, "浴室").area - 10.24) < 0.01 and abs(_room(h, "玄関土間").area - 6.09) < 0.01
+    assert abs(_room(h, "トイレ").area - 6.08) < 0.01 and abs(_room(h, "洗面・脱衣").area - 8.29) < 0.01
 
 
 def test_daylight_margin():
@@ -51,18 +52,19 @@ def test_x3_remnant_and_rc():
 def test_hall_and_gd2():
     h = _h()
     hall = _room(h, "ホール")
-    assert hall.rect[2] - hall.rect[0] == 4250 and hall.rect[2] <= 10500
+    assert hall.rect[2] - hall.rect[0] == 3250 and hall.rect[2] <= 9500          # v4.41: 幅 4,250→3,250（土間の東端 9,500）
     gd2 = [op for w in h.walls for op in w.openings if "ガラス" in op.name and w.c == h.gy[1] and w.axis == "x" and w.floor == "1F"][0]
-    assert (gd2.u0, gd2.u1) == (7500, 10500)
+    assert (gd2.u0, gd2.u1) == (6500, 9500)             # v4.41: −1,000（W3,000 は不変）
 
 
 def test_bath_wall_and_toilet_face():
     h = _h()
-    w = [w for w in h.walls if w.floor == "1F" and w.axis == "y" and w.c == 9500]
-    assert len(w) == 1 and w[0].t == 200 and (w[0].a, w[0].b) == (14850, 18125)
+    # v4.41: bath_wall（t200 の東壁）は廃止。浴室は 4,600×2,225（10.24m²）で東は配管スペース（x10,850〜11,000）との境の LGS x10,900
+    w = [w for w in h.walls if w.floor == "1F" and w.axis == "y" and w.c == 10900]
+    assert len(w) == 1 and (w[0].a, w[0].b) == (14850, 17125)
     toilet = _room(h, "トイレ")
-    assert toilet.rect[0] == 9600                            # トイレ側の面は不変
-    assert _room(h, "浴室").rect[2] == 9400
+    assert toilet.rect == (11250, 13550, 12950, 17125)       # 北東へ移設（1,700×3,575。2F トイレの真下）
+    assert _room(h, "浴室").rect == (6250, 14900, 10850, 17125)
 
 
 def test_sound_and_window():

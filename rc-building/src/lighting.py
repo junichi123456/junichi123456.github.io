@@ -17,7 +17,7 @@ from shapely.ops import unary_union
 
 CODE = {"リビング・ダイニング": "LDK", "キッチン": "KIT", "玄関土間": "GEN", "ホール・階段1": "HS1", "ホール・階段2": "HS2", "ホール": "HAL",
         "ジム": "GYM", "ランドリー・室内干し": "LDY", "ファミリークローゼット": "FCL", "洗面・脱衣": "WSH", "脱衣所": "WSH", "居室E": "BDE", "浴室": "BTH", "シャワー": "SHW", "居室": "RM",
-        "WIC（主寝室）": "MWC", "WIC": "WIC", "シアター": "THR", "前室（音響ロック）": "ANT", "図書室": "LIB", "主寝室": "MBR", "廊下": "COR", "トイレ（手洗い付）": "TLH",
+        "WIC（主寝室）": "MWC", "WIC": "WIC", "シアター": "THR", "前室（音響ロック）": "ANT", "図書室": "LIB", "主寝室": "MBR", "廊下": "COR", "廊下（北東）": "CRE", "ランドリー（階段2前）": "LDF", "トイレ（手洗い付）": "TLH",
         "トイレ": "TLT", "機械室（西系統）": "MCW", "機械室（東系統）": "MCE"}
 
 # 光束法の利用率 U（直付・乳白拡散、反射率 天井0.7/壁0.5/床0.2 を仮定した概略値）
@@ -126,7 +126,9 @@ def _blockers(h, its, r):
     tall = [sbox(*i.rect).buffer(clr) for i in its if i.floor == r.floor and i.room == r.name
             and i.z0 + i.h >= h.fl[r.floor] + h.ch[r.floor] - 100 and not i.stack]
     bat = [sbox(*h.battery_room.rect).buffer(clr)] if (r.floor == "1F" and r.name == "ジム") else []      # v4.26 蓄電室には器具を置かない
-    return unary_union(tall + bat + [p.buffer(clr) for p in holes])
+    # v4.41: 天井点検口（1F の天井裏）の真下には器具を置かない（点検口から 300 以上離す。北の廊下が 1.4m 幅になったため）
+    chs = [sbox(*c[2]).buffer(300) for c in h.spec["long_life"]["ceiling_hatches"] if r.floor == "1F" and c[1] == r.name]
+    return unary_union(tall + bat + chs + [p.buffer(clr) for p in holes])
 
 
 # 室ごとの上書き（C-1.3 の表）: (向き, [(中心線, 端a, 端b)], lm/m)
@@ -134,9 +136,11 @@ def _override(h, r):
     if r.floor == "1F" and r.name == "キッチン":
         return [("x", y, 700, 5500) for y in (7550, 9550, 11300)], 3000
     if r.floor == "1F" and r.name.startswith("ランドリー"):
-        return [("x", y, 600, 5400) for y in (13000, 14000)], 2000
-    if r.floor == "2F" and r.name == "主寝室":
-        return [("x", y, 12788, 17588) for y in (13500, 17000)], 2500
+        return [("x", y, 600, 3400) for y in (13000, 14300)], 2000      # v4.41: L 形の室の西側（階段2前の床は別の室）
+    if r.floor == "1F" and r.name == "WIC":                               # v4.41: 幅 1,275 の WIC（棚 D600 の東の通路に 1 本）
+        return [("y", 14000, 14300, 16800)], 1500
+    if r.floor == "1F" and r.name == "ファミリークローゼット":            # v4.41: 北の収納（D600）の南へ 1 本（幅 1,475 の室）
+        return [("x", 16100, 900, 3600)], 1500
     return None
 
 
@@ -210,7 +214,7 @@ def lines(h, its):
             if r.floor == "1F":                          # W1-C（x8950〜9500・東壁沿い）
                 p0, p1, ax, ln_ = [9250, 13675, z], [9250, 14575, z], "y", 900
             else:                                        # v4.28 W2-C（y13,800〜14,250・脱衣所の南壁沿い）
-                p0, p1, ax, ln_ = [8300, 14025, z], [9900, 14025, z], "x", 1600
+                p0, p1, ax, ln_ = [6475, 14450, z], [6475, 16150, z], "y", 1700
             out.append(dict(id=f"{r.floor}-{code}-L{len(segs) + 1}", code=code, floor=r.floor, room=r.name, p0=p0, p1=p1, L=ln_,
                             lm_per_m=1500, kind="line", axis=ax, group="L"))
     return out

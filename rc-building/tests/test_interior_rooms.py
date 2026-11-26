@@ -29,11 +29,7 @@ if not BPY.exists():
 needs_bpy = pytest.mark.skipif(not BPY.exists() or not BM.MASTER.exists(), reason="bpy の入った python かマスターが無い")
 _C = {}
 # R1-03 は玄関土間 8.0㎡＋式台 1.7㎡（仕様書の 8.0 は土間のみ）
-AREAS = {"R1-01_ld": 33.6, "R1-02_kitchen": 33.8, "R1-03_doma": 9.7, "R1-04_hall": 15.3, "R1-05_gym": 51.6, "R1-06_stair1": 20.4, "R1-07_wc1a": 3.9, "R1-08_mechW": 8.6,
-         "R1-09_mechE": 8.8, "R1-10_battery": 5.2, "R1-11_laundry": 16.2, "R1-12_fcl": 11.4, "R1-13_wash": 8.3, "R1-14_bath": 10.2, "R1-15_corr1": 7.8, "R1-16_wc1b": 6.1,
-         "R1-17_roomA": 20.1, "R1-18_wic1": 10.6, "R2-01_roomB": 12.5, "R2-02_roomC": 11.9, "R2-03_corr2w": 6.5, "R2-04_roomD": 17.1, "R2-05_wicD": 9.3, "R2-06_corr2s": 6.3,
-         "R2-07_theater": 34.5, "R2-08_ante": 10.9, "R2-09_wicM": 22.3, "R2-10_library": 33.8, "R2-11_stair1": 20.4, "R2-12_wc2a": 3.9, "R2-13_roomE": 19.6, "R2-14_stair2": 5.5,
-         "R2-15_corr2n": 8.3, "R2-16_dress": 7.0, "R2-17_shower": 9.5, "R2-18_wc2b": 6.0, "R2-19_master": 34.5}
+AREAS = {"R1-01_ld": 33.6, "R1-02_kitchen": 33.8, "R1-03_doma": 7.4, "R1-04_hall": 11.7, "R1-05_gym": 51.6, "R1-06_stair1": 12.1, "R1-07_wc1a": 3.9, "R1-08_mechW": 8.6, "R1-09_mechE": 8.8, "R1-10_battery": 4.7, "R1-11_laundry": 12.5, "R1-13_wash": 8.3, "R1-14_bath": 10.2, "R1-15_corr1": 3.6, "R1-16_wc1b": 6.1, "R1-17_roomA": 9.7, "R2-01_roomB": 9.6, "R2-02_roomC": 9.7, "R2-03_corr2w": 6.5, "R2-04_roomD": 9.7, "R2-05_wicD": 12.0, "R2-06_corr2s": 5.2, "R2-07_theater": 34.5, "R2-08_ante": 10.9, "R2-09_wicM": 22.3, "R2-10_library": 33.8, "R2-11_stair1": 12.1, "R2-12_wc2a": 3.9, "R2-13_roomE": 9.6, "R2-14_stair2": 3.5, "R2-15_corr2n": 5.7, "R2-16_dress": 7.1, "R2-17_shower": 9.6, "R2-18_wc2b": 6.1, "R2-19_master": 9.7}      # v4.41: 寝室 4.5〜6 畳・北の行の組み替え（R1-12・R1-18 は視点が取れず除外 37→35）
 
 
 def ctx():
@@ -56,11 +52,11 @@ def test_counts_and_ids():
     c = ctx()
     R = [k for k, d in c["defs"].items() if d["kind"] == "R"]
     T = [k for k, d in c["defs"].items() if d["kind"] == "T"]
-    assert len(R) == 37 and sorted(T) == ["T1_plan_1F", "T2_plan_2F"]
-    assert sum(1 for k in R if k.startswith("R1-")) == 18 and sum(1 for k in R if k.startswith("R2-")) == 19
+    assert len(R) == 35 and sorted(T) == ["T1_plan_1F", "T2_plan_2F"]
+    assert sum(1 for k in R if k.startswith("R1-")) == 16 and sum(1 for k in R if k.startswith("R2-")) == 19
     assert all(re.fullmatch(r"R[12]-\d\d_[A-Za-z0-9]+", k) for k in R)
     assert set(R) == set(AREAS)
-    assert len(c["Y"]["excluded"]) == 7
+    assert len(c["Y"]["excluded"]) == 14          # v4.41: 7→14
     for k, a in AREAS.items():
         assert abs(c["defs"][k]["cut"]["area"] - a) <= 0.15, (k, c["defs"][k]["cut"]["area"], a)
 
@@ -96,7 +92,7 @@ def test_top_down_cuts():
     pl = Y["settings"]["plan"]
     for k, fl in (("T1_plan_1F", "1F"), ("T2_plan_2F", "2F")):
         sp = c["defs"][k]["spec"]
-        assert sp["cam"][2] == h.fl[fl] + 2800 and sp["pitch"] == -90 and sp["ortho_scale"] == 20.0 and sp["cam"][:2] == [9125, 9125]
+        assert sp["cam"][2] == h.fl[fl] + 2800 and sp["pitch"] == -90 and sp["ortho_scale"] == 20.0 and sp["cam"][:2] == [8625, 8625]
         assert abs((sp["cam"][2] - sp["clip_start"] * 1000) - (h.fl[fl] + 2400)) < 1e-6                              # 手前 400mm を切ると FL+2,400 の水平断面
         assert sp["target"][0] == sp["cam"][0] and sp["target"][1] > sp["cam"][1]                                    # 北（+Y）が画像の上
         assert sp["section"] == "Section_" + fl and sp["hide_pergola"] is True
@@ -158,8 +154,8 @@ def test_master_has_96_cameras_and_old_hashes():
             "print('JSON:'+json.dumps(dict(cams=cams,cols=cols,caps=caps,mh=bpy.context.scene['model_hash'])))")
     r = bpy_json(code, str(BM.MASTER))
     cams = r["cams"]
-    assert len(cams) == 96
-    assert sum(1 for c in cams.values() if c["fam"] == "R") == 37 and sum(1 for c in cams.values() if c["fam"] == "T") == 2
+    assert len(cams) == 94
+    assert sum(1 for c in cams.values() if c["fam"] == "R") == 35 and sum(1 for c in cams.values() if c["fam"] == "T") == 2
     for k, v in base.items():
         assert cams[k]["h"] == v, k                                                                              # 既存 57 の def_hash は不変
     for k in ("T1_plan_1F", "T2_plan_2F"):

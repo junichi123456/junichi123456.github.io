@@ -130,7 +130,7 @@ def test_glb_base_colors_linear():
 def facade_ratio():
     h = house()
     sc = trimesh.load(str(glb_path()))
-    rz = trimesh.transformations.rotation_matrix(h.alpha, [0, 0, 1], [h.W / 2000, h.D / 2000, 0])
+    rz = trimesh.transformations.rotation_matrix(h.alpha, [0, 0, 1], [h.FW / 2000, h.FD / 2000, 0])
     rot = trimesh.transformations.rotation_matrix(-np.pi / 2, [1, 0, 0]) @ rz
     inv = np.linalg.inv(rot)
     res = {"base": 0.0, "assort": 0.0, "accent": 0.0}

@@ -700,7 +700,7 @@ def SH_cfg_for_plate(Y, job):
     h = House(ROOT)
     spec = copy.deepcopy(h.spec)
     st = Y["settings"]
-    spec["interior_cg"]["cuts"] = {"PLATE": dict(file="PLATE", title="plate", cam=[9125, 9125, 4600], target=[9125, 12125, 4600], lens=26, when=st["when"], exposure=0.0, wb=6500, shift_y=0,
+    spec["interior_cg"]["cuts"] = {"PLATE": dict(file="PLATE", title="plate", cam=[h.W / 2, h.D / 2, 4600], target=[h.W / 2, h.D / 2 + 3000, 4600], lens=26, when=st["when"], exposure=0.0, wb=6500, shift_y=0,
                                                  pitch=0, screens="up", sun_k=job["sun_k"])}
     tex = {**spec["cg"]["textures"], **spec["interior_cg"]["textures"]}
     assets = RC.fetch_assets({"cg": {"textures": tex, "hdri": spec["cg"]["hdri"]}}, BM.CACHE, use_textures=True)
