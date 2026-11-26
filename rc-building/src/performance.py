@@ -519,10 +519,12 @@ def seismic(h):
             ly = max(a2 - a1, b2 - b1) - h.t
             lam = ly / lx
             gym = a1 >= h.gx[2] and b1 < h.gy[2]
-            wp = (5.0 + 1.0) if gym else (1.8 + 1.0)
+            ar = h.spec.get("archive")      # v4.42 書庫の区画（積載 設計用 5kN/m²）
+            arch = bool(ar) and a1 <= ar["rect"][0] and b1 <= ar["rect"][1] and a2 >= ar["rect"][2] and b2 >= ar["rect"][3]
+            wp = (5.0 + 1.0) if gym else ((ar["live_load_n"] / 1000 + 1.0) if arch else (1.8 + 1.0))
             t_req = 0.02 * (lam - 0.7) / (lam - 0.6) * (1 + wp / 10 + lx / 10000) * lx
             slabs.append(dict(cell=f"{a1 / 1000:.2f}–{a2 / 1000:.2f}×{b1 / 1000:.2f}–{b2 / 1000:.2f}", lx=lx, ly=ly, wp=wp,
-                              t_req=t_req, gym=gym, area=(a2 - a1) * (b2 - b1) / 1e6))
+                              t_req=t_req, gym=gym, archive=arch, area=(a2 - a1) * (b2 - b1) / 1e6))
     res["slabs"] = slabs
     return res
 

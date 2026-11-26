@@ -16,7 +16,7 @@ from shapely.geometry import LineString, Point, box as sbox
 from shapely.ops import unary_union
 
 CODE = {"リビング・ダイニング": "LDK", "キッチン": "KIT", "玄関土間": "GEN", "ホール・階段1": "HS1", "ホール・階段2": "HS2", "ホール": "HAL",
-        "ジム": "GYM", "ランドリー・室内干し": "LDY", "ファミリークローゼット": "FCL", "洗面・脱衣": "WSH", "脱衣所": "WSH", "居室E": "BDE", "浴室": "BTH", "シャワー": "SHW", "居室": "RM",
+        "ジム": "GYM", "ランドリー・室内干し": "LDY", "ファミリークローゼット": "FCL", "洗面・脱衣": "WSH", "脱衣所": "WSH", "書庫": "ARC", "浴室": "BTH", "シャワー": "SHW", "居室": "RM",
         "WIC（主寝室）": "MWC", "WIC": "WIC", "シアター": "THR", "前室（音響ロック）": "ANT", "図書室": "LIB", "主寝室": "MBR", "廊下": "COR", "廊下（北東）": "CRE", "ランドリー（階段2前）": "LDF", "トイレ（手洗い付）": "TLH",
         "トイレ": "TLT", "機械室（西系統）": "MCW", "機械室（東系統）": "MCE"}
 

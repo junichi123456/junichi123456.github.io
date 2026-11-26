@@ -65,8 +65,8 @@ cuts:
   Z2-22b: {slug: hall2f, zone: Z2-22, floor: 2F, room: ホール・階段1, x: 10000, y: 7000, dir: N, look: トイレの戸・廊下への開口}
   Z2-32a: {exposure: -1.0, exp_note: "プレビューの平均輝度が上限（185）を超えたため −0.5 → −1.0（1回だけ）", slug: wic, zone: Z2-32, floor: 2F, room: WIC（主寝室）, x: 14200, y: 10300, dir: S, lens: 24, look: 棚・耐火金庫, alt: "区画中心 (15188,9125) は WIC の棚 MW-S から 325mm で収納の側に当たるため、WIC（主寝室）の中の空きへ移した"}
   Z2-32b: {slug: wic, zone: Z2-32, floor: 2F, room: WIC（主寝室）, x: 14200, y: 10300, dir: W, lens: 24, look: 防犯扉 WD-7, alt: "a と同じ位置（代替の理由は a と同じ）"}
-  Z2-13a: {slug: roomE, zone: Z2-13, floor: 2F, room: 居室E, x: 2600, y: 12800, dir: N, lens: 24, look: 北窓・デスク}
-  Z2-13b: {slug: roomE, zone: Z2-13, floor: 2F, room: 居室E, x: 2600, y: 14400, dir: S, lens: 24, look: 収納の引戸}
+  Z2-13a: {slug: archive, zone: Z2-13, floor: 2F, room: 書庫, x: 2600, y: 13100, dir: N, lens: 24, look: 北の書架・中央書架}
+  Z2-13b: {slug: archive, zone: Z2-13, floor: 2F, room: 書庫, x: 2600, y: 14400, dir: S, lens: 24, look: 書架・扉}
   Z2-23a: {slug: dressing, zone: Z2-23, floor: 2F, room: 脱衣所, x: 7200, y: 14100, dir: N, lens: 24, look: 洗面カウンター・シャワーの戸, alt: "区画中心 (9125,15188) は北向き 437mm・東向き 1,025mm で正面の壁が近く、主室が複数あるため、a は脱衣所の西寄りの空きへ移した"}
   Z2-23b: {slug: dressing, zone: Z2-23, floor: 2F, room: 脱衣所, x: 7200, y: 16600, dir: S, lens: 24, look: ロボットのドック・戸, alt: "同じ理由で、b は脱衣所の東寄りの空きから a の側（西）を撮る"}
   Z2-33a: {exposure: -1.0, exp_note: "プレビューの平均輝度が上限（185）を超えたため −0.5 → −1.0（1回だけ）", slug: master, zone: Z2-33, floor: 2F, room: 主寝室, x: 16700, y: 14100, dir: N, look: 北窓・ナイトテーブル}

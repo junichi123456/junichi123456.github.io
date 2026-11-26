@@ -110,15 +110,15 @@ def test_ifc_counts(h, ifc):
     assert len(m.by_type("IfcWall")) == len(h.walls) + len(h.fence_lines) + ext_walls
     assert len(m.by_type("IfcSpace")) == len(h.rooms)
     n_fit = sum(1 for o in h.openings() if o.operation != "opening")
-    assert len(m.by_type("IfcWindow")) + len(m.by_type("IfcDoor")) == n_fit == 56       # v4.41: 53→56（北の行の扉・引戸の増減）。v4.40: 54→53（外の防水扉の廃止。人通口 12 は operation "opening" で建具に数えない）
+    assert len(m.by_type("IfcWindow")) + len(m.by_type("IfcDoor")) == n_fit == 54       # v4.42: 56→54（居室E の西窓・収納の引戸を廃止）。v4.41: 53→56（北の行の扉・引戸の増減）。v4.40: 54→53（外の防水扉の廃止。人通口 12 は operation "opening" で建具に数えない）
     assert len(m.by_type("IfcOpeningElement")) == sum(1 for _ in h.openings())
-    assert len(m.by_type("IfcFurniture")) == 76
+    assert len(m.by_type("IfcFurniture")) == 77
     assert len(m.by_type("IfcLightFixture")) >= 240        # v4.41: 260→240
     assert {s.Name for s in m.by_type("IfcBuildingStorey")} == {"FDN", "1F", "2F", "RF"}
     assert len(m.by_type("IfcSolarDevice")) == 2 and len(m.by_type("IfcStair")) == 3
     # v4.32: AP 16 台（IfcCommunicationsAppliance）・有線 LAN 口 9 組 21 口（IfcOutlet）は配置点だけで形状なし
     aps, outs = m.by_type("IfcCommunicationsAppliance"), m.by_type("IfcOutlet")
-    assert len(aps) == 16 and len(outs) == 9
+    assert len(aps) == 16 and len(outs) == 8
     assert all(e.Representation is None and e.ContainedInStructure for e in aps + outs)
     wet_ap = [e for e in aps if e.Name in ("AP1-5",)]
     assert len(wet_ap) == 1 and wet_ap[0].ContainedInStructure[0].RelatingStructure.Name == "1F"
@@ -290,7 +290,7 @@ def test_csv_headers_and_rows(h, outdir):
     import csv
     from export import tables
     d, _ = outdir
-    exp = {"室": len(h.rooms), "建具": 56, "建具表": len(h.fittings), "設備": 21, "家具": 76, "壁量": 5, "ネットワーク": 47}      # v4.32: network 表（AP 16・LAN 口 9 組・ラック機器 8・スリーブ 14）を追加
+    exp = {"室": len(h.rooms), "建具": 54, "建具表": len(h.fittings), "設備": 21, "家具": 77, "壁量": 5, "ネットワーク": 46}      # v4.32: network 表（AP 16・LAN 口 9 組・ラック機器 8・スリーブ 14）を追加
     for name, hd in tables.HEADERS.items():
         p = d / "csv" / f"{tables.CSV_NAMES[name]}.csv"
         raw = p.read_bytes()
@@ -305,7 +305,7 @@ def test_csv_headers_and_rows(h, outdir):
     lns = LI.lines(h, its)
     n_light = len(lns) + len(LI.downlights(h, its, lns)) + len(LI.footlights(h)) + len(LI.footlines(h, its)[0])
     n = len(list(csv.reader((d / "csv" / "lights.csv").read_bytes().decode("utf-8-sig").splitlines()))) - 1
-    assert n == n_light == 242       # v4.41: 272→242（足元灯・ライン・ダウンライトの再配置）
+    assert n == n_light == 239       # v4.42: 242→239（寝室の調光・書庫の照明への置換）。v4.41: 272→242（足元灯・ライン・ダウンライトの再配置）
 
 
 def test_xlsx_matches_csv_and_summary(h, outdir):

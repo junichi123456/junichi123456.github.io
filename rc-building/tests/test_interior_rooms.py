@@ -29,7 +29,7 @@ if not BPY.exists():
 needs_bpy = pytest.mark.skipif(not BPY.exists() or not BM.MASTER.exists(), reason="bpy の入った python かマスターが無い")
 _C = {}
 # R1-03 は玄関土間 8.0㎡＋式台 1.7㎡（仕様書の 8.0 は土間のみ）
-AREAS = {"R1-01_ld": 33.6, "R1-02_kitchen": 33.8, "R1-03_doma": 7.4, "R1-04_hall": 11.7, "R1-05_gym": 51.6, "R1-06_stair1": 12.1, "R1-07_wc1a": 3.9, "R1-08_mechW": 8.6, "R1-09_mechE": 8.8, "R1-10_battery": 4.7, "R1-11_laundry": 12.5, "R1-13_wash": 8.3, "R1-14_bath": 10.2, "R1-15_corr1": 3.6, "R1-16_wc1b": 6.1, "R1-17_roomA": 9.7, "R2-01_roomB": 9.6, "R2-02_roomC": 9.7, "R2-03_corr2w": 6.5, "R2-04_roomD": 9.7, "R2-05_wicD": 12.0, "R2-06_corr2s": 5.2, "R2-07_theater": 34.5, "R2-08_ante": 10.9, "R2-09_wicM": 22.3, "R2-10_library": 33.8, "R2-11_stair1": 12.1, "R2-12_wc2a": 3.9, "R2-13_roomE": 9.6, "R2-14_stair2": 3.5, "R2-15_corr2n": 5.7, "R2-16_dress": 7.1, "R2-17_shower": 9.6, "R2-18_wc2b": 6.1, "R2-19_master": 9.7}      # v4.41: 寝室 4.5〜6 畳・北の行の組み替え（R1-12・R1-18 は視点が取れず除外 37→35）
+AREAS = {"R1-01_ld": 33.6, "R1-02_kitchen": 33.8, "R1-03_doma": 7.4, "R1-04_hall": 11.7, "R1-05_gym": 51.6, "R1-06_stair1": 12.1, "R1-07_wc1a": 3.9, "R1-08_mechW": 8.6, "R1-09_mechE": 8.8, "R1-10_battery": 4.7, "R1-11_laundry": 12.5, "R1-13_wash": 8.3, "R1-14_bath": 10.2, "R1-15_corr1": 3.6, "R1-16_wc1b": 6.1, "R1-17_roomA": 9.7, "R2-01_roomB": 9.6, "R2-02_roomC": 9.7, "R2-03_corr2w": 6.5, "R2-04_roomD": 9.7, "R2-05_wicD": 12.0, "R2-06_corr2s": 5.2, "R2-07_theater": 34.5, "R2-08_ante": 10.9, "R2-09_wicM": 22.3, "R2-10_library": 33.8, "R2-11_stair1": 12.1, "R2-12_wc2a": 3.9, "R2-13_archive": 18.4, "R2-14_stair2": 3.5, "R2-15_corr2n": 5.7, "R2-16_dress": 7.1, "R2-17_shower": 9.6, "R2-18_wc2b": 6.1, "R2-19_master": 9.7}      # v4.42: R2-13 は書庫 18.4。v4.41: 寝室 4.5〜6 畳・北の行の組み替え（R1-12・R1-18 は視点が取れず除外 37→35）
 
 
 def ctx():
@@ -56,7 +56,7 @@ def test_counts_and_ids():
     assert sum(1 for k in R if k.startswith("R1-")) == 16 and sum(1 for k in R if k.startswith("R2-")) == 19
     assert all(re.fullmatch(r"R[12]-\d\d_[A-Za-z0-9]+", k) for k in R)
     assert set(R) == set(AREAS)
-    assert len(c["Y"]["excluded"]) == 14          # v4.41: 7→14
+    assert len(c["Y"]["excluded"]) == 13          # v4.42: 14→13（収納（居室E）は書庫に統合）。v4.41: 7→14
     for k, a in AREAS.items():
         assert abs(c["defs"][k]["cut"]["area"] - a) <= 0.15, (k, c["defs"][k]["cut"]["area"], a)
 
@@ -234,6 +234,8 @@ def test_R_outputs_if_present(fl):
     c = ctx()
     ids = [k for k, d in c["defs"].items() if d["kind"] == "R" and d["floor"] == fl]
     lg = _rooms_log().get("cuts", {})
+    stale = {k for k in ids if lg.get(k, {}).get("stale_since")}      # v4.42: 書庫 R2-13_archive は未撮影（stale_since）
+    ids = [k for k in ids if k not in stale]
     got = [k for k in ids if k in lg]
     if not got:
         pytest.skip(f"{fl} 未撮影")

@@ -8,7 +8,7 @@ project:
   short: KAWAZANYO
   location: 東京都八王子市大和田町7丁目
   designer: 設計検討（仮）
-  date: "2026-11-25"
+  date: "2026-11-26"
   phase: 基本計画
 
 site:
@@ -159,11 +159,11 @@ wifi:         # 館内 Wi-Fi（v4.32）: 室ごとの品質。上質な室は -5
   rx_h: 1200         # 受信点の高さ（床上、mm）
   ap_h: 2800         # AP の高さ（床上、mm）
   eirp_range: [6, 20]
-  premium:           # 上質（12 室）: 計算の目標は全面 -55dBm 以上（竣工時の実測は -60 以上・各室 5 点以上。家具・人体の損失を見込み 5dB 厳しく）
+  premium:           # 上質（11 室、v4.42 で 2F 居室E を除外）: 計算の目標は全面 -55dBm 以上（竣工時の実測は -60 以上・各室 5 点以上。家具・人体の損失を見込み 5dB 厳しく）
     dbm: -55
     measure_dbm: -60
-    rooms: [1F リビング・ダイニング, 1F キッチン, 1F ジム, 1F ジム（拡張部）, 1F 居室A, 2F 居室B, 2F 居室C, 2F 居室D, 2F 居室E, 2F 主寝室, 2F 図書室, 2F シアター]
-    wired: [1F 居室A, 2F 居室B, 2F 居室C, 2F 居室D, 2F 居室E, 1F リビング・ダイニング, 2F シアター]    # 有線の余地
+    rooms: [1F リビング・ダイニング, 1F キッチン, 1F ジム, 1F ジム（拡張部）, 1F 居室A, 2F 居室B, 2F 居室C, 2F 居室D, 2F 主寝室, 2F 図書室, 2F シアター]
+    wired: [1F 居室A, 2F 居室B, 2F 居室C, 2F 居室D, 1F リビング・ダイニング, 2F シアター]    # 有線の余地
   quiet:             # 水回り（9 室）: 中央値 -70〜-65、上位 10% 値 -62 以下、最小 -75 以上。竣工時の実測は中央値 -67±3
     median: [-70, -65]
     p90_max: -62
@@ -189,7 +189,7 @@ wifi:         # 館内 Wi-Fi（v4.32）: 室ごとの品質。上質な室は -5
     - {id: AP2-3, floor: 2F, xy: [7250, 4250],   eirp: 20, role: 居室D, via: [C10, C13]}
     - {id: AP2-4, floor: 2F, xy: [16250, 5250],  eirp: 19, role: シアター, via: [C9]}
     - {id: AP2-5, floor: 2F, xy: [3250, 11250],  eirp: 15, role: 図書室, via: [C10, C11]}
-    - {id: AP2-6, floor: 2F, xy: [3250, 14250],  eirp: 20, role: 居室E（シャワーの調整）, tune: true, alt_xy: [2250, 14200], via: [C10, C11, C14]}
+    - {id: AP2-6, floor: 2F, xy: [3250, 14250],  eirp: 20, role: 書庫（シャワーの調整）, tune: true, alt_xy: [2250, 14200], via: [C10, C11, C14]}
     - {id: AP2-7, floor: 2F, xy: [5250, 13250],  eirp: 17, role: ホール・階段2（脱衣所の調整）, tune: true, alt_xy: [5000, 12700], via: [C10, C11, C14]}
     - {id: AP2-8, floor: 2F, xy: [12250, 9250],  eirp: 20, role: WIC（避難室。24 時間稼働）, via: []}
     - {id: AP2-9, floor: 2F, xy: [16250, 14250], eirp: 6, role: 主寝室（2F トイレの調整。夜間停止 M-04）, tune: true, alt_xy: [15750, 14400], via: [C8]}
@@ -221,14 +221,13 @@ wifi:         # 館内 Wi-Fi（v4.32）: 室ごとの品質。上質な室は -5
     - {id: SL-C11, floor: 2F, wall: X2, xy: [6125, 11000], to: 図書室}
     - {id: SL-C12, floor: 2F, wall: Y2, xy: [3000, 6125], to: 居室B・C}
     - {id: SL-C13, floor: 2F, wall: Y2, xy: [10000, 6125], to: 居室D}
-    - {id: SL-C14, floor: 2F, wall: Y3, xy: [3000, 12125], to: 居室E・ホール・階段2}
+    - {id: SL-C14, floor: 2F, wall: Y3, xy: [3000, 12125], to: 書庫・ホール・階段2}
   sleeve_spec: {dia: 100, n: 2, z: 2950, pitch: 150, edge_clear: 300}
   lan_outlets:       # 有線 LAN の口（Cat6A・シャッター付き・床コンセントなし）。z は FL からの高さ mm。水回りには置かない
     - {id: LAN-A, floor: 1F, room: 居室A, xy: [15900, 13650], z: 800, n: 2, where: 南の LGS（机の位置）}
     - {id: LAN-B, floor: 2F, room: 居室B, xy: [1950, 4800], z: 800, n: 2, where: 北の LGS（扉の脇）}
     - {id: LAN-C, floor: 2F, room: 居室C, xy: [5500, 4800], z: 800, n: 2, where: 北の LGS（扉の脇）}
     - {id: LAN-D, floor: 2F, room: 居室D, xy: [8100, 4800], z: 800, n: 2, where: 北の LGS（扉の脇）}
-    - {id: LAN-E, floor: 2F, room: 居室E, xy: [3900, 14400], z: 800, n: 2, where: 東の LGS（デスク E-D1 の延長。天板の配線ダクトでつなぐ）}
     - {id: LAN-L1, floor: 1F, room: リビング・ダイニング, xy: [6000, 1350], z: 300, n: 4, where: サイドボード L-S1 の背面（X2 の RC に打込み）}
     - {id: LAN-L2, floor: 1F, room: リビング・ダイニング, xy: [900, 5990], z: 1100, n: 2, where: リビング収納 L-K1 の中}
     - {id: LAN-T1, floor: 2F, room: シアター, xy: [14200, 125], z: 300, n: 4, where: AV ボード TH-A の背面（南の RC に打込み）}
@@ -260,8 +259,10 @@ vehicle_security:   # 車両盗難対策（v4.10）
   camera: 赤外線カメラ（940nm・不可視光、虫を寄せない）門・カーポート各2台、録画は機械室・異常時は bot へ通知
   sensor: 塀の内側に赤外線ビームセンサー、門・ボラードの状態を制御基盤に集約
 
+archive: {rect: [125, 12250, 3900, 17125], live_load_n: 5000, note: 図書室の閉架。集密書架不可（v4.42）}   # 2F 書庫（旧 居室E＋収納）
+
 lifestyle:    # Blueprint 型の暮らし（v4.13）: 睡眠・空気・水・食（菜園）・運動・測定
-  bedrooms: [居室A, 居室B, 居室C, 居室D, 居室E, 主寝室]   # 寝室は1部屋に1人
+  bedrooms: [居室A, 居室B, 居室C, 居室D, 主寝室]   # 寝室は1部屋に1人（5 室、v4.42）
   co2_target: 800          # 寝室の CO2 上限 ppm（就寝中）
   co2_outdoor: 420
   co2_sleep_m3h: 0.014     # 就寝中の CO2 発生量 m³/h・人
@@ -952,7 +953,7 @@ gym_layout:                               # v4.27: S・E 壁の増し打ち（�
 laundry:         # v4.28（8.webp 追加指示）2階のランドリーは設けない。1階ランドリーで乾燥まで完結し、北西の1階ファミクロへしまう
   floor: 1F
   route: ランドリー・室内干し（1F）→ 隣のファミリークローゼット（1F、引戸 u1,000〜1,800）。階段は使わない
-  load_kg_per_day: 10          # 6 人×1.5kg＋タオル・寝具
+  load_kg_per_day: 10          # 5〜6 人分（安全側。v4.42 で寝室 5 室）
   machines: {name: ヒートポンプ式ドラム式洗濯乾燥機（洗12kg／乾6kg）, qty: 2, dry_kg_per_cycle: 6, cycle_h: 3, circuits: 2}
   backup: {poles: 2, kg: 5, dehumidifier_l_per_day: 18, vent_m3h: 100, rh_alarm: 65}
   quiet_until: 22

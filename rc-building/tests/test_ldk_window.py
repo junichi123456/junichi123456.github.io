@@ -81,7 +81,7 @@ def test_glazing_quad():
     for op in h.openings(exterior=True):
         if op.kind == "window" and op.label not in q["labels"]:
             assert SS.op_g(h, op) == SS.glazing_g(h, op.side)
-    assert abs(sum(SS.window_solar(h)["glass"].values()) - 19.84) < 0.01      # v4.41: 居室D の窓 W1,600→1,200 で 20.16→19.84         # 実面積（等価面積ではない）
+    assert abs(sum(SS.window_solar(h)["glass"].values()) - 18.56) < 0.01      # v4.42: 居室E の西窓 1.28m² を廃止 19.84→18.56。v4.41: 居室D の窓 W1,600→1,200 で 20.16→19.84         # 実面積（等価面積ではない）
 
 
 def test_local_thickness_geometry():

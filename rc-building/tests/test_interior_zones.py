@@ -151,8 +151,8 @@ def test_log_if_present():
     if not p.exists():
         return
     lg = json.loads(p.read_text(encoding="utf-8"))
-    done = [c for c in lg["cuts"].values() if c.get("status") in ("ok", "flag")]
-    floors = {f for f in ("1F", "2F") if all(RZ.jpg_path(i).exists() for i, c in ctx()["Z"]["cuts"].items() if c["floor"] == f and i in lg["cuts"])}
+    done = [c for c in lg["cuts"].values() if c.get("status") in ("ok", "flag") and not c.get("stale_since")]      # v4.42: Z2-13a/b は未撮影（stale_since）
+    floors = {f for f in ("1F", "2F") if all(RZ.jpg_path(i).exists() for i, c in ctx()["Z"]["cuts"].items() if c["floor"] == f and i in lg["cuts"] and not lg["cuts"][i].get("stale_since"))}
     for e in done:
         assert RZ.jpg_path(e["id"]).exists(), e["id"]
         assert e["eye_mm"] == 1600 and e["when"] == "2026-03-21T15:30" and abs(e["sun"]["el"] - 27.8) < 0.06

@@ -32,7 +32,7 @@ def _sel(stats, cls):
 
 def test_room_counts(stats):
     """上質 12 室・水回り 8 室（spec の分類が実在の室と対応している）。v4.41: 2F 収納（トイレ・主寝室）は主寝室に LGS 1 枚で接する一般の収納へ（水回り 9→8）。"""
-    assert len(_sel(stats, "premium")) == 12 and len(_sel(stats, "quiet")) == 8
+    assert len(_sel(stats, "premium")) == 11 and len(_sel(stats, "quiet")) == 8
 
 
 def test_premium_rooms_fully_covered(h, stats):
@@ -143,13 +143,13 @@ def test_lan_outlets(h):
     """計 21 口。居室A〜E・リビング・シアターの 7 室に 2 口以上・FL+300 以上（床コンセントなし）。水回りには置かない。"""
     import wiring as WR
     os_ = h.spec["wifi"]["lan_outlets"]
-    assert WR.lan_total(h) == 21
+    assert WR.lan_total(h) == 19
     per = {}
     for o in os_:
         assert o["z"] >= 300
         per[(o["floor"], o["room"])] = per.get((o["floor"], o["room"]), 0) + o["n"]
     assert sorted(f"{k[0]} {k[1]}" for k, v in per.items() if v >= 2) == sorted(h.spec["wifi"]["premium"]["wired"])
-    assert len(per) == 7
+    assert len(per) == 6
 
 
 def test_rack_and_poe(h):
@@ -174,6 +174,6 @@ def test_network_table_matches_spec(h):
     from export import tables
     rows = tables.sheet_network(h)
     kinds = [r[0] for r in rows]
-    assert kinds.count("AP") == 16 and kinds.count("LAN口") == 9 and kinds.count("ラック機器") == 8 and kinds.count("スリーブ") == 14
-    assert sum(r[8] for r in rows if r[0] == "LAN口") == 21
+    assert kinds.count("AP") == 16 and kinds.count("LAN口") == 8 and kinds.count("ラック機器") == 8 and kinds.count("スリーブ") == 14
+    assert sum(r[8] for r in rows if r[0] == "LAN口") == 19
     assert all(len(r) == len(tables.HEADERS["ネットワーク"]) for r in rows)

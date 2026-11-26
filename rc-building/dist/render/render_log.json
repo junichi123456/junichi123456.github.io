@@ -1610,54 +1610,6 @@
     "wall_angle": 25.0,
     "alt": null
    },
-   "R2-13_roomE": {
-    "id": "R2-13_roomE",
-    "kind": "R",
-    "floor": "2F",
-    "room": "居室E",
-    "cam": [
-     3200,
-     12950,
-     6500
-    ],
-    "target": [
-     499.0436857934196,
-     14255.693298116983,
-     6500
-    ],
-    "lens": 24,
-    "exposure": -0.5,
-    "when": "2026-06-21T08:00",
-    "wb": 5500,
-    "sun_k": 3900,
-    "channels": {
-     "L": [
-      5000,
-      100
-     ],
-     "D": 0,
-     "F": 0
-    },
-    "render_seconds": 946.4,
-    "metrics": {
-     "black": 0.0001,
-     "white": 0.0,
-     "mean": 144.2328,
-     "std": 52.2517,
-     "window_area": 0.1125,
-     "window_ratio": 0.4459,
-     "window_std": 46.3725
-    },
-    "status": "flag",
-    "issues": [
-     "窓の外が見えない（窓領域の平均は画像平均の 0.45 倍・標準偏差 46.4）"
-    ],
-    "def_hash": "6b0cd202f6eb",
-    "clearance": 700,
-    "front_mm": 3539,
-    "wall_angle": 25.8,
-    "alt": null
-   },
    "R2-14_stair2": {
     "id": "R2-14_stair2",
     "kind": "R",
@@ -1971,6 +1923,12 @@
     "front_mm": 1538,
     "wall_angle": 25.0,
     "alt": null
+   },
+   "R2-13_archive": {
+    "status": "stale",
+    "stale_since": "v4.42",
+    "note": "居室E を書庫に変更（bpy 環境がなく未撮影）。旧 R2-13_roomE は廃止",
+    "prev": "6b0cd202f6eb"
    }
   },
   "master": {

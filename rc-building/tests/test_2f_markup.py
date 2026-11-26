@@ -28,7 +28,8 @@ def _room(h, name, fl="2F"):
 def test_room_areas():
     h = house()
     # v4.41: 寝室は 4.5〜6 畳（居室E 9.63・主寝室 9.65）。収納・水廻りは北の行の組み替え後の値（ブリーフ 49 章）
-    exp = {"居室E": 9.63, "収納（居室E）": 8.40, "脱衣所": 7.06, "シャワー": 9.56, "トイレ": 6.08, "収納（トイレ・主寝室）": 4.56, "廊下": None,
+    exp = {"書庫": 18.40,  # v4.42: 居室E＋収納（居室E）を一体化
+            "脱衣所": 7.06, "シャワー": 9.56, "トイレ": 6.08, "収納（トイレ・主寝室）": 4.56, "廊下": None,
            "収納（居室B）": 3.47, "収納（居室C）": 3.62, "主寝室": 9.65, "WIC（主寝室）": 22.32}
     for n, a in exp.items():
         if a is not None:
@@ -59,8 +60,9 @@ def test_red_lines_standard_thickness():
 
 def test_window_aw9_and_daylight():
     h = house()
-    r = [x for x in HL.window_table(h) if x["room"] == "居室E"][0]
-    assert abs(r["glass"] - 1.28) < 0.01 and r["eff"] >= r["need"]
+    # v4.42: 居室E は書庫になり西窓 AW-9 は廃止。書庫に窓がなく、2F W 面に u12,900 の窓がない
+    assert not [x for x in HL.window_table(h) if x["room"] in ("居室E", "書庫")]
+    assert not [o for w in h.walls for o in w.openings if "FIX窓" in o.name and o.u0 == 12900]
 
 
 def test_structure_2f():

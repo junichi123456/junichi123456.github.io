@@ -2142,11 +2142,11 @@
     "window_ratio": 0.4111,
     "window_std": 34.0906
    },
-   "status": "flag",
-   "issues": [
-    "窓の外が見えない（窓領域の平均は画像平均の 0.41 倍・標準偏差 34.1）"
-   ],
-   "def_hash": "a459061adbe0"
+   "status": "stale",
+   "issues": [],
+   "def_hash": "a459061adbe0",
+   "stale_since": "v4.42",
+   "note": "居室E→書庫（bpy 環境がなく未撮影）"
   },
   "Z2-13b": {
    "id": "Z2-13b",
@@ -2208,9 +2208,11 @@
     "std": 25.5501,
     "window_area": 0.0
    },
-   "status": "ok",
+   "status": "stale",
    "issues": [],
-   "def_hash": "3a4eaa98b314"
+   "def_hash": "3a4eaa98b314",
+   "stale_since": "v4.42",
+   "note": "居室E→書庫（bpy 環境がなく未撮影）"
   },
   "Z2-23a": {
    "id": "Z2-23a",
