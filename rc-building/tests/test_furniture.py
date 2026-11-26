@@ -177,7 +177,7 @@ def test_storage_v437():
         it = its[k]
         assert it.z0 + it.h <= FU.stair_soffit(h, it.under, it.poly()) - 50, k
     assert FU.check(h, list(its.values())) == []
-    assert len(its) == 60      # v4.45: 62→60（1F トイレの便器・手洗い T2-W・T2-H を撤去）。v4.44: 家具 70→62（KS-W・H-S1/H-S3・書庫の書架 3・WIC の棚・脱衣所・シャワー・玄関収納 の組み替え、PS 2、ジム収納の棚）
+    assert len(its) == 61      # v4.46: 60→61（1F 寝室 2 室の家具 5・2F 居室B・C・E の家具 4・図書室の本棚 +1 を足し、2F 旧寝室・T4・ジム収納棚・機械室（東）を撤去）。v4.45: 62→60（1F トイレの便器・手洗い T2-W・T2-H を撤去）。v4.44: 家具 70→62（KS-W・H-S1/H-S3・書庫の書架 3・WIC の棚・脱衣所・シャワー・玄関収納 の組み替え、PS 2、ジム収納の棚）
     assert its["LDK-C1"].slot is None and its["LDK-C2"].slot is None          # v4.38 クアッドで吹出しを廃止
     assert [its[k].leaves for k in ("L-K2", "L-K3", "H-S4", "R-S1")] == [2, 2, 2, 2]
     assert its["L-K1"].hjoint == its["L-K2"].hjoint == 2200

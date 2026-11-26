@@ -105,7 +105,7 @@ def sheet_finish(h):
 
 def sheet_equipment(h):
     rows = []
-    for id_, room, name, r, hh in h.spec["mech_rooms"]["equipment"]:
+    for id_, room, name, r, hh, *_z in h.spec["mech_rooms"]["equipment"]:
         rows.append(["機械・蓄電", id_, room, name, *[round(v) for v in r], round(hh), ""])
     for name, r, hh, kg in getattr(h, "equipment_cg", h.equipment):
         rows.append(["ジム機器", "", "ジム", name, *[round(v) for v in r], round(hh), kg])

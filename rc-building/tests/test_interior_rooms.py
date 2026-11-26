@@ -29,7 +29,7 @@ if not BPY.exists():
 needs_bpy = pytest.mark.skipif(not BPY.exists() or not BM.MASTER.exists(), reason="bpy の入った python かマスターが無い")
 _C = {}
 # R1-03 は玄関土間 8.0㎡＋式台 1.7㎡（仕様書の 8.0 は土間のみ）
-AREAS = {"R1-01_ld": 26.0, "R1-02_kitchen": 19.4, "R1-03_doma": 7.1, "R1-04_hall": 9.1, "R1-05_gym": 54.7, "R1-06_stair1": 3.5, "R1-08_mechW": 8.2, "R1-09_mechE": 8.2, "R1-10_battery": 4.7, "R1-11_laundry": 13.8, "R1-13_wash": 8.3, "R1-14_bath": 10.3, "R1-15_corr1": 5.7, "R2-01_roomB": 11.0, "R2-02_roomC": 10.6, "R2-03_corr2w": 5.7, "R2-04_roomD": 10.4, "R2-05_master": 11.3, "R2-06_corr2s": 3.5, "R2-07_theater": 33.2, "R2-08_ante": 10.5, "R2-10_library": 32.5, "R2-11_hallE": 5.5, "R2-14_stair2": 4.3, "R2-15_corr2n": 3.4, "R2-18_wc2b": 6.0, "R2-19_roomA": 11.2, "R2-20_multi": 12.2}      # v4.45: R1-16_wc1b・R2-21_mhall を削除（R 28 枚）。キッチン 27.9→19.4。v4.44: 新しい室割り（R 30 枚）
+AREAS = {"R1-01_ld": 26.0, "R1-02_kitchen": 19.4, "R1-03_doma": 7.1, "R1-04_hall": 9.1, "R1-05_gym": 43.9, "R1-06_stair1": 3.5, "R1-08_mech": 5.8, "R1-10_battery": 4.3, "R1-11_laundry": 12.2, "R1-13_wash": 8.3, "R1-14_bath": 10.3, "R1-15_corr1": 5.7, "R1-16_roomA1": 10.1, "R1-17_master1": 10.1, "R2-01_roomB": 12.2, "R2-02_roomC": 10.1, "R2-03_corr2w": 5.7, "R2-04_roomD": 11.4, "R2-05_roomE": 10.1, "R2-06_corr2s": 3.5, "R2-07_theater": 33.2, "R2-08_ante": 10.5, "R2-10_library": 26.8, "R2-11_hallE": 3.8, "R2-14_stair2": 4.3, "R2-15_corr2n": 3.4, "R2-20_multi": 26.7}      # v4.46: R 27 枚（R1-09_mechE・R2-18_wc2b・R2-19_roomA を削除、R1-08_mech 統合、R1-16_roomA1・R1-17_master1・R2-05_roomE を新設）。v4.45: R 28 枚
 
 
 def ctx():
@@ -52,8 +52,8 @@ def test_counts_and_ids():
     c = ctx()
     R = [k for k, d in c["defs"].items() if d["kind"] == "R"]
     T = [k for k, d in c["defs"].items() if d["kind"] == "T"]
-    assert len(R) == 28 and sorted(T) == ["T1_plan_1F", "T2_plan_2F"]
-    assert sum(1 for k in R if k.startswith("R1-")) == 13 and sum(1 for k in R if k.startswith("R2-")) == 15
+    assert len(R) == 27 and sorted(T) == ["T1_plan_1F", "T2_plan_2F"]
+    assert sum(1 for k in R if k.startswith("R1-")) == 14 and sum(1 for k in R if k.startswith("R2-")) == 13
     assert all(re.fullmatch(r"R[12]-\d\d_[A-Za-z0-9]+", k) for k in R)
     assert set(R) == set(AREAS)
     assert len(c["Y"]["excluded"]) == 29          # v4.45: 22→29（廊下（西）・未割当 5 室・廊下（北）・廊下（北・接続）の除外を追加し、削除した室の対象を引く）。v4.43: 13→10（居室A・WIC・FC・収納の廃止、トイレ（手洗い付）2 室を追加）。v4.42: 14→13（収納（居室E）は書庫に統合）。v4.41: 7→14
@@ -118,8 +118,8 @@ def test_direct_and_screens_prediction():
     c = ctx()
     d = c["defs"]
     assert d["R1-05_gym"]["cut"]["direct"] and d["R1-05_gym"]["cut"]["screens_down"]                                 # ジム高窓（東）は下ろす
-    assert not d["R2-19_roomA"]["cut"]["direct"] and not d["R2-19_roomA"]["cut"]["screens_down"]      # v4.43: 居室A は 2F 西窓（朝の直射なし）
-    assert not d["R2-05_master"]["cut"]["direct"] and not d["R2-05_master"]["cut"]["screens_down"]    # v4.43: 主寝室は 2F 南窓
+    assert d["R2-05_roomE"]["cut"]["direct"]      # v4.46: 居室E は東窓（朝の直射あり）
+    assert not d["R2-02_roomC"]["cut"]["direct"] and not d["R2-02_roomC"]["cut"]["screens_down"]    # v4.46: 居室C は北窓（直射なし）
     assert not d["R1-01_ld"]["cut"]["direct"]      # v4.44: 図書室は東窓（朝の直射あり）。                           # 南・西の窓に直射なし
 
 
@@ -154,8 +154,8 @@ def test_master_has_96_cameras_and_old_hashes():
             "print('JSON:'+json.dumps(dict(cams=cams,cols=cols,caps=caps,mh=bpy.context.scene['model_hash'])))")
     r = bpy_json(code, str(BM.MASTER))
     cams = r["cams"]
-    assert len(cams) == 87      # v4.45: R 30→28。v4.44: R 32→30
-    assert sum(1 for c in cams.values() if c["fam"] == "R") == 28 and sum(1 for c in cams.values() if c["fam"] == "T") == 2
+    assert len(cams) == 86      # v4.46: R 28→27。v4.45: R 30→28。v4.44: R 32→30
+    assert sum(1 for c in cams.values() if c["fam"] == "R") == 27 and sum(1 for c in cams.values() if c["fam"] == "T") == 2
     for k, v in base.items():
         assert cams[k]["h"] == v, k                                                                              # 既存 57 の def_hash は不変
     for k in ("T1_plan_1F", "T2_plan_2F"):

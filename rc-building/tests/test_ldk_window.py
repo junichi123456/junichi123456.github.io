@@ -48,8 +48,8 @@ def test_structure():
         assert v["wall_rate"] >= 12, (f, d)
         assert v["耐震等級3（Co=0.3）"]["ratio"] >= 1.0
         assert v["ecc"] <= 0.15, (f, d, v["ecc"])
-    assert abs(se["stories"][("1F", "X方向")]["ecc"] - 0.018) < 0.005     # v4.45: Y2 W 列の開口 1,600→4,300 で 0.000→0.018。v4.44: 均等な通り芯で 1F X 0.115→0.000（最大は 2F X 0.107）
-    assert abs(se["stories"][("1F", "Y方向")]["ecc"] - 0.056) < 0.005     # v4.44: 0.056 のまま
+    assert abs(se["stories"][("1F", "X方向")]["ecc"] - 0.0265) < 0.003  # v4.46: 1F 北東の寝室 2・東面の窓 2・ジム→機械室前の扉の閉鎖で 0.018→0.0265。以前:     # v4.45: Y2 W 列の開口 1,600→4,300 で 0.000→0.018。v4.44: 均等な通り芯で 1F X 0.115→0.000（最大は 2F X 0.107）
+    assert abs(se["stories"][("1F", "Y方向")]["ecc"] - 0.1345) < 0.003  # v4.46: 0.056→0.1345（≦0.15。東面の窓 2・X2 の扉の移動）。以前:     # v4.44: 0.056 のまま
     assert max(h.H.values()) <= 3500
     assert 250 >= max(150, max(h.H.values()) / 22)
     assert not [b for b in h.boxes if b.level == "1F" and b.tag in ("角柱", "方立", "角の方立")]
@@ -75,13 +75,13 @@ def test_glazing_quad():
     env = PF.envelope(h)
     parts = {p[0]: p for p in env["parts"]}
     assert abs(parts["窓（FIX・クアッド）"][1] - 8.40) < 1e-6 and parts["窓（FIX・クアッド）"][2] == 0.65
-    assert 0.2125 <= env["UA"] <= 0.2155, env["UA"]            # v4.44: 2F 南窓 4 か所の拡大（W1,200×H1,100）で 0.2107→0.2140
+    assert 0.2125 <= env["UA"] <= 0.2200, env["UA"]    # v4.46: 窓 +7.56m² で 0.2140→0.2192            # v4.44: 2F 南窓 4 か所の拡大（W1,200×H1,100）で 0.2107→0.2140
     o = _ops(h)
     assert SS.op_g(h, o["AW-LS"]) == 0.40 and SS.op_g(h, o["AW-LW"]) == 0.25
     for op in h.openings(exterior=True):
         if op.kind == "window" and op.label not in q["labels"]:
             assert SS.op_g(h, op) == SS.glazing_g(h, op.side)
-    assert abs(sum(SS.window_solar(h)["glass"].values()) - 22.035) < 0.01      # v4.44: 2F 南窓 4 か所 W1,200×H1,100・居室D 西窓・図書室 E 窓・洗面 N 窓などで 17.42→22.04
+    assert abs(sum(SS.window_solar(h)["glass"].values()) - 29.595) < 0.01      # v4.46: +7.56m²（居室の窓 7 か所）・図書室 E 窓 3.0 を撤去（22.04→29.60）。v4.44: 2F 南窓 4 か所 W1,200×H1,100・居室D 西窓・図書室 E 窓・洗面 N 窓などで 17.42→22.04
 
 
 def test_local_thickness_geometry():

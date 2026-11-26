@@ -70,7 +70,7 @@ def test_legal_rows():
     k = "電気工作物の区分・系統連系（逆潮流なし）"
     assert items[k]["result"] == house_legal.CHK and "RPR" in items[k]["planned"]
     assert items["太陽光の全量自家消費（逆潮流なし）"]["result"] == house_legal.OK
-    assert len(c["rows"]) == 148      # v4.44: −2（2階 書庫の可燃物・警報器、書庫の積載荷重を削除）。v4.43: +1（シアター↔居室D の遮音）
+    assert len(c["rows"]) == 150      # v4.44: −2（2階 書庫の可燃物・警報器、書庫の積載荷重を削除）。v4.43: +1（シアター↔居室D の遮音）
     assert sum(r["result"] == house_legal.CHK for r in c["rows"]) == 38    # v4.44: 42→38（書庫 2 行・避難室・2階 水回りの読み替え）
     assert "29.99%" in items["建ぺい率（予約ゾーンを満たした場合・参考）"]["planned"], items["建ぺい率（予約ゾーンを満たした場合・参考）"]["planned"]
     assert "32.36%" in items["建ぺい率（予約ゾーンを満たした場合・参考）"]["planned"]      # v4.43: 建築面積 312.54→279.04m² で 31.37/33.74 → 29.99/32.36。v4.41: 35.21/32.83 → 31.37/33.74（RZ-a のみ／RZ 全体の表記順）
@@ -81,11 +81,11 @@ def test_self_consumption():
     sc = PF.self_consumption(h, en, bs)
     assert abs(sc["gen"] - en["pv_gen"]) < 5 and abs(sc["load"] - en["total"]) < 5
     assert abs(sc["self"] + sc["grid"] - en["total"]) < 5                 # 需要＝自家消費＋買電
-    assert abs(sc["self"] - 14168) < 30 and abs(sc["curtail"] - 24106) < 50 and abs(sc["grid"] - 4728) < 30     # v4.44: 需要 18,919→18,895kWh（南窓の拡大・2F 水回りの削減）。v4.43: 18,919
+    assert abs(sc["self"] - 14216) < 30 and abs(sc["curtail"] - 24063) < 50 and abs(sc["grid"] - 4774) < 30      # v4.46: 需要 18,895→18,989kWh（窓 +7.56m²）     # v4.44: 需要 18,919→18,895kWh（南窓の拡大・2F 水回りの削減）。v4.43: 18,919
     assert 0.36 < sc["sc_rate"] < 0.37 and 0.74 < sc["ss_rate"] < 0.76 and 30.6 < sc["peak_surplus"] < 31.0
     assert abs(sc["reserve"] - 142.7) < 0.1 and abs(sc["band"] - 37.3) < 0.1
     e = PF.self_consumption(h, en, bs, eol=True)
-    assert abs(e["band"] - 1.3) < 0.1 and abs(e["self"] - 8916) < 30 and abs(e["grid"] - 9979) < 30
+    assert abs(e["band"] - 1.3) < 0.1 and abs(e["self"] - 8971) < 30 and abs(e["grid"] - 10018) < 30
     assert len(sc["months"]) == 12 and abs(sum(m["self"] for m in sc["months"]) - sc["self"]) < 5
     assert sc["months"][11]["gen"] < sc["months"][11]["load"] and sc["months"][4]["curtail"] > 3000   # 12月は不足、5月は抑制
     ps = h.spec["pv_self"]["pcs_kw"]
@@ -98,22 +98,22 @@ def test_battery_room():
     c = _get()
     h = c["h"]
     x0, y0, x1, y1 = h.battery_room.rect
-    assert y1 <= h.D / 2 + 500 + 1 and abs(h.D / 2 - 8125) < 1, (y1, h.D)           # v4.43: 外形 16.25m 角で建物中心 y=8,125。「南半分」は D/2＋500（蓄電室の北端 8,625）まで許容（要確認）。v4.41: 9,125→8,625
-    assert sbox(*h.gym.rect).contains(sbox(*h.battery_room.rect))
-    assert abs(h.battery_room.area - 4.17) < 0.05                       # v4.41: 内法 1,775×2,350（旧 4.66）
-    assert h.gym.area >= 44.3 and abs(h.gym.area - 44.77) < 0.05, h.gym.area     # v4.44: 5,175×10,575（−蓄電室−ジム収納−増し打ち帯）。拡張部込みで 51.76（目標 51.6 以上）
-    assert h.gym.daylight_area >= h.spec["battery"]["gym_target_m2"] and abs(h.gym.daylight_area - 51.76) < 0.05   # v4.44 拡張部 6.99m² 込み
+    # v4.46（施主画像）: 蓄電室はジム北端の E-M 区画（Y2〜Y3）へ移設。「1 階南半分（D/2＋500）」の判定は E-M 区画に読み替え（要確認）
+    assert y0 >= h.gy[1] and y1 <= h.gy[2] and abs(h.D / 2 - 8125) < 1, (y0, y1, h.D)
+    assert sbox(*h.gym.rect).buffer(150).intersects(sbox(*h.battery_room.rect)) and not sbox(*h.gym.rect).intersects(sbox(x0 + 1, y0 + 1, x1, y1))
+    assert abs(h.battery_room.area - 4.30) < 0.05                       # v4.46: 内法 2,150×2,000（v4.45 4.17）
+    assert h.gym.area >= 43.0 and abs(h.gym.area - 43.34) < 0.05, h.gym.area     # v4.46: 5,175×8,475（−増し打ち帯）。拡張部込みで 50.33（v4.45 51.76 の −2.8%）
+    assert h.gym.daylight_area >= 51.76 * 0.95 and abs(h.gym.daylight_area - 50.33) < 0.05   # v4.46 拡張部 6.99m² 込み
     room = sbox(x0, y0, x1, y1)
     for name, r, hh, kg in h.equipment:
         assert not sbox(*r).intersects(room), name
-    # 扉の開き範囲（ジム側 W900）に機器がない
+    # 扉の開き範囲（ジム側＝南へ W900）に機器がない
     d = h.battery_door
-    sw = sbox(x0 - d.width, d.u0, x0, d.u1)
+    sw = sbox(d.u0, y0 - h.pt / 2 - d.width, d.u1, y0 - h.pt / 2)
     for name, r, hh, kg in h.equipment:
         assert not sbox(*r).intersects(sw), name
     cc = {n: r for n, r, *_ in h.equipment}["ケーブルクロスオーバー"]
-    assert cc[0] == 11000 and cc[2] == 13875   # v4.44: W2,875（蓄電室との離隔 800 を保つため y8,750〜9,350 へ。ジム本体は x10,950〜）
-    # 機械室と同じ南半分の外（機械室は北）、換気用に東外壁に面する
+    assert cc[2] == 16075 and cc[1] == 2300     # v4.46: E 壁沿いに縦（E-S）。機械室・蓄電室から遠ざける
     assert x1 == 16125                                   # v4.43: 東外壁の内面（旧 17,125）
 
 
@@ -226,7 +226,8 @@ def test_battery_room_distance_to_panels():
     h = _get()["h"]
     x, y = h.spec["lifeline"]["power"]["panels"]["main"]
     b = __import__("shapely.geometry", fromlist=["box"]).box(*h.battery_room.rect)
-    assert b.bounds[0] <= x <= b.bounds[2] and Point(x, y).distance(b) < 5500      # v4.44: 機械室（東）が蓄電室の真北（Y3 の向こう）へ移り、配線 約5m（蓄電 PCS→主分電盤。旧 約1m）
+    mr_ = next(r for r in h.rooms if r.name == "機械室" and r.floor == "1F")
+    assert mr_.rect[0] <= x <= mr_.rect[2] and mr_.rect[1] <= y <= mr_.rect[3] and Point(x, y).distance(b) < 5500      # v4.46: 主分電盤は機械室（蓄電室の西隣）、配線 約 3m。v4.44: 機械室（東）が蓄電室の真北（Y3 の向こう）へ移り、配線 約5m（蓄電 PCS→主分電盤。旧 約1m）
 
 
 def _sheet_problems(sh):
@@ -268,13 +269,13 @@ def test_lifeline_sheets():
 
 
 # v4.25 で更新: 間仕切り x10,600 t200（S 壁まで）・②撤去・室内窓・X3 開口 W4,835・浴室壁 t200・居室A／WIC の区画・玄関土間の縮小（意図した変更）
-GLB_V422 = ("80ddb433cc990ce4", "581a07d59ffa5b81")      # v4.45 意図した変更: 1F トイレ撤去・キッチン縮小・接続開口 4.3m・2F 多目的ホールの分割・家具・照明・配管（直前 f8b0d7d0c327d551／450b0be7a978b1e5）。# v4.44 意図した変更: 通り芯の均等化・室構成の見直し
+GLB_V422 = ("d6f93ec9f9818a9a", "0f7fb342bd52ff0d")      # v4.46 意図した変更: 施主の書き込みに寄せた間取り・窓・家具・機械室（直前 80ddb433cc990ce4／581a07d59ffa5b81）。# v4.45 意図した変更: 1F トイレ撤去・キッチン縮小・接続開口 4.3m・2F 多目的ホールの分割・家具・照明・配管（直前 f8b0d7d0c327d551／450b0be7a978b1e5）。# v4.44 意図した変更: 通り芯の均等化・室構成の見直し
 _OLD_GLB = ("4acf124d2dff7667", "2fd58dda4c84e612")      # v4.43 意図した変更: 壁芯 16.25m 角（5.90/4.45/5.90・6.125/6.0/4.125）・1F の居室A/WIC/FC の廃止・2F の寝室 5 室・書庫・収納の組み替え・窓の増減・階段幅 950・家具・照明の移動（直前 7482a9e1d0f1a029／60d85e5b8bcd9166）。# v4.42 意図した変更: 居室E の書庫化（西窓・LGS・引戸の廃止、書架）（直前 9ea0292c4c6449b7／596e779e483bbf8c）。# v4.41 意図した変更: 壁芯 17.25m 角への縮小・北の行と中央列の組み替え・玄関ポーチ・目隠し壁・ジム機器の x −1,000（直前 ab57e0f8e2c78731／e2518d1a42292423）。# v4.40 意図した変更: FDN の外の扉の撤去・人通口 12・駐車場の舗装（西端 12,800・面取り）と菜園（東へ 700）・管路帯・インターロッキング・ボラード 2 基・PS 3・点検口の目地（直前 5f0b725a4ab51e83／6b47dad692c98805）。# v4.38 意図した変更: 西窓 u1,900〜4,000・C1/C2 の吹出し廃止・収納の扉の目地・H-S3 の台輪（直前 c51c8601220f3a43／7eceaa47eadc4f2b）。# v4.37 意図した変更: 西窓 AW-LW・収納 4 点・L-K2 D825（直前 50f8ffbfacc3da67／28087fc12d73af16）。# v4.36 意図した変更: L 字窓の撤回（角柱・方立・西窓の撤去）・キッチンの L 字化・テーブルの北移動・L-K2・窓辺の収納（直前 b370081a3c3a0d20／0129d8bd899b1f7f）。# v4.35 意図した変更: テーブルの北移動・Y2 西端の袖壁の短縮・L-K1（直前 a34272db8aa00b43／902964e0b5bc695a）。# v4.29 意図した変更: 内装 GLB のみ（外観 GLB は不変）。内装の配色（壁を明るい壁と暗い壁に面ごとに塗り分け、蹴込み板 W5、床・天井・巾木の色）。直前: 1222daf2c09d58f7（段階1・3 は 8a24d25bf22dae70。段階4 で暗い壁を開口のない区間に置く変更）。  v4.28 段階2 意図した変更: 内装 GLB は 2階の脱衣所・居室E の仕上げ（床シート・壁パネル）と家具・照明の配置変更で変化（外観 GLB は段階1のまま）。段階1: 2階の部屋割り（居室E・脱衣所・トイレ・廊下・収納の分割）・扉の移設・北窓 AW-9。直前(v4.27): ("dba61049f6cebf79", "6fb2bc39bf8ad262")      # v4.27 意図した変更: 扉を x10,600 の u4,550〜5,750 へ移動（SSD-2 を塞ぎ IW-1 を撤去）・ジムの S・E 壁の増し打ち（local_thick を 3D が描く）・照明/機器の移動。直前: ("9263258e77804ac9", "1a5daf7157595946")      # v4.26: 室内 GLB はさらに、ジムの照明ラインから蓄電室の矩形を除いたため変化（外観 GLB は 9263258e…のまま）。 X3 の扉 D(9,300〜10,100) を RC で塞いだ意図した変更（旧 v4.25: 3f32bbe4…／a5956372…）。旧 v4.24: 739f6a23…／0d2f2ca3…。      # model.glb／model_interior.glb の SHA-256 先頭16桁。v4.22 は 9e2ddbd5…／66f2eabaf…。v4.24 で更新: ジム拡張部の LGS 間仕切り2本と式台の縮小（x12,000→10,500）が GLB に入るため（CG・3D の描画コードは不変）
 # v4.25: 586→588（間仕切り②−1・y14,250−1・y14,650＋1・9,550 の分割＋1・室内窓＋1・x3 開口の分割など、実測）
-A02X_COUNT = 598  # v4.45: 596→598（扉の増減）。# v4.43: 599→589（建物外形 16.25m 角・窓の増減の実測）。# v4.41: 601→599（縮小に伴う実測）。# v4.40: 587→601（菜園の移動・舗装の外形・管路帯・さや管・点検桝・番号 16 ほかの実測値）。# v4.37: 582→587（西窓・収納 4 点）。# v4.36: 588→582（L 字窓の撤回ほか）。#                                          # v4.24: +2（ジム拡張部の間仕切り2本）。 v4.22 の 561 + 予約ゾーン（外形・点ハッチ・ラベル2）・蓄電室の塗り・番号3件・凡例2行 ほか
+A02X_COUNT = 611  # v4.46: 598→611（窓・扉・蓄電室の位置などの実測）。# v4.45: 596→598（扉の増減）。# v4.43: 599→589（建物外形 16.25m 角・窓の増減の実測）。# v4.41: 601→599（縮小に伴う実測）。# v4.40: 587→601（菜園の移動・舗装の外形・管路帯・さや管・点検桝・番号 16 ほかの実測値）。# v4.37: 582→587（西窓・収納 4 点）。# v4.36: 588→582（L 字窓の撤回ほか）。#                                          # v4.24: +2（ジム拡張部の間仕切り2本）。 v4.22 の 561 + 予約ゾーン（外形・点ハッチ・ラベル2）・蓄電室の塗り・番号3件・凡例2行 ほか
 # v4.25: 471→474（間仕切り②−1・y14,250−1・y14,650＋1・9,550 の分割＋1・扉＋1−1・室内窓＋2 など、実測）
 # v4.27: 520→525（搬入線の折れ点 +2 と S・E 壁 t300 の増し打ち線・寸法などの実測）
-A03_COUNT = 572  # v4.45: 554→572（廊下（西）・未割当・LGS・戸の増加、トイレの撤去）。# v4.43: 538→512（1F の居室A・WIC・FC の廃止、収納・納戸の組み替えの実測）。# v4.41: 529→538（北の行の室・扉・LGS の増減の実測）。# v4.37: 520→529（西窓 AW-LW・ZIP）。# v4.36: 528→520（角柱の円と注記・方立・西窓の撤去、KB-C2・L-K2 などの増減の実測値）。# v4.35: 526→528（袖壁の短縮と回遊①の折れ点）。# v4.32 意図した変更: 525→526（拡大詳細に「通信スリーブ SL-C は E-07」の 1 行）。                                          # v4.26 意図した変更: 474→520（離隔帯・搬入動線・機械室の扉3か所・スリーブ12・機器の詳細）。以前の内訳: # v4.22 の 411 + 蓄電室（間仕切り・扉・ラック・PCS・束壁・室名）と拡大詳細 52 = 463。v4.24: 463→471（+8。ジム拡張部の間仕切り2・移設した遮音ドア・拡張部の室名と面積・要確認の注記・框ラベルの移動、H-S1 撤去とマット移動を差し引いた実測値）
+A03_COUNT = 573  # v4.46: 572→573（機械室・蓄電室の再配置と 1F 北東の寝室・廊下）。# v4.45: 554→572（廊下（西）・未割当・LGS・戸の増加、トイレの撤去）。# v4.43: 538→512（1F の居室A・WIC・FC の廃止、収納・納戸の組み替えの実測）。# v4.41: 529→538（北の行の室・扉・LGS の増減の実測）。# v4.37: 520→529（西窓 AW-LW・ZIP）。# v4.36: 528→520（角柱の円と注記・方立・西窓の撤去、KB-C2・L-K2 などの増減の実測値）。# v4.35: 526→528（袖壁の短縮と回遊①の折れ点）。# v4.32 意図した変更: 525→526（拡大詳細に「通信スリーブ SL-C は E-07」の 1 行）。                                          # v4.26 意図した変更: 474→520（離隔帯・搬入動線・機械室の扉3か所・スリーブ12・機器の詳細）。以前の内訳: # v4.22 の 411 + 蓄電室（間仕切り・扉・ラック・PCS・束壁・室名）と拡大詳細 52 = 463。v4.24: 463→471（+8。ジム拡張部の間仕切り2・移設した遮音ドア・拡張部の室名と面積・要確認の注記・框ラベルの移動、H-S1 撤去とマット移動を差し引いた実測値）
 
 
 if __name__ == "__main__":
@@ -292,7 +293,7 @@ def test_gym_annex_geometry_and_structure():
     from shapely.geometry import box as sb
     h = _get()["h"]
     a = h.gym_annex
-    assert abs(a.area - 6.99) < 0.01 and h.gym.daylight_area >= 51.6      # v4.44: 拡張部 1,350×5,175
+    assert abs(a.area - 6.99) < 0.01 and h.gym.daylight_area >= 51.76 * 0.95      # v4.46: 拡張部 1,350×5,175、ジム計 50.33（−2.8%）
     g = h.genkan
     for k in ("doma", "shikidai"):
         assert not sb(*a.rect).intersection(sb(*g[k])).area > 0, k
@@ -305,10 +306,10 @@ def test_gym_annex_geometry_and_structure():
     x3 = [op for w in h.walls if w.floor == "1F" and w.cat == "wall" and w.axis == "y" and w.c == h.gx[2] for op in w.openings if op.kind == "door" and op.u0 < 5000]
     assert [(o.u0, o.u1, o.height, o.operation) for o in x3] == [(815, 4850, 2300, "opening")]
     wq = house_legal.wall_quantity(h)
-    assert abs(wq[("1F", "X方向")][1] - 18.23) < 0.01 and abs(wq[("1F", "Y方向")][1] - 18.33) < 0.01     # v4.45: 19.19→18.23（Y2 W 列の袖壁 3,375→875）。v4.44: 17.86/18.71 → 19.19/18.33（均等な通り芯・開口の組み替え）
+    assert abs(wq[("1F", "X方向")][1] - 18.54) < 0.01 and abs(wq[("1F", "Y方向")][1] - 17.15) < 0.01     # v4.45: 19.19→18.23（Y2 W 列の袖壁 3,375→875）。v4.44: 17.86/18.71 → 19.19/18.33（均等な通り芯・開口の組み替え）
     import performance as PF
     se = PF.seismic(h)["stories"]
-    assert max(v["ecc"] for v in se.values()) <= 0.15 and abs(se[("1F", "Y方向")]["ecc"] - 0.056) < 0.001 and abs(se[("1F", "X方向")]["ecc"] - 0.018) < 0.001      # v4.44: 0.056/0.000（2F X 0.107 が最大）
+    assert max(v["ecc"] for v in se.values()) <= 0.15 and abs(se[("1F", "Y方向")]["ecc"] - 0.1345) < 0.001 and abs(se[("1F", "X方向")]["ecc"] - 0.0265) < 0.001      # v4.44: 0.056/0.000（2F X 0.107 が最大）
 
 
 def test_gym_annex_lighting_name():

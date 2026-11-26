@@ -191,8 +191,8 @@ def checks(h):
     bs = PF.battery_sizing(h, en)
     bt = h.spec["battery"]
     add("ブリーフ", "蓄電池（理論上1週間）", "施主指示（v4.23）・ブリーフ31章", f"1階南半分に1週間相当（日射ゼロ・寿命末期 SOH {bt['soh_eol']:.1f}）",
-        f"公称 {bt['nominal_kwh']}kWh 級（LFP）。防災モード {bs['rows']['C']['kwh']:.1f}kWh/日 → 必要公称 {bs['rows']['C']['nominal']:.0f}kWh、自立 {bs['days_eol']:.1f}日（新品 {bs['days_new']:.1f}日、排煙・ポンプ {bt['emergency_fixed_kwh']}kWh 控除後 {bs['days_eol_net']:.1f}日）。蓄電室 {bs['room_area']:.1f}m²（北端 y8,625≦D/2＋500）",
-        judge(bt["nominal_kwh"] >= bs["rows"]["C"]["nominal"] and bs["days_eol_net"] >= bt["days_target"] and bt["rect"][3] <= h.D / 2 + 500.5))   # v4.44: 蓄電室は Y2〜y7,925（D/2＋500＝8,625 以内）（要確認）
+        f"公称 {bt['nominal_kwh']}kWh 級（LFP）。防災モード {bs['rows']['C']['kwh']:.1f}kWh/日 → 必要公称 {bs['rows']['C']['nominal']:.0f}kWh、自立 {bs['days_eol']:.1f}日（新品 {bs['days_new']:.1f}日、排煙・ポンプ {bt['emergency_fixed_kwh']}kWh 控除後 {bs['days_eol_net']:.1f}日）。蓄電室 {bs['room_area']:.1f}m²（v4.46: 1 階 E-M 区画（Y2〜Y3）のジムの北端。1 階南半分（D/2＋500）の判定は E-M 区画に読み替え＝要確認。1F 居室A とは RC t250 で区画）",
+        judge(bt["nominal_kwh"] >= bs["rows"]["C"]["nominal"] and bs["days_eol_net"] >= bt["days_target"] and bt["rect"][1] >= h.gy[1] and bt["rect"][3] <= h.gy[2]))   # v4.46: 蓄電室は E-M 区画（Y2〜Y3）のジム北端（旧「南半分 D/2＋500」を読み替え。要確認）
     pr_pct = (sm["building_area"] + pg_area + en["cp_area"] + h.pv_reserve_a.area / 1e6) / sm["site_area"] * 100
     pr_all = (sm["building_area"] + pg_area + en["cp_area"] + h.pv_reserve.area / 1e6) / sm["site_area"] * 100
     add("集団規定", "建ぺい率（予約ゾーンを満たした場合・参考）", "法53条・法2条1号", "屋根と柱をもつ架台は建築物として扱う見込み",
@@ -302,7 +302,7 @@ def checks(h):
     rp = SV.robot_plan(h)
     add("ブリーフ", "床清掃（掃除ロボット）", "施主指示（v4.7）", "床清掃は可能な限りロボット（レールは可）",
         "・".join(f"{f} {v['area']:.0f}m²" for f, v in rp.items()) + f"、段差{s['smart']['robots']['max_step']}mm以下、各階にドック（自動ゴミ収集・給排水直結）", OK)
-    add("ブリーフ", "便器", "施主指示（v4.7）", "タンクレスにしない", "全トイレ（1F 1・2F 2）タンク式便器（フチなし・防汚）", OK)
+    add("ブリーフ", "便器", "施主指示（v4.7）", "タンクレスにしない", "全トイレ（1F 1・2F 1）タンク式便器（フチなし・防汚）", OK)
     add("ブリーフ", "スクリーンの bot 制御", "施主指示（v4.7）", "全館のスクリーンを bot から操作できる",
         f"全{len(h.blinds)}台 KNX/Matter 対応モーター→ゲートウェイのローカル API（認証付き）。強風・凍結時の安全動作が優先", OK)
     ls = SV.lighting_curve(h)
@@ -412,9 +412,9 @@ def checks(h):
         judge(st.width >= sp["min_width"] and st.riser <= sp["max_riser"] and st.tread >= sp["min_tread"]))
     add("単体規定", "踊場・手すり", "令24条・25条", "高さ4m以内ごとに踊場、手すり設置", f"中間踊場（高さ {h.H['1F'] / 2000:.1f}m）・手すり設置", OK)
     add("単体規定", "排煙（1階）", "令126条の2・3", "FIX窓の居室は「排煙上の無窓居室」→ 排煙設備",
-        "LDK・ジム: 機械排煙（機械室の排煙機。v4.44: 機械室は 1F 北東の N 行）", OK)
+        "LDK・ジム: 機械排煙（機械室の排煙機。v4.46: 機械室は 1 室に統合し、1F E-M 区画のジム北端）", OK)
     srows, cap = smoke_systems(h)
-    add("単体規定", "排煙（2階）", "令126条の2・3", "2階居室も FIX 窓 → 排煙上の無窓居室", "居室A・B・C・D・図書室・主寝室: 機械排煙（1階と同じ方式。未割当（2F 北西・北・西・北・東）3 室は非居室で天井の排煙口なし）", OK)
+    add("単体規定", "排煙（2階）", "令126条の2・3", "2階居室も FIX 窓 → 排煙上の無窓居室", "居室B・C・D・E・図書室: 機械排煙（1階と同じ方式。1F 居室A・主寝室も同じ。未割当（2F 南・北・東）3 室は非居室で天井の排煙口なし）", OK)
     for k_, c in sorted(cap.items()):
         add("単体規定", f"排煙機 能力（{k_}）", "令126条の3第1項9号",
             f"120m³/分以上かつ 最大区画 {c['max_area']:.1f}m²×2 = {2 * c['max_area']:.0f}m³/分以上（{c['rooms']}区画）",
@@ -475,7 +475,7 @@ def checks(h):
     add("関連法令", "蓄電池の保有距離", "対象火気省令・東京都火災予防条例（確信なし）", "点検面 0.6m 以上・操作面 1.0m 以上と記憶（要確認）",
         f"ラックの前の空き {cr['rack_front']:,.0f}mm、PCS の前面 800 以上、ラック間 50＋側面は壁。メーカー値が 1.0m を超えるときは 2列×2段に変更。八王子消防署と事前協議", CHK)
     add("関連法令", "蓄電室の扉（特定防火設備）", "令112条・令109条（1時間区画に合わせる）", "特定防火設備（常時閉・自閉・遮煙）。現行の「防火設備」から格上げ",
-        f"W{h.battery_door.width:.0f}・ジム側へ外開き・自閉。扉の位置（西の壁 u6,500〜7,400）は書き込みにないため依頼文から設定（要確認 Q3）。熱暴走時のガスはジムへ出さない", CHK)
+        f"W{h.battery_door.width:.0f}・ジム側へ外開き・自閉。扉は南の壁（ジム側 y8,650）u14,400〜15,300（v4.46 施主画像の蓄電室の位置に合わせ設定。要確認 Q3）。熱暴走時のガスはジムへ出さない", CHK)
     add("関連法令", "機械室・蓄電室の排煙設備は不要とする判断", "令126条の2・令116条の2", "排煙が要るのは無窓の居室。機械室・蓄電室は居室でない",
         "不要と判断。扉は常時閉で、ジムの防煙区画（令126条の3）の面積は変わらない（要確認）", CHK)
     add("構造", "壁の貫通（スリーブ）", "構造設計者の確認（要確認）", "開口補強筋・間隔は径の3倍以上・壁の端から 300 以上",
@@ -484,17 +484,22 @@ def checks(h):
     # ---- v4.28 2階の組み替え（8.webp）
     import lighting as LG
     r2 = lambda n: [x for x in h.rooms if x.floor == "2F" and x.name == n][0]
-    wc = r2("トイレ")
-    add("単体規定", "2階 水回りの寸法（施主指示 v4.28・v4.44）", "施主指示（8.webp・追加指示・v4.44 追加指示）", "2階はトイレのみ（トイレ ≦6.1m²）。脱衣所・シャワー・リネン庫は撤去（v4.44）",
-        f"トイレ {wc.area:.2f}m²（≦6.1）・トイレ（手洗い付） {r2('トイレ（手洗い付）').area:.2f}m²。どちらも 1 階の水廻り（浴室・トイレ（手洗い付））の真上で PS を通す。収納（北） {r2('収納（北）').area:.2f}m²。非常解錠錠・段差なし・換気扇",
+    wc = r2("トイレ（手洗い付）")
+    add("単体規定", "2階 水回りの寸法（施主指示 v4.28・v4.44）", "施主指示（8.webp・追加指示・v4.44 追加指示）", "2階はトイレのみ（1 か所・≦6.1m²）。脱衣所・シャワー・リネン庫は撤去（v4.44）。v4.46: C-N のトイレ 6.05 を撤去し手洗い付 1 か所へ",
+        f"トイレ（手洗い付） {wc.area:.2f}m²（≦6.1）・1 か所。PS-3（2F）の真北で 1 階の PS-3 と縦に揃う。非常解錠錠・段差なし・換気扇",
         OK if wc.area <= 6.1 else NG)
+    t_lo, t_hi = s["north_row"]["bedroom_tatami"]                                      # v4.46: 居室・主寝室は 6〜8畳（1 畳＝1.62m²）
+    beds = [x for x in h.rooms if x.habitable and (x.name.startswith("居室") or x.name == "主寝室")]
+    add("ブリーフ", "居室・主寝室の広さ（6〜8畳）", "施主指示（v4.46）", f"各室 {t_lo * 1.62:.2f}〜{t_hi * 1.62:.2f}m²（{t_lo:g}〜{t_hi:g}畳、1 畳＝1.62m²）。従前の 4.5〜6畳＋1畳の規則を置き換える",
+        f"{len(beds)} 室（1F {sum(1 for x in beds if x.floor == '1F')}・2F {sum(1 for x in beds if x.floor == '2F')}）: " + "・".join(f"{x.floor} {x.name} {x.area:.2f}m²（{x.area / 1.62:.1f}畳）" for x in beds),
+        OK if all(t_lo * 1.62 - 0.005 <= x.area <= t_hi * 1.62 + 0.005 for x in beds) else NG)
     hall_names = [(x.floor, x.name, min(x.rect[2] - x.rect[0], x.rect[3] - x.rect[1])) for x in h.rooms if x.name.startswith("廊下")]
     add("単体規定", "廊下の有効幅（v4.44）", "施主指示（v4.44 追加指示）・品確法 等級5 通路幅 780 以上", "すべての廊下を内法 1,100（LGS 面〜面または RC 面〜LGS 面。ホール・階段前は廊下でなく階段幅 950 以上）",
         f"{len(hall_names)} か所（1F {sum(1 for n in hall_names if n[0] == '1F')}・2F {sum(1 for n in hall_names if n[0] == '2F')}）すべて内法 {min(n[2] for n in hall_names):,}〜{max(n[2] for n in hall_names):,}",
         OK if all(n[2] == 1100 for n in hall_names) else NG)
     lq = s["laundry"]
     cap = lq["machines"]["qty"] * lq["machines"]["dry_kg_per_cycle"]
-    add("ブリーフ", "家事動線（洗う→乾かす→しまう）", "施主追加指示（v4.28・8.webp）", f"2階のランドリーは設けず、1階で乾燥まで完結し、ファミクロ兼用のランドリー（13.76m²。v4.44: X2 の扉で洗面・脱衣と隣接）と収納（ランドリー）・納戸へ収納。キッチン→北の戸→廊下（西）→Y3 の引戸→ホール・階段2→引戸→ランドリー（v4.45。洗濯量 約{lq['load_kg_per_day']}kg/日）",
+    add("ブリーフ", "家事動線（洗う→乾かす→しまう）", "施主追加指示（v4.28・8.webp）", f"2階のランドリーは設けず、1階で乾燥まで完結し、ファミクロ兼用のランドリー（12.22m²。v4.46: 収納（ランドリー）を統合し、X2 の扉 u14,300〜15,100 で洗面・脱衣と隣接）・納戸へ収納。キッチン→北の戸→廊下（西）→Y3 の引戸→ホール・階段2→引戸→廊下（北西）→ランドリー（v4.46。洗濯量 約{lq['load_kg_per_day']}kg/日）",
         f"ドラム式洗濯乾燥機 ×{lq['machines']['qty']}（乾燥 {cap}kg/回≧{lq['load_kg_per_day']}kg/日、1回約{lq['machines']['cycle_h']}h）＋予備の室内干し（物干し {lq['backup']['poles']}本・除湿機 {lq['backup']['dehumidifier_l_per_day']}L/日）。階段を使わない。ファミクロ兼用の容量は要確認 Q5",
         judge(cap >= lq["load_kg_per_day"]) if cap >= lq["load_kg_per_day"] else NG)
     fp_, mk_ = LG.footlines(h)

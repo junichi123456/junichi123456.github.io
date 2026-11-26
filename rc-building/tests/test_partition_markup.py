@@ -23,17 +23,17 @@ def _room(h, name, floor="1F", idx=0):
 
 def test_room_areas():
     h = _h()
-    # v4.44: 居室A は 2F（11.21m²、6.92 畳）、玄関 土間 5.86・式台 1.25・ホール 9.06（計 16.17）、浴室 10.32、トイレ 6.05、洗面・脱衣 8.35。ジム拡張部 6.99・ジム計 51.76
-    assert h.room_A.floor == "2F" and abs(h.room_A.area - 11.2095) < 0.01
-    assert not [r for r in h.rooms if r.floor == "1F" and r.name in ("居室A", "WIC", "ファミリークローゼット", "収納（洗面）")]
-    assert abs(h.gym_annex.area - 6.99) < 0.01 and abs(h.gym.daylight_area - 51.76) < 0.02 and h.gym.daylight_area >= 51.6       # v4.44: ジム本体 44.77（収納 4.25・蓄電室・増し打ちを除く）
+    # v4.46: 居室A は 1F 北東（10.08m²、6.2 畳）。玄関 土間 5.86・式台 1.25・ホール 9.06（計 16.17）、浴室 10.32、洗面・脱衣 8.35。ジム拡張部 6.99・ジム計 50.33（v4.45 51.76 の −2.8%）
+    assert h.room_A.floor == "1F" and abs(h.room_A.area - 10.0845) < 0.01
+    assert not [r for r in h.rooms if r.floor == "1F" and r.name in ("WIC", "ファミリークローゼット", "収納（洗面）")]
+    assert abs(h.gym_annex.area - 6.99) < 0.01 and abs(h.gym.daylight_area - 50.33) < 0.02 and h.gym.daylight_area >= 51.76 * 0.95       # v4.46: ジム本体 43.34
     assert abs(_room(h, "浴室").area - 10.32) < 0.01 and abs(_room(h, "玄関土間").area - 5.86) < 0.01
-    assert abs(_room(h, "トイレ", "2F").area - 6.05) < 0.01 and abs(_room(h, "洗面・脱衣").area - 8.35) < 0.01      # v4.45: 1F トイレ（6.05）は撤去して未割当（1F 北東）
+    assert abs(_room(h, "トイレ（手洗い付）", "2F").area - 4.51) < 0.03 and abs(_room(h, "洗面・脱衣").area - 8.35) < 0.01      # v4.46: 2F トイレは中央の手洗い付 1 か所
 
 
 def test_daylight_margin():
     rows = {r["item"]: r for r in house_legal.checks(_h())[0]}
-    for k in ("採光 2F 居室A", "採光 1F ジム（拡張部含む）"):     # v4.44: 居室A は 2F 南
+    for k in ("採光 1F 居室A", "採光 1F 主寝室", "採光 1F ジム（拡張部含む）"):     # v4.46: 居室A・主寝室は 1F 北東（E 面の FIX 窓）
         assert rows[k]["result"] == "適合", k
     h = _h()
     glass = h.room_windows(h.room_A) * 3.0
@@ -59,14 +59,13 @@ def test_hall_and_gd2():
 
 def test_bath_wall_and_toilet_face():
     h = _h()
-    # v4.44: 浴室は 2,950×3,500（10.32m²、C-N）、洗面・脱衣との境は LGS x7,700（u12,150〜16,125）、1F トイレは E-N（x10,950〜14,265）。2F トイレは浴室の真上（C-N）
+    # v4.46: 浴室は 2,950×3,500（10.32m²、C-N）、洗面・脱衣との境は LGS x7,700（u12,150〜16,125）。1F E-N は 主寝室＋居室A＋廊下（北東）＋収納（北東）
     w = [w for w in h.walls if w.floor == "1F" and w.axis == "y" and w.c == 7700]
     assert len(w) == 1 and (w[0].a, w[0].b) == (12150, 16125)
-    toilet = _room(h, "未割当（1F 北東）")                    # v4.45: 1F トイレを撤去（旧位置は未割当）
-    assert toilet.rect == (10950, 10950, 14265, 12775)     # E-N（3,315×1,825）
-    assert not [r for r in h.rooms if r.floor == "1F" and r.name == "トイレ"]
+    assert not [r for r in h.rooms if r.floor == "1F" and r.name in ("トイレ", "未割当（1F 北東）", "機械室前")]
+    assert _room(h, "居室A").rect == (12150, 10950, 16125, 13487) and _room(h, "主寝室").rect == (12150, 13587, 16125, 16125)
     assert _room(h, "浴室").rect == (7750, 12150, 10700, 15650)
-    assert _room(h, "トイレ", "2F").rect == (7750, 13500, 10700, 15550)
+    assert _room(h, "トイレ（手洗い付）", "2F").rect == (8850, 8260, 10700, 10700)      # 2F のトイレは PS-3（2F）の北
 
 
 def test_sound_and_window():

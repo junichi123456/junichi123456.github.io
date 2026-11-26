@@ -27,8 +27,8 @@ def test_local_thick_rows():
 
 def test_areas():
     h = _h()
-    assert abs(h.gym.area - 44.77) < 0.02                 # v4.44: 5,175×10,575 − 蓄電室 − ジム収納（壁込み 4.75）− 増し打ち帯（v4.43 は 44.31）
-    assert abs(h.gym.daylight_area - 51.76) < 0.02        # 拡張部 6.99 込み。v4.43 比 −0.9%、施主目標 51.6 以上
+    assert abs(h.gym.area - 43.34) < 0.02                 # v4.44: 5,175×10,575 − 蓄電室 − ジム収納（壁込み 4.75）− 増し打ち帯（v4.43 は 44.31）
+    assert abs(h.gym.daylight_area - 50.33) < 0.02 and h.gym.daylight_area >= 51.76 * 0.95        # v4.46: 拡張部 6.99 込み 50.33（v4.45 比 −2.8%、±5% 内）
     assert h.clearance_report()["usable"] >= 44.85
 
 

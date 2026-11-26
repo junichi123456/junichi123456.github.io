@@ -32,7 +32,7 @@ def _sel(stats, cls):
 
 def test_room_counts(stats):
     """上質 12 室・水回り 8 室（spec の分類が実在の室と対応している）。v4.41: 2F 収納（トイレ・主寝室）は主寝室に LGS 1 枚で接する一般の収納へ（水回り 9→8）。"""
-    assert len(_sel(stats, "premium")) == 11 and len(_sel(stats, "quiet")) == 7   # v4.44: 水回りは 1F 北（洗面・脱衣・浴室・トイレ 2）と 2F トイレ 2・収納（北中央）の 7 室（脱衣所・シャワー・リネン庫・収納（洗面）は撤去）
+    assert len(_sel(stats, "premium")) == 12 and len(_sel(stats, "quiet")) == 4   # v4.44: 水回りは 1F 北（洗面・脱衣・浴室・トイレ 2）と 2F トイレ 2・収納（北中央）の 7 室（脱衣所・シャワー・リネン庫・収納（洗面）は撤去）
 
 
 def test_premium_rooms_fully_covered(h, stats):
@@ -67,9 +67,9 @@ def test_general_rooms(h, stats):
 def test_eirp_range_and_counts(h):
     aps = h.spec["wifi"]["aps"]
     lo, hi = h.spec["wifi"]["eirp_range"]
-    assert (lo, hi) == (6, 20) and len(aps) == 16
+    assert (lo, hi) == (6, 20) and len(aps) == 18
     assert all(lo <= a["eirp"] <= hi and float(a["eirp"]).is_integer() for a in aps)
-    assert sum(a["floor"] == "1F" for a in aps) == 7 and sum(a["floor"] == "2F" for a in aps) == 9
+    assert sum(a["floor"] == "1F" for a in aps) == 9 and sum(a["floor"] == "2F" for a in aps) == 9
 
 
 def test_no_ap_in_wet_areas(h):
@@ -174,6 +174,6 @@ def test_network_table_matches_spec(h):
     from export import tables
     rows = tables.sheet_network(h)
     kinds = [r[0] for r in rows]
-    assert kinds.count("AP") == 16 and kinds.count("LAN口") == 8 and kinds.count("ラック機器") == 8 and kinds.count("スリーブ") == 13
+    assert kinds.count("AP") == 18 and kinds.count("LAN口") == 8 and kinds.count("ラック機器") == 8 and kinds.count("スリーブ") == 13
     assert sum(r[8] for r in rows if r[0] == "LAN口") == 19
     assert all(len(r) == len(tables.HEADERS["ネットワーク"]) for r in rows)
