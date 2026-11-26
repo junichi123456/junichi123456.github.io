@@ -28,7 +28,7 @@ def test_room_areas():
     assert not [r for r in h.rooms if r.floor == "1F" and r.name in ("居室A", "WIC", "ファミリークローゼット", "収納（洗面）")]
     assert abs(h.gym_annex.area - 6.99) < 0.01 and abs(h.gym.daylight_area - 51.76) < 0.02 and h.gym.daylight_area >= 51.6       # v4.44: ジム本体 44.77（収納 4.25・蓄電室・増し打ちを除く）
     assert abs(_room(h, "浴室").area - 10.32) < 0.01 and abs(_room(h, "玄関土間").area - 5.86) < 0.01
-    assert abs(_room(h, "トイレ").area - 6.05) < 0.01 and abs(_room(h, "洗面・脱衣").area - 8.35) < 0.01
+    assert abs(_room(h, "トイレ", "2F").area - 6.05) < 0.01 and abs(_room(h, "洗面・脱衣").area - 8.35) < 0.01      # v4.45: 1F トイレ（6.05）は撤去して未割当（1F 北東）
 
 
 def test_daylight_margin():
@@ -62,8 +62,9 @@ def test_bath_wall_and_toilet_face():
     # v4.44: 浴室は 2,950×3,500（10.32m²、C-N）、洗面・脱衣との境は LGS x7,700（u12,150〜16,125）、1F トイレは E-N（x10,950〜14,265）。2F トイレは浴室の真上（C-N）
     w = [w for w in h.walls if w.floor == "1F" and w.axis == "y" and w.c == 7700]
     assert len(w) == 1 and (w[0].a, w[0].b) == (12150, 16125)
-    toilet = _room(h, "トイレ")
+    toilet = _room(h, "未割当（1F 北東）")                    # v4.45: 1F トイレを撤去（旧位置は未割当）
     assert toilet.rect == (10950, 10950, 14265, 12775)     # E-N（3,315×1,825）
+    assert not [r for r in h.rooms if r.floor == "1F" and r.name == "トイレ"]
     assert _room(h, "浴室").rect == (7750, 12150, 10700, 15650)
     assert _room(h, "トイレ", "2F").rect == (7750, 13500, 10700, 15550)
 

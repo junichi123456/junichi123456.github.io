@@ -22,7 +22,7 @@ CODE = {"リビング・ダイニング": "LDK", "キッチン": "KIT", "玄関�
         # v4.44 新しい室（部分一致のため長い名前を持つ。廊下・ホール・収納は室ごとに別の記号）
         "玄関収納": "GST", "ジム収納": "GSR", "機械室前": "MCF", "収納（ランドリー）": "LDS", "ホール（東）": "HLE", "階段1前": "S1F",
         "廊下（中央）": "CRC", "廊下（北）": "CRN", "廊下（南西）": "CSW", "廊下（南中央）": "CSC", "廊下（西）": "CRW", "廊下（北西）": "CNW",
-        "多目的室（北西）": "MPR", "多目的ホール（北）": "MPH", "収納（北中央）": "SNC", "収納（廊下）": "SCR", "収納（図書室）": "SLB", "収納（居室A）": "SRA", "収納（北）": "SRN",
+        "未割当（1F 西）": "UAW", "未割当（1F 北東）": "UAE", "未割当（2F 北西）": "UNW", "未割当（2F 北・西）": "UCW", "未割当（2F 北・東）": "UCE", "廊下（北・接続）": "CRJ", "収納（北中央）": "SNC", "収納（廊下）": "SCR", "収納（図書室）": "SLB", "収納（居室A）": "SRA", "収納（北）": "SRN",
         "PS-2": "PS2", "PS-3": "PS3", "納戸": "NND"}
 
 # 光束法の利用率 U（直付・乳白拡散、反射率 天井0.7/壁0.5/床0.2 を仮定した概略値）
@@ -139,7 +139,7 @@ def _blockers(h, its, r):
 # 室ごとの上書き（C-1.3 の表）: (向き, [(中心線, 端a, 端b)], lm/m)
 def _override(h, r):
     if r.floor == "1F" and r.name == "キッチン":
-        return [("x", y, 600, 4900) for y in (6300, 8300, 10100)], 3000      # v4.44: キッチン x125〜5,300・y5,300〜10,700
+        return [("x", y, 600, 4900) for y in (6300, 7300, 8500)], 3000      # v4.45: キッチン x125〜5,300・y5,300〜9,050（AP1-4 は (3250,7800)）
     if r.floor == "1F" and r.name.startswith("ランドリー"):
         return [("x", y, 2700, 4900) for y in (11500, 13200, 14800)], 2000      # v4.44: ファミクロ兼用の 3,075×4,475（x2,225〜5,300・y10,950〜15,425）
     return None
@@ -158,7 +158,10 @@ def _generic(h, its, r):
     segs = []
     for j in range(n):
         c = (y0 + d * (j + 0.5) / n) if along_x else (x0 + w * (j + 0.5) / n)
-        a, b = ((x0 + cfg["end_clear"], x1 - cfg["end_clear"]) if along_x else (y0 + cfg["end_clear"], y1 - cfg["end_clear"]))
+        ec = cfg["end_clear"]
+        if long_ - 2 * ec < 600:                # v4.45: 短い廊下（1F 廊下（西）1,550・2F 廊下（北・接続）1,350）は端の空きを詰めて 600 のラインを 1 本置く
+            ec = max(0, (long_ - 600) / 2)
+        a, b = ((x0 + ec, x1 - ec) if along_x else (y0 + ec, y1 - ec))
         L = LineString([(a, c), (b, c)] if along_x else [(c, a), (c, b)])
         rest = L.difference(block) if not block.is_empty else L
         parts = [g for g in getattr(rest, "geoms", [rest]) if g.length >= 600]

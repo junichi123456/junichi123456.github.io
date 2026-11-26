@@ -40,7 +40,7 @@ checks:
 # 対象室。anchor = 室の矩形に入る点。rooms = house.py の室名（複数なら矩形の和）。
 targets:
   R1-01_ld:      {floor: 1F, rooms: [リビング・ダイニング], anchor: [3000, 3000]}
-  R1-02_kitchen: {floor: 1F, rooms: [キッチン], anchor: [3000, 8500]}
+  R1-02_kitchen: {floor: 1F, rooms: [キッチン], anchor: [3000, 7700]}      # v4.45: 北端 y9,050（旧 anchor y8,500）
   R1-03_doma:   {floor: 1F, rooms: [玄関土間, 式台（框1）], anchor: [7300, 1000]}
   R1-04_hall:   {floor: 1F, rooms: [ホール], anchor: [7300, 4000]}
   R1-05_gym:    {floor: 1F, rooms: [ジム], anchor: [13500, 3000]}
@@ -52,7 +52,6 @@ targets:
   R1-13_wash:   {floor: 1F, rooms: [洗面・脱衣], anchor: [6500, 14000]}
   R1-14_bath:   {floor: 1F, rooms: [浴室], anchor: [9000, 13500]}
   R1-15_corr1:  {floor: 1F, rooms: [廊下（北）], anchor: [8000, 11500]}
-  R1-16_wc1b:   {floor: 1F, rooms: [トイレ], anchor: [12500, 11800]}
   R2-01_roomB:  {floor: 2F, rooms: [居室B], anchor: [1200, 2500]}
   R2-02_roomC:  {floor: 2F, rooms: [居室C], anchor: [9700, 2500]}
   R2-03_corr2w: {floor: 2F, rooms: [廊下（南西）], anchor: [3000, 6100]}
@@ -67,8 +66,7 @@ targets:
   R2-15_corr2n: {floor: 2F, rooms: [廊下（北西）], anchor: [3750, 11500]}
   R2-18_wc2b:   {floor: 2F, rooms: [トイレ], anchor: [9000, 14500]}
   R2-19_roomA:  {floor: 2F, rooms: [居室A], anchor: [6600, 2500]}
-  R2-20_multi:  {floor: 2F, rooms: [多目的室（北西）], anchor: [3750, 14000]}
-  R2-21_mhall:  {floor: 2F, rooms: [多目的ホール（北）], anchor: [8000, 12000]}
+  R2-20_multi:  {floor: 2F, rooms: [未割当（2F 北西）], anchor: [3750, 14000]}      # v4.45: 多目的室を撤去（R2-21_mhall も削除）
 # 除外（v4.44: 室数の組み替え）。理由つき
 excluded:
   - {floor: 1F, name: トイレ（手洗い付）, reason: 幅 1,850×奥行 2,050 の小室で正面 1,500 が取れない（v4.44）}
@@ -93,12 +91,19 @@ excluded:
   - {floor: 2F, name: PS-2, reason: パイプスペース（v4.44）}
   - {floor: 1F, name: 式台（框1）, reason: 玄関土間のカット（R1-03）に入る}
   - {floor: 1F, name: ジム（拡張部）, reason: ジムのカット（R1-05）に入る}
+  - {floor: 1F, name: 廊下（西）, reason: 幅 1,100×1,550 の廊下で正面 1,500 が取れない（v4.45 新設・未撮影）}
+  - {floor: 1F, name: 未割当（1F 西）, reason: 用途未定の未割当（v4.45 新設・未撮影）}
+  - {floor: 1F, name: 未割当（1F 北東）, reason: 用途未定の未割当（v4.45。旧 1F トイレ。R1-16_wc1b は削除）}
+  - {floor: 2F, name: 廊下（北）, reason: 幅 1,100 の廊下（v4.45 新設・未撮影。Z2-23a が代表）}
+  - {floor: 2F, name: 廊下（北・接続）, reason: 1,100×1,350 の廊下で正面 1,500 が取れない（v4.45 新設・未撮影）}
+  - {floor: 2F, name: 未割当（2F 北・西）, reason: 2,000×1,250 の未割当（v4.45 新設・未撮影）}
+  - {floor: 2F, name: 未割当（2F 北・東）, reason: 1,850×1,250 の未割当（v4.45 新設・未撮影）}
 # 個別上書き（--plan で保持）。例: R1-01_ld: {x: 3000, y: 3000, yaw: 45, exposure: -1.0, exp_note: "…"}
 override: {}
 # ---- 以下は src/render_rooms.py --plan が書く（手で直さない。直すときは上の override）----
 cuts:
   R1-01_ld: {"kind": "R", "floor": "1F", "room": "リビング・ダイニング", "area": 26.0, "theater": false, "corner": "NE", "x": 4386, "y": 4389, "yaw": 224.6, "inset": 300, "lens": 26, "front_mm": 5915, "clearance_mm": 464, "nearest": "L-K3", "windows": ["AW-LS", "AW-LW"], "wall_angle": 44.6, "direct": false, "sun_windows": [], "screens_down": [], "blackout_raised": [], "rect": [175, 225, 5300, 5300], "slug": "ld", "same_z": ["Z1-11"]}
-  R1-02_kitchen: {"kind": "R", "floor": "1F", "room": "キッチン", "area": 27.9, "theater": false, "corner": "SE", "x": 4600, "y": 6000, "yaw": 133.3, "inset": 0, "lens": 26, "front_mm": 6463, "clearance_mm": 673, "nearest": "wall", "windows": [], "wall_angle": 43.3, "direct": false, "sun_windows": [], "screens_down": [], "blackout_raised": [], "rect": [125, 5300, 5300, 10700], "slug": "kitchen", "same_z": ["Z1-12"]}
+  R1-02_kitchen: {"kind": "R", "floor": "1F", "room": "キッチン", "area": 19.4, "theater": false, "corner": "SW", "x": 825, "y": 6000, "yaw": 31.9, "inset": 0, "lens": 26, "front_mm": 5271, "clearance_mm": 450, "nearest": "wall", "windows": [], "wall_angle": 31.9, "direct": false, "sun_windows": [], "screens_down": [], "blackout_raised": [], "rect": [125, 5300, 5300, 9050], "slug": "kitchen", "same_z": ["Z1-12"]}
   R1-03_doma: {"kind": "R", "floor": "1F", "room": "玄関土間・式台（框1）", "area": 7.1, "theater": false, "corner": "SW", "x": 6903, "y": 915, "yaw": 26.9, "inset": 200, "lens": 24, "front_mm": 2626, "clearance_mm": 428, "nearest": "G-S1", "windows": [], "wall_angle": 26.9, "direct": false, "sun_windows": [], "screens_down": [], "blackout_raised": [], "rect": [6025, 125, 9150, 2400], "slug": "doma", "same_z": []}
   R1-04_hall: {"kind": "R", "floor": "1F", "room": "ホール", "area": 9.1, "theater": false, "corner": "NE", "x": 8450, "y": 4600, "yaw": 221.0, "inset": 0, "lens": 24, "front_mm": 3843, "clearance_mm": 700, "nearest": "wall", "windows": [], "wall_angle": 41.0, "direct": false, "sun_windows": [], "screens_down": [], "blackout_raised": [], "rect": [6025, 2400, 9150, 5300], "slug": "hall", "same_z": ["Z1-21"]}
   R1-05_gym: {"kind": "R", "floor": "1F", "room": "ジム", "area": 54.7, "theater": false, "corner": "NE", "x": 15425, "y": 10000, "yaw": 245.0, "inset": 0, "lens": 26, "front_mm": 10589, "clearance_mm": 675, "nearest": "partition", "windows": ["AW-2"], "wall_angle": 25.0, "direct": true, "sun_windows": ["AW-2", "AW-3"], "screens_down": ["AW-2", "AW-3"], "blackout_raised": [], "rect": [10950, 125, 16125, 10700], "slug": "gym", "same_z": ["Z1-31", "Z1-32"]}
@@ -110,7 +115,6 @@ cuts:
   R1-13_wash: {"kind": "R", "floor": "1F", "room": "洗面・脱衣", "area": 8.3, "theater": false, "corner": "SE", "x": 6950, "y": 12850, "yaw": 115.0, "inset": 0, "lens": 24, "front_mm": 3313, "clearance_mm": 700, "nearest": "partition", "windows": ["AW-5"], "wall_angle": 25.0, "direct": false, "sun_windows": [], "screens_down": [], "blackout_raised": [], "rect": [5550, 12150, 7650, 16125], "slug": "wash", "same_z": ["Z1-23"]}
   R1-14_bath: {"kind": "R", "floor": "1F", "room": "浴室", "area": 10.3, "theater": false, "corner": "SW", "x": 8450, "y": 12850, "yaw": 53.6, "inset": 0, "lens": 26, "front_mm": 3480, "clearance_mm": 700, "nearest": "partition", "windows": [], "wall_angle": 36.4, "direct": false, "sun_windows": [], "screens_down": [], "blackout_raised": [], "rect": [7750, 12150, 10700, 15650], "slug": "bath", "same_z": ["Z1-23"]}
   R1-15_corr1: {"kind": "R", "floor": "1F", "room": "廊下（北）", "area": 5.7, "theater": false, "corner": "SE", "x": 9900, "y": 11500, "yaw": 205.0, "inset": 100, "lens": 24, "front_mm": 2483, "clearance_mm": 550, "nearest": "wall", "windows": [], "wall_angle": 25.0, "direct": false, "sun_windows": [], "screens_down": [], "blackout_raised": [], "rect": [5550, 10950, 10700, 12050], "slug": "corr1", "same_z": []}
-  R1-16_wc1b: {"kind": "R", "floor": "1F", "room": "トイレ", "area": 6.0, "theater": false, "corner": "SW", "x": 11650, "y": 11650, "yaw": 25.0, "inset": 0, "lens": 24, "front_mm": 2662, "clearance_mm": 700, "nearest": "wall", "windows": [], "wall_angle": 25.0, "direct": false, "sun_windows": [], "screens_down": [], "blackout_raised": [], "rect": [10950, 10950, 14265, 12775], "slug": "wc1b", "same_z": ["Z1-33"]}
   R2-01_roomB: {"kind": "R", "floor": "2F", "room": "居室B", "area": 11.0, "theater": false, "corner": "NE", "x": 1545, "y": 4600, "yaw": 245.0, "inset": 0, "lens": 26, "front_mm": 3360, "clearance_mm": 700, "nearest": "wall", "windows": ["AW-4"], "wall_angle": 25.0, "direct": false, "sun_windows": [], "screens_down": [], "blackout_raised": [], "rect": [125, 125, 2245, 5300], "slug": "roomB", "same_z": ["Z2-11"]}
   R2-02_roomC: {"kind": "R", "floor": "2F", "room": "居室C", "area": 10.6, "theater": false, "corner": "NE", "x": 10000, "y": 4600, "yaw": 245.0, "inset": 0, "lens": 26, "front_mm": 3185, "clearance_mm": 700, "nearest": "wall", "windows": ["AW-4"], "wall_angle": 25.0, "direct": false, "sun_windows": [], "screens_down": [], "blackout_raised": [], "rect": [8654, 125, 10700, 5300], "slug": "roomC", "same_z": ["Z2-21"]}
   R2-03_corr2w: {"kind": "R", "floor": "2F", "room": "廊下（南西）", "area": 5.7, "theater": false, "corner": "SE", "x": 4600, "y": 6100, "yaw": 205.0, "inset": 0, "lens": 24, "front_mm": 1538, "clearance_mm": 550, "nearest": "wall", "windows": [], "wall_angle": 25.0, "direct": false, "sun_windows": [], "screens_down": [], "blackout_raised": [], "rect": [125, 5550, 5300, 6650], "slug": "corr2w", "same_z": []}
@@ -122,10 +126,9 @@ cuts:
   R2-10_library: {"kind": "R", "floor": "2F", "room": "図書室", "area": 32.5, "theater": false, "corner": "NW", "x": 11650, "y": 14337, "yaw": 307.7, "inset": 0, "lens": 26, "front_mm": 6740, "clearance_mm": 436, "nearest": "LB-P1", "windows": ["AW-1"], "wall_angle": 37.7, "direct": true, "sun_windows": ["AW-1"], "screens_down": ["AW-1"], "blackout_raised": [], "rect": [10950, 8759, 16125, 15037], "slug": "library", "same_z": ["Z2-32", "Z2-33"]}
   R2-11_hallE: {"kind": "R", "floor": "2F", "room": "ホール（東）", "area": 5.5, "theater": false, "corner": "SW", "x": 9550, "y": 8400, "yaw": 65.0, "inset": 0, "lens": 24, "front_mm": 2538, "clearance_mm": 700, "nearest": "partition", "windows": [], "wall_angle": 25.0, "direct": false, "sun_windows": [], "screens_down": [], "blackout_raised": [], "rect": [8850, 7700, 10700, 10700], "slug": "hallE", "same_z": ["Z2-22"]}
   R2-14_stair2: {"kind": "R", "floor": "2F", "room": "ホール・階段2", "area": 4.3, "theater": false, "corner": "SW", "x": 825, "y": 11650, "yaw": 51.3, "inset": 0, "lens": 24, "front_mm": 2081, "clearance_mm": 700, "nearest": "wall", "windows": [], "wall_angle": 38.7, "direct": false, "sun_windows": [], "screens_down": [], "blackout_raised": [], "rect": [125, 10950, 2125, 13100], "slug": "stair2", "same_z": []}
-  R2-15_corr2n: {"kind": "R", "floor": "2F", "room": "廊下（北西）", "area": 3.4, "theater": false, "corner": "戸口", "x": 2900, "y": 11650, "yaw": 335, "inset": 0, "lens": 22, "front_mm": 2648, "clearance_mm": 425, "nearest": "door", "windows": [], "alt": "4 隅（壁から 700 内側）はいずれも離隔 400mm・正面 1,500mm を満たさない（SW・SE・NE・NW）ため、戸口（WD-2@x2900y12100）から室内へ 450mm 入った位置に立ち戸を開け、22mm（水平 79°）を例外として許可。正面の壁まで 2648mm", "open_doors": {"x2900y12100": 1.0}, "wall_angle": 25.0, "direct": false, "sun_windows": [], "screens_down": [], "blackout_raised": [], "rect": [2225, 10950, 5300, 12050], "slug": "corr2n", "same_z": []}
+  R2-15_corr2n: {"kind": "R", "floor": "2F", "room": "廊下（北西）", "area": 3.4, "theater": false, "corner": "戸口", "x": 2900, "y": 11650, "yaw": 335, "inset": 0, "lens": 22, "front_mm": 2648, "clearance_mm": 425, "nearest": "door", "windows": [], "alt": "4 隅（壁から 700 内側）はいずれも離隔 400mm・正面 1,500mm を満たさない（SW・SE・NE・NW）ため、戸口（WD-3@x2900y12100）から室内へ 450mm 入った位置に立ち戸を開け、22mm（水平 79°）を例外として許可。正面の壁まで 2648mm", "open_doors": {"x2900y12100": 1.0}, "wall_angle": 25.0, "direct": false, "sun_windows": [], "screens_down": [], "blackout_raised": [], "rect": [2225, 10950, 5300, 12050], "slug": "corr2n", "same_z": []}
   R2-18_wc2b: {"kind": "R", "floor": "2F", "room": "トイレ", "area": 6.0, "theater": false, "corner": "SW", "x": 8450, "y": 14200, "yaw": 25.0, "inset": 0, "lens": 24, "front_mm": 2483, "clearance_mm": 700, "nearest": "partition", "windows": [], "wall_angle": 25.0, "direct": false, "sun_windows": [], "screens_down": [], "blackout_raised": [], "rect": [7750, 13500, 10700, 15550], "slug": "wc2b", "same_z": ["Z2-23"]}
   R2-19_roomA: {"kind": "R", "floor": "2F", "room": "居室A", "area": 11.2, "theater": false, "corner": "NW", "x": 6250, "y": 4600, "yaw": 295.0, "inset": 0, "lens": 26, "front_mm": 3528, "clearance_mm": 700, "nearest": "wall", "windows": ["AW-4"], "wall_angle": 25.0, "direct": false, "sun_windows": [], "screens_down": [], "blackout_raised": [], "rect": [5550, 125, 7716, 5300], "slug": "roomA", "same_z": ["Z2-21"]}
-  R2-20_multi: {"kind": "R", "floor": "2F", "room": "多目的室（北西）", "area": 12.2, "theater": false, "corner": "SW", "x": 2925, "y": 12850, "yaw": 57.0, "inset": 0, "lens": 26, "front_mm": 3907, "clearance_mm": 700, "nearest": "partition", "windows": [], "wall_angle": 33.0, "direct": false, "sun_windows": [], "screens_down": [], "blackout_raised": [], "rect": [2225, 12150, 5300, 16125], "slug": "multi", "same_z": ["Z2-13"]}
-  R2-21_mhall: {"kind": "R", "floor": "2F", "room": "多目的ホール（北）", "area": 12.6, "theater": false, "corner": "SE", "x": 10000, "y": 11650, "yaw": 155.0, "inset": 0, "lens": 26, "front_mm": 4200, "clearance_mm": 700, "nearest": "wall", "windows": [], "wall_angle": 25.0, "direct": false, "sun_windows": [], "screens_down": [], "blackout_raised": [], "rect": [5550, 10950, 10700, 13400], "slug": "mhall", "same_z": ["Z2-23"]}
+  R2-20_multi: {"kind": "R", "floor": "2F", "room": "未割当（2F 北西）", "area": 12.2, "theater": false, "corner": "SW", "x": 2925, "y": 12850, "yaw": 57.0, "inset": 0, "lens": 26, "front_mm": 3907, "clearance_mm": 700, "nearest": "partition", "windows": [], "wall_angle": 33.0, "direct": false, "sun_windows": [], "screens_down": [], "blackout_raised": [], "rect": [2225, 12150, 5300, 16125], "slug": "multi", "same_z": ["Z2-13"]}
   T1_plan_1F: {"kind": "T", "floor": "1F", "room": "", "title": "T1_plan_1F 1F全体を天井面から見下ろす", "exposure": -0.5}
   T2_plan_2F: {"kind": "T", "floor": "2F", "room": "", "title": "T2_plan_2F 2F全体を天井面から見下ろす", "exposure": -0.5}

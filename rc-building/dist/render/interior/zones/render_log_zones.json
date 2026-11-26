@@ -82,9 +82,9 @@
    "shoot_flags": [],
    "texture_fallbacks": [],
    "palette_mismatch": [],
-   "stale_since": "v4.44",
-   "prev_stale_since": "v4.43",
-   "note": "グリッド均等化・室構成見直し（未撮影）"
+   "stale_since": "v4.45",
+   "prev_stale_since": "v4.44",
+   "note": "トイレ 1 か所・LDK＋キッチン 28畳・接続開口 4.3m・多目的室撤去（未撮影）"
   },
   "Z1-11b": {
    "id": "Z1-11b",
@@ -164,9 +164,9 @@
    "shoot_flags": [],
    "texture_fallbacks": [],
    "palette_mismatch": [],
-   "stale_since": "v4.44",
-   "prev_stale_since": "v4.43",
-   "note": "グリッド均等化・室構成見直し（未撮影）"
+   "stale_since": "v4.45",
+   "prev_stale_since": "v4.44",
+   "note": "トイレ 1 か所・LDK＋キッチン 28畳・接続開口 4.3m・多目的室撤去（未撮影）"
   },
   "Z1-21a": {
    "id": "Z1-21a",
@@ -529,9 +529,9 @@
    "shoot_flags": [],
    "texture_fallbacks": [],
    "palette_mismatch": [],
-   "stale_since": "v4.44",
-   "prev_stale_since": "v4.43",
-   "note": "グリッド均等化・室構成見直し（未撮影）"
+   "stale_since": "v4.45",
+   "prev_stale_since": "v4.44",
+   "note": "トイレ 1 か所・LDK＋キッチン 28畳・接続開口 4.3m・多目的室撤去（未撮影）"
   },
   "Z1-12b": {
    "id": "Z1-12b",
@@ -615,9 +615,9 @@
    "shoot_flags": [],
    "texture_fallbacks": [],
    "palette_mismatch": [],
-   "stale_since": "v4.44",
-   "note": "グリッド均等化・室構成見直し（未撮影）",
-   "prev_stale_since": "v4.43"
+   "stale_since": "v4.45",
+   "note": "トイレ 1 か所・LDK＋キッチン 28畳・接続開口 4.3m・多目的室撤去（未撮影）",
+   "prev_stale_since": "v4.44"
   },
   "Z1-22a": {
    "id": "Z1-22a",
@@ -697,9 +697,9 @@
    "shoot_flags": [],
    "texture_fallbacks": [],
    "palette_mismatch": [],
-   "stale_since": "v4.44",
-   "prev_stale_since": "v4.43",
-   "note": "グリッド均等化・室構成見直し（未撮影）"
+   "stale_since": "v4.45",
+   "prev_stale_since": "v4.44",
+   "note": "トイレ 1 か所・LDK＋キッチン 28畳・接続開口 4.3m・多目的室撤去（未撮影）"
   },
   "Z1-22b": {
    "id": "Z1-22b",
@@ -1206,7 +1206,7 @@
   "Z1-33a": {
    "id": "Z1-33a",
    "zone": "Z1-33",
-   "room": "トイレ",
+   "room": "未割当（1F 北東）",
    "dir": "西",
    "cam": [
     13350,
@@ -1270,9 +1270,9 @@
     "窓の外が見えない（窓領域の平均は画像平均の 0.38 倍・標準偏差 27.4）"
    ],
    "def_hash": "dff81067a848",
-   "stale_since": "v4.44",
-   "note": "グリッド均等化・室構成見直し（未撮影）",
-   "prev_stale_since": "v4.43"
+   "stale_since": "v4.45",
+   "note": "トイレ 1 か所・LDK＋キッチン 28畳・接続開口 4.3m・多目的室撤去（未撮影）",
+   "prev_stale_since": "v4.44"
   },
   "Z1-33b": {
    "id": "Z1-33b",
@@ -2164,7 +2164,7 @@
   "Z2-13a": {
    "id": "Z2-13a",
    "zone": "Z2-13",
-   "room": "多目的室（北西）",
+   "room": "未割当（2F 北西）",
    "dir": "北",
    "cam": [
     3775,
@@ -2226,14 +2226,14 @@
    "status": "stale",
    "issues": [],
    "def_hash": "a459061adbe0",
-   "stale_since": "v4.44",
-   "note": "グリッド均等化・室構成見直し（未撮影）",
-   "prev_stale_since": "v4.43"
+   "stale_since": "v4.45",
+   "note": "トイレ 1 か所・LDK＋キッチン 28畳・接続開口 4.3m・多目的室撤去（未撮影）",
+   "prev_stale_since": "v4.44"
   },
   "Z2-13b": {
    "id": "Z2-13b",
    "zone": "Z2-13",
-   "room": "多目的室（北西）",
+   "room": "未割当（2F 北西）",
    "dir": "南",
    "cam": [
     3775,
@@ -2293,14 +2293,14 @@
    "status": "stale",
    "issues": [],
    "def_hash": "3a4eaa98b314",
-   "stale_since": "v4.44",
-   "note": "グリッド均等化・室構成見直し（未撮影）",
-   "prev_stale_since": "v4.43"
+   "stale_since": "v4.45",
+   "note": "トイレ 1 か所・LDK＋キッチン 28畳・接続開口 4.3m・多目的室撤去（未撮影）",
+   "prev_stale_since": "v4.44"
   },
   "Z2-23a": {
    "id": "Z2-23a",
    "zone": "Z2-23",
-   "room": "多目的ホール（北）",
+   "room": "廊下（北・接続）",
    "dir": "北",
    "cam": [
     8200,
@@ -2375,9 +2375,10 @@
    "shoot_flags": [],
    "texture_fallbacks": [],
    "palette_mismatch": [],
-   "stale_since": "v4.44",
-   "note": "グリッド均等化・室構成見直し（未撮影）",
-   "prev_stale_since": "v4.43"
+   "stale_since": "v4.45",
+   "note": "トイレ 1 か所・LDK＋キッチン 28畳・接続開口 4.3m・多目的室撤去（未撮影）",
+   "prev_stale_since": "v4.44",
+   "look": "収納（北中央）・トイレの戸・廊下（北）"
   },
   "Z2-23b": {
    "id": "Z2-23b",

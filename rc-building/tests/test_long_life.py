@@ -77,7 +77,7 @@ def test_pit_access():
     h, its = c["h"], c["its"]
     ll = h.spec["long_life"]
     ac = MT.access(h)
-    assert ac["ok"] and ac["connected"] and (ac["manways"], ac["hatches"], ac["ch"], ac["ps"], ac["co"]) == (12, 3, 3, 2, 7)    # v4.44: PS-1 と CO-1 を削除（PS-2・PS-3 の 2 か所、掃除口 7 か所）
+    assert ac["ok"] and ac["connected"] and (ac["manways"], ac["hatches"], ac["ch"], ac["ps"], ac["co"]) == (12, 3, 3, 2, 6)    # v4.45: CO-8（1F トイレの枝管）も削除して掃除口 6 か所。v4.44: PS-1 と CO-1 を削除（PS-2・PS-3 の 2 か所、掃除口 7 か所）
     
     assert not any("点検" in (o.label or "") for o in h.rc_walls["FDN"]["S"].openings)
     assert FU.check(h, its) == []

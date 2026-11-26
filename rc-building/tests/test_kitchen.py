@@ -52,10 +52,10 @@ def test_passages_1200():
 def test_L_kitchen():
     h = house()
     its = {i.id: i for i in FU.items(h)}
-    assert its["KB-C2"].rect == (4800, 7750, 5300, 10050)   # v4.44: キッチン x125〜5,300・y5,300〜10,700（背面の一式は v4.43 から dx −475・dy −1,300）
+    assert its["KB-C2"].rect == (4800, 6650, 5300, 8400)   # v4.45: キッチン y5,300〜9,050（背面の一式は v4.44 から dy −1,650、東カウンターは L2,300→1,750）。v4.44: (4800,7750,5300,10050)
     assert its["KB-C"].rect[2] == 5300
-    assert its["KB-F"].rect == (1325, 10050, 2025, 10650)
-    assert its["K-I1"].rect == (1325, 7850, 3600, 8850)   # v4.44: W2,275（KS-W 撤去・通路 1,200 を保つ）
+    assert its["KB-F"].rect == (1325, 8400, 2025, 9000)
+    assert its["K-I1"].rect == (1325, 6200, 3600, 7200)   # v4.45: アイランドは南へ 1,650（Y2 の北面 5,550 から 650）。v4.44: W2,275（KS-W 撤去・通路 1,200 を保つ）
 
 
 def test_pantry_removed():
@@ -64,7 +64,7 @@ def test_pantry_removed():
     ids = {i.id for i in FU.items(h)}
     assert "P-O1" not in ids and "KB-K" not in ids and "KS-W" not in ids      # v4.44: 西の目隠し収納 KS-W は撤去
     kit = next(r for r in h.rooms if r.name == "キッチン")
-    assert kit.rect == (125, 5300, 5300, 10700)
+    assert kit.rect == (125, 5300, 5300, 9050)      # v4.45: LDK＋キッチン 45.42m²＝28.03畳（旧 10,700）
 
 
 if __name__ == "__main__":

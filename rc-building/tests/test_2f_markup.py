@@ -49,7 +49,7 @@ def test_wc_and_dressing_constraints():
     assert [sorted((o.u0, o.u1) for o in w.openings) for w in sorted(walls, key=lambda w: w.a)] == [[(5800, 6600), (8800, 9600)]]     # 北の行の C 列（収納（北中央）・トイレ）
     # 廊下はすべて内法 1,100（v4.44 の追加指示）
     cors = [r for r in h.rooms if r.name.startswith("廊下")]
-    assert len([r for r in cors if r.floor == "2F"]) == 5 and len([r for r in cors if r.floor == "1F"]) == 2
+    assert len([r for r in cors if r.floor == "2F"]) == 7 and len([r for r in cors if r.floor == "1F"]) == 3      # v4.45: 2F に廊下（北）・廊下（北・接続）、1F に廊下（西）が増える
     assert all(min(r.rect[2] - r.rect[0], r.rect[3] - r.rect[1]) == 1100 for r in cors)
 
 

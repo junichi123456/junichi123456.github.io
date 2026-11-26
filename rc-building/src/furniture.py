@@ -92,13 +92,13 @@ def items(h):
         out.append(Item(i, fl, room, name, kind, tuple(float(v) for v in rect), FL[fl] if z0 is None else z0, H, mat, base, **kw))
 
     # ---- 1F LDK（指定商品 2 点・チェアはこの 1 脚だけ）。v4.44: 通り芯の均等化でキッチンは x125〜5300・y5300〜10700（Y2 の開口 x1,000〜5,100）
-    tx, ty = 2212.5, 6225.0           # v4.44: テーブルはキッチンの西端（x1,325〜3,100）・Y2 の北面（5,550）から 250 離す（アイランドの南 1,200）
-    add("L-T1", "1F", "キッチン", T["name"], "table_osb", (tx - T["w"] / 2, ty - T["d"] / 2, tx + T["w"] / 2, ty + T["d"] / 2), T["h"], "osb",
+    tx, ty = 2337.5, 3150.0           # v4.45: テーブルを LDK へ戻す（x1,450〜3,225・y2,725〜3,575）。西の LDK-C2 と 275、南の LDK-C1 前面と 1,500、北は Y2 面まで 1,725
+    add("L-T1", "1F", "リビング・ダイニング", T["name"], "table_osb", (tx - T["w"] / 2, ty - T["d"] / 2, tx + T["w"] / 2, ty + T["d"] / 2), T["h"], "osb",
         base="legs690", product="table_osb")
-    # チェアはテーブルの西の短辺側に、東（テーブル）向きに置く（v4.44: 東は Y2・X2 の開口の通行帯に掛かるため）。さらに −8° 振る
-    ccx = tx - T["w"] / 2 - 60 - C["d"] / 2
-    add("L-C1", "1F", "キッチン", C["name"], "school_chair", (ccx - C["w"] / 2, ty - C["d"] / 2, ccx + C["w"] / 2, ty + C["d"] / 2), C["h"], "chair_wood",
-        base="legs", chair=True, rot=82.0, product="school_chair")
+    # チェアはテーブルの東の短辺側に、西（テーブル）向きに置く（v4.45: 西は LDK-C2 との間が狭い）。さらに −8° 振る（rot −98°）
+    ccx = tx + T["w"] / 2 + 60 + C["d"] / 2
+    add("L-C1", "1F", "リビング・ダイニング", C["name"], "school_chair", (ccx - C["w"] / 2, ty - C["d"] / 2, ccx + C["w"] / 2, ty + C["d"] / 2), C["h"], "chair_wood",
+        base="legs", chair=True, rot=-98.0, product="school_chair")
     add("L-S1", "1F", LDK, "サイドボード（台輪）", "cabinet", (4850, 225, 5300, 2475), 700, "case_ash")
     add("L-K1", "1F", LDK, "リビング収納（天井まで・開き戸＋天袋 FL+2,200〜・W825）", "tall", (175, 4850, 1000, 5300), h.ch["1F"], "case_ash", hjoint=2200.0)
     add("LDK-C1", "1F", LDK, "窓辺の造作収納 南（FL+700・奥行 1,000・オーク天板 t40・前面は引出し・奥は跳ね上げ蓋）", "sill_storage", (175, 225, 4000, 1225), 700, "sill_panel", base="none", front="+y",
@@ -108,17 +108,17 @@ def items(h):
     add("L-K2", "1F", LDK, "リビング収納 南（天井まで・D825・開き戸 2 枚＋天袋・可動棚・人感 LED）", "tall", (175, 4000, 1000, 4850), h.ch["1F"], "case_ash", front="+x", leaves=2, hjoint=2200.0)
     add("L-K3", "1F", LDK, "リビング収納 東（天井まで・引違い戸 2 枚（上吊り）・可動棚・背面 130 は GD-1 の戸袋）", "tall", (4850, 4050, 5300, 4700), h.ch["1F"], "case_ash", front="-x", pocket=130.0, leaves=2, hjoint=0.0)
     add("L-A1", "1F", LDK, "アートパネル（サイドボードの上に立て掛け）", "art", (5170, 700, 5200, 1600), 640, "art", z0=FL["1F"] + 700, base="stack", stack=True)
-    # ---- キッチン（v4.44: v4.43 の背面側の一式を dx −475・dy −1,300、アイランドは W2,275・dy −1,200、KS-W は撤去）
-    add("K-I1", "1F", "キッチン", "アイランドキッチン W2,275（IH 3口・一体成形シンク・ダウンドラフト換気、南＝LDK を向いて調理）", "island", (1325, 7850, 3600, 8850), 900, "olive_case")
-    add("KB-W", "1F", "キッチン", "背面のふかし壁（ステンレス）", "kb_wall", (1325, 10650, 5300, 10700), h.ch["1F"], "stainless", base="none")
-    add("KB-C", "1F", "キッチン", "背面カウンター（下部オープン棚・L 字の北辺）", "kb_counter", (2025, 10050, 5300, 10650), 900, "stainless", base="legs25", front="-y")
-    add("KB-C2", "1F", "キッチン", "L 字の東カウンター（下部オープン棚・D500）", "kb_counter", (4800, 7750, 5300, 10050), 900, "stainless", base="legs25", front="-x")
-    add("KB-R", "1F", "キッチン", "壁付けレール φ12（台所用具）", "kb_rail", (2825, 10600, 4725, 10650), 12, "stainless", z0=FL["1F"] + KO.RAIL_Z, base="wallfix", stack=True)
-    add("KB-N", "1F", "キッチン", "施錠式ナイフケース W450×H300×D80（FL+1,250〜1,550）", "kb_knife_case", (2175, 10570, 2625, 10650), 300, "steel_black", z0=FL["1F"] + KO.KNIFE_Z[0],
+    # ---- キッチン（v4.45: 一式を dy −1,650、アイランドは南へ、東カウンター L1,750。v4.44: v4.43 の背面側の一式を dx −475・dy −1,300、アイランドは W2,275・dy −1,200、KS-W は撤去）
+    add("K-I1", "1F", "キッチン", "アイランドキッチン W2,275（IH 3口・一体成形シンク・ダウンドラフト換気、南＝LDK を向いて調理）", "island", (1325, 6200, 3600, 7200), 900, "olive_case")
+    add("KB-W", "1F", "キッチン", "背面のふかし壁（ステンレス）", "kb_wall", (1325, 9000, 5300, 9050), h.ch["1F"], "stainless", base="none")
+    add("KB-C", "1F", "キッチン", "背面カウンター（下部オープン棚・L 字の北辺）", "kb_counter", (2025, 8400, 5300, 9000), 900, "stainless", base="legs25", front="-y")
+    add("KB-C2", "1F", "キッチン", "L 字の東カウンター（下部オープン棚・D500）", "kb_counter", (4800, 6650, 5300, 8400), 900, "stainless", base="legs25", front="-x")
+    add("KB-R", "1F", "キッチン", "壁付けレール φ12（台所用具）", "kb_rail", (2825, 8950, 4725, 9000), 12, "stainless", z0=FL["1F"] + KO.RAIL_Z, base="wallfix", stack=True)
+    add("KB-N", "1F", "キッチン", "施錠式ナイフケース W450×H300×D80（FL+1,250〜1,550）", "kb_knife_case", (2175, 8920, 2625, 9000), 300, "steel_black", z0=FL["1F"] + KO.KNIFE_Z[0],
         base="wallfix", stack=True, note="包丁の扱い（施錠ケース／磁石バー／引出し）は要施主確認")
-    add("KB-S", "1F", "キッチン", "吊り棚 1 段（天端 FL+1,550・落下防止バー）", "kb_shelves", (2725, 10350, 4825, 10650), 72, "stainless", z0=FL["1F"] + KO.KS_TIERS[0],
+    add("KB-S", "1F", "キッチン", "吊り棚 1 段（天端 FL+1,550・落下防止バー）", "kb_shelves", (2725, 8700, 4825, 9000), 72, "stainless", z0=FL["1F"] + KO.KS_TIERS[0],
         base="wallfix", stack=True)
-    add("KB-F", "1F", "キッチン", "冷蔵庫＋上部ふさぎ板", "kb_fridge", (1325, 10050, 2025, 10650), h.ch["1F"], "stainless", base="none")
+    add("KB-F", "1F", "キッチン", "冷蔵庫＋上部ふさぎ板", "kb_fridge", (1325, 8400, 2025, 9000), h.ch["1F"], "stainless", base="none")
     # ---- 玄関・ホール（v4.44: 玄関収納は GD-1 の降り口 y2,700〜4,100 を空けた造作）
     add("G-S1", "1F", "玄関土間", "下足入れ（造作・天井まで・扉付き・電波遮断キーボックス内蔵）", "tall", h.shoe, FL["1F"] + h.ch["1F"] - DOMA, "case_ash", z0=DOMA, front="+x")
     add("G-B1", "1F", "玄関土間", "腰掛けベンチ（造作、座 H420＋クッション）", "bench", h.bench, 420, "case_ash", z0=DOMA, seat=True, front="+y", note="座る家具。要施主確認")
@@ -131,8 +131,6 @@ def items(h):
     # ---- 水回り
     add("T1-W", "1F", "トイレ（手洗い付）", "タンク式便器（フチなし）", "toilet", (9700, 7100, 10200, 7600), 800, "ceramic", base="none")
     add("T1-H", "1F", "トイレ（手洗い付）", "手洗いカウンター（一体成形・浮かせ）", "counter_float", (10400, 5550, 10700, 6550), 850, "solid_surface", base="float650")
-    add("T2-W", "1F", "トイレ", "タンク式便器（フチなし）", "toilet", (13250, 12275, 13750, 12775), 800, "ceramic", base="none")
-    add("T2-H", "1F", "トイレ", "手洗いカウンター（一体成形・浮かせ）", "counter_float", (13965, 10950, 14265, 11950), 850, "solid_surface", base="float650")
     # v4.40 PS（パイプスペース）: LGS＋耐水PB・EP、点検扉 1 枚（FL+60〜2,700）。2F の排水・給水を通す（long_life.ps、48章）
     for pid, room, rect, front, note in h.spec["long_life"]["ps"]:
         add(pid, "1F", room, f"PS（パイプスペース）LGS＋耐水PB・点検扉 1 枚 FL+60〜2,700・{note}", "ps", tuple(rect), h.ch["1F"], "wet_panel",
@@ -167,7 +165,7 @@ def items(h):
     add("A-B1", "2F", "居室A", "ベッド シングル 1000×2000（頭は北）", "bed", (6716, 2300, 7716, 4300), 520, "case_oak", base="legs260", head="+y")
     add("A-C1", "2F", "居室A", "チェスト", "cabinet", (5550, 1000, 5950, 1800), 700, "case_ash")
     add("MB-C1", "2F", "主寝室", "チェスト", "cabinet", (2345, 1000, 2795, 1800), 700, "case_ash")
-    add("D2-DK", "2F", "多目的ホール（北）", "掃除ロボットのドック（2階。トイレの給排水から壁越しに直結）", "dock", (10250, 12950, 10700, 13400), 600, "appliance_white", base="none")
+    add("D2-DK", "2F", "廊下（北）", "掃除ロボットのドック（2階。トイレの給排水から壁越しに直結）", "dock", (10250, 12950, 10700, 13400), 600, "appliance_white", base="none")
     add("T3-W", "2F", "トイレ（手洗い付）", "タンク式便器（フチなし）", "toilet", (9700, 7100, 10200, 7600), 800, "ceramic", base="none")
     add("T3-H", "2F", "トイレ（手洗い付）", "手洗いカウンター（浮かせ）", "counter_float", (10400, 5550, 10700, 6550), 850, "solid_surface", base="float650")
     add("T4-W", "2F", "トイレ", "タンク式便器（フチなし）", "toilet", (8700, 15050, 9200, 15550), 800, "ceramic", base="none")

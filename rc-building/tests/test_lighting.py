@@ -108,8 +108,8 @@ def test_footline_hs3():
     its = FU.items(h)
     fp, _ = L.footlines(h, its)
     assert not [d for d in fp if d.get("mount") == "家具"] and not [i for i in its if i.footline]
-    # v4.44: 足元灯 105 本（1F 延長 21,783）。階段2 は北西の角へ
-    assert len(fp) == 105 and sum(d["L"] for d in fp if d["floor"] == "1F") == 21783
+    # v4.44: 足元灯 105 本（1F 延長 21,783）。v4.45: 廊下（西）（1F）が増えて 109 本（1F 延長 24,160）
+    assert len(fp) == 109 and sum(d["L"] for d in fp if d["floor"] == "1F") == 24160
 
 
 def test_channels_schedule():

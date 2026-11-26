@@ -229,21 +229,21 @@ AISLE_MIN = 1200
 
 
 def aisles(h, its=None):
-    """固定物・家具の仕上げ面どうしの水平の内法（mm）。[(ラベル, 値)] 7 行（v4.44 で KS-W 撤去・チェア行を削除）。出入口の戸は数えない（要施主確認 F-4）。"""
+    """固定物・家具の仕上げ面どうしの水平の内法（mm）。[(ラベル, 値)] 7 行（v4.45: テーブルを LDK へ戻し、アイランド南面↔テーブル・テーブル西端の行を
+    テーブル南端↔窓辺の収納・テーブル北端↔Y2 南面に置換）。出入口の戸は数えない（要施主確認 F-4）。"""
     import furniture as FU
     its = {i.id: i for i in (its or FU.items(h))}
     isl, kbc, kbf = its["K-I1"].rect, its["KB-C"].rect, its["KB-F"].rect
-    c2, tb = its["KB-C2"].rect, its["L-T1"].rect
+    c2, tb, cs = its["KB-C2"].rect, its["L-T1"].rect, its["LDK-C1"].rect
     kit = next(r for r in h.rooms if r.name == "キッチン")
     kx0, ky0, kx1, ky1 = kit.rect
-    chx1 = its["L-C1"].poly().bounds[2]
     return [("アイランド北面 ↔ 背面カウンター前面", kbc[1] - isl[3]),
             ("アイランド北面 ↔ 冷蔵庫前面", kbf[1] - isl[3]),
             ("アイランド西面 ↔ X1 壁面（v4.44 KS-W 撤去）", isl[0] - kx0),
             ("アイランド東面 ↔ L 字東カウンター前面", c2[0] - isl[2]),
-            ("アイランド南面 ↔ テーブル北端", isl[1] - tb[3]),
-            ("テーブル西端 ↔ X1 壁面", tb[0] - kx0),
-            ("冷蔵庫西面 ↔ X1 壁面（Y3 の戸への通路）", kbf[0] - kx0)]
+            ("冷蔵庫西面 ↔ X1 壁面（北の戸への通路）", kbf[0] - kx0),
+            ("テーブル南端 ↔ 窓辺の収納 LDK-C1 前面（v4.45）", tb[1] - cs[3]),
+            ("テーブル北端 ↔ Y2 南面（開口。v4.45）", ky0 - tb[3])]
 
 
 def passages(h, its=None):

@@ -58,7 +58,7 @@ def test_single_chair_in_ldk():
     its = FU.items(h)
     ch = [i for i in its if i.chair]
     assert len(ch) == 1 == sum(i.chair for i in its)
-    assert ch[0].room in (FU.LDK, "キッチン") and ch[0].name == "ペッパー スクールチェア チャコールブラウン"
+    assert ch[0].room in (FU.LDK, "キッチン")      # v4.45: LDK（テーブルの東の短辺） and ch[0].name == "ペッパー スクールチェア チャコールブラウン"
     assert not [i for i in its if i.kind in FU.CHAIR_KINDS and not i.chair]
 
 
@@ -66,7 +66,8 @@ def test_table_north_of_y2():
     h = house()
     its = {i.id: i for i in FU.items(h)}
     t = its["L-T1"]
-    assert t.room == "キッチン" and t.rect[1] >= 5550 + 250 and its["K-I1"].rect[1] - t.rect[3] >= 1200      # v4.44: Y2 の北面 5,550 から 250 以上離す（通行帯の外）
+    # v4.45: テーブルを LDK へ戻す（x1,450〜3,225・y2,725〜3,575）。Y2 の南面（5,300）まで 1,725、窓辺の収納 LDK-C1 の前面まで 1,500、西の LDK-C2 まで 275
+    assert t.room == "リビング・ダイニング" and t.rect == (1450.0, 2725.0, 3225.0, 3575.0) and 5300 - t.rect[3] >= 1200 and t.rect[1] - its["LDK-C1"].rect[3] >= 1200
     assert "L-P1" not in its and "L-K2" in its
     assert round(t.w) == h.spec["furniture"]["products"]["table_osb"]["w"] == 1775
     assert t.name.startswith("マテリア ダイニングテーブル OSB 177.5cm")
@@ -176,7 +177,7 @@ def test_storage_v437():
         it = its[k]
         assert it.z0 + it.h <= FU.stair_soffit(h, it.under, it.poly()) - 50, k
     assert FU.check(h, list(its.values())) == []
-    assert len(its) == 62      # v4.44: 家具 70→62（KS-W・H-S1/H-S3・書庫の書架 3・WIC の棚・脱衣所・シャワー・玄関収納 の組み替え、PS 2、ジム収納の棚）
+    assert len(its) == 60      # v4.45: 62→60（1F トイレの便器・手洗い T2-W・T2-H を撤去）。v4.44: 家具 70→62（KS-W・H-S1/H-S3・書庫の書架 3・WIC の棚・脱衣所・シャワー・玄関収納 の組み替え、PS 2、ジム収納の棚）
     assert its["LDK-C1"].slot is None and its["LDK-C2"].slot is None          # v4.38 クアッドで吹出しを廃止
     assert [its[k].leaves for k in ("L-K2", "L-K3", "H-S4", "R-S1")] == [2, 2, 2, 2]
     assert its["L-K1"].hjoint == its["L-K2"].hjoint == 2200

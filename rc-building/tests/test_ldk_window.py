@@ -48,7 +48,7 @@ def test_structure():
         assert v["wall_rate"] >= 12, (f, d)
         assert v["耐震等級3（Co=0.3）"]["ratio"] >= 1.0
         assert v["ecc"] <= 0.15, (f, d, v["ecc"])
-    assert abs(se["stories"][("1F", "X方向")]["ecc"] - 0.000) < 0.005     # v4.44: 均等な通り芯で 1F X 0.115→0.000（最大は 2F X 0.107）
+    assert abs(se["stories"][("1F", "X方向")]["ecc"] - 0.018) < 0.005     # v4.45: Y2 W 列の開口 1,600→4,300 で 0.000→0.018。v4.44: 均等な通り芯で 1F X 0.115→0.000（最大は 2F X 0.107）
     assert abs(se["stories"][("1F", "Y方向")]["ecc"] - 0.056) < 0.005     # v4.44: 0.056 のまま
     assert max(h.H.values()) <= 3500
     assert 250 >= max(150, max(h.H.values()) / 22)
