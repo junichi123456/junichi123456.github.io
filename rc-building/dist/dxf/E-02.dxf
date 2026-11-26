@@ -493,7 +493,7 @@ $SKPOLY
   9
 $TDCREATE
  40
-2461371.0976388888
+2461371.2640046296
   9
 $TDUCREATE
  40
@@ -501,7 +501,7 @@ $TDUCREATE
   9
 $TDUPDATE
  40
-2461371.0983796297
+2461371.264722222
   9
 $TDUUPDATE
  40
@@ -553,7 +553,7 @@ $SPLINESEGS
   9
 $HANDSEED
   5
-1A5
+1A6
   9
 $SURFTAB1
  70
@@ -933,11 +933,11 @@ $PSTYLEMODE
   9
 $FINGERPRINTGUID
   2
-{5374A1C7-9F85-45A3-ADA5-ADCED2C8F6A1}
+{7BC12CFF-2E6B-41FE-80CE-36FD45721C49}
   9
 $VERSIONGUID
   2
-{DCDD098A-A300-4E99-BF50-3370EAB7ABBC}
+{60A74666-016D-460F-B3B7-29F5C900E9F7}
   9
 $EXTNAMES
 290
@@ -1327,9 +1327,9 @@ ISM
   0
 CLASS
   1
-LAYOUT
+ACDBPLACEHOLDER
   2
-AcDbLayout
+AcDbPlaceHolder
   3
 ObjectDBX Classes
  90
@@ -1343,9 +1343,9 @@ ObjectDBX Classes
   0
 CLASS
   1
-ACDBPLACEHOLDER
+LAYOUT
   2
-AcDbPlaceHolder
+AcDbLayout
   3
 ObjectDBX Classes
  90
@@ -5021,7 +5021,7 @@ AcAecLayerStandard
   0
 APPID
   5
-1A2
+1A3
 330
 3
 100
@@ -5035,7 +5035,7 @@ HATCHBACKGROUNDCOLOR
   0
 APPID
   5
-1A3
+1A4
 330
 3
 100
@@ -6859,7 +6859,7 @@ JIS
 340
 8A
 342
-1A5
+1A6
 371
 13
 372
@@ -6981,7 +6981,7 @@ _CLOSEDBLANK
   0
 BLOCK_RECORD
   5
-1A5
+1A6
 330
 9
 100
@@ -7301,9 +7301,9 @@ AcDbBlockEnd
   0
 BLOCK
   5
-1A6
+1A7
 330
-1A5
+1A6
 100
 AcDbEntity
   8
@@ -7327,9 +7327,9 @@ _DOT
   0
 LINE
   5
-1A8
+1A9
 330
-1A5
+1A6
 100
 AcDbEntity
   8
@@ -7355,9 +7355,9 @@ AcDbLine
   0
 LWPOLYLINE
   5
-1A9
+1AA
 330
-1A5
+1A6
 100
 AcDbEntity
   8
@@ -7389,9 +7389,9 @@ AcDbPolyline
   0
 ENDBLK
   5
-1A7
+1A8
 330
-1A5
+1A6
 100
 AcDbEntity
   8
@@ -8725,7 +8725,7 @@ AcDbText
  40
 2.0
   1
-・外付けスクリーン 11台
+・外付けスクリーン 10台
   7
 JP
  11
@@ -13169,7 +13169,7 @@ AcDbText
  40
 1.9
   1
-14
+20
   7
 JP
  11
@@ -13291,7 +13291,7 @@ AcDbText
  40
 1.9
   1
-206m²
+221m²
   7
 JP
  11
@@ -13323,7 +13323,7 @@ AcDbText
  40
 1.9
   1
-21
+26
   7
 JP
  11
@@ -13661,7 +13661,7 @@ AcDbText
  40
 2.1
   1
-ドック: 1階 ランドリー、2階 廊下（北）の西端（脱衣所の給排水から壁越しに直結）。自動ゴミ収集・給排水直結で水拭きの水替え不要
+ドック: 1階 ランドリー、2階 多目的ホール（北）の東端（トイレの給排水から壁越しに直結）。自動ゴミ収集・給排水直結で水拭きの水替え不
   7
 JP
  11
@@ -13687,7 +13687,39 @@ AcDbText
  10
 13.0
  20
-81.07500000000003
+82.07500000000003
+ 30
+0.0
+ 40
+2.1
+  1
+要
+  7
+JP
+ 11
+13.0
+ 21
+82.07500000000003
+ 31
+0.0
+100
+AcDbText
+  0
+TEXT
+  5
+19A
+330
+17
+100
+AcDbEntity
+  8
+A-TEXT
+100
+AcDbText
+ 10
+13.0
+ 20
+77.27500000000003
  30
 0.0
  40
@@ -13699,7 +13731,7 @@ JP
  11
 13.0
  21
-81.07500000000003
+77.27500000000003
  31
 0.0
 100
@@ -13707,7 +13739,7 @@ AcDbText
   0
 TEXT
   5
-19A
+19B
 330
 17
 100
@@ -13739,7 +13771,7 @@ AcDbText
   0
 TEXT
   5
-19B
+19C
 330
 17
 100
@@ -13771,7 +13803,7 @@ AcDbText
   0
 TEXT
   5
-19C
+19D
 330
 17
 100
@@ -13803,7 +13835,7 @@ AcDbText
   0
 TEXT
   5
-19D
+19E
 330
 17
 100
@@ -13835,7 +13867,7 @@ AcDbText
   0
 TEXT
   5
-19E
+19F
 330
 17
 100
@@ -13867,7 +13899,7 @@ AcDbText
   0
 TEXT
   5
-19F
+1A0
 330
 17
 100
@@ -13899,7 +13931,7 @@ AcDbText
   0
 TEXT
   5
-1A0
+1A1
 330
 17
 100
@@ -13917,7 +13949,7 @@ AcDbText
  40
 2.1
   1
-全11台を個別・グループ（方位・室）で操作でき、位置を bot に返す。日没後の自動降下で光漏れを防ぐ（虫を寄せない、E-03）
+全10台を個別・グループ（方位・室）で操作でき、位置を bot に返す。日没後の自動降下で光漏れを防ぐ（虫を寄せない、E-03）
   7
 JP
  11
@@ -13931,7 +13963,7 @@ AcDbText
   0
 TEXT
   5
-1A1
+1A2
 330
 17
 100
@@ -15051,7 +15083,7 @@ CREATED_BY_EZDXF
   3
 WRITTEN_BY_EZDXF
 350
-1A4
+1A5
   0
 DICTIONARYVAR
   5
@@ -15063,7 +15095,7 @@ DictionaryVariables
 280
 0
   1
-1.4.5 @ 2026-11-26T02:20:36.879581+00:00
+1.4.5 @ 2026-11-26T06:20:10.079428+00:00
   0
 VISUALSTYLE
   5
@@ -21617,7 +21649,7 @@ strokes_ogs.tif
   0
 DICTIONARYVAR
   5
-1A4
+1A5
 330
 2D
 100
@@ -21625,7 +21657,7 @@ DictionaryVariables
 280
 0
   1
-1.4.5 @ 2026-11-26T02:21:40.186078+00:00
+1.4.5 @ 2026-11-26T06:21:12.755744+00:00
   0
 ENDSEC
   0

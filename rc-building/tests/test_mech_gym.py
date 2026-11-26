@@ -22,9 +22,9 @@ def _h():
 def test_x3_openings_and_remnants():
     h = _h()
     x3 = sorted((o.u0, o.u1) for w in h.walls if w.floor == "1F" and w.cat == "wall" and w.axis == "y" and w.c == h.gx[2] for o in w.openings)
-    assert x3 == [(815, 4850), (12400, 13200)]                # v4.41: 北の扉（C-N 廊下↔北東廊下）
+    assert x3 == [(815, 4850), (11050, 11850)]                # v4.44: ジム拡張部の開口と、廊下（北）→トイレ（N 行）の扉
     assert 815 - 125 >= max(450, 0.3 * 2300)                 # 南端の残り壁 690
-    assert 17250 - 125 - 13200 >= 690                        # 北端側（13,200〜外面。v4.41）
+    assert 16250 - 125 - 11850 >= 690                        # 北端側（11,850〜外面）
 
 
 def test_wall_quantity_and_eccentricity():
@@ -35,21 +35,21 @@ def test_wall_quantity_and_eccentricity():
     assert h.t == 250
 
 
-def test_three_rooms_one_door_each_into_gym():
+def test_mech_rooms_in_north_row():
+    """v4.44: 機械室 2 室は 1F 北東（N 行）。機械室前（ジム Y3 の扉）→東系統（MD-E）→西系統（MD-W）の順で入る。蓄電室はジムの東壁沿い。"""
     h = _h()
-    w89 = next(w for w in h.walls if w.floor == "1F" and w.axis == "x" and w.c == 8950 and w.a == 10475)
-    assert [(o.u0, o.u1) for o in w89.openings] == [(10575, 11375), (13500, 14300)]                # v4.43: 機械室の幅 2,750／2,800
-    assert all(o.swing == 1 and o.hinge == 0 for o in w89.openings)                 # 内開き
-    w15 = next(w for w in h.walls if w.floor == "1F" and w.axis == "y" and w.c == 13275)
-    assert not w15.openings                                                          # 機械室どうしの扉は廃止
+    mr = h.spec["mech_rooms"]
+    wx = next(w for w in h.walls if w.floor == "1F" and w.axis == "x" and w.c == mr["wall_x_y"])
+    assert [(o.u0, o.u1) for o in wx.openings] == [(14500, 15300)] and all(o.swing == 1 and o.hinge == 0 for o in wx.openings)          # 機械室前→東系統（内開き）
+    wm = next(w for w in h.walls if w.floor == "1F" and w.axis == "y" and w.c == mr["wall_mid"])
+    assert [(o.u0, o.u1) for o in wm.openings] == [(13200, 14000)] and all(o.swing == -1 for o in wm.openings)                       # 東系統→西系統（西へ内開き）
     d = h.battery_door
-    assert d.swing == -1 and d.width == 900 and (d.u0, d.u1) == (6500, 7400)
+    assert d.swing == -1 and d.width == 900 and (d.u0, d.u1) == (6300, 7200)
     gym = sb(*h.gym.rect)
     assert gym.buffer(1).intersects(sb(*h.battery_room.rect)) and abs(h.battery_room.area - 4.17) < 0.05
-    mw, me = (r for r in h.rooms if r.name.startswith("機械室"))
-    assert abs(mw.area - 8.25) < 0.1 and abs(me.area - 8.40) < 0.1      # v4.43: −3.5%・−4.3%
-    for r in (mw, me):                                                               # 扉のある壁（y8,950）がジムに接する
-        assert abs(r.rect[1] - 9000) < 1 and gym.intersects(sb(r.rect[0], 8900, r.rect[2], 9000))
+    mw, me = (r for r in h.rooms if r.name.startswith("機械室") and r.floor == "1F" and "前" not in r.name)
+    assert abs(mw.area - 8.25) < 0.1 and abs(me.area - 8.25) < 0.1      # v4.43 比 0%・−1.8%
+    assert mw.rect[1] == 12875 and me.rect[1] == 12875
 
 
 def test_clearance_800_and_swing():
@@ -59,7 +59,7 @@ def test_clearance_800_and_swing():
     assert not r["battery_swing_hits"] and not r["lane_hits"]
     assert not any(r["mech_swing_hits"].values())                                    # 分電盤・機器が扉の軌跡に入らない
     assert r["usable"] >= 44.85, r["usable"]
-    assert abs(h.gym.area - 44.31) < 0.05 and abs(h.gym.daylight_area - 52.24) < 0.05      # v4.43: ジム 5,650×8,775（−蓄電室−増し打ち帯）＋拡張部 7.93
+    assert abs(h.gym.area - 44.77) < 0.05 and abs(h.gym.daylight_area - 51.76) < 0.05      # v4.44: ジム 5,175×10,575（−蓄電室−ジム収納−増し打ち帯）＋拡張部 6.99
     assert r["rack_front"] >= h.spec["mech_rooms"]["rack_front_min"]
     z = h.mech_zones()
     for n, rc, *_ in h.equipment:
@@ -83,5 +83,5 @@ def test_a03_detail_does_not_overlap_notes():
     sh = hs.floor_plan(h, "1F", "A-03")                      # 内部の assert: 詳細の下端が表題欄の上端から 3mm 以上離れる
     btm, notes_bottom = sh.detail_frame
     assert btm >= sh.MARGIN + sh.TB[1] + 3
-    assert notes_bottom - 4 - 8 + 8 > btm + 70                 # 詳細の枠（上端 = 注記欄の下端−4−5）が注記欄より下にある
+    assert notes_bottom - 4 - 8 + 8 > btm + 50                 # 詳細の枠（上端 = 注記欄の下端−4−5）が注記欄より下にある（v4.44: 2 窓を横に並べ 1:100 にしたため高さ 約 56mm）
     assert btm < notes_bottom - 4

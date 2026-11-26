@@ -27,8 +27,8 @@ def test_local_thick_rows():
 
 def test_areas():
     h = _h()
-    assert abs(h.gym.area - 44.31) < 0.02                 # v4.43: 5,650×8,775 − 蓄電室 − 増し打ち帯（v4.41・42 は 46.27）
-    assert abs(h.gym.daylight_area - 52.24) < 0.02        # 拡張部 7.93 込み。v4.42 比 −3.1%、施主目標 51.6 以上
+    assert abs(h.gym.area - 44.77) < 0.02                 # v4.44: 5,175×10,575 − 蓄電室 − ジム収納（壁込み 4.75）− 増し打ち帯（v4.43 は 44.31）
+    assert abs(h.gym.daylight_area - 51.76) < 0.02        # 拡張部 6.99 込み。v4.43 比 −0.9%、施主目標 51.6 以上
     assert h.clearance_report()["usable"] >= 44.85
 
 
@@ -55,10 +55,10 @@ def test_equipment_off_inner_faces():
 
 def test_door_window_and_mat():
     h = _h()
-    assert (h.gym_door.u0, h.gym_door.u1, h.gym_door.hinge) == (4550, 5750, 1)
+    assert (h.gym_door.u0, h.gym_door.u1, h.gym_door.hinge) == (4000, 5200, 1)      # v4.44: 間仕切り x9,250 の北西（Y2 の内面 5,300 の手前）
     assert (h.gym_window.u0, h.gym_window.u1) == (1000, 2415)            # IW-1 は南へ再配置（施主回答）
-    assert not any(op.u0 < 4000 and op.u1 > 3000 and op.kind == "door" and w.c == 8775 for w in h.walls for op in w.openings)  # SSD-2 は塞ぐ
-    sw = h.swing_zone(h.gym_door, (8775, 5750), (1, -1))   # v4.43: 間仕切りは x8,775（v4.41・42 は 9,600）
+    assert not any(op.u0 < 4000 and op.u1 > 3000 and op.kind == "door" and w.c == 9250 for w in h.walls for op in w.openings)  # SSD-2 は塞ぐ
+    sw = h.swing_zone(h.gym_door, (9250, 5200), (1, -1))   # v4.44: 間仕切りは x9,250（v4.43 は 8,775）
     mat = [r for n, r, *_ in h.equipment if n == "ストレッチマット"][0]
     assert not sb(*mat).intersects(sw)
     assert house_legal.gym_sound(h)["tl"] >= 48

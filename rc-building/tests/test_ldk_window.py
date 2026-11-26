@@ -48,8 +48,8 @@ def test_structure():
         assert v["wall_rate"] >= 12, (f, d)
         assert v["耐震等級3（Co=0.3）"]["ratio"] >= 1.0
         assert v["ecc"] <= 0.15, (f, d, v["ecc"])
-    assert abs(se["stories"][("1F", "X方向")]["ecc"] - 0.115) < 0.005     # v4.43: 外形 16.25m 角で 0.089→0.115（1F E 面の居室A 窓を塞いだ）。v4.36: L 字窓の撤回（角を RC 化）で 0.113→0.061。v4.37 西窓 0.062。v4.41: X3 が西へ寄り北の行が浅くなって 0.089（≦0.12）
-    assert abs(se["stories"][("1F", "Y方向")]["ecc"] - 0.056) < 0.005     # v4.43: 0.082→0.056。0.040→0.107。v4.37 西窓の追加で 0.107→0.071。v4.41: 0.082
+    assert abs(se["stories"][("1F", "X方向")]["ecc"] - 0.000) < 0.005     # v4.44: 均等な通り芯で 1F X 0.115→0.000（最大は 2F X 0.107）
+    assert abs(se["stories"][("1F", "Y方向")]["ecc"] - 0.056) < 0.005     # v4.44: 0.056 のまま
     assert max(h.H.values()) <= 3500
     assert 250 >= max(150, max(h.H.values()) / 22)
     assert not [b for b in h.boxes if b.level == "1F" and b.tag in ("角柱", "方立", "角の方立")]
@@ -75,20 +75,20 @@ def test_glazing_quad():
     env = PF.envelope(h)
     parts = {p[0]: p for p in env["parts"]}
     assert abs(parts["窓（FIX・クアッド）"][1] - 8.40) < 1e-6 and parts["窓（FIX・クアッド）"][2] == 0.65
-    assert 0.2085 <= env["UA"] <= 0.2115, env["UA"]            # v4.41: 外皮が縮み窓の比率が増えて 0.2100→0.2107
+    assert 0.2125 <= env["UA"] <= 0.2155, env["UA"]            # v4.44: 2F 南窓 4 か所の拡大（W1,200×H1,100）で 0.2107→0.2140
     o = _ops(h)
     assert SS.op_g(h, o["AW-LS"]) == 0.40 and SS.op_g(h, o["AW-LW"]) == 0.25
     for op in h.openings(exterior=True):
         if op.kind == "window" and op.label not in q["labels"]:
             assert SS.op_g(h, op) == SS.glazing_g(h, op.side)
-    assert abs(sum(SS.window_solar(h)["glass"].values()) - 17.42) < 0.01      # v4.43: 窓 削除 3（1F E 居室A・2F N・E 主寝室）・追加 3（2F W 居室A・S 居室D・S 主寝室 W1,200）で 18.56→17.42。v4.42: 居室E の西窓 1.28m² を廃止 19.84→18.56。v4.41: 居室D の窓 W1,600→1,200 で 20.16→19.84         # 実面積（等価面積ではない）
+    assert abs(sum(SS.window_solar(h)["glass"].values()) - 22.035) < 0.01      # v4.44: 2F 南窓 4 か所 W1,200×H1,100・居室D 西窓・図書室 E 窓・洗面 N 窓などで 17.42→22.04
 
 
 def test_local_thickness_geometry():
     h = house()
     ext = [b for b in h.boxes if b.tag == "増し打ち"]
     assert ext and all(b.level == "1F" for b in ext)
-    assert abs(h.ldk.area - 32.34) < 1e-6      # v4.43: 5,600×5,775（v4.42 は 33.639375、−3.9%）
+    assert abs(h.ldk.area - 26.009375) < 1e-6      # v4.44: 5,125×5,075（LDK＋キッチン計 53.96m²＝33.3 畳）
 
 
 def test_cg_1400_shading():

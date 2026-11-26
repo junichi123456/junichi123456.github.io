@@ -32,7 +32,7 @@ def _sel(stats, cls):
 
 def test_room_counts(stats):
     """上質 12 室・水回り 8 室（spec の分類が実在の室と対応している）。v4.41: 2F 収納（トイレ・主寝室）は主寝室に LGS 1 枚で接する一般の収納へ（水回り 9→8）。"""
-    assert len(_sel(stats, "premium")) == 11 and len(_sel(stats, "quiet")) == 11   # v4.43: 水回りブロック内の収納 3 室（収納（洗面）・リネン庫・収納（北））を水回りに加える
+    assert len(_sel(stats, "premium")) == 11 and len(_sel(stats, "quiet")) == 7   # v4.44: 水回りは 1F 北（洗面・脱衣・浴室・トイレ 2）と 2F トイレ 2・収納（北中央）の 7 室（脱衣所・シャワー・リネン庫・収納（洗面）は撤去）
 
 
 def test_premium_rooms_fully_covered(h, stats):
@@ -76,7 +76,7 @@ def test_no_ap_in_wet_areas(h):
     """水回りと、水回りブロック内の廊下には AP（予備の alt_xy も）を置かない。"""
     w = h.spec["wifi"]
     wet = [r for r in h.rooms if WF.room_class(w, f"{r.floor} {r.name}") == "quiet"]
-    corr = {"1F": (9600, 12250, 11000, 14800), "2F": (6250, 12250, 11000, 13450)}      # v4.41: 北中央の廊下
+    corr = {"1F": (-1, -1, -1, -1), "2F": (-1, -1, -1, -1)}      # v4.44: 水回りブロック内の廊下はなし（廊下（北）は一般の室で AP の候補）
     for a in w["aps"]:
         for key in ("xy", "alt_xy"):
             if key not in a:
@@ -160,7 +160,7 @@ def test_rack_and_poe(h):
     x0, y0, x1, y1 = mc6[3]
     assert x0 <= w["rack"]["xy"][0] <= x1 and y0 <= w["rack"]["xy"][1] <= y1
     assert WR.poe_load_w(h) <= w["rack"]["poe_budget_w"]
-    assert len(w["sleeves"]) == 12 and len(WR.sleeve_pairs(h)) == 12
+    assert len(w["sleeves"]) == 11 and len(WR.sleeve_pairs(h)) == 11      # v4.44: SL-C8（2F シャワー・脱衣所）を削除
     assert w["riser"]["n"] == 4 and w["riser"]["spare"] == 2
 
 
@@ -174,6 +174,6 @@ def test_network_table_matches_spec(h):
     from export import tables
     rows = tables.sheet_network(h)
     kinds = [r[0] for r in rows]
-    assert kinds.count("AP") == 16 and kinds.count("LAN口") == 8 and kinds.count("ラック機器") == 8 and kinds.count("スリーブ") == 14
+    assert kinds.count("AP") == 16 and kinds.count("LAN口") == 8 and kinds.count("ラック機器") == 8 and kinds.count("スリーブ") == 13
     assert sum(r[8] for r in rows if r[0] == "LAN口") == 19
     assert all(len(r) == len(tables.HEADERS["ネットワーク"]) for r in rows)

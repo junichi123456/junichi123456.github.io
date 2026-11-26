@@ -18,7 +18,12 @@ from shapely.ops import unary_union
 CODE = {"リビング・ダイニング": "LDK", "キッチン": "KIT", "玄関土間": "GEN", "ホール・階段1": "HS1", "ホール・階段2": "HS2", "ホール": "HAL",
         "ジム": "GYM", "ランドリー・室内干し": "LDY", "ファミリークローゼット": "FCL", "洗面・脱衣": "WSH", "脱衣所": "WSH", "書庫": "ARC", "浴室": "BTH", "シャワー": "SHW", "居室": "RM",
         "WIC（主寝室）": "MWC", "WIC": "WIC", "シアター": "THR", "前室（音響ロック）": "ANT", "図書室": "LIB", "主寝室": "MBR", "廊下": "COR", "廊下（北東）": "CRE", "ランドリー（階段2前）": "LDF", "トイレ（手洗い付）": "TLH",
-        "トイレ": "TLT", "機械室（西系統）": "MCW", "機械室（東系統）": "MCE"}
+        "トイレ": "TLT", "機械室（西系統）": "MCW", "機械室（東系統）": "MCE",
+        # v4.44 新しい室（部分一致のため長い名前を持つ。廊下・ホール・収納は室ごとに別の記号）
+        "玄関収納": "GST", "ジム収納": "GSR", "機械室前": "MCF", "収納（ランドリー）": "LDS", "ホール（東）": "HLE", "階段1前": "S1F",
+        "廊下（中央）": "CRC", "廊下（北）": "CRN", "廊下（南西）": "CSW", "廊下（南中央）": "CSC", "廊下（西）": "CRW", "廊下（北西）": "CNW",
+        "多目的室（北西）": "MPR", "多目的ホール（北）": "MPH", "収納（北中央）": "SNC", "収納（廊下）": "SCR", "収納（図書室）": "SLB", "収納（居室A）": "SRA", "収納（北）": "SRN",
+        "PS-2": "PS2", "PS-3": "PS3", "納戸": "NND"}
 
 # 光束法の利用率 U（直付・乳白拡散、反射率 天井0.7/壁0.5/床0.2 を仮定した概略値）
 _UT = [(0.6, .33), (0.8, .40), (1.0, .45), (1.25, .50), (1.5, .54), (2.0, .59), (2.5, .63), (3.0, .66), (4.0, .70), (5.0, .72)]
@@ -134,9 +139,9 @@ def _blockers(h, its, r):
 # 室ごとの上書き（C-1.3 の表）: (向き, [(中心線, 端a, 端b)], lm/m)
 def _override(h, r):
     if r.floor == "1F" and r.name == "キッチン":
-        return [("x", y, 700, 5500) for y in (7550, 9550, 11300)], 3000
+        return [("x", y, 600, 4900) for y in (6300, 8300, 10100)], 3000      # v4.44: キッチン x125〜5,300・y5,300〜10,700
     if r.floor == "1F" and r.name.startswith("ランドリー"):
-        return [("x", y, 600, 3200) for y in (13000, 14300, 15500)], 2000      # v4.43: ファミクロ兼用の 3,550×3,875（階段2前の床は別の室）
+        return [("x", y, 2700, 4900) for y in (11500, 13200, 14800)], 2000      # v4.44: ファミクロ兼用の 3,075×4,475（x2,225〜5,300・y10,950〜15,425）
     return None
 
 
@@ -208,7 +213,7 @@ def lines(h, its):
                             L=round(b - a), lm_per_m=cls, kind="line", axis=ax, group="L"))
         if "洗面" in r.name or "脱衣" in r.name:         # 鏡の上（カウンターの上の壁際）にも 1 本（鏡前 300lx 以上）
             if r.floor == "1F":                          # W1-C（x8950〜9500・東壁沿い）
-                p0, p1, ax, ln_ = [9250, 13675, z], [9250, 14575, z], "y", 900
+                p0, p1, ax, ln_ = [5750, 13700, z], [5750, 14600, z], "y", 900
             else:                                        # v4.28 W2-C（y13,800〜14,250・脱衣所の南壁沿い）
                 p0, p1, ax, ln_ = [6475, 14450, z], [6475, 16150, z], "y", 1700
             out.append(dict(id=f"{r.floor}-{code}-L{len(segs) + 1}", code=code, floor=r.floor, room=r.name, p0=p0, p1=p1, L=ln_,
@@ -296,8 +301,8 @@ def footlights(h):
         zl = z1 + (s.half) * R                        # 踊場の床（1FL + 9R）
         for i in range(2, s.half, ft["every_steps"]):       # 下の flight 2,4,6,8 段
             out.append(dict(stair=s.name, flight="下", step=i, p=[xm - 50, s.y_entry + dr * (i - 0.5) * T, z1 + i * R + hh], n=[-1, 0]))
-        # 踊場: 奥の LGS 間仕切の面（階段1 は東の x1 側＝西面、階段2 は西の x0 側＝東面）
-        xl, nl = (s.x1, -1) if s.name == "階段1" else (s.x0, +1)
+        # 踊場: 奥の LGS 間仕切の面（どちらも東の x1 側（LGS）の西面）
+        xl, nl = s.x1, -1                                  # v4.44: 階段2 も北西の角（x125〜2,125）。東の LGS（x2,175）の西面
         yl_mid = (s.y_turn + s.hole[3]) / 2
         out.append(dict(stair=s.name, flight="踊場", step=s.half, p=[xl, yl_mid, zl + hh], n=[nl, 0]))
         for j in range(2, s.half, ft["every_steps"]):       # 上の flight 2,4,6,8 段

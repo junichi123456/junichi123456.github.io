@@ -66,7 +66,7 @@ def test_table_north_of_y2():
     h = house()
     its = {i.id: i for i in FU.items(h)}
     t = its["L-T1"]
-    assert t.room == "キッチン" and t.rect[1] >= 6850 and its["K-I1"].rect[1] - t.rect[3] >= 1200
+    assert t.room == "キッチン" and t.rect[1] >= 5550 + 250 and its["K-I1"].rect[1] - t.rect[3] >= 1200      # v4.44: Y2 の北面 5,550 から 250 以上離す（通行帯の外）
     assert "L-P1" not in its and "L-K2" in its
     assert round(t.w) == h.spec["furniture"]["products"]["table_osb"]["w"] == 1775
     assert t.name.startswith("マテリア ダイニングテーブル OSB 177.5cm")
@@ -149,7 +149,7 @@ def test_kitchen_open():
     its = FU.items(h)
     ids = {i.id for i in its}
     assert "K-B1" not in ids and "P-S1" not in ids
-    assert {"KB-W", "KB-C", "KB-C2", "KB-R", "KB-N", "KB-S", "KB-F", "KS-W"} <= ids and not ({"KB-K", "P-O1"} & ids)
+    assert {"KB-W", "KB-C", "KB-C2", "KB-R", "KB-N", "KB-S", "KB-F"} <= ids and not ({"KB-K", "P-O1", "KS-W"} & ids)      # v4.44: KS-W 撤去
     by = {i.id: i for i in its}
     assert by["KB-N"].z0 - h.fl["1F"] + by["KB-N"].h <= 1550         # 施錠式ナイフケース（上端 1,550 以下）
     zs = [0] + [z for z in KO.KB_SHELF_Z] + [KO.KB_TOP_UNDER]       # 背面カウンター下部の段の間隔（棚板上面〜上の棚板下面）
@@ -157,7 +157,7 @@ def test_kitchen_open():
     assert gaps[0] >= 250 and all(g > 230 for g in gaps[1:]), gaps   # 底板の下は掃除ロボットが入る（≧250）、段の間隔は 230 超
     tiers = KO.KS_TIERS
     assert all(b - a - KO.KB_SHELF_T > 230 for a, b in zip(tiers, tiers[1:]))
-    ks = KO.KSW_SHELF_Z
+    ks = KO.KSW_SHELF_Z      # 関数・定数は残す（v4.44 で KS-W 自体は撤去）
     assert all(b - a - 18 > 230 for a, b in zip(ks, ks[1:])) and KO.KSW_Z - ks[-1] - 18 > 230
     assert FU.check(h, its) == []
     assert not h.spec["kitchen_open"]["pot_rack"]
@@ -168,21 +168,20 @@ def test_kitchen_open():
 def test_storage_v437():
     h = house()
     its = {i.id: i for i in FU.items(h)}
-    assert its["L-K2"].rect == (175, 4000, 1000, 5550) and its["L-K3"].rect == (5325, 4050, 5775, 5400)     # v4.43: LDK 幅 5,600
-    assert its["H-S3"].rect == (9775, 6650, 10225, 8100) and its["H-S4"].rect == (7075, 9800, 8025, 10840)   # v4.43
-    assert its["R-S1"].rect == (4825, 13100, 5775, 13900)
+    assert its["L-K2"].rect == (175, 4000, 1000, 4850) and its["L-K3"].rect == (4850, 4050, 5300, 4700)     # v4.44: LDK x175〜5,300・Y2 の開口の通行帯（y4,700〜）の外
+    assert "H-S3" not in its and its["H-S4"].rect == (6600, 8500, 7550, 9540)   # v4.44: H-S3 撤去・階段1 は x5,550〜7,550
+    assert its["R-S1"].rect == (1175, 13100, 2125, 13900)      # v4.44: 階段2 は北西（x125〜2,125）
     assert its["L-K3"].pocket == 130
     for k in ("H-S4", "R-S1"):
         it = its[k]
         assert it.z0 + it.h <= FU.stair_soffit(h, it.under, it.poly()) - 50, k
     assert FU.check(h, list(its.values())) == []
-    assert len(its) == 70      # v4.43: 家具 77→70（1F 居室A・FC・WIC・2F 居室D の WIC・収納 B/C の廃止、書庫・居室A の組み替え）
+    assert len(its) == 62      # v4.44: 家具 70→62（KS-W・H-S1/H-S3・書庫の書架 3・WIC の棚・脱衣所・シャワー・玄関収納 の組み替え、PS 2、ジム収納の棚）
     assert its["LDK-C1"].slot is None and its["LDK-C2"].slot is None          # v4.38 クアッドで吹出しを廃止
-    assert its["H-S3"].footline and its["H-S3"].plinth == 350
-    assert [its[k].leaves for k in ("L-K2", "L-K3", "H-S3", "H-S4", "R-S1")] == [3, 2, 2, 2, 2]
+    assert [its[k].leaves for k in ("L-K2", "L-K3", "H-S4", "R-S1")] == [2, 2, 2, 2]
     assert its["L-K1"].hjoint == its["L-K2"].hjoint == 2200
-    assert not any(its[k].note for k in ("L-K3", "H-S3", "H-S4", "R-S1"))
-    assert "引違い" in its["H-S3"].name and "両開き" in its["R-S1"].name
+    assert not any(its[k].note for k in ("L-K3", "H-S4", "R-S1"))
+    assert "引違い" in its["L-K3"].name and "両開き" in its["R-S1"].name
 
 
 if __name__ == "__main__":

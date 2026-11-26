@@ -24,6 +24,19 @@ ISLAND_BAY = (1100, 1500)          # アイランド調理側（北面）のオ�
 ISLAND_BAY_Z = (300, 600)
 
 
+class _Shift:
+    """MB の box・tube に平行移動（dx, dy）をかける薄い包み（v4.44 キッチンの移設）。"""
+
+    def __init__(self, mb, dx, dy):
+        self.mb, self.dx, self.dy = mb, dx, dy
+
+    def box(self, key, x0, y0, z0, x1, y1, z1):
+        return self.mb.box(key, x0 + self.dx, y0 + self.dy, z0, x1 + self.dx, y1 + self.dy, z1)
+
+    def tube(self, key, p0, p1, r, n=12):
+        return self.mb.tube(key, (p0[0] + self.dx, p0[1] + self.dy, p0[2]), (p1[0] + self.dx, p1[1] + self.dy, p1[2]), r, n)
+
+
 def _cyl(mb, key, cx, cy, r, z0, z1, n=16):
     mb.tube(key, (cx, cy, z0), (cx, cy, z1), r, n)
 
@@ -148,7 +161,8 @@ def props(h):
     FL = h.fl["1F"]
     mb = FS.MB()
     st, cr, bk, ow, ap, gl = "stainless", "ceramic", "steel_black", "case_oak", "appliance_white", "glass_clear"
-    cx0 = 0
+    real = mb
+    mb = _Shift(real, -475.0, -1300.0)             # v4.44: 背面側の一式は v4.43 の座標に対し dx −475・dy −1,300（KB-C は x2,025〜5,300）
     # ---- KB-C 下部の棚（x 2500〜5300、y 11350〜11950）
     zm = FL + KB_SHELF_Z[1] + KB_SHELF_T          # 中段の上面
     zb = FL + KB_SHELF_Z[0] + KB_SHELF_T          # 底板の上面
@@ -189,6 +203,7 @@ def props(h):
         _cyl(mb, cr, x + 60 + k * 130, yy, 60, z1, z1 + 60, 14)
     for k in range(3):                                                  # 汁椀（木）
         _cyl(mb, ow, x + 60 + k * 130, yy - 110, 55, z1, z1 + 55, 14)
+    mb = real
     # ---- K-I1 調理側のまな板 2 枚（北面のオープン棚の中、立てて置く）
     zi = FL + ISLAND_BAY_Z[0] + KB_SHELF_T
     # island は K-I1 の矩形（x0 から局所 u）、-y 向き。v4.36: 棚の内法 376 に W400 の板は入らないので奥行方向に立てる（各 t20×400×H250）
@@ -214,22 +229,20 @@ AISLE_MIN = 1200
 
 
 def aisles(h, its=None):
-    """固定物・家具の仕上げ面どうしの水平の内法（mm）。[(ラベル, 値)] 9 行。出入口の戸は数えない（要施主確認 F-4）。"""
+    """固定物・家具の仕上げ面どうしの水平の内法（mm）。[(ラベル, 値)] 7 行（v4.44 で KS-W 撤去・チェア行を削除）。出入口の戸は数えない（要施主確認 F-4）。"""
     import furniture as FU
     its = {i.id: i for i in (its or FU.items(h))}
-    isl, kbc, kbf, ksw = its["K-I1"].rect, its["KB-C"].rect, its["KB-F"].rect, its["KS-W"].rect
+    isl, kbc, kbf = its["K-I1"].rect, its["KB-C"].rect, its["KB-F"].rect
     c2, tb = its["KB-C2"].rect, its["L-T1"].rect
     kit = next(r for r in h.rooms if r.name == "キッチン")
     kx0, ky0, kx1, ky1 = kit.rect
     chx1 = its["L-C1"].poly().bounds[2]
     return [("アイランド北面 ↔ 背面カウンター前面", kbc[1] - isl[3]),
             ("アイランド北面 ↔ 冷蔵庫前面", kbf[1] - isl[3]),
-            ("アイランド西面 ↔ 目隠し収納 KS-W 扉面", isl[0] - ksw[2]),
+            ("アイランド西面 ↔ X1 壁面（v4.44 KS-W 撤去）", isl[0] - kx0),
             ("アイランド東面 ↔ L 字東カウンター前面", c2[0] - isl[2]),
             ("アイランド南面 ↔ テーブル北端", isl[1] - tb[3]),
-            ("KS-W 北端 ↔ Y3 壁面", ky1 - ksw[3]),
-            ("テーブル西端 ↔ KS-W 扉面", tb[0] - ksw[2]),
-            ("チェア東端 ↔ X2 壁面", kx1 - chx1),
+            ("テーブル西端 ↔ X1 壁面", tb[0] - kx0),
             ("冷蔵庫西面 ↔ X1 壁面（Y3 の戸への通路）", kbf[0] - kx0)]
 
 
@@ -288,5 +301,4 @@ def support_tops(h):
             ("KB-S", "吊り棚の棚板天端", KS_TIERS[0] + KB_SHELF_T),
             ("KB-N", "ナイフケース上端", KNIFE_Z[1]),
             ("K-I1", "アイランド天板", 900),
-            ("K-I1", "アイランド北面のオープン棚", ISLAND_BAY_Z[1] + KB_SHELF_T),
-            ("KS-W", "目隠し収納の天板・最上段の棚板天端", max(KSW_Z, max(KSW_SHELF_Z) + 18))]
+            ("K-I1", "アイランド北面のオープン棚", ISLAND_BAY_Z[1] + KB_SHELF_T)]

@@ -77,7 +77,8 @@ def test_pit_access():
     h, its = c["h"], c["its"]
     ll = h.spec["long_life"]
     ac = MT.access(h)
-    assert ac["ok"] and ac["connected"] and (ac["manways"], ac["hatches"], ac["ch"], ac["ps"], ac["co"]) == (12, 3, 3, 3, 8)
+    assert ac["ok"] and ac["connected"] and (ac["manways"], ac["hatches"], ac["ch"], ac["ps"], ac["co"]) == (12, 3, 3, 2, 7)    # v4.44: PS-1 と CO-1 を削除（PS-2・PS-3 の 2 か所、掃除口 7 か所）
+    
     assert not any("点検" in (o.label or "") for o in h.rc_walls["FDN"]["S"].openings)
     assert FU.check(h, its) == []
     zones = [z for _, z in FU.door_zones(h, "1F")]
@@ -122,10 +123,10 @@ def test_hatch_clearance():
 def test_envelope_tb():
     h = _get()["h"]
     tb, ea, be = PF.envelope_tb(h), PF.eta_ac(h), PF.bei_estimate(h)
-    assert abs(tb["UA_tb"] - 0.2412) < 0.001 and tb["UA_tb"] <= 0.26      # v4.43: 外形 16.25m 角・窓 3 削除 3 追加で 0.2392→0.2412。v4.41: 0.2377→0.2403（外皮が縮み、熱橋の割合が増える）。等級7（0.26）は維持
-    assert abs(ea["value"] - 0.5424) < 0.01 and abs(be["bei"] - 0.3243) < 0.005      # v4.43: ηAC 0.531→0.542（2F 南・西に窓を追加し、東・北の窓を減らした）・BEI 0.3165→0.3243。v4.42: 居室E の西窓廃止で UA 0.2403→0.2392・ηAC 0.546→0.531・BEI 0.317→0.3165。v4.41: ηAC 0.53→0.55（居室D の窓縮小・居室E の窓が西へ）、BEI 0.310→0.317
-    assert abs(be["E_design"] - 113235) < 200 and abs(be["E_ref"] - 349183) < 500      # v4.43
-    assert abs(PF.energy(h, PF.heat_load(h))["total"] - 18919.19) < 1      # v4.43
+    assert abs(tb["UA_tb"] - 0.2448) < 0.001 and tb["UA_tb"] <= 0.26      # v4.44: 2F 南窓 4 か所を W1,200×H1,100 に拡大・窓の組み替えで 0.2412→0.2448。v4.43: 外形 16.25m 角・窓 3 削除 3 追加で 0.2392→0.2412。v4.41: 0.2377→0.2403（外皮が縮み、熱橋の割合が増える）。等級7（0.26）は維持
+    assert abs(ea["value"] - 0.6152) < 0.01 and abs(be["bei"] - 0.3247) < 0.005      # v4.44: ηAC 0.542→0.615（南窓の拡大）・BEI 0.3243→0.3247。v4.43: ηAC 0.531→0.542（2F 南・西に窓を追加し、東・北の窓を減らした）・BEI 0.3165→0.3243。v4.42: 居室E の西窓廃止で UA 0.2403→0.2392・ηAC 0.546→0.531・BEI 0.317→0.3165。v4.41: ηAC 0.53→0.55（居室D の窓縮小・居室E の窓が西へ）、BEI 0.310→0.317
+    assert abs(be["E_design"] - 113072) < 200 and abs(be["E_ref"] - 348229) < 500      # v4.43
+    assert abs(PF.energy(h, PF.heat_load(h))["total"] - 18895.22) < 1      # v4.43
 
 
 def test_maintenance_plan():
@@ -143,7 +144,7 @@ def test_legal_long_life():
     ok = {0, 1, 3, 4, 5, 6, 10}
     for i, r in enumerate(ll):
         assert r["result"] == (house_legal.OK if i in ok else house_legal.CHK), (i, r["item"], r["result"])
-    assert len(rows) == 150 and sum(r["result"] == house_legal.CHK for r in rows) == 42 and not any(r["result"] == house_legal.NG for r in rows)
+    assert len(rows) == 148 and sum(r["result"] == house_legal.CHK for r in rows) == 38 and not any(r["result"] == house_legal.NG for r in rows)
 
 
 if __name__ == "__main__":

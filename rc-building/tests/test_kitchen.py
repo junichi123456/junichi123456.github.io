@@ -27,7 +27,7 @@ def house():
 def test_shelf_tops_within_1550():
     h = house()
     assert max(v for *_, v in KO.support_tops(h)) <= h.spec["kitchen_open"]["shelf_max_z"]
-    # 実際に作った形状でも、KS-W は上部パネル（1,550〜天井、物は置けない）以外の水平面が 1,550 以下
+    # 実際に作った形状でも、水平面が 1,550 以下（v4.44: KS-W は撤去）
     its = {i.id: i for i in FU.items(h)}
     for iid in ("KB-S", "KB-N"):
         mb = FU.build_item(h, its[iid])
@@ -39,7 +39,7 @@ def test_shelf_tops_within_1550():
 def test_aisles_at_least_1200():
     h = house()
     ai = KO.aisles(h)
-    assert len(ai) == 9 and min(v for _, v in ai) >= h.spec["kitchen_open"]["aisle_min"] == 1200, ai
+    assert len(ai) == 7 and min(v for _, v in ai) >= h.spec["kitchen_open"]["aisle_min"] == 1200, ai
 
 
 def test_passages_1200():
@@ -52,19 +52,19 @@ def test_passages_1200():
 def test_L_kitchen():
     h = house()
     its = {i.id: i for i in FU.items(h)}
-    assert its["KB-C2"].rect == (5275, 9050, 5775, 11350)   # v4.43: キッチン幅 5,650 に合わせ D500（通路 ≧1,200 を保つ）
-    assert its["KB-C"].rect[2] == 5775
-    assert its["KB-F"].rect == (1800, 11350, 2500, 11950)
-    assert its["K-I1"].rect == (1675, 9050, 4075, 10050)   # v4.43: 西へ 125（KS-W は奥行 350）
+    assert its["KB-C2"].rect == (4800, 7750, 5300, 10050)   # v4.44: キッチン x125〜5,300・y5,300〜10,700（背面の一式は v4.43 から dx −475・dy −1,300）
+    assert its["KB-C"].rect[2] == 5300
+    assert its["KB-F"].rect == (1325, 10050, 2025, 10650)
+    assert its["K-I1"].rect == (1325, 7850, 3600, 8850)   # v4.44: W2,275（KS-W 撤去・通路 1,200 を保つ）
 
 
 def test_pantry_removed():
     h = house()
     assert not any(r.name == "パントリー" for r in h.rooms)
     ids = {i.id for i in FU.items(h)}
-    assert "P-O1" not in ids and "KB-K" not in ids and "KS-W" in ids
+    assert "P-O1" not in ids and "KB-K" not in ids and "KS-W" not in ids      # v4.44: 西の目隠し収納 KS-W は撤去
     kit = next(r for r in h.rooms if r.name == "キッチン")
-    assert kit.rect == (125, 6250, 5775, 12000)
+    assert kit.rect == (125, 5300, 5300, 10700)
 
 
 if __name__ == "__main__":

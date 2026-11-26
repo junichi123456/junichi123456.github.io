@@ -101,20 +101,15 @@ def test_footlights_300():
 
 
 def test_footline_hs3():
-    """v4.38 H-S3 の台輪 H350 の外周に足元灯ライン（施主回答 Q10 採用済み）。"""
+    """v4.38 H-S3 の台輪 H350 の外周の足元灯ライン。v4.44: ホール・階段1 の収納 H-S3 は撤去（通り芯の均等化でホールが 3,200×1,100 に）。家具の足元灯は 0 本。"""
     import furniture as FU
     import lighting as L
     h = house()
     its = FU.items(h)
     fp, _ = L.footlines(h, its)
-    cab = [d for d in fp if d.get("mount") == "家具"]
-    assert len(cab) == 3 and [d["L"] for d in cab] == [442, 1450, 442]
-    # v4.43: H-S3 は X3 の内面 10,225 に付く（x −775）。足元灯は 99→78 本（1F 延長 21,939→15,365。1F の北の行・ホールの縮小と収納の廃止）
-    assert [d["id"] for d in cab] == ["1F-FL13", "1F-FL14", "1F-FL15"]
-    assert cab[1]["p0"][:2] == [9775, 6650] and cab[1]["n"] == [-1, 0]
-    assert sum(d["L"] for d in fp if d["floor"] == "1F") == 15365 and len(fp) == 78
-    wall = [d for d in fp if d["floor"] == "1F" and d["p0"][0] == 10225 and d["axis"] == "y"]
-    assert wall and any(d["p0"][1] == 6250 for d in wall)
+    assert not [d for d in fp if d.get("mount") == "家具"] and not [i for i in its if i.footline]
+    # v4.44: 足元灯 105 本（1F 延長 21,783）。階段2 は北西の角へ
+    assert len(fp) == 105 and sum(d["L"] for d in fp if d["floor"] == "1F") == 21783
 
 
 def test_channels_schedule():

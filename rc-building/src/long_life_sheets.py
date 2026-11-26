@@ -240,10 +240,10 @@ def plumbing_sheet(h, number):
         _flow_box(sh, xs[i], 270, W, H_ + 8, tx, "E-WATER")
         if i:
             _flow_line(sh, [(xs[i - 1] + W, 260), (xs[i], 260)], "E-WATER")
-    _flow_box(sh, xs[4], 246, W, H_, "PS-1（さや管）→ HD-2 → 2F の各器具", "E-WATER")
+    _flow_box(sh, xs[4], 246, W, H_, "PS-2（さや管）→ HD-2 → 2F の各器具", "E-WATER")
     _flow_line(sh, [(xs[4] + W / 2, 250), (xs[4] + W / 2, 246)], "E-WATER")
     sh.text("(2) 排水系統（汚水）", (12, 228), 2.4, "A-TEXT", paper=True)
-    drain = ["2F 器具（シャワー・脱衣洗面・トイレ 2 室）→ スラブのスリーブ", "PS-1・PS-2・PS-3（掃除口 CO-1〜3）→ 床下ピットの枝管（1/100）", "主管 φ150 x7,000（CO-4・CO-5）→ SL-P3・SL-P2 → 出口 SL-P1（GL+100・つば付き止水）",
+    drain = ["2F 器具（トイレ 2 室）→ スラブのスリーブ", "PS-2・PS-3（掃除口 CO-2・CO-3）→ 床下ピットの枝管（1/100）", "主管 φ150 x7,000（CO-4・CO-5）→ SL-P3・SL-P2 → 出口 SL-P1（GL+100・つば付き止水）",
              "汚1（建物出口桝・逆流防止弁・掃除口）→ 汚2（2/100）→ 汚3 → 汚4 → 汚5", "汚6 最終桝（門前・管底 約GL−320）→ 公共下水（南側道路）"]
     for i, tx in enumerate(drain):
         _flow_box(sh, xs[i], 222, W, H_ + 8, tx, "E-SEWER")

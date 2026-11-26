@@ -35,44 +35,44 @@ checks:
   window: {mean_ratio: 1.2, std_min: 8, min_area: 0.02}
 cuts:
   # id: {zone, floor, room(カメラのある室), x, y, dir, lens(省略=標準), look(主に見えるもの), direct(直射の予測), alt(代替位置の理由), open_doors, also_1f}
-  Z1-11a: {slug: ld, zone: Z1-11, floor: 1F, room: リビング・ダイニング, x: 3000, y: 3800, dir: S, look: 南窓・西窓・RC の角・窓辺の収納、直射, direct: true, moved: {from: [3000, 4600], reason: "テーブルの北移動（v4.35）で視点がテーブルの上になる"}}
-  Z1-11b: {exposure: -1.0, exp_note: "プレビューの平均輝度が上限（185）を超えたため −0.5 → −1.0（1回だけ）", slug: ld, zone: Z1-11, floor: 1F, room: リビング・ダイニング, x: 3000, y: 3800, dir: N, look: 開口越しのキッチン・テーブル, direct: true, moved: {from: [3000, 4600], reason: "テーブルの北移動（v4.35）で視点がテーブルの上になる"}}
-  Z1-21a: {slug: genkan, zone: Z1-21, floor: 1F, room: ホール, x: 7350, y: 3800, dir: S, look: 土間・下足入れ・玄関扉}
-  Z1-21b: {slug: genkan, zone: Z1-21, floor: 1F, room: ホール, x: 7350, y: 3800, dir: N, look: GD-2 越しの階段ホール}
-  Z1-31a: {slug: gym, zone: Z1-31, floor: 1F, room: ジム, x: 13500, y: 3600, dir: E, look: 高窓・測定コーナー}
-  Z1-31b: {slug: gym, zone: Z1-31, floor: 1F, room: ジム, x: 13500, y: 3600, dir: W, look: 拡張部・室内窓 IW-1}
-  Z1-12a: {slug: kitchen, zone: Z1-12, floor: 1F, room: キッチン, x: 3200, y: 8100, dir: N, look: アイランド・L 字の背面・冷蔵庫}
-  Z1-12b: {slug: kitchen, zone: Z1-12, floor: 1F, room: キッチン, x: 3200, y: 8100, dir: S, look: テーブル・開口越しの LDK・南窓の逆光, direct: true}
-  Z1-22a: {slug: hall1f, zone: Z1-22, floor: 1F, room: ホール・階段1, x: 9350, y: 6900, dir: W, look: 階段1・階段下の収納・キッチン開口}
-  Z1-22b: {slug: hall1f, zone: Z1-22, floor: 1F, room: ホール・階段1, x: 9350, y: 6900, dir: N, look: トイレの戸・廊下への開口}
-  Z1-32a: {slug: gym, zone: Z1-32, floor: 1F, room: ジム, x: 13500, y: 4300, dir: S, look: ジム全景, alt: "区画中心はジム機器・蓄電室の壁の上にあるため、搬入通路 R2 の空きへ移した（v4.43）"}
-  Z1-32b: {exposure: 0.0, exp_note: "プレビューの平均輝度が下限（70）を下回ったため −0.5 → 0.0", slug: mech, zone: Z1-32, floor: 1F, room: 機械室（西系統）, x: 10900, y: 10300, dir: E, lens: 24, look: 機械室の設備, alt: "区画中心は機械室の外のため、機械室（西系統）の西寄りの空きから東を撮る（v4.43）"}
-  Z1-13a: {slug: laundry, zone: Z1-13, floor: 1F, room: ランドリー・室内干し, x: 3000, y: 14600, dir: S, lens: 24, look: 洗濯乾燥機・シンク, alt: "区画中心はファミクロ兼用ランドリーの作業台・物干しの側のため、ランドリーの空きへ移した（v4.43）"}
-  Z1-13b: {exposure: -1.0, exp_note: "プレビューの平均輝度が上限（185）を超えたため −0.5 → −1.0（1回だけ）", slug: laundry, zone: Z1-13, floor: 1F, room: ランドリー・室内干し, x: 800, y: 13300, dir: E, lens: 24, look: 階段2前・物干し・洗濯乾燥機, alt: "同じ理由で、b は西寄りから東（階段2前）を撮る（v4.43）"}
-  Z1-23a: {exposure: -1.0, exp_note: "プレビューの平均輝度が上限（185）を超えたため −0.5 → −1.0（1回だけ）", slug: washroom, zone: Z1-23, floor: 1F, room: 洗面・脱衣, x: 11550, y: 13300, dir: N, lens: 24, look: 洗面カウンター・リネン収納, alt: "区画中心は洗面の浴室側の壁に近いため、a は洗面の空きへ移した（v4.43）"}
-  Z1-23b: {slug: washroom, zone: Z1-23, floor: 1F, room: 洗面・脱衣, x: 10900, y: 15500, dir: E, lens: 24, look: 洗面カウンター・鏡, alt: "同じ理由で、b は西寄りから東を撮る（v4.43）"}
-  Z1-33a: {slug: roomA, zone: Z1-33, floor: 1F, room: 浴室, x: 15400, y: 13000, dir: W, look: 浴槽・ユニットの壁}
-  Z1-33b: {slug: roomA, zone: Z1-33, floor: 1F, room: 浴室, x: 13500, y: 13000, dir: E, look: 浴槽・戸}
-  Z2-11a: {slug: roomB, zone: Z2-11, floor: 2F, room: 居室B, x: 650, y: 3950, dir: S, lens: 24, look: 南窓・ベッド、直射, direct: true, alt: "区画中心 (3062,3062) は収納（居室B）の棚の中（離隔 0mm）で、主室が居室B・居室C の2つあるため、a は居室B の中の空きへ移した"}
-  Z2-11b: {slug: roomC, zone: Z2-11, floor: 2F, room: 居室C, x: 4350, y: 1900, dir: N, lens: 24, look: 戸・廊下, alt: "区画中心（居室B の隣）は書庫の書架の中のため、b は居室C の中の空きへ移した（v4.43）"}
-  Z2-21a: {slug: master, zone: Z2-21, floor: 2F, room: 主寝室, x: 6700, y: 3900, dir: S, lens: 24, look: 南窓・ベッド, direct: true, alt: "区画中心は居室D の壁の上にあるため、a は主寝室の空きへ移した（v4.43）"}
-  Z2-21b: {slug: roomD, zone: Z2-21, floor: 2F, room: 居室D, x: 8650, y: 3200, dir: N, lens: 24, look: 戸・遮音ふかし壁, alt: "a と同じ理由で、b は居室D の空きから北を撮る（v4.43）"}
-  Z2-31a: {exposure: 0.0, exp_note: "プレビューの平均輝度が上限（150）を超えたため +0.5 → 0.0（1回だけ）", slug: theater, zone: Z2-31, floor: 2F, room: シアター, x: 13300, y: 5150, dir: S, look: スクリーン, alt: "区画中心は前席 TH-F の側に当たるため、a は画面側から撮る"}
-  Z2-31b: {exposure: 0.0, exp_note: "プレビューの平均輝度が上限（150）を超えたため +0.5 → 0.0（1回だけ）", slug: theater, zone: Z2-31, floor: 2F, room: シアター, x: 13300, y: 2250, dir: N, look: ソファ・後壁, alt: "同じ理由で、b は画面側（南寄り）から後方（北）を撮る"}
-  Z2-12a: {slug: library, zone: Z2-12, floor: 2F, room: 図書室, x: 3200, y: 7400, dir: W, look: 西窓2か所・ベンチ、強い直射, direct: true, alt: "区画中心 (3062,9125) は閲覧台 LB-T1 から 650mm で家具の側に当たるため、西窓の直射が撮れる図書室の空きへ移した"}
-  Z2-12b: {slug: library, zone: Z2-12, floor: 2F, room: 図書室, x: 3200, y: 7400, dir: N, look: 閲覧台・本棚, alt: "a と同じ位置（代替の理由は a と同じ）"}
-  Z2-22a: {slug: hall2f, zone: Z2-22, floor: 2F, room: ホール・階段1, x: 9350, y: 6900, dir: W, look: 吹抜け・手すり壁, also_1f: true}
-  Z2-22b: {slug: hall2f, zone: Z2-22, floor: 2F, room: ホール・階段1, x: 9350, y: 6900, dir: N, look: トイレの戸・廊下への開口}
-  Z2-32a: {exposure: -1.0, exp_note: "プレビューの平均輝度が上限（185）を超えたため −0.5 → −1.0（1回だけ）", slug: wic, zone: Z2-32, floor: 2F, room: WIC（主寝室）, x: 13300, y: 10300, dir: S, lens: 24, look: 棚・耐火金庫, alt: "区画中心は WIC の棚 MW-S に近いため、棚の前から撮る（v4.43）"}
-  Z2-32b: {slug: wic, zone: Z2-32, floor: 2F, room: WIC（主寝室）, x: 13300, y: 10300, dir: W, lens: 24, look: 防犯扉 WD-7, alt: "a と同じ位置（代替の理由は a と同じ）"}
-  Z2-13a: {slug: archive, zone: Z2-13, floor: 2F, room: 書庫, x: 3000, y: 2000, dir: N, lens: 24, look: 北の書架・書庫の戸}
-  Z2-13b: {slug: archive, zone: Z2-13, floor: 2F, room: 書庫, x: 3000, y: 3400, dir: S, lens: 24, look: 南の書架・西の書架}
-  Z2-23a: {slug: wc2, zone: Z2-23, floor: 2F, room: トイレ, x: 7200, y: 14100, dir: N, lens: 24, look: 便器・戸, alt: "区画中心は収納（北）の壁の上にあるため、a は隣のトイレ（2F）の空きへ移した（v4.43）"}
-  Z2-23b: {slug: wc2, zone: Z2-23, floor: 2F, room: トイレ, x: 7200, y: 15200, dir: S, lens: 24, look: 戸・手洗い, alt: "同じ理由で、b はトイレの北寄りから南（戸）を撮る（v4.43）"}
-  Z2-33a: {exposure: -1.0, exp_note: "プレビューの平均輝度が上限（185）を超えたため −0.5 → −1.0（1回だけ）", slug: shower, zone: Z2-33, floor: 2F, room: シャワー, x: 15200, y: 12850, dir: W, look: シャワーユニット・戸}
-  Z2-33b: {slug: shower, zone: Z2-33, floor: 2F, room: シャワー, x: 13000, y: 12850, dir: E, look: シャワーユニット}
+  Z1-11a: {slug: ld, zone: Z1-11, floor: 1F, room: リビング・ダイニング, x: 2725, y: 4075, dir: S, look: 南窓・西窓・RC の角・窓辺の収納、直射, direct: true}
+  Z1-11b: {slug: ld, zone: Z1-11, floor: 1F, room: リビング・ダイニング, x: 3525, y: 2775, dir: N, look: 開口越しのキッチン・テーブル, direct: true}
+  Z1-21a: {slug: genkan, zone: Z1-21, floor: 1F, room: ホール, x: 7625, y: 4200, dir: S, look: 土間・下足入れ・玄関扉}
+  Z1-21b: {slug: genkan, zone: Z1-21, floor: 1F, room: ホール, x: 7575, y: 2500, dir: N, look: GD-2 越しの階段ホール}
+  Z1-31a: {slug: gym, zone: Z1-31, floor: 1F, room: ジム, x: 11550, y: 3625, dir: E, look: 高窓・測定コーナー}
+  Z1-31b: {slug: gym, zone: Z1-31, floor: 1F, room: ジム, x: 13850, y: 3775, dir: W, look: 拡張部・室内窓 IW-1}
+  Z1-12a: {slug: kitchen, zone: Z1-12, floor: 1F, room: キッチン, x: 4075, y: 6600, dir: N, look: アイランド・L 字の背面・冷蔵庫}
+  Z1-12b: {slug: kitchen, zone: Z1-12, floor: 1F, room: キッチン, x: 3975, y: 6950, dir: S, look: テーブル・開口越しの LDK・南窓の逆光, direct: true}
+  Z1-22a: {slug: hall1f, zone: Z1-22, floor: 1F, room: ホール・階段1, x: 7150, y: 6350, dir: W, lens: 24, look: 階段1・階段下の収納・キッチン開口}
+  Z1-22b: {slug: hall1f, zone: Z1-22, floor: 1F, room: ホール・階段1, x: 6500, y: 6350, dir: E, lens: 24, look: トイレの戸・廊下への開口}
+  Z1-32a: {slug: gym, zone: Z1-32, floor: 1F, room: ジム, x: 13950, y: 7175, dir: S, look: ジム全景, alt: "区画中心は壁・家具・開口の上にあるため、室の空きへ移した（v4.44 通り芯の均等化）"}
+  Z1-32b: {slug: gym, zone: Z1-32, floor: 1F, room: ジム, x: 13850, y: 3675, dir: N, look: ジム収納の戸・機械室前への開口, alt: "区画中心は壁・家具・開口の上にあるため、室の空きへ移した（v4.44 通り芯の均等化）"}
+  Z1-13a: {slug: laundry, zone: Z1-13, floor: 1F, room: ランドリー・室内干し, x: 3425, y: 13800, dir: S, lens: 24, look: 洗濯乾燥機・シンク, alt: "区画中心は壁・家具・開口の上にあるため、室の空きへ移した（v4.44 通り芯の均等化）"}
+  Z1-13b: {slug: laundry, zone: Z1-13, floor: 1F, room: ランドリー・室内干し, x: 3425, y: 13350, dir: E, lens: 24, look: 洗面・脱衣への戸・物干し, alt: "区画中心は壁・家具・開口の上にあるため、室の空きへ移した（v4.44 通り芯の均等化）"}
+  Z1-23a: {slug: washroom, zone: Z1-23, floor: 1F, room: 洗面・脱衣, x: 6650, y: 13150, dir: N, lens: 24, look: 洗面カウンター・リネン収納, alt: "区画中心は壁・家具・開口の上にあるため、室の空きへ移した（v4.44 通り芯の均等化）"}
+  Z1-23b: {slug: bath, zone: Z1-23, floor: 1F, room: 浴室, x: 9500, y: 13650, dir: W, lens: 24, look: 浴槽・ユニットの壁, alt: "区画中心は壁・家具・開口の上にあるため、室の空きへ移した（v4.44 通り芯の均等化）"}
+  Z1-33a: {slug: wc1, zone: Z1-33, floor: 1F, room: トイレ, x: 13350, y: 11850, dir: W, lens: 24, look: 便器・戸・手洗い}
+  Z1-33b: {slug: mech, zone: Z1-33, floor: 1F, room: 機械室（東系統）, x: 14837, y: 13975, dir: N, lens: 24, look: 機械室の設備}
+  Z2-11a: {slug: roomB, zone: Z2-11, floor: 2F, room: 居室B, x: 1175, y: 4275, dir: S, lens: 24, look: 南窓・ベッド、直射, direct: true, alt: "区画中心は壁・家具・開口の上にあるため、室の空きへ移した（v4.44 通り芯の均等化）"}
+  Z2-11b: {slug: master, zone: Z2-11, floor: 2F, room: 主寝室, x: 3445, y: 1175, dir: N, lens: 24, look: 戸・廊下, alt: "区画中心は壁・家具・開口の上にあるため、室の空きへ移した（v4.44 通り芯の均等化）"}
+  Z2-21a: {slug: roomA, zone: Z2-21, floor: 2F, room: 居室A, x: 6650, y: 4225, dir: S, lens: 24, look: 南窓・ベッド, direct: true, alt: "区画中心は壁・家具・開口の上にあるため、室の空きへ移した（v4.44 通り芯の均等化）"}
+  Z2-21b: {slug: roomC, zone: Z2-21, floor: 2F, room: 居室C, x: 9654, y: 1075, dir: N, lens: 24, look: 戸・遮音壁（シアター側）, alt: "区画中心は壁・家具・開口の上にあるため、室の空きへ移した（v4.44 通り芯の均等化）"}
+  Z2-31a: {slug: theater, zone: Z2-31, floor: 2F, room: シアター, x: 13550, y: 5525, dir: S, look: スクリーン, alt: "区画中心は壁・家具・開口の上にあるため、室の空きへ移した（v4.44 通り芯の均等化）"}
+  Z2-31b: {slug: theater, zone: Z2-31, floor: 2F, room: シアター, x: 13550, y: 1425, dir: N, look: ソファ・後壁, alt: "区画中心は壁・家具・開口の上にあるため、室の空きへ移した（v4.44 通り芯の均等化）"}
+  Z2-12a: {slug: roomD, zone: Z2-12, floor: 2F, room: 居室D, x: 1625, y: 7950, dir: W, lens: 24, look: 西窓・ベッド、直射, direct: true, alt: "区画中心は壁・家具・開口の上にあるため、室の空きへ移した（v4.44 通り芯の均等化）"}
+  Z2-12b: {slug: roomD, zone: Z2-12, floor: 2F, room: 居室D, x: 1275, y: 7900, dir: N, lens: 24, look: 戸・収納（北）の壁, alt: "区画中心は壁・家具・開口の上にあるため、室の空きへ移した（v4.44 通り芯の均等化）"}
+  Z2-22a: {slug: hall2f, zone: Z2-22, floor: 2F, room: 廊下（南中央）, x: 7700, y: 6450, dir: N, look: 吹抜け・手すり壁, also_1f: true}
+  Z2-22b: {slug: hall2f, zone: Z2-22, floor: 2F, room: ホール（東）, x: 9550, y: 9200, dir: W, look: 廊下（中央）・トイレの戸}
+  Z2-32a: {slug: ante, zone: Z2-32, floor: 2F, room: 前室（音響ロック）, x: 11950, y: 7639, dir: E, look: 遮音扉・シアターの壁, alt: "区画中心は壁・家具・開口の上にあるため、室の空きへ移した（v4.44 通り芯の均等化）"}
+  Z2-32b: {slug: library, zone: Z2-32, floor: 2F, room: 図書室, x: 15000, y: 11959, dir: W, look: ホール（東）の戸・本棚, alt: "区画中心は壁・家具・開口の上にあるため、室の空きへ移した（v4.44 通り芯の均等化）"}
+  Z2-13a: {slug: multi, zone: Z2-13, floor: 2F, room: 多目的室（北西）, x: 3775, y: 13350, dir: N, lens: 24, look: 収納・窓}
+  Z2-13b: {slug: multi, zone: Z2-13, floor: 2F, room: 多目的室（北西）, x: 3775, y: 14900, dir: S, lens: 24, look: 廊下（北西）の戸}
+  Z2-23a: {slug: mhall, zone: Z2-23, floor: 2F, room: 多目的ホール（北）, x: 8200, y: 11800, dir: N, look: 収納（北中央）・トイレの戸, alt: "区画中心は壁・家具・開口の上にあるため、室の空きへ移した（v4.44 通り芯の均等化）"}
+  Z2-23b: {slug: wc2, zone: Z2-23, floor: 2F, room: トイレ, x: 9200, y: 15100, dir: S, lens: 24, look: 戸・手洗い, alt: "区画中心は壁・家具・開口の上にあるため、室の空きへ移した（v4.44 通り芯の均等化）"}
+  Z2-33a: {slug: library, zone: Z2-33, floor: 2F, room: 図書室, x: 12750, y: 9959, dir: N, look: 本棚・収納（図書室）の戸}
+  Z2-33b: {slug: library, zone: Z2-33, floor: 2F, room: 図書室, x: 12250, y: 9959, dir: E, look: 東窓・ベンチ}
 # 範囲外の室（施主が希望すれば c カットを足す）
-out_of_scope: [階段2, 1F 廊下・トイレ・納戸, 前室, 1F 洗面（浴室の戸の前）, 2F 北の廊下・収納（北）・リネン庫・収納（居室A）, 機械室（東系統）]   # v4.43: 居室A（2F）・書庫は a/b、1F の居室A・ファミクロ・WIC は廃止
+out_of_scope: [階段2, 1F 廊下・納戸・トイレ（手洗い付）, 前室を除く 2F の廊下・収納・トイレ（手洗い付）, ジム収納・玄関収納・機械室前・機械室（西系統）]   # v4.44: 書庫・WIC・脱衣所・シャワー・リネン庫は撤去
 # 設計上の問題（レンダー後に追記）。kind: 設計 / CG。confirm: 要施主確認
 findings:
   - {id: ZQ-01, cuts: [Z1-11, Z1-12, Z1-33, Z2-11, Z2-21, Z2-12, Z2-13, Z2-33], kind: 設計, confirm: true, text: "窓の外は空・遠景の木・周辺建物が写るが、室内（平均輝度 110〜170）より暗く、窓領域の平均が画像平均の 0.2〜0.9 倍になる（自動検査の「窓の外が見えない」8 カット）。15:30 の昼でも外が沈んで見える。窓ガラス（gain/shield）の透過率と、室内灯 100% の組合せを施主に確認する"}
