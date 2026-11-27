@@ -54,14 +54,14 @@ def routes(h):
     w = cfg(h)
     c = w["cable"]
     rack = tuple(w["rack"]["xy"])
-    riser = tuple(w["riser"]["box"]["xy"])
+    riser = tuple(w["riser"]["xy"])
     sl = {k: v[2][0] for k, v in sleeve_pairs(h).items()}
     out = []
     for a in w["aps"]:
         pts = [rack]
         vert = (c["ceiling_h"] - c["rack_h"]) / 1000 + 0.3
-        if a["floor"] == "2F":
-            pts += [tuple(w["riser"]["xy"]), riser]
+        if a["floor"] == "1F":          # v4.47 ラックは 2F 機械室。1F の AP へは SL-C2 から下りる（2F の AP は同じ階）
+            pts += [riser]
             vert += (h.fl["2F"] - h.fl["1F"]) / 1000
         pts += [sl["SL-" + v] for v in a.get("via", [])]
         pts.append(tuple(a["xy"]))
@@ -89,7 +89,7 @@ def check(h):
     w = cfg(h)
     sp = w["sleeve_spec"]
     bad = []
-    existing = [(s[0], s[2][0] if False else s[2], s[3]) for s in h.spec["mech_rooms"]["sleeves"]]
+    existing = [(s[0], s[2], s[3], s[6] if len(s) > 6 else "1F") for s in h.spec["mech_rooms"]["sleeves"] if (s[6] if len(s) > 6 else "1F") in ("1F", "2F")]   # v4.47 階つき。RF の屋上フードは対象外
     for sid, (f, wall, pairs) in sleeve_pairs(h).items():
         z = h.fl[f] + sp["z"]
         for (x, y) in pairs:
@@ -102,8 +102,8 @@ def check(h):
                     ok = min(p - u0, u1 - p) >= sp["edge_clear"] + sp["dia"] / 2
             if not ok:
                 bad.append(f"{sid}: RC 壁の中・開口端から {sp['edge_clear']} 以上でない {(x, y)}")
-            for name, xy, d in existing:
-                if f == "1F" and math.hypot(x - xy[0], y - xy[1]) < (d + sp["dia"]) / 2 + sp["edge_clear"]:
+            for name, xy, d, fl_ in existing:
+                if f == fl_ and math.hypot(x - xy[0], y - xy[1]) < (d + sp["dia"]) / 2 + sp["edge_clear"]:
                     bad.append(f"{sid}: 既存 {name} と近い")
     sleeve_ids = {"SL-" + v for a in w["aps"] for v in a.get("via", [])}
     if not sleeve_ids <= set(sleeve_pairs(h)):

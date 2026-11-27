@@ -46,7 +46,7 @@ cuts:
   Z1-22a: {slug: hall1f, zone: Z1-22, floor: 1F, room: ホール・階段1, x: 7150, y: 6350, dir: W, lens: 24, look: 階段1・階段下の収納・キッチン開口}
   Z1-22b: {slug: hall1f, zone: Z1-22, floor: 1F, room: ホール・階段1, x: 6500, y: 6350, dir: E, lens: 24, look: トイレの戸・廊下への開口}
   Z1-32a: {slug: gym, zone: Z1-32, floor: 1F, room: ジム, x: 13950, y: 7175, dir: S, look: ジム全景, alt: "区画中心は壁・家具・開口の上にあるため、室の空きへ移した（v4.44 通り芯の均等化）"}
-  Z1-32b: {slug: gym, zone: Z1-32, floor: 1F, room: ジム, x: 13850, y: 3675, dir: N, look: 機械室の扉 MD-1・蓄電室の扉（v4.46 ジム北端）, alt: "区画中心は壁・家具・開口の上にあるため、室の空きへ移した（v4.44 通り芯の均等化）"}
+  Z1-32b: {slug: gym, zone: Z1-32, floor: 1F, room: ジム, x: 13850, y: 3675, dir: N, look: 未割当（1F 北東）の戸・蓄電室の扉（v4.47 ジム北端）, alt: "区画中心は壁・家具・開口の上にあるため、室の空きへ移した（v4.44 通り芯の均等化）"}
   Z1-13a: {slug: laundry, zone: Z1-13, floor: 1F, room: ランドリー・室内干し, x: 3425, y: 13800, dir: S, lens: 24, look: 洗濯乾燥機・シンク, alt: "区画中心は壁・家具・開口の上にあるため、室の空きへ移した（v4.44 通り芯の均等化）"}
   Z1-13b: {slug: laundry, zone: Z1-13, floor: 1F, room: ランドリー・室内干し, x: 3425, y: 13350, dir: E, lens: 24, look: 洗面・脱衣への戸・物干し, alt: "区画中心は壁・家具・開口の上にあるため、室の空きへ移した（v4.44 通り芯の均等化）"}
   Z1-23a: {slug: washroom, zone: Z1-23, floor: 1F, room: 洗面・脱衣, x: 6650, y: 13150, dir: N, lens: 24, look: 洗面カウンター・リネン収納, alt: "区画中心は壁・家具・開口の上にあるため、室の空きへ移した（v4.44 通り芯の均等化）"}
@@ -64,7 +64,7 @@ cuts:
   Z2-22a: {slug: hall2f, zone: Z2-22, floor: 2F, room: 廊下（南中央）, x: 7700, y: 6450, dir: N, look: 吹抜け・手すり壁, also_1f: true}
   Z2-22b: {slug: hall2f, zone: Z2-22, floor: 2F, room: ホール（東）, x: 9700, y: 6500, dir: W, look: 廊下（南中央）・トイレへの廊下（v4.46。未撮影）}
   Z2-32a: {slug: ante, zone: Z2-32, floor: 2F, room: 前室（音響ロック）, x: 11950, y: 7639, dir: E, look: 遮音扉・シアターの壁, alt: "区画中心は壁・家具・開口の上にあるため、室の空きへ移した（v4.44 通り芯の均等化）"}
-  Z2-32b: {slug: unassigned, zone: Z2-32, floor: 2F, room: 未割当（2F 東）, x: 15000, y: 9700, dir: W, look: 前室との緩衝・廊下（東）への戸（v4.46 未撮影）, alt: "区画中心は壁・家具・開口の上にあるため、室の空きへ移した（v4.46）"}
+  Z2-32b: {slug: mech, zone: Z2-32, floor: 2F, room: 機械室, x: 13900, y: 9250, dir: W, look: 天吊りの空調・排煙機・ラック（v4.47 旧 未割当（2F 東）。未撮影）, alt: "区画中心は壁・家具・開口の上にあるため、室の空きへ移した（v4.47）"}
   Z2-13a: {slug: roomB, zone: Z2-13, floor: 2F, room: 居室B, x: 3300, y: 14000, dir: E, lens: 24, look: ベッド・戸（v4.46 旧 未割当（2F 北西）。未撮影）}
   Z2-13b: {slug: roomB, zone: Z2-13, floor: 2F, room: 居室B, x: 3300, y: 14000, dir: N, lens: 24, look: 北窓（v4.46。未撮影）}
   Z2-23a: {slug: corr2n, zone: Z2-23, floor: 2F, room: 廊下（北）, x: 8200, y: 11500, dir: W, look: X2 の開口・未割当への戸（v4.46 新位置。未撮影）, alt: "区画中心は壁・家具・開口の上にあるため、室の空きへ移した（v4.46）"}
@@ -72,7 +72,7 @@ cuts:
   Z2-33a: {slug: roomC, zone: Z2-33, floor: 2F, room: 居室C, x: 11500, y: 14500, dir: E, lens: 24, look: ベッド・北窓（v4.46 北東の居室。未撮影）}
   Z2-33b: {slug: roomE, zone: Z2-33, floor: 2F, room: 居室E, x: 14700, y: 12900, dir: N, lens: 24, look: ベッド・東窓（v4.46 北東の居室。未撮影）}
 # 範囲外の室（施主が希望すれば c カットを足す）
-out_of_scope: [階段2, 1F 廊下・納戸・トイレ（手洗い付）, 前室を除く 2F の廊下・収納・トイレ（手洗い付）, 玄関収納・機械室・蓄電室・収納（北東）]   # v4.44: 書庫・WIC・脱衣所・シャワー・リネン庫は撤去
+out_of_scope: [階段2, 1F 廊下・納戸・トイレ（手洗い付）, 前室を除く 2F の廊下・収納・トイレ（手洗い付）, 玄関収納・蓄電室・収納（北東）]   # v4.44: 書庫・WIC・脱衣所・シャワー・リネン庫は撤去
 # 設計上の問題（レンダー後に追記）。kind: 設計 / CG。confirm: 要施主確認
 findings:
   - {id: ZQ-01, cuts: [Z1-11, Z1-12, Z1-33, Z2-11, Z2-21, Z2-12, Z2-13, Z2-33], kind: 設計, confirm: true, text: "窓の外は空・遠景の木・周辺建物が写るが、室内（平均輝度 110〜170）より暗く、窓領域の平均が画像平均の 0.2〜0.9 倍になる（自動検査の「窓の外が見えない」8 カット）。15:30 の昼でも外が沈んで見える。窓ガラス（gain/shield）の透過率と、室内灯 100% の組合せを施主に確認する"}

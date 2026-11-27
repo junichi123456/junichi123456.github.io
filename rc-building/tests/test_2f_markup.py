@@ -65,7 +65,8 @@ def test_red_lines_standard_thickness():
     assert not any((o.u0, o.u1) in ((8850, 9650), (7750, 8550)) for o in x3.openings)       # 図書室の扉は RC で閉じる・旧位置も
     assert any((o.u0, o.u1) == (10950, 12050) for o in x3.openings) and any((o.u0, o.u1) == (10950, 12050) for o in h.rc_walls["2F"]["X2"].openings)   # 廊下の開口 W1,100
     y2, y3 = h.rc_walls["2F"]["Y2"], h.rc_walls["2F"]["Y3"]
-    assert any((o.u0, o.u1) == (11300, 15800) for o in y2.openings) and any((o.u0, o.u1) == (11300, 15800) for o in y3.openings)   # シアター・北東の大開口（壁梁）
+    assert any((o.u0, o.u1) == (11300, 15800) for o in y2.openings) and not any((o.u0, o.u1) == (11300, 15800) for o in y3.openings)   # シアターの大開口（壁梁）。v4.47 Y3 の大開口は RC で閉じ、機械室の扉 MD-1 u11,400〜12,400 だけ
+    assert any((o.u0, o.u1) == (11400, 12400) for o in y3.openings)
     assert sorted((o.u0, o.u1) for o in y2.openings if o.kind == "door" and o.operation != "opening") == [(2900, 3700), (6000, 6800)]   # 図書室・未割当（2F 南）の戸だけ
 
 

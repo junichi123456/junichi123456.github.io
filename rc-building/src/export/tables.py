@@ -106,7 +106,7 @@ def sheet_finish(h):
 def sheet_equipment(h):
     rows = []
     for id_, room, name, r, hh, *_z in h.spec["mech_rooms"]["equipment"]:
-        rows.append(["機械・蓄電", id_, room, name, *[round(v) for v in r], round(hh), ""])
+        rows.append(["機械・蓄電", id_, room, name, *[round(v) for v in r], round(hh), _z[1] if len(_z) > 1 else ""])      # v4.47 質量 kg
     for name, r, hh, kg in getattr(h, "equipment_cg", h.equipment):
         rows.append(["ジム機器", "", "ジム", name, *[round(v) for v in r], round(hh), kg])
     return rows
@@ -188,11 +188,11 @@ def sheet_network(h):
         rows.append(["LAN口", o["id"], o["floor"], o["room"], *o["xy"], o["z"], "", o["n"], o["where"]])
     rk = w["rack"]
     for e in rk["equipment"]:
-        rows.append(["ラック機器", rk["id"], "1F", "機械室（東系統）", *rk["xy"], "", "", 1, e])
+        rows.append(["ラック機器", rk["id"], rk.get("floor", "1F"), "機械室（2F 東）", *rk["xy"], "", "", 1, e])
     sp = w["sleeve_spec"]
-    rows.append(["スリーブ", "SL-C1", "1F", "機械室（東系統）床→ONU", *w["entry"]["sleeve_xy"], "", "", 2, "床下ピットからの引込（φ%d）" % sp["dia"]])
+    rows.append(["スリーブ", "SL-C1", "1F", "未割当（1F 北東）の天井内→SL-C2→ONU", *w["entry"]["sleeve_xy"], "", "", 2, "床下ピットからの引込（φ%d）" % sp["dia"]])
     r2 = w["riser"]
-    rows.append(["スリーブ", r2["id"], "1F→2F", "縦配線（スラブ）", *r2["xy"], "", "", r2["n"], f"φ{r2['dia']}×{r2['n']}（{r2['spare']} 本予備）→2F WIC 北東角の配線ボックス"])
+    rows.append(["スリーブ", r2["id"], "1F→2F", "縦配線（スラブ）", *r2["xy"], "", "", r2["n"], f"φ{r2['dia']}×{r2['n']}（{r2['spare']} 本予備）→2F 機械室のラック"])
     for s in w["sleeves"]:
         rows.append(["スリーブ", s["id"], s["floor"], f"{s['wall']} 壁", *s["xy"], sp["z"], "", sp["n"], f"φ{sp['dia']}×{sp['n']}（1 本予備）→{s['to']}"])
     return rows

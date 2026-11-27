@@ -263,7 +263,7 @@ def test_blend_cameras_and_materials(blend_out):
     d, mf = blend_out
     assert not (d / "kawazanyo_exterior.blend").exists() and not (d / "kawazanyo_interior.blend").exists()
     m = bpy_check("blend", d / "kawazanyo_master.blend")
-    assert m["cameras"] == 86 and "C01" in m["camera_names"] and "Z1-11a" in m["camera_names"] and "Z2-33b" in m["camera_names"] and "I01" in m["camera_names"]
+    assert m["cameras"] == 87 and "C01" in m["camera_names"] and "Z1-11a" in m["camera_names"] and "Z2-33b" in m["camera_names"] and "I01" in m["camera_names"]
     assert m["meshes"] > 650 and m["materials"] > 150 and m["lights"] > 100 and m["unit"] == "METRIC"
     assert any(f["file"] == "kawazanyo_master.blend" for f in mf.files)
 
@@ -305,7 +305,7 @@ def test_csv_headers_and_rows(h, outdir):
     lns = LI.lines(h, its)
     n_light = len(lns) + len(LI.downlights(h, its, lns)) + len(LI.footlights(h)) + len(LI.footlines(h, its)[0])
     n = len(list(csv.reader((d / "csv" / "lights.csv").read_bytes().decode("utf-8-sig").splitlines()))) - 1
-    assert n == n_light == 254       # v4.46: 239→254（新しい廊下・寝室・機械室のライン・足元灯）。v4.45: 234→239（廊下（西）・廊下（北）・廊下（北・接続）・未割当のライン／足元灯、キッチンの再配置、トイレの削除）。v4.43: 239→212（1F の居室A・WIC・FC の廃止、収納の組み替え）。v4.42: 242→239（寝室の調光・書庫の照明への置換）。v4.41: 272→242（足元灯・ライン・ダウンライトの再配置）
+    assert n == n_light == 261       # v4.46: 239→254（新しい廊下・寝室・機械室のライン・足元灯）。v4.45: 234→239（廊下（西）・廊下（北）・廊下（北・接続）・未割当のライン／足元灯、キッチンの再配置、トイレの削除）。v4.43: 239→212（1F の居室A・WIC・FC の廃止、収納の組み替え）。v4.42: 242→239（寝室の調光・書庫の照明への置換）。v4.41: 272→242（足元灯・ライン・ダウンライトの再配置）
 
 
 def test_xlsx_matches_csv_and_summary(h, outdir):

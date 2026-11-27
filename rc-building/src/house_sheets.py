@@ -65,7 +65,7 @@ def _equip_by_id(h, prefix):
 
 def battery_room_draw(h, sh, t):
     """蓄電室（v4.26。v4.46: ジム北端の E-M 区画へ移設）: 南の間仕切り（LGS＋強化PB 1時間耐火）・特定防火設備・室名と面積・蓄電池ラック・蓄電 PCS・RC 束壁（破線）。
-    西の壁（x13,925）は機械室との境として h.walls の LGS が描く。ラック・PCS の位置は spec の mech_rooms から読む。"""
+    西の壁（x13,925）は未割当（1F 北東）との境として h.walls の LGS が描く。ラック・PCS の位置は spec の mech_rooms から読む。"""
     x0, y0, x1, y1 = h.battery_room.rect
     for w in h.battery_walls:
         u = w.a
@@ -110,13 +110,40 @@ def _swing_leaf(sh, t2, hinge, open_dir, closed_dir, width, scale):
     sh.arc(hp, R, a0, a1, "A-DOOR") if (a1 - a0) % 360 == 90 else sh.arc(hp, R, a1, a0, "A-DOOR")
 
 
-def machine_battery_detail(h, sh, number_xy, scale=100):
-    """A-03 の差込み拡大詳細（v4.46: 機械室（1 室）と蓄電室をジム北端 y8,700〜10,700 に並べた 1 窓）。number_xy＝見出しの用紙座標。縮尺 1:scale（本図は 1:100）。
-    室・扉・機器・スリーブはすべて spec の mech_rooms から読む。天吊りの機器（z0 ≧ 2,000）は破線。位置はいずれも仮置き（要確認）。
-    戻り値: 枠の下端（用紙 y）。"""
+def _mech_floor(mr, room):
+    """機器の階（v4.47）: 「機械室」は mech_rooms.floor（2F）、「蓄電室」は 1F。"""
+    return mr.get("floor", "1F") if room == "機械室" else "1F"
+
+
+def _rc_strip(h, sh, t2, floor, wname, win, scale):
+    """詳細図に RC 壁（wname）の帯を窓 win で切り取って描く（開口は抜く）。"""
+    w = h.rc_walls[floor][wname]
+    x0, y0, x1, y1 = win
+    lo, hi = (x0, x1) if w.axis == "x" else (y0, y1)
+    u = max(w.a, lo)
+    gaps = sorted((op.u0, op.u1) for op in w.openings) + [(hi, hi)]
+    for a_, b_ in gaps:
+        a_ = min(a_, hi)
+        if a_ > u:
+            if w.axis == "x":
+                sh.rect(*t2(u, w.c - w.t / 2), *t2(a_, w.c + w.t / 2), "A-CUT", lineweight=35)
+            else:
+                sh.rect(*t2(w.c - w.t / 2, u), *t2(w.c + w.t / 2, a_), "A-CUT", lineweight=35)
+        u = max(u, b_)
+
+
+def machine_battery_detail(h, sh, number_xy, scale=100, floor="1F"):
+    """差込みの拡大詳細。v4.47: floor="1F" は未割当（1F 北東）と蓄電室（ジム北端 y8,700〜10,700。A-03）、
+    floor="2F" は 2F 機械室（A-04。天吊りは破線・MD-1 の軌跡・SO-1・SR・SF の記号）。number_xy＝見出しの用紙座標。縮尺 1:scale（本図は 1:100）。
+    室・扉・機器・スリーブはすべて spec の mech_rooms から読む。位置はいずれも仮置き（要確認）。戻り値: 枠の下端（用紙 y）。"""
     mr = h.spec["mech_rooms"]
     bx0, by0, bx1, by1 = h.battery_room.rect
-    wins = [("機械室（5.85m²）・蓄電室（4.30m²）― ジム北端（E-M 区画）", (10950, 8200, 16125, 10800))]
+    if floor == "1F":
+        ur = next(r for r in h.rooms if r.floor == "1F" and r.name == "未割当（1F 北東）")
+        wins = [(f"未割当（1F 北東 {ur.area:.2f}m²）・蓄電室（{h.battery_room.area:.2f}m²）― ジム北端（E-M 区画）", (10950, 8200, 16125, 10800))]
+    else:
+        mrm = next(r for r in h.rooms if r.floor == "2F" and r.name == "機械室")
+        wins = [(f"機械室（2F 東 {mrm.area:.2f}m²）― 天吊りは破線・MD-1・SO-1・屋上フード SR（1:{scale}）", (10700, 8300, 16125, 11300))]
     sh.text(f"拡大詳細 1:{scale}", (number_xy[0], number_xy[1] - 3), 2.0, "A-TEXT", paper=True)
     top = number_xy[1] - 8
     left0 = number_xy[0]
@@ -136,17 +163,25 @@ def machine_battery_detail(h, sh, number_xy, scale=100):
         sh.text(title, (left + 1, top + 1.0), 1.1, "A-TEXT", paper=True)
         sh.rect(*sh.P(left, top - ph - 4), *sh.P(left + pw + 4, top), "G-TABLE")
         # 室名・面積
-        for r_ in h.rooms:
-            if r_.floor == "1F" and r_.name == "機械室":
-                sh.text(r_.name, t2(11450, 10450), 1.2, "A-ROOM", "MIDDLE_CENTER")
-        sh.text("ジム", t2(12400, 8350), 1.2, "A-ROOM", "MIDDLE_CENTER")
-        sh.text("蓄電室", t2((bx0 + bx1) / 2, 9400), 1.2, "A-ROOM", "MIDDLE_CENTER")
-        sh.text(f"{h.battery_room.area:.2f}m²", t2((bx0 + bx1) / 2, 9100), 1.0, "A-ROOM", "MIDDLE_CENTER")
-        # LGS（y8,650 は機械室の扉 MD-1 の開口を抜く、x13,925 は機械室｜蓄電室）
+        if floor == "1F":
+            sh.text("未割当", t2(11450, 10450), 1.2, "A-ROOM", "MIDDLE_CENTER")
+            sh.text("ジム", t2(12400, 8350), 1.2, "A-ROOM", "MIDDLE_CENTER")
+            sh.text("蓄電室", t2((bx0 + bx1) / 2, 9400), 1.2, "A-ROOM", "MIDDLE_CENTER")
+            sh.text(f"{h.battery_room.area:.2f}m²", t2((bx0 + bx1) / 2, 9100), 1.0, "A-ROOM", "MIDDLE_CENTER")
+        else:
+            sh.text(f"機械室 {mrm.area:.2f}m²（2F 東）", t2(13400, 8500), 1.2, "A-ROOM", "MIDDLE_CENTER")
+            sh.text("前室（音響ロック）", t2(13400, 8330), 0.9, "A-ROOM", "MIDDLE_CENTER")
+            sh.text("廊下（東）", t2(14600, 11150), 1.0, "A-ROOM", "MIDDLE_CENTER")
+            _rc_strip(h, sh, t2, "2F", "Y3", win, scale)
+            _rc_strip(h, sh, t2, "2F", "X3", win, scale)
+        # LGS（1F: y8,650＝ジムとの境（戸 u12,950〜13,750）と x13,925＝未割当｜蓄電室。2F: y8,709＝前室の北壁＝機械室の南壁）
         for w in h.walls:
-            if w.floor != "1F" or w.cat != "partition" or w.c not in (mr["wall_x_y"], mr["wall_mid"]):
+            if w.cat != "partition" or w.floor != floor:
                 continue
-            if w.axis == "x" and abs(w.c - mr["wall_x_y"]) > 1 or w.axis == "y" and abs(w.c - mr["wall_mid"]) > 1:
+            if floor == "1F":
+                if w.axis == "x" and abs(w.c - mr["wall_x_y"]) > 1 or w.axis == "y" and abs(w.c - mr["wall_mid"]) > 1 or w.axis not in ("x", "y"):
+                    continue
+            elif not (w.axis == "x" and abs(w.c - 8709) < 1):
                 continue
             u = w.a
             for a_, b_ in sorted((op.u0, op.u1) for op in w.openings) + [(w.b, w.b)]:
@@ -156,28 +191,39 @@ def machine_battery_detail(h, sh, number_xy, scale=100):
                     else:
                         sh.rect(*t2(w.c - w.t / 2, u), *t2(w.c + w.t / 2, a_), "A-CUT-LGS")
                 u = max(u, b_)
-        for did, room, op in h.mech_doors:                          # 機械室の扉 MD-1（北へ内開き）
-            _swing_leaf(sh, t2, (op.u0, op.wall.c + h.pt / 2), (0, 1), (1, 0), op.width, scale)
-            sh.text(f"{did} W{op.width:.0f} 内開き", t2((op.u0 + op.u1) / 2, op.wall.c - 250), 1.0, "A-TEXT", "MIDDLE_CENTER")
-        sh.hatch_polys([sbox(*t2(bx0, by0), *t2(bx1, by1))], layer="E-BATT", pattern="ANSI31", spacing=2.0, color=1)
-        sh.rect(*t2(bx0, by0), *t2(bx1, by1), "E-BATT")
-        for w in h.battery_walls:                                     # 蓄電室の南の壁（特定防火設備の扉を抜く）
-            u = w.a
-            for a_, b_ in sorted((op.u0, op.u1) for op in w.openings) + [(w.b, w.b)]:
-                if a_ > u:
-                    sh.rect(*t2(u, w.c - w.t / 2), *t2(a_, w.c + w.t / 2), "A-CUT-LGS")
-                u = max(u, b_)
-        d = h.battery_door
-        _swing_leaf(sh, t2, (d.u0, d.wall.c - h.pt / 2), (0, -1), (1, 0), d.width, scale)
-        sh.text("特定防火設備 W900 外開き・自閉", t2(d.u0 - 100, d.wall.c - d.width - 150), 1.0, "A-TEXT", "MIDDLE_RIGHT")
-        z = h.clearance_report()["zone"].intersection(sbox(x0, y0, x1, y1))
-        for g in iter_polygons(z):
-            sh.pline([t2(*p) for p in g.exterior.coords], "A-HIDDEN", closed=True)
-        sh.text("離隔 800", t2(14900, 7900), 1.0, "A-TEXT", "MIDDLE_CENTER")
+            if floor == "1F" and w.axis == "x":                      # ジム→未割当（1F 北東）の木製片開き戸（北へ内開き）
+                for op in w.openings:
+                    _swing_leaf(sh, t2, (op.u0, op.wall.c + h.pt / 2), (0, 1), (1, 0), op.width, scale)
+                    sh.text(f"戸 W{op.width:.0f} 内開き", t2((op.u0 + op.u1) / 2, op.wall.c + 250), 0.9, "A-TEXT", "MIDDLE_CENTER")
+        if floor == "2F":
+            for did, room, op in h.mech_doors:                         # 機械室の扉 MD-1（南＝機械室側へ内開き。蝶番は u0）
+                _swing_leaf(sh, t2, (op.u0, op.wall.c - h.t / 2), (0, -1), (1, 0), op.width, scale)
+                sh.text(f"{did} W{op.width:.0f} 内開き", t2((op.u0 + op.u1) / 2, op.wall.c + h.t / 2 + 200), 1.0, "A-TEXT", "MIDDLE_CENTER")
+            for sid, fl_, (sx0, sy0, sx1, sy1) in mr.get("slab_openings", []):
+                sh.rect(*t2(sx0, sy0), *t2(sx1, sy1), "A-HIDDEN", lineweight=35)
+                sh.text(sid + "（1,400×750）", t2((sx0 + sx1) / 2, (sy0 + sy1) / 2), 0.9, "A-TEXT", "MIDDLE_CENTER")
+        else:
+            sh.hatch_polys([sbox(*t2(bx0, by0), *t2(bx1, by1))], layer="E-BATT", pattern="ANSI31", spacing=2.0, color=1)
+            sh.rect(*t2(bx0, by0), *t2(bx1, by1), "E-BATT")
+            for w in h.battery_walls:                                     # 蓄電室の南の壁（特定防火設備の扉を抜く）
+                u = w.a
+                for a_, b_ in sorted((op.u0, op.u1) for op in w.openings) + [(w.b, w.b)]:
+                    if a_ > u:
+                        sh.rect(*t2(u, w.c - w.t / 2), *t2(a_, w.c + w.t / 2), "A-CUT-LGS")
+                    u = max(u, b_)
+            d = h.battery_door
+            _swing_leaf(sh, t2, (d.u0, d.wall.c - h.pt / 2), (0, -1), (1, 0), d.width, scale)
+            sh.text("特定防火設備 W900 外開き・自閉", t2(d.u0 - 100, d.wall.c - d.width - 150), 1.0, "A-TEXT", "MIDDLE_RIGHT")
+            z = h.clearance_report()["zone"].intersection(sbox(x0, y0, x1, y1))
+            for g in iter_polygons(z):
+                sh.pline([t2(*p) for p in g.exterior.coords], "A-HIDDEN", closed=True)
+            sh.text("離隔 800", t2(14900, 7900), 1.0, "A-TEXT", "MIDDLE_CENTER")
         # 機器（spec の mech_rooms.equipment。天吊りは破線）
-        short = {"蓄電池ラック": "ラック", "蓄電 PCS（壁掛け）": "PCS", "空調・全熱交換ユニット": "空調・全熱交換", "排煙機（西）": "排煙機（西）", "排煙機（東）": "排煙機（東）",
+        short = {"蓄電池ラック": "ラック", "蓄電 PCS（壁掛け）": "PCS", "空調・全熱交換ユニット": "空調・全熱交換", "排煙機（西系統）": "排煙機（西）", "排煙機（東系統）": "排煙機（東）",
                  "ネットワークラック（防振マット": "ラック", "特定負荷分電盤": "特定負荷", "主分電盤": "主分電盤", "浄水器": "浄水器"}
         for eid, room, nm, r, hh, *zz in mr["equipment"]:
+            if _mech_floor(mr, room) != floor:
+                continue
             z0_ = zz[0] if zz else 0
             lay = "E-BATT" if eid.startswith("MB-") and "ラック" in nm else ("E-POWER" if "分電盤" in nm else ("E-PV" if "PCS" in nm else "A-VIS"))
             if z0_ >= 2000:
@@ -187,9 +233,10 @@ def machine_battery_detail(h, sh, number_xy, scale=100):
             pw_ = (r[2] - r[0]) / scale
             vert = (r[3] - r[1]) > (r[2] - r[0]) * 1.3 and pw_ < 9
             sh.text(lab + ("（天吊り）" if z0_ >= 2000 and "天吊り" not in lab else ""), t2((r[0] + r[2]) / 2, (r[1] + r[3]) / 2), 0.9, "A-TEXT", "MIDDLE_CENTER", rot=90 if vert else 0)
-        # スリーブ（○ と記号のみ）
-        for sid, wall, (sx, sy), dia, z_, use in mr["sleeves"]:
-            if not (x0 <= sx <= x1 and y0 <= sy <= y1):
+        # スリーブ・貫通（○ と記号のみ。階つき。SR は RF スラブの屋上フードの平面位置）
+        for sid, wall, (sx, sy), dia, z_, use, *fl_ in mr["sleeves"]:
+            lv = fl_[0] if fl_ else "1F"
+            if not (lv == floor or (floor == "2F" and lv == "RF")) or not (x0 <= sx <= x1 and y0 <= sy <= y1):
                 continue
             c = t2(sx, sy)
             sh.circle(c, 0.7 * sh.S, "A-SYMB")
@@ -197,6 +244,12 @@ def machine_battery_detail(h, sh, number_xy, scale=100):
             sh.text(sid, (c[0] + dx * sh.S, c[1]), 0.9, "A-SYMB", "MIDDLE_LEFT" if dx > 0 else "MIDDLE_RIGHT")
         left += pw + 8
     return bottom
+
+
+def surplus_lines(h):
+    """余剰面積（未割当）を 1F・2F 別に 25m² 単位（単位数＋端数、小数の単位数）で。図の注記・ブリーフに同じ表（v4.47）。"""
+    sr = h.surplus_report()
+    return [f"{k}: {v['area']:.2f}m²＝{v['units']} 単位＋{v['rem']:.2f}m²（{v['frac']:.2f} 単位）" for k, v in sr.items()]
 
 
 def room_labels(h, sh, t, floor, hgt=2.6):
@@ -620,7 +673,7 @@ def exterior_plan(h, number):
     u = h.spec["utilities"]
     ln = lambda key: sum(g.length for g in h.pipes[key]) / 1000
     pr = [["管", "管種・口径", "勾配", "延長"],
-          ["上水（量水器→機械室）", u["water"]["dia"], "—", f"約{ln('water'):.0f}m"],
+          ["上水（量水器→ピット→2F 機械室）", u["water"]["dia"], "—", f"約{ln('water'):.0f}m"],
           ["汚水（汚1〜汚%d）" % len(h.sewer_manholes), u["sewer"]["pipe"], u["sewer"]["slope"], f"約{ln('sewer'):.0f}m"],
           ["雨水 西（縦樋→貯留槽→浸透桝）", "塩ビ " + u["storm"]["pipe"], u["storm"]["slope"], f"約{ln('storm_w'):.0f}m"],
           ["雨水 東（縦樋→浸透桝→雨水最終桝）", "塩ビ " + u["storm"]["pipe"], u["storm"]["slope"], f"約{ln('storm_e'):.0f}m"]]
@@ -733,7 +786,7 @@ def floor_plan(h, floor, number):
     cy = legend(sh, 285, cy - 1, [("A-CUT", "RC壁 t=250（耐力壁）", "hatch"), ("A-CUT-LGS", "外断熱100＋外装20", "ins"),
                                     ("A-CUT-LGS", "乾式間仕切（LGS）t=100", "line"), ("A-GRID", "通り芯（壁芯）", "line"),
                                     ("A-FLOW", "動線（回遊・家事・搬入）", "line")])
-    notes = [("h", "計画の考え方（v4.46 壁芯16.25m角・均等割り。施主の書き込みに寄せる）")]
+    notes = [("h", "計画の考え方（v4.47 壁芯16.25m角・均等割り。施主の書き込みに寄せる）")]
     if floor == "1F":
         cr = h.clearance_report()
         import house_legal
@@ -744,25 +797,26 @@ def floor_plan(h, floor, number):
                   ("t", "回遊①（家族）: 玄関ホール→GD-2→ホール・階段1→キッチン（X2 の開口）→LDK（Y2 の開口）→GD-1→玄関ホール。回遊②（家事）: キッチン→廊下（西）→ホール・階段2→ランドリー→洗面・脱衣→廊下（北）→廊下（中央）→ホール・階段1"),
                   ("t", "洗う→干す→しまう: ランドリー・室内干し（12.22m²。v4.46 で収納（ランドリー）を統合し、南の廊下（北西）から戸 u2,350〜3,150 で入る）と洗面・脱衣が X2 の扉（u14,300〜15,100・W800）で隣接。納戸へしまう。階段は使わない（2F にランドリーなし）"),
                   ("t", f"ジム {h.gym.daylight_area:.1f}m²（本体{h.gym.area:.1f}＋拡張部{h.gym_annex.area:.1f}）。ジム本体は E の列 2 区画（Y2 の開口 u11,300〜14,000）。S・E 外壁 t300（室内側+50）。搬入: 玄関→土間→ホール→遮音ドア Ts-45 W1,200（x9,250・u4,000〜5,200）→拡張部→X3 開口 W4,035→ジム。v4.46: ジム北端は y8,600（旧 10,700）で、旧ジム収納と蓄電室の位置は機械室・蓄電室へ"),
-                  ("t", f"機械室 1 室（5.85m²）と蓄電室（4.30m²）はジム北端 y8,700〜10,700（E-M 区画。施主画像）。ジム→MD-1（内開き）→機械室。空調・排煙機は天吊り（破線）。機器との離隔 最小 {cr['min'][1] / 1000:.2f}m（≧0.80）、有効面積 {cr['usable']:.1f}m²（≧44.85）。破線=離隔帯、搬入動線 R1・R2"),
-                  ("t", "要確認: ①X3 北端 4,850 ②機械室 5.85m²（−64%）で足りるか・機器の天吊り化 ③蓄電室の扉位置 ④開口 4,300（袖壁 875）⑤蓄電室が 1F 北寄り（E-M）になり、1F 居室A と RC で隣り合う ⑥Y3 の扉（ジム→機械室前）は RC で閉じた"),
+                  ("t", f"v4.47 旧機械室は未割当（1F 北東 5.85m²・無窓・ジムから戸 u12,950〜13,750 で入る。居室には使えない）、蓄電室（4.30m²）はジム北端 y8,700〜10,700（E-M 区画）のまま。機械室は 2F 東（A-04）へ移設。機器との離隔 最小 {cr['min'][1] / 1000:.2f}m（≧0.80）、有効面積 {cr['usable']:.1f}m²（≧44.85）。排煙の吸込み・空調は 2F 機械室からスラブ開口 SO-1 経由（破線）"),
+                  ("t", "要確認: ①X3 北端 4,850 ②蓄電室を 1F に残す（2F へは移さない） ③蓄電室の扉位置 ④開口 4,300（袖壁 875） ⑤未割当（1F 北東）が無窓・ジム経由のみで良いか ⑥1F 主寝室の窓は東→北（同寸）。X4 の Y 方向壁が増え偏心率が下がる"),
                   ("t", "玄関: SICなし（土間に下足入れ・ベンチ）。二重框: 土間 1FL-360 → 式台 1FL-180 → ホール 1FL。ホール・土間の幅 3,125（x6,025〜9,150）"),
-                  ("t", "階段1: 有効幅 950×2・R170・T260。廊下はすべて内法 1,100。トイレ（手洗い付）3.79m²（1F はここだけ）・納戸 4.51m²。1F 北東は主寝室 10.09m²（6.2畳）・居室A 10.08m²（6.2畳）・廊下・収納 1.57m²。未割当（1F 西）6.16m²（余剰 25m² 単位: 0 単位＋6.16m²）"),
+                  ("t", "階段1: 有効幅 950×2・R170・T260。廊下はすべて内法 1,100。トイレ（手洗い付）3.79m²（1F はここだけ）・納戸 4.51m²。1F 北東は主寝室 10.09m²（6.2畳）・居室A 10.08m²（6.2畳）・廊下・収納 1.57m²。未割当（1F 西 6.16＋1F 北東 5.85）。余剰 25m² 単位 — " + " ／ ".join(surplus_lines(h))),
                   ("t", "ジム床: 5,000N/m²（提案）・浮き床。直天井（CH 約2,900）を推奨。ジムの窓: 外部扉なし。天井際の FIX 高窓（窓台 FL+2,000）に集約"),
-                  ("t", "防音: ジムは浮き床＋遮音ドア Ts-45（二重壁D-55相当）、機械室・蓄電室は RC（Y3 t250）で 1F 居室A・主寝室と隔てる（機械室の隣が寝室。要確認）。真上は 2F シアター（Y2 を跨ぐ大開口・遮音天井）"),
+                  ("t", "防音: ジムは浮き床＋遮音ドア Ts-45（二重壁D-55相当）、蓄電室と未割当（1F 北東）は RC（Y3 t250）で 1F 居室A・主寝室と隔てる（v4.47: 機械室は 2F へ移り「機械室の隣が寝室」は解消）。真上は 2F シアター（Y2 を跨ぐ大開口・遮音天井）"),
                   ("t", "排煙: LDK・ジムは機械排煙（令126条の3）。窓は全窓 FIX の樹脂サッシ・Low-E トリプル（LDK の 2 窓はクアッド）（UVカット防犯合わせ CP、全窓）。南・東・西は外付け電動スクリーン（M-03）")]
     else:
         notes += [("t", "回遊③: 廊下（南西）⇄廊下（南中央）（X2 の開口 u5,550〜6,650）→階段1。回遊④: 廊下（西）→廊下（北西）→ホール・階段2。図書室・前室へはホール（東）→廊下（中央）"),
                   ("t", "寝室 6 室（1F 主寝室・居室A、2F 居室B・C・D・E）はすべて 6〜8畳（9.72〜12.96m²）。居室B（12.22・7.5畳）は北西、居室C・E（各約 10.1）は北東、居室D（11.36・7.0畳）は西。ウォークインは設けない（避難室なし。要確認 Q6）"),
-                  ("t", "シアター 33.19m² は Y2 の壁梁（せい 約600）を跨ぐ。前室（音響ロック）はシアターと LGS 遮音二重壁（y6,589）。図書室は南西へ移設（26.78m²。v4.45 32.49 の −17.6%）。北東は居室 2 室（C・E）＋未割当（2F 東）10.04m²（前室との緩衝）"),
+                  ("t", "シアター 33.19m² は Y2 の壁梁（せい 約600）を跨ぐ。前室（音響ロック）はシアターと LGS 遮音二重壁（y6,589）。図書室は南西へ移設（26.78m²。v4.45 32.49 の −17.6%）。北東は居室 2 室（C・E）＋機械室 10.04m²（2F 東。v4.47 旧 未割当（2F 東））。前室の北壁は遮音 LGS（D-50 目標）"),
                   ("t", "窓: 全窓 FIX（樹脂サッシ・Low-E トリプル（LDK の 2 窓はクアッド）・UVカット合わせガラス、Uw≦0.90）。南・東・西は外付け電動スクリーン（M-03）。排煙は各居室の天井排煙口"),
                   ("t", "2F の水回りはトイレ（手洗い付）1 か所だけ（4.51m²。PS-3 の北。v4.46 で C-N のトイレ 6.05m² を撤去）。PS-2 は 1F 浴室・洗面の通気・換気の縦系統として残す。脱衣所・シャワー・リネン庫・書庫は撤去（v4.44）"),
-                  ("t", "未割当（v4.46）: 2F 南 26.65・北 18.51（北・奥 1.00 を含む）・東 10.04＝55.20m²、1F は 西 6.16m²。余剰面積 25m² 単位: 1F 0 単位＋6.16m²、2F 2 単位＋5.20m²（2.21 単位）、計 2 単位＋11.36m²（2.45 単位）。廊下はすべて内法 1,100（用途は要確認 Q6）"),
+                  ("t", "未割当（v4.47）: 2F 南 26.65・北 18.51（北・奥 1.00 を含む）＝45.16m²、1F は 西 6.16＋北東 5.85＝12.01m²。余剰面積 25m² 単位 — " + " ／ ".join(surplus_lines(h)) + "。廊下はすべて内法 1,100（用途は要確認）"),
+                  ("t", "偏心率（v4.47・重心は荷重の図心）: " + "・".join(f"{f[0]}{n[0]} {v['ecc']:.3f}" for (f, n), v in PF.seismic(h)["stories"].items()) + "（各 ≦0.10。2F Y3 の旧大開口を RC で閉じ MD-1 W1,000 とした）"),
                   ("t", "赤線＝RC 壁（t250・標準厚）の位置・範囲。足元灯: 廊下・ホールの壁 床上300 に連続ライン（遠藤照明 Linear 第一候補・仮定値）。死角（曲がり角・戸口・階段口）の前後は警告区間。配置は E-05")]
     notes += [("t", "寸法: mm、面積: 壁芯内法の概算")]
     cy = side_panel(sh, 284, cy - 3, notes, width=118)
-    if floor == "1F":                                   # v4.26 拡大詳細は注記欄の下端から 4mm 下（凡例・注記と重ねない）
-        btm = machine_battery_detail(h, sh, (284, cy - 4 + 8))
+    if True:                                            # v4.26 拡大詳細は注記欄の下端から 4mm 下（凡例・注記と重ねない）。v4.47 2F にも機械室の詳細
+        btm = machine_battery_detail(h, sh, (284, cy - 4 + 8), floor=floor)
         tb_top = sh.MARGIN + sh.TB[1]
         assert btm >= tb_top + 3, (btm, tb_top)         # 表題欄の上端から 3mm 以上離す
         sh.detail_frame = (btm, cy)
@@ -783,7 +837,11 @@ def roof_plan(h, number):
         sh.text("RD", t(x + 300, y + 300), 1.5, "A-SYMB")
     sh.text("屋上: 外断熱防水（シート防水）、水勾配 1/50", t(h.W / 2, h.D / 2), 2.2, "A-TEXT", "MIDDLE_CENTER")
     sh.text("太陽光パネルは設置しない（庭のソーラーパーゴラに集約）", t(h.W / 2, h.D / 2 - 1200), 1.8, "A-TEXT", "MIDDLE_CENTER")
-    sh.text("排煙機の排気口・給気ダンパーは外壁面（機械室）に設置", t(h.W / 2, h.D / 2 - 2200), 1.6, "A-TEXT", "MIDDLE_CENTER")
+    sh.text("排煙機・OA/EA の吐出は屋上フード SR1〜SR4（2F 機械室の真上。外壁の貫通なし）", t(h.W / 2, h.D / 2 - 2200), 1.6, "A-TEXT", "MIDDLE_CENTER")
+    for sid, wall, (sx, sy), dia, z_, use, *fl_ in h.spec["mech_rooms"]["sleeves"]:                      # v4.47 屋上フード
+        if fl_ and fl_[0] == "RF":
+            sh.circle(t(sx, sy), abs(t(dia / 2, 0)[0] - t(0, 0)[0]), "A-SYMB")
+            sh.text(sid, t(sx + dia / 2 + 150, sy + 150), 1.4, "A-SYMB", "LEFT")
     sh.north_arrow(sh.P(395, 268), 7, rot=h.facade_az)
     sh.view_title("屋根伏図", "1:100", (24, 22))
     sh.text(f"RFL = 設計GL+{h.fl['RF']:,}／パラペット天端 GL+{h.parapet_top:,}", (24, 15), 2.4, "A-TEXT", paper=True)
@@ -1176,7 +1234,7 @@ def openings_smoke_sheet(h, number):
              ("t", "全窓（1・2階）: 外側を防犯合わせガラス（CP 認定品）。窓台: 居室 FL+1,000、ジム FL+2,000"),
              ("t", "換気は全館空調・全熱交換（窓に依存しない）。排煙時は機械室の給気ダンパーが連動して開く"),
              ("t", "開口 H2,200 で天井 2,800 のため防煙垂れ壁 600（≧500）。欄間パネル100 は不要（ガラス扉の欄間は意匠として残す）（要確認）"),
-             ("t", "排煙機: 機械室（1 室・天吊り）に 120m³/分×2台（西・東系統）。排煙口は各居室の天井、手動開放装置は床から0.8〜1.5m。予備電源は蓄電池 200kWh 級（蓄電室、PV と連携、30分以上）")]
+             ("t", "排煙機: 2F 機械室（天吊り）に 120m³/分×2台（西・東系統）。排煙口は各居室の天井、手動開放装置は床から0.8〜1.5m。予備電源は蓄電池 200kWh 級（蓄電室、PV と連携、30分以上）")]
     side_panel(sh, 190, y2 - 6, notes, width=210)
     return sh
 
@@ -1647,7 +1705,7 @@ def wifi_sheet(h, number):
         rows.append([a_["id"] + (" ★" if a_.get("tune") else ""), a_["role"], f"{a_['eirp']}dBm", f"{a_['xy'][0]:,}, {a_['xy'][1]:,}"])
     yy = sh.table(250, 268, [18, 76, 14, 32], rows, row_h=3.9, h=1.7)
     side_panel(sh, 250, yy - 5, [("h", "計画の考え方"),
-        ("t", f"機器: {w['standard']}。各 AP は PoE＋の有線（Cat6A）で機械室のラック MC-6 に集める（E-07）"),
+        ("t", f"機器: {w['standard']}。各 AP は PoE＋の有線（Cat6A）で 2F 機械室のラック MC-6 に集める（E-07）"),
         ("t", f"上質な室（居室 A〜E・主寝室・図書室・LDK・ジム・シアター）: 全面 −55dBm 以上（計算。家具・人体の損失を見込み実測の目標 −60 より 5dB 厳しい）。RC 壁 1 枚で 25dB 落ちるため室ごとに AP を置く。最小 {sm['premium_min']:.1f}dBm"),
         ("t", "水回り（浴室・トイレ 2・洗面・脱衣。v4.46: 2F のトイレは 1 か所、収納（北中央）は撤去）: 施主の決定で −67dBm 程度（中央値 −65〜−70）に抑える。AP も LAN 口も置かず、RC 壁・スラブ越しの漏れ電波を周りの AP の出力で合わせる。切るのではなく悪くする（最小 −75 以上）"),
         ("t", "注意: 水回りの値は簡易モデルの試算で、RC 壁の減衰の誤差（±5dB）で動く（RC 20dB なら中央値 −61〜−66、30dB なら −69〜−75）。竣工時に実測し、★の AP の出力を 1dB 刻みで調整する。位置で合わなければ予備の天井ボックス（1.5m 離れ）へ移す"),
@@ -2539,9 +2597,9 @@ def lifeline_sheet(h, number):
             ("引込開閉器盤＋電力量計（門の塀に組込む・下端 FGL+1,200 以上・外面を門前広場へ）", (15500, -27589), (16900, -25800)),
             ("幹線 PE φ65×2（1本予備）＋通信 別管 φ50×2。駐車場区画1の下を北へ", (14200, -22000), (15900, -22000)),
             ("HH ハンドホール（曲がり・約30m ごと）", (14200, -14000), (15800, -14000)),
-            ("建物南面で基礎スリーブ（止水）→ 床下ピット → 機械室", (14200, -245), (15600, -1800)),
+            ("建物南面で基礎スリーブ（止水）→ 床下ピット → 未割当（1F 北東）→ 2F 機械室", (14200, -245), (15600, -1800)),
             ("PCS（カーポートの柱）", (13000, -19400), (13000, -21200)),
-            ("主分電盤・特定負荷分電盤（機械室）", (12400, 9500), (17500, 10500)),
+            ("主分電盤・特定負荷分電盤（2F 機械室）", (12400, 9500), (17500, 10500)),
             ("蓄電室 200kWh 級・蓄電 PCS（双方向、AC 結合）", (15100, 7600), (17500, 7600)),
             ("PCS（パーゴラ東端・屋外）", (-9000, 15000), (-7000, 13500)),
             ("PV AC 配線 → 西面スリーブ。雨水管と交差（上下 0.3m）", (-4000, 16000), (-2800, 17500)),
@@ -2643,7 +2701,7 @@ def lifeline_tables(h, number):
     r1, r2, r3 = 276, 259, 242
     _flow_box(sh, cx[0], r1, W, H_, "配電線（南側道路・地中引込）")
     _flow_box(sh, cx[1], r1, W, H_, "引込開閉器盤＋電力量計（門の塀）")
-    _flow_box(sh, cx[2], r1, W, H_, "主分電盤（機械室）・CT・RPR")
+    _flow_box(sh, cx[2], r1, W, H_, "主分電盤（2F 機械室）・CT・RPR")
     _flow_box(sh, cx[3], r1, W, H_, "一般負荷（照明・空調・IH ほか）")
     _flow_line(sh, [(cx[0] + W, r1 - 4.5), (cx[1], r1 - 4.5)])
     _flow_line(sh, [(cx[1] + W, r1 - 4.5), (cx[2], r1 - 4.5)])
@@ -2652,7 +2710,7 @@ def lifeline_tables(h, number):
     _flow_box(sh, cx[3], r2, W, H_, "蓄電池 200kWh 級（LFP・蓄電室）", "E-BATT")
     _flow_line(sh, [(cx[2] + W / 2, r1 - H_), (cx[2] + W / 2, r2)])
     _flow_line(sh, [(cx[2] + W, r2 - 4.5), (cx[3], r2 - 4.5)], "E-BATT")
-    _flow_box(sh, cx[2], r3, W, H_, "特定負荷分電盤（機械室）")
+    _flow_box(sh, cx[2], r3, W, H_, "特定負荷分電盤（2F 機械室）")
     _flow_box(sh, cx[3], r3, W, H_, "特定負荷: 排煙機・排水ポンプ・冷蔵庫・通信警備・照明・HP空調1系統・給湯・IH1口")
     _flow_line(sh, [(cx[2] + W / 2, r2 - H_), (cx[2] + W / 2, r3)])
     _flow_line(sh, [(cx[2] + W, r3 - 4.5), (cx[3], r3 - 4.5)])

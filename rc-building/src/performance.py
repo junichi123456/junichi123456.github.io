@@ -436,6 +436,41 @@ def _wall_stiff(h, floor, axis):
     return out
 
 
+def gravity_center(h, floor):
+    """v4.47 令82条の6 の重心: 層 floor の中間高さより上にある長期荷重の図心 (gx, gy) m。
+    RC（mat == "concrete" の箱。中間高さより上の部分の体積 × 24kN/m³）、均等荷重（RF: 防水・断熱 1.5kN/m²、
+    1F 層では 2F 床の仕上 1.2＋間仕切 0.5＋地震用積載 0.6kN/m² を平面中心に）、
+    2F の設備（spec.mech_rooms.equipment の kg。z0 ≧ 2,200 の天吊りは RF、他は 2F 床）。
+    1F の床に載る設備（ジム機器・蓄電池）は基礎へ直接流れるので含めない。"""
+    zl = h.fl[floor]
+    zu = h.fl["2F" if floor == "1F" else "RF"]
+    zm = (zl + zu) / 2
+    M = Mx = My = 0.0
+    for b in h.boxes:
+        if b.mat != "concrete" or b.z1 <= zm:
+            continue
+        w = (b.x1 - b.x0) * (b.y1 - b.y0) * (b.z1 - max(b.z0, zm)) / 1e9 * GAMMA_RC
+        M += w
+        Mx += w * (b.x0 + b.x1) / 2000
+        My += w * (b.y0 + b.y1) / 2000
+    A = (h.W / 1000) ** 2
+    u = A * 1.5 + (A * (1.2 + 0.5 + 0.6) if floor == "1F" else 0.0)
+    M += u
+    Mx += u * h.W / 2000
+    My += u * h.W / 2000
+    for e in h.spec["mech_rooms"]["equipment"]:
+        if e[1] != "機械室" or len(e) < 7:
+            continue
+        lv = "RF" if e[5] >= 2200 else "2F"
+        if floor == "1F" or lv == "RF":
+            kn = e[6] * 9.8 / 1000
+            r = e[3]
+            M += kn
+            Mx += kn * (r[0] + r[2]) / 2000
+            My += kn * (r[1] + r[3]) / 2000
+    return Mx / M, My / M
+
+
 def seismic(h):
     A = (h.W / 1000) ** 2
     vol = {"1F": 0.0, "2F": 0.0, "RF": 0.0, "PAR": 0.0, "STAIR": 0.0}
@@ -492,12 +527,14 @@ def seismic(h):
             r_c = sum(k * p for k, p in zip(Kd, pos)) / sum(Kd)
             Ko = [k for k, _ in st_o]
             r_o = sum(k * p for k, p in st_o) / sum(Ko)
-            g = h.W / 2000
+            gx_, gy_ = gravity_center(h, floor)                        # v4.47 重心＝荷重の図心（従前は平面中心 W/2）
+            g = gy_ if axis == "x" else gx_                           # X 方向の壁の位置 p は y 座標
+            g_c = h.W / 2000
             e = abs(r_c - g)
             Kr = sum(k * (p - r_c) ** 2 for k, p in zip(Kd, pos)) + sum(k * (p - r_o) ** 2 for k, p in st_o)
             re = math.sqrt(Kr / sum(Kd))
             out.update(Lw=Lw, wall_rate=Lw * 100 / A, Aw=Aw / 1e6, Qu=Qu, Qun=Qun, qu_ratio=Qu / Qun,
-                       ecc=e / re, e=e, re=re)
+                       ecc=e / re, e=e, re=re, g=g, rc=r_c, ecc_center=abs(r_c - g_c) / re)
             res["stories"][(floor, name)] = out
     res["fs"] = fs
     res["tau_u"] = tau_u

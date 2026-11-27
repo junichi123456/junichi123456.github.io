@@ -62,7 +62,7 @@ def test_bath_wall_and_toilet_face():
     # v4.46: 浴室は 2,950×3,500（10.32m²、C-N）、洗面・脱衣との境は LGS x7,700（u12,150〜16,125）。1F E-N は 主寝室＋居室A＋廊下（北東）＋収納（北東）
     w = [w for w in h.walls if w.floor == "1F" and w.axis == "y" and w.c == 7700]
     assert len(w) == 1 and (w[0].a, w[0].b) == (12150, 16125)
-    assert not [r for r in h.rooms if r.floor == "1F" and r.name in ("トイレ", "未割当（1F 北東）", "機械室前")]
+    assert not [r for r in h.rooms if r.floor == "1F" and r.name in ("トイレ", "機械室前")]        # v4.47 未割当（1F 北東）は旧機械室（5.85m²）として復活
     assert _room(h, "居室A").rect == (12150, 10950, 16125, 13487) and _room(h, "主寝室").rect == (12150, 13587, 16125, 16125)
     assert _room(h, "浴室").rect == (7750, 12150, 10700, 15650)
     assert _room(h, "トイレ（手洗い付）", "2F").rect == (8850, 8260, 10700, 10700)      # 2F のトイレは PS-3（2F）の北

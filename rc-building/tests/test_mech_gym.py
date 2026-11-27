@@ -31,33 +31,46 @@ def test_wall_quantity_and_eccentricity():
     h = _h()
     wq = house_legal.wall_quantity(h)
     assert wq[("1F", "Y方向")][1] >= 12 and wq[("1F", "X方向")][1] >= 12      # v4.46 施主画像（1F 北東に寝室 2・東面に窓 2）。法の下限 12 を守る
-    assert max(v["ecc"] for v in PF.seismic(h)["stories"].values()) <= 0.15
+    se = PF.seismic(h)["stories"]
+    assert max(v["ecc"] for v in se.values()) <= 0.10          # v4.47 機械室を 2F 東へ・重心を荷重の図心に・1F 主寝室の窓を北へ・2F Y3 を RC 化（全 ≦0.10）
+    assert all(abs(v["g"] - 8.125) < 0.5 for v in se.values())
     assert h.t == 250
 
 
 def test_mech_room_and_battery_room_at_gym_north():
-    """v4.46（施主画像）: 機械室は 1 室（5.85m²）、蓄電室（4.30m²）と並んでジム北端 y8,700〜10,700（E-M 区画）。機械室の扉 MD-1 はジムへ。"""
+    """v4.47 機械室を 2F 東へ: 1F は未割当（1F 北東 5.85m²）と蓄電室（4.30m²）がジム北端 y8,700〜10,700（E-M 区画）に並ぶ。
+    2F の機械室は旧 未割当（2F 東）10.04m²、扉 MD-1 は Y3 u11,400〜12,400（W1,000・南へ内開き）。"""
     h = _h()
     mr = h.spec["mech_rooms"]
-    assert mr["wall_x_y"] == 8650 and mr["wall_mid"] == 13925
+    assert mr["wall_x_y"] == 8650 and mr["wall_mid"] == 13925 and mr["floor"] == "2F"
     wx = next(w for w in h.walls if w.floor == "1F" and w.axis == "x" and w.c == mr["wall_x_y"])
-    assert [(o.u0, o.u1) for o in wx.openings] == [(12950, 13750)] and all(o.swing == 1 and o.hinge == 0 for o in wx.openings)          # ジム→機械室（内開き）
+    assert [(o.u0, o.u1) for o in wx.openings] == [(12950, 13750)] and all(o.swing == 1 and o.hinge == 0 for o in wx.openings)          # ジム→未割当（1F 北東）（木製片開き戸）
+    assert wx.openings[0].name == "木製片開き戸"
     wm = next(w for w in h.walls if w.floor == "1F" and w.axis == "y" and w.c == mr["wall_mid"])
-    assert not wm.openings                                                          # 機械室｜蓄電室 は戸なし
+    assert not wm.openings                                                          # 未割当（1F 北東）｜蓄電室 は戸なし
     d = h.battery_door
     assert d.swing == -1 and d.width == 900 and (d.u0, d.u1) == (14400, 15300) and d.wall.c == 8650
     gym = sb(*h.gym.rect)
     assert gym.buffer(150).intersects(sb(*h.battery_room.rect)) and abs(h.battery_room.area - 4.30) < 0.05
     assert h.battery_room.rect[1] >= h.gy[1] and h.battery_room.rect[3] <= h.gy[2]      # E-M 区画
-    mech = [r for r in h.rooms if r.name.startswith("機械室") and r.floor == "1F"]
-    assert len(mech) == 1 and mech[0].name == "機械室" and abs(mech[0].area - 5.85) < 0.03
-    assert not [r for r in h.rooms if r.name in ("機械室前", "ジム収納") or r.name.startswith("機械室（")]
-    # 天吊り（z0 ≧ 2,200）は排煙機・空調機のみ。通路 2,000 の頭上に収まる
+    m1 = [r for r in h.rooms if r.name.startswith("機械室") and r.floor == "1F"]
+    assert not m1                                                                   # 1F に機械室はない
+    spare = [r for r in h.rooms if r.floor == "1F" and r.name == "未割当（1F 北東）"]
+    assert len(spare) == 1 and abs(spare[0].area - 5.85) < 0.03 and spare[0].rect == (10950, 8700, 13875, 10700) and not spare[0].habitable
+    m2 = [r for r in h.rooms if r.floor == "2F" and r.name == "機械室"]
+    assert len(m2) == 1 and m2[0].rect == (10950, 8759, 16125, 10700) and abs(m2[0].area - 10.04) < 0.03
+    assert not [r for r in h.rooms if r.name in ("機械室前", "ジム収納", "未割当（2F 東）") or r.name.startswith("機械室（")]
+    md = [(i, o) for i, _, o in h.mech_doors]
+    assert len(md) == 1 and md[0][0] == "MD-1" and (md[0][1].u0, md[0][1].u1) == (11400, 12400) and md[0][1].swing == -1 and md[0][1].wall.floor == "2F"
+    # 天吊り（z0 ≧ 2,200）は排煙機・空調機のみ。上端は 2F スラブ下面 3,180 以下（直天井）
     for e in mr["equipment"]:
-        z0 = e[5] if len(e) > 5 else 0
-        assert e[4] + z0 <= h.H["1F"] - h.slab_t if z0 else True      # 1FL〜2F スラブ下面 3,180（直天井）
+        assert len(e) == 7 and e[6] > 0, e
+        z0 = e[5]
+        assert e[4] + z0 <= h.H["2F"] - h.slab_t if z0 else True
         if z0 >= 2000:
             assert e[0] in ("MC-1", "MC-2", "MC-7")
+        if e[1] == "機械室":
+            assert sb(*e[3]).within(sb(10950, 8759, 16125, 10700).buffer(1)), e
 
 
 def test_clearance_800_and_swing():
@@ -65,7 +78,7 @@ def test_clearance_800_and_swing():
     r = h.clearance_report()
     assert r["min"][1] >= 800, r["min"]
     assert not r["battery_swing_hits"] and not r["lane_hits"]
-    assert not any(r["mech_swing_hits"].values())                                    # 分電盤・機器が扉の軌跡に入らない
+    assert not any(r["mech_swing_hits"].values()) and r["mech_aisle"] >= 900          # 分電盤・機器が扉の軌跡に入らない。v4.47 2F 機械室の通路 ≧900（実寸 966）
     assert r["usable"] >= 44.85, r["usable"]
     assert abs(h.gym.area - 43.34) < 0.05 and h.gym.daylight_area >= 51.76 * 0.95      # v4.46: ジム 5,175×8,475（−増し打ち帯）＋拡張部 6.99＝50.33（−2.8%、±5% 内）
     assert r["rack_front"] >= h.spec["mech_rooms"]["rack_front_min"]

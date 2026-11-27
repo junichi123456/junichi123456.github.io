@@ -235,7 +235,7 @@ def plumbing_sheet(h, number):
     xs = [12 + i * (W + G) for i in range(5)]
     sh.text("(1) 給水系統", (12, 276), 2.4, "A-TEXT", paper=True)
     water = ["量水器 MW（門前広場・門の塀の外面 x11,600）", "W-1 点検桝（止水栓）→ さや管 VU75（アプローチの横断 1.72m）→ W-2 点検桝", "管路帯（砂利・Dotcon+ の下 0m）→ 南面 SL-P7（つば付き止水）",
-             "床下ピット 給水 φ25 →SL-P8 → 立上り WR（機械室）", "HD-1 ヘッダー（機械室）→ 1F の各器具"]
+             "床下ピット 給水 φ25 →SL-P8 → 立上り WR（SF7→2F 機械室）", "HD-1 ヘッダー（機械室）→ 1F の各器具"]
     for i, tx in enumerate(water):
         _flow_box(sh, xs[i], 270, W, H_ + 8, tx, "E-WATER")
         if i:

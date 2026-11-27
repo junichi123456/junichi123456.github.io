@@ -355,15 +355,14 @@ class House:
         L(f, "y", 12100, 10950, 16125, [(11900, 12700, "swing", 1, 0), (13700, 14500, "swing", 1, 0)])
         L(f, "x", 13537, 12150, 16125)
         L(f, "x", 14650, 10950, 12050, [(11100, 11900, "sliding")])
-        # v4.46 機械室（1 室に統合）と蓄電室: ジム北端 y8,700〜10,700（E-M 区画）
-        R("機械室", f, (10950, 8700, 13875, 10700))
+        # v4.47 旧機械室（ジム北端 y8,700〜10,700）は未割当（1F 北東）へ。機械室は 2F 東へ移した。蓄電室は 1F のまま
+        R("未割当（1F 北東）", f, (10950, 8700, 13875, 10700)).label_name = "未割当"
         mr = self.spec["mech_rooms"]
-        w89 = L(f, "x", mr["wall_x_y"], 10950, mr["wall_mid"], [(d["u"][0], d["u"][1], "swing", d["swing"], 0) for d in mr["doors"] if d["wall"] == "x"])
-        L(f, "y", mr["wall_mid"], 8700, 10700)                                  # 機械室｜蓄電室
-        self.mech_doors = []
-        for d, op in zip([d for d in mr["doors"] if d["wall"] == "x"], list(w89.openings)):
-            op.name = d["name"]
-            self.mech_doors.append((d["id"], d["room"], op))
+        sd = mr["spare_door"]
+        w89 = L(f, "x", mr["wall_x_y"], 10950, mr["wall_mid"], [(sd["u"][0], sd["u"][1], "swing", sd["swing"], 0)])
+        w89.openings[0].name = sd["name"]                                       # v4.47 ジム→未割当（1F 北東）の木製片開き戸（機械室の戸ではない）
+        L(f, "y", mr["wall_mid"], 8700, 10700)                                  # 未割当（1F 北東）｜蓄電室
+        self.mech_doors = []                                                    # v4.47 機械室の扉 MD-1 は 2F（_openings_rc で追加）
         # ================= 2F
         f = "2F"
         R("図書室", f, (125, 125, 5300, 5300), True)                                       # v4.46 南西へ移設 26.78m²
@@ -402,16 +401,16 @@ class House:
         L(f, "x", 12100, 5550, 10700, [(5700, 6500, "swing", 1, 0)])                        # 廊下（北）｜未割当（2F 北）
         L(f, "y", 7700, 15600, 16125)
         L(f, "x", 15600, 7750, 10700)
-        # v4.46 2F 北東: 居室C・居室E、廊下（東）・収納（東）、未割当（2F 東）
+        # v4.46 2F 北東: 居室C・居室E、廊下（東）・収納（東）。v4.47 東端の未割当（2F 東）は機械室へ
         R("廊下（東）", f, (10950, 10950, 14450, 12050), label=(12700, 11500))
         R("居室C", f, (10950, 12150, 13487, 16125), True)
         R("居室E", f, (13587, 12150, 16125, 16125), True)
         R("収納（東）", f, (14550, 10950, 16125, 12050)).label_name = "収納"
-        R("未割当（2F 東）", f, (10950, 8759, 16125, 10700)).label_name = "未割当"
+        R("機械室", f, (10950, 8759, 16125, 10700))                                       # v4.47 旧 未割当（2F 東）。直天井・床は防水塗装
         L(f, "x", 12100, 10950, 16125, [(11900, 12700, "swing", 1, 0), (13650, 14450, "swing", 1, 0)])
         L(f, "y", 13537, 12150, 16125)
         L(f, "y", 14500, 10950, 12050, [(11100, 11900, "sliding")])
-        L(f, "x", 10825, 11300, 15800, [(11400, 12200, "swing", 1, 0)])                     # Y3 の RC 開口の中（廊下（東）→未割当（2F 東））
+        # v4.47 Y3 の RC 開口を閉じ、機械室の扉 MD-1 は RC 壁に直接（LGS は不要）
         short = {"廊下（西）": "廊下", "廊下（中央）": "廊下", "廊下（南西）": "廊下", "廊下（南中央）": "廊下", "廊下（北西）": "廊下", "廊下（北）": "廊下",
                  "廊下（東）": "廊下", "ホール（東）": "ホール", "トイレ（手洗い付）": "トイレ手洗"}      # 図面の室名（幅 1,100 前後の室に収める。v4.44・v4.46）
         for r in self.rooms:
@@ -543,7 +542,7 @@ class House:
         self._window("1F", "E", 3100, 5200, 2000, 650, "FIX高窓（ジム）")
         self._window("1F", "N", 5800, 7400, 1500, 800, "FIX高窓（洗面・脱衣）")
         self._window("1F", "E", 11500, 13100, 800, 1100, "FIX窓（居室A）")                      # v4.46 1F 北東の寝室
-        self._window("1F", "E", 14100, 15700, 800, 1100, "FIX窓（主寝室）")
+        self._window("1F", "N", 12500, 14100, 800, 1100, "FIX窓（主寝室）")                   # v4.47 東→北（同寸）。X4 の Y 方向壁を増やして偏心率を下げる
         # ---------------- 2F
         for u0, u1 in ((2900, 3700), (6000, 6800)):
             D("2F", "Y2", u0, u1, swing=-1)                                          # 南の図書室・未割当（2F 南）へ（v4.46。他の 3 か所は RC で閉じる）
@@ -554,7 +553,9 @@ class House:
         D("2F", "X3", 6750, 7550, "遮音ドア（Ts-35）", swing=1, hinge=0)           # ホール（東）→前室（v4.46 u7,750〜8,550 から南へ移す）
         G("2F", "Y3", 4200, 5300, name="開口（通路↔廊下）")
         G("2F", "Y3", 7650, 8750, name="開口（通路↔廊下）")
-        self._gap("2F", "Y3", 11300, 15800, h=2600, name="開口（廊下（東）・未割当）")
+        for md in self.spec["mech_rooms"]["doors"]:                                  # v4.47 Y3 の大開口を RC で閉じ、機械室の扉 MD-1（W1,000・南の機械室側へ内開き）
+            op = D("2F", md["wall"], md["u"][0], md["u"][1], md["name"], swing=md["swing"], hinge=0)
+            self.mech_doors.append((md["id"], md["room"], op))
         for u0, u1 in ((600, 1800), (2800, 4000)):                                       # 図書室（南面）
             self._window("2F", "S", u0, u1, 800, 1100, "FIX窓（図書室）")
         for u0, u1 in ((6000, 7200), (9000, 10200)):                                     # 未割当（2F 南）
@@ -1057,7 +1058,8 @@ class House:
 
     # ------------------------------------------------------------------ v4.26 離隔・軌跡の判定
     def mech_zones(self):
-        """機械室と蓄電室の壁の面までの矩形（開口側＝ジム側の面）。壁芯 ± 厚/2 から求める。v4.46: ジム北端 y8,650 の壁の南面（8,600）まで。"""
+        """機械室と蓄電室の壁の面までの矩形（開口側＝ジム側の面）。壁芯 ± 厚/2 から求める。v4.46: ジム北端 y8,650 の壁の南面（8,600）まで。
+        v4.47 キー mech は 1F の未割当（1F 北東＝旧機械室）の外形。施主指示の離隔 800 はこの壁の面に対して引き続き適用する。"""
         mr = self.spec["mech_rooms"]
         face = mr["wall_x_y"] - self.pt / 2                                  # v4.46 機械室・蓄電室の南面（y8,600）
         bx0, by0, bx1, by1 = self.battery_room.rect
@@ -1092,13 +1094,15 @@ class House:
         # 機械室の扉（内開き）の軌跡と機器
         mr = self.spec["mech_rooms"]
         mech_sw = {}
-        for (did, room, op) in self.mech_doors:                               # 機械室の扉 MD-1（y8,650 の壁、北へ内開き）
-            sw = self.swing_zone(op, (op.u0, op.wall.c + self.pt / 2), (1, 1))
+        for (did, room, op) in self.mech_doors:                               # v4.47 機械室の扉 MD-1（2F Y3、南＝機械室側へ内開き）
+            sw = self.swing_zone(op, (op.u0 if op.hinge == 0 else op.u1, op.wall.c + op.swing * op.wall.t / 2), (1 if op.hinge == 0 else -1, op.swing))
             mech_sw[did] = [e[2] for e in mr["equipment"] if sbox(*e[3]).intersects(sw) and e[1] == room and (len(e) < 6 or e[5] < 2000)]
+        fl_ = [e[3][1] for e in mr["equipment"] if e[1] == "機械室" and (len(e) < 6 or e[5] == 0)]          # v4.47 床置きの南端
+        mech_aisle = (min(fl_) - mr["rect"][1]) if fl_ else 9999
         racks = [e for e in mr["equipment"] if e[0].startswith("MB-") and "ラック" in e[2]]
         rack_front = min(e[3][1] - (self.spec["battery"]["fire_door"]["wall"] + self.pt / 2 + 350) for e in racks)      # v4.46 南の壁の内面 8,700＋PCS の張出し・通路 350＝9,050 から北の棚の前面まで
         return dict(min=mn, items=dist, need=need, battery_swing_hits=bsw_hits, lane_hits=lane_hits, zone_area=zone.area / 1e6,
-                    usable=usable, mech_swing_hits=mech_sw, rack_front=rack_front, zone=zone, battery_swing=bsw)
+                    usable=usable, mech_swing_hits=mech_sw, mech_aisle=mech_aisle, rack_front=rack_front, zone=zone, battery_swing=bsw)
 
     def surplus_report(self, unit=25.0):
         """余剰面積（v4.46）: 階ごとの「未割当」室の面積合計を 25m² 単位（単位数＝floor(m²/25)・端数）で。収納（用途のある物入れ）は含めない。"""
